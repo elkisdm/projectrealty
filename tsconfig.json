@@ -59,6 +59,7 @@
   ],
   "exclude": [
     "node_modules",
-    "arriendo-zero/**"
+    "arriendo-zero/**",
+    "tests/**"
   ]
 }

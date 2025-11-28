@@ -89,15 +89,6 @@ export default defineConfig({
     /* Global setup and teardown */
     globalSetup: require.resolve('./tests/global-setup.ts'),
     globalTeardown: require.resolve('./tests/global-teardown.ts'),
-    
-    /* MSW configuration for browser tests */
-    use: {
-        ...devices['Desktop Chrome'],
-        // Configurar MSW para tests E2E
-        launchOptions: {
-            args: ['--disable-web-security', '--disable-features=VizDisplayCompositor'],
-        },
-    },
 
     /* Test timeout */
     timeout: 30 * 1000,
