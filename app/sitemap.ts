@@ -3,7 +3,14 @@ import type { MetadataRoute } from "next";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000");
-  const buildings = await getAllBuildings();
+  
+  let buildings: Awaited<ReturnType<typeof getAllBuildings>> = [];
+  try {
+    buildings = await getAllBuildings();
+  } catch (error) {
+    console.error('Error fetching buildings for sitemap:', error);
+    // Si falla, retornar solo la página principal
+  }
 
   return [
     { url: base.toString(), lastModified: new Date() },

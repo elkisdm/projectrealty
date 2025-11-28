@@ -1,69 +1,34 @@
 import Image from "next/image";
 import Link from "next/link";
-
-type FeaturedBuildingItem = {
-  id: string;
-  slug: string;
-  name: string;
-  comuna: string;
-  cover_image: string;
-  precio_desde: number | null;
-  has_availability: boolean;
-};
+import { getAllBuildings } from "@lib/data";
+import { formatPrice } from "@lib/utils";
 
 type FeaturedGridProps = Record<string, never>;
 
-async function fetchFeaturedBuildings(): Promise<FeaturedBuildingItem[]> {
+async function getFeaturedBuildings() {
   try {
-    // URL absoluta para desarrollo
-    const url = 'http://localhost:3000/api/landing/featured';
-    // console.log('🌐 FeaturedGrid: Fetching from:', url);
-
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      // Cache durante 5 minutos en desarrollo, 1 hora en producción
-      next: {
-        revalidate: process.env.NODE_ENV === 'production' ? 3600 : 300
-      }
-    });
-
-    // console.log('📡 FeaturedGrid: Response status:', response.status);
-
-    if (!response.ok) {
-      // console.error(`Error fetching featured buildings: ${response.status} ${response.statusText}`);
-      return [];
-    }
-
-    const data = await response.json();
-    // console.log('📦 FeaturedGrid: Response data:', data);
-
-    return data.buildings || [];
+    const allBuildings = await getAllBuildings({});
+    
+    // Filtrar edificios con disponibilidad y tomar los primeros 3
+    const featuredBuildings = allBuildings
+      .filter(building => {
+        const available = building.units.filter((u) => u.disponible);
+        return available.length > 0;
+      })
+      .slice(0, 3);
+    
+    return featuredBuildings;
   } catch (error) {
-    // console.error('Error in fetchFeaturedBuildings:', error);
+    console.error('Error getting featured buildings:', error);
     return [];
   }
 }
 
-function formatPrice(price: number | null): string {
-  if (!price || price <= 0) return "Consultar precio";
-  if (price >= 1_000_000) {
-    const millions = price / 1_000_000;
-    return `$${millions.toFixed(0)}M`;
-  }
-  return `$${price.toLocaleString('es-CL')}`;
-}
-
 export default async function FeaturedGrid(_: FeaturedGridProps) {
-  // console.log('🔍 FeaturedGrid: Iniciando fetch de proyectos destacados...');
-  const buildings = await fetchFeaturedBuildings();
-  // console.log('📊 FeaturedGrid: Proyectos obtenidos:', buildings.length, buildings);
+  const buildings = await getFeaturedBuildings();
 
   // Fallback si no hay proyectos destacados
   if (buildings.length === 0) {
-    // console.log('⚠️ FeaturedGrid: No hay proyectos, mostrando fallback');
     return (
       <section aria-labelledby="featured-heading" className="px-6 py-12 lg:px-8">
         <div className="mx-auto max-w-6xl">
@@ -79,8 +44,6 @@ export default async function FeaturedGrid(_: FeaturedGridProps) {
       </section>
     );
   }
-
-  // console.log('✅ FeaturedGrid: Mostrando', buildings.length, 'proyectos destacados');
 
   return (
     <section aria-labelledby="featured-heading" className="relative px-6 py-16 lg:px-8 lg:py-24">
@@ -103,64 +66,70 @@ export default async function FeaturedGrid(_: FeaturedGridProps) {
 
         {/* Grid de proyectos */}
         <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {buildings.map((building) => (
-            <article
-              key={building.id}
-              className="group relative overflow-hidden rounded-2xl bg-card shadow-lg transition-all duration-300 hover:shadow-xl hover:shadow-primary/10"
-            >
-              {/* Imagen */}
-              <div className="relative aspect-[4/3] overflow-hidden">
-                <Image
-                  src={building.cover_image}
-                  alt={`${building.name} en ${building.comuna}`}
-                  fill
-                  className="object-cover transition-transform duration-300 group-hover:scale-105"
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                />
+          {buildings.map((building) => {
+            const available = building.units.filter((u) => u.disponible);
+            const hasAvailability = available.length > 0;
+            const coverImage = building.coverImage || building.gallery?.[0] || '/images/lascondes-cover.jpg';
+            
+            return (
+              <article
+                key={building.id}
+                className="group relative overflow-hidden rounded-2xl bg-card shadow-lg transition-all duration-300 hover:shadow-xl hover:shadow-primary/10"
+              >
+                {/* Imagen */}
+                <div className="relative aspect-[4/3] overflow-hidden">
+                  <Image
+                    src={coverImage}
+                    alt={`${building.name} en ${building.comuna}`}
+                    fill
+                    className="object-cover transition-transform duration-300 group-hover:scale-105"
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  />
 
-                {/* Badge de disponibilidad */}
-                {building.has_availability && (
-                  <div className="absolute top-3 left-3">
-                    <span className="inline-flex items-center rounded-full bg-green-500/90 px-2 py-1 text-xs font-medium text-white backdrop-blur-sm">
-                      Disponible
-                    </span>
+                  {/* Badge de disponibilidad */}
+                  {hasAvailability && (
+                    <div className="absolute top-3 left-3">
+                      <span className="inline-flex items-center rounded-full bg-green-500/90 px-2 py-1 text-xs font-medium text-white backdrop-blur-sm">
+                        Disponible
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Overlay de hover */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                </div>
+
+                {/* Contenido */}
+                <div className="p-6">
+                  <div className="mb-2">
+                    <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">
+                      {building.name}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">{building.comuna}</p>
                   </div>
-                )}
 
-                {/* Overlay de hover */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-              </div>
+                  <div className="mb-4">
+                    <p className="text-2xl font-bold text-primary">
+                      {formatPrice(building.precioDesde ?? undefined)}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Desde</p>
+                  </div>
 
-              {/* Contenido */}
-              <div className="p-6">
-                <div className="mb-2">
-                  <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">
-                    {building.name}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">{building.comuna}</p>
+                  {/* CTA */}
+                  <Link
+                    href={`/property/${building.slug}`}
+                    aria-label={`Ver detalles de ${building.name}`}
+                    className="inline-flex w-full items-center justify-center rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-all duration-200 hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
+                  >
+                    Ver detalles
+                    <svg className="ml-2 h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                    </svg>
+                  </Link>
                 </div>
-
-                <div className="mb-4">
-                  <p className="text-2xl font-bold text-primary">
-                    {formatPrice(building.precio_desde)}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Desde</p>
-                </div>
-
-                {/* CTA */}
-                <Link
-                  href={`/property/${building.slug}`}
-                  aria-label={`Ver detalles de ${building.name}`}
-                  className="inline-flex w-full items-center justify-center rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-all duration-200 hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
-                >
-                  Ver detalles
-                  <svg className="ml-2 h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-                  </svg>
-                </Link>
-              </div>
-            </article>
-          ))}
+              </article>
+            );
+          })}
         </div>
 
         {/* CTA final */}

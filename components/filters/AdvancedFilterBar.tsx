@@ -148,17 +148,17 @@ export function AdvancedFilterBar({
         {/* Search and Sort Row */}
         <div className="flex flex-col lg:flex-row gap-4">
           
-          {/* Search Input */}
-          <div className="flex-1">
+          {/* Search Input - Disabled for MVP */}
+          {/* <div className="flex-1">
             <SearchInput
-              value={filters.query}
+              value={filters.query || ''}
               onChange={handleSearchChange}
               suggestions={searchSuggestions}
               placeholder="Buscar propiedades, ubicaciones o amenidades..."
               autoFocus={false}
               className="w-full"
             />
-          </div>
+          </div> */}
 
           {/* Sort Select */}
           <div className="lg:w-48">
@@ -200,11 +200,6 @@ export function AdvancedFilterBar({
             ) : (
               <span>
                 {resultsCount} de {buildings.length} propiedades
-                {filters.query && searchResults.length > 0 && (
-                  <span className="ml-2 text-[var(--primary)]">
-                    (búsqueda activa)
-                  </span>
-                )}
               </span>
             )}
           </div>
@@ -358,92 +353,9 @@ export function AdvancedFilterBar({
                   Filtros Avanzados
                 </h3>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  
-                  {/* M2 Range */}
-                  <div>
-                    <label htmlFor="min-m2-filter" className="block text-sm font-medium text-white mb-2">
-                      Metros² mínimos
-                    </label>
-                    <input
-                      id="min-m2-filter"
-                      type="number"
-                      value={filters.minM2 || ''}
-                      onChange={(e) => handleFilterChange('minM2', e.target.value ? Number(e.target.value) : null)}
-                      placeholder="30"
-                      className="
-                        w-full px-3 py-2 
-                        bg-white/10 border border-white/20 
-                        rounded-xl text-white placeholder-[var(--subtext)]
-                        focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/50
-                      "
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="max-m2-filter" className="block text-sm font-medium text-white mb-2">
-                      Metros² máximos
-                    </label>
-                    <input
-                      id="max-m2-filter"
-                      type="number"
-                      value={filters.maxM2 || ''}
-                      onChange={(e) => handleFilterChange('maxM2', e.target.value ? Number(e.target.value) : null)}
-                      placeholder="120"
-                      className="
-                        w-full px-3 py-2 
-                        bg-white/10 border border-white/20 
-                        rounded-xl text-white placeholder-[var(--subtext)]
-                        focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/50
-                      "
-                    />
-                  </div>
-
-                  {/* Boolean Filters */}
-                  <div className="space-y-3">
-                    <label className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        checked={filters.estacionamiento === true}
-                        onChange={(e) => handleFilterChange('estacionamiento', e.target.checked ? true : null)}
-                        className="
-                          w-4 h-4 text-[var(--primary)] 
-                          bg-white/10 border-white/20 
-                          rounded focus:ring-[var(--primary)]/50
-                        "
-                      />
-                      <span className="text-sm text-white">Con estacionamiento</span>
-                    </label>
-
-                    <label className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        checked={filters.bodega === true}
-                        onChange={(e) => handleFilterChange('bodega', e.target.checked ? true : null)}
-                        className="
-                          w-4 h-4 text-[var(--primary)] 
-                          bg-white/10 border-white/20 
-                          rounded focus:ring-[var(--primary)]/50
-                        "
-                      />
-                      <span className="text-sm text-white">Con bodega</span>
-                    </label>
-
-                    <label className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        checked={filters.petFriendly === true}
-                        onChange={(e) => handleFilterChange('petFriendly', e.target.checked ? true : null)}
-                        className="
-                          w-4 h-4 text-[var(--primary)] 
-                          bg-white/10 border-white/20 
-                          rounded focus:ring-[var(--primary)]/50
-                        "
-                      />
-                      <span className="text-sm text-white">Pet friendly</span>
-                    </label>
-                  </div>
-
+                {/* Advanced filters disabled for MVP - only comuna and price */}
+                <div className="text-center text-white/60 py-4">
+                  <p className="text-sm">Filtros avanzados disponibles próximamente</p>
                 </div>
               </div>
 
