@@ -9,8 +9,9 @@ import { redirect } from 'next/navigation';
 export const revalidate = 3600;
 
 export default function Home() {
-  if (COMING_SOON) redirect('/coming-soon');
-  
+  // TEMPORAL: Sin redirección para debug
+  console.log('DEBUG: Home page loading without redirect');
+
   // Mostrar landing directamente sin redirección
   return (
     <>

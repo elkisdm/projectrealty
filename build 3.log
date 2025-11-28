@@ -1,0 +1,72 @@
+
+> hommie-0-commission@1.0.0 build /Users/macbookpro/Documents/hommie-0-commission-next
+> next build
+
+   ▲ Next.js 15.4.6
+   - Environments: .env.local, .env.production
+   - Experiments (use with caution):
+     · optimizePackageImports
+
+   Creating an optimized production build ...
+ ⚠ Compiled with warnings in 9.0s
+
+./node_modules/.pnpm/@supabase+realtime-js@2.15.0/node_modules/@supabase/realtime-js/dist/module/lib/websocket-factory.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/.pnpm/@supabase+realtime-js@2.15.0/node_modules/@supabase/realtime-js/dist/module/lib/websocket-factory.js
+./node_modules/.pnpm/@supabase+realtime-js@2.15.0/node_modules/@supabase/realtime-js/dist/module/index.js
+./node_modules/.pnpm/@supabase+supabase-js@2.54.0/node_modules/@supabase/supabase-js/dist/module/index.js
+./lib/supabase.mock.ts
+./app/api/debug-admin/route.ts
+
+ ✓ Compiled successfully in 17.0s
+   Linting and checking validity of types ...
+ ⨯ ESLint: Invalid Options: - Unknown options: useEslintrc, extensions - 'extensions' has been removed.
+   Collecting page data ...
+   Generating static pages (0/21) ...
+   Generating static pages (5/21) 
+🚀 Función readAll() iniciada
+🔧 USE_SUPABASE: true
+🔄 Llamando a readFromSupabase()...
+🔍 Intentando leer desde Supabase...
+   Generating static pages (10/21) 
+   Generating static pages (15/21) 
+ ✓ Generating static pages (21/21)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                 Size  First Load JS  Revalidate  Expire
+┌ ○ /                                      190 B         101 kB          1h      1y
+├ ○ /_not-found                            996 B         101 kB
+├ ○ /admin/flags                         11.6 kB         112 kB
+├ ƒ /api/admin/completeness                190 B         101 kB
+├ ƒ /api/booking                           190 B         101 kB
+├ ƒ /api/buildings                         190 B         101 kB
+├ ƒ /api/buildings/[slug]                  190 B         101 kB
+├ ƒ /api/buildings/paginated               190 B         101 kB
+├ ƒ /api/debug                             190 B         101 kB
+├ ƒ /api/debug-admin                       190 B         101 kB
+├ ƒ /api/flags/override                    190 B         101 kB
+├ ƒ /api/quotations                        190 B         101 kB
+├ ƒ /api/test                              190 B         101 kB
+├ ƒ /api/waitlist                          190 B         101 kB
+├ ○ /coming-soon                         1.53 kB         102 kB
+├ ○ /cotizador                           8.93 kB         132 kB
+├ ○ /demo                                  171 B         162 kB
+├ ○ /landing                             7.88 kB         179 kB          1h      1y
+├ ○ /mi-bio                                190 B         101 kB
+├ ƒ /property/[slug]                     12.4 kB         134 kB
+├ ƒ /propiedad/[id]                        190 B         101 kB
+├ ○ /robots.txt                            190 B         101 kB
+├ ○ /sitemap.xml                           190 B         101 kB
+└ ○ /test                                  190 B         101 kB
++ First Load JS shared by all             100 kB
+  ├ chunks/1b79293a-b663be4a96b74d5c.js  54.1 kB
+  ├ chunks/6120-5e3a9f32517fa186.js      44.2 kB
+  └ other shared chunks (total)           2.1 kB
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
