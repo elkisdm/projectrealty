@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { motion } from "framer-motion";
+import Image from "next/image";
 import { Home, Users, Zap, ArrowRight, Percent, Shield, Clock, CreditCard, UserCheck, ChevronLeft, ChevronRight, Bed, Building2, Castle, Hotel, Flame } from "lucide-react";
 import Link from "next/link";
 import type { BuildingSummary } from "@/hooks/useFetchBuildings";
@@ -111,8 +112,10 @@ export default function ArriendaSinComisionBuildingCard({ building }: ArriendaSi
 
     // Obtener todas las imágenes disponibles
     const allImages = building.gallery && building.gallery.length > 0 
-      ? building.gallery 
-      : [building.coverImage];
+      ? building.gallery.filter((img): img is string => Boolean(img))
+      : building.coverImage 
+        ? [building.coverImage]
+        : ['/images/nunoa-cover.jpg'];
 
     return {
       minPrice,
@@ -145,11 +148,16 @@ export default function ArriendaSinComisionBuildingCard({ building }: ArriendaSi
     >
       {/* Imagen principal con carrusel - altura fija */}
       <div className="relative h-64 overflow-hidden flex-shrink-0" role="region" aria-label="Galería de imágenes del edificio">
-        <img
-          src={allImages[currentImageIndex]}
-          alt={`Imagen ${currentImageIndex + 1} de ${allImages.length} del edificio ${building.name}`}
-          className="w-full h-full object-cover transition-all duration-150"
-        />
+        {allImages.length > 0 && (
+          <Image
+            src={allImages[currentImageIndex] || allImages[0]}
+            alt={`Imagen ${currentImageIndex + 1} de ${allImages.length} del edificio ${building.name}`}
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            className="object-cover transition-all duration-150"
+            priority={currentImageIndex === 0}
+          />
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
         
         {/* Badge principal: Comisión gratis */}

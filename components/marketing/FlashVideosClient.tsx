@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { UpsellStepper } from "./UpsellStepper";
-import { flashOfferContent } from "@/content/flashOffer";
+import { flashOfferContent } from "@/lib/content/flashOffer";
 
 export function FlashVideosClient() {
     const [isStepperOpen, setIsStepperOpen] = useState(false);

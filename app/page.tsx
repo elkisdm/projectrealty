@@ -1,23 +1,22 @@
 import HeroV2 from "@/components/marketing/HeroV2";
-import FeaturedGrid from "@/components/marketing/FeaturedGrid";
+import { FeaturedGridWithFilters } from "@/components/marketing/FeaturedGridWithFilters";
 import HowItWorks from "@/components/marketing/HowItWorks";
 import Trust from "@/components/marketing/Trust";
 import StickyMobileCTA from "@/components/marketing/StickyMobileCTA";
-import { COMING_SOON } from '@lib/flags';
-import { redirect } from 'next/navigation';
+import { getAllBuildings } from "@lib/data";
 
+export const dynamic = 'force-dynamic';
 export const revalidate = 3600;
 
-export default function Home() {
-  // TEMPORAL: Sin redirección para debug
-  console.log('DEBUG: Home page loading without redirect');
+export default async function Home() {
+  // Obtener todos los edificios para los filtros
+  const allBuildings = await getAllBuildings({});
 
-  // Mostrar landing directamente sin redirección
   return (
     <>
       <main className="min-h-screen bg-bg text-text">
         <HeroV2 />
-        <FeaturedGrid />
+        <FeaturedGridWithFilters initialBuildings={allBuildings} />
         <HowItWorks />
         <Trust />
       </main>

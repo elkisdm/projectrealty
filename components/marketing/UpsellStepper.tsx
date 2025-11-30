@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { flashOfferContent, formatPrice } from "@/content/flashOffer";
+import { flashOfferContent, formatPrice } from "@/lib/content/flashOffer";
 
 interface UpsellStepperProps {
     isOpen: boolean;

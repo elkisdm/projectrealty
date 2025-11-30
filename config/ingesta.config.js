@@ -19,9 +19,9 @@ export const INGESTA_CONFIG = {
   
   // Archivos y directorios
   DEFAULT_CSV_FILE: 'assetplan-export.csv',
-  SOURCES_DIR: 'data/sources',
-  BACKUP_DIR: 'backups',
-  REPORTS_DIR: 'reports',
+  SOURCES_DIR: '_workspace/data/sources',
+  BACKUP_DIR: '_workspace/data/backups',
+  REPORTS_DIR: '_workspace/docs/reports',
   
   // Límites de validación
   MAX_INTEGER: 2147483647,      // Límite PostgreSQL INTEGER

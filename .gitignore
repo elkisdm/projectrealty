@@ -31,5 +31,34 @@ coverage/
 *.tar.gz
 arriendo-zero-backup-*.tar.gz
 
+# Temporary files
+.temp-files/
+*.log
+lint-report.txt
+debug.js
+~
+
+# TypeScript build info
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# Package managers (using pnpm)
+package-lock.json
+yarn.lock
+
+# Generated builds
+static-build/
+
+# Snapshots
+.snapshots/
+
+# Git rewrite files
+.git-rewrite-mailmap
+.mailmap
+
+# Workspace generated files (mantener scripts y docs en git)
+_workspace/coverage/
+_workspace/test-results/
+_workspace/playwright-report/
 
 .vercel

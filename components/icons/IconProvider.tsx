@@ -8,7 +8,7 @@
  */
 
 import React, { createContext, useContext, useState, useMemo, ReactNode } from 'react';
-import { IconSize, StrokeWeight, IconVariant, getPreset } from '@/scripts/icon-gen/tokens';
+import { IconSize, StrokeWeight, IconVariant, getPreset } from '@workspace/scripts/icon-gen/tokens';
 
 // ============================================================================
 // INTERFACES Y TIPOS

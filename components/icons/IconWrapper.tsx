@@ -10,7 +10,7 @@
 import React, { forwardRef, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useIconContext, useIconConfig } from './IconProvider';
-import { IconSize, StrokeWeight, IconVariant, ICON_SIZES } from '@/scripts/icon-gen/tokens';
+import { IconSize, StrokeWeight, IconVariant, ICON_SIZES } from '@workspace/scripts/icon-gen/tokens';
 
 // ============================================================================
 // INTERFACES Y TIPOS

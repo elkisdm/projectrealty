@@ -28,7 +28,7 @@ export type {
   OpacityLevel,
   IconVariant,
   IconPreset
-} from '@/scripts/icon-gen/tokens';
+} from '@workspace/scripts/icon-gen/tokens';
 
 export {
   ICON_SIZES,
@@ -38,7 +38,7 @@ export {
   DARK_PRESET,
   BRAND_PRESET,
   getPreset
-} from '@/scripts/icon-gen/tokens';
+} from '@workspace/scripts/icon-gen/tokens';
 
 // ============================================================================
 // CONSTANTES Y CONFIGURACIÓN

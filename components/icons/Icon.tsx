@@ -10,7 +10,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { IconWrapper } from './IconWrapper';
 import { useIconContext, useIconPreset } from './IconProvider';
-import { IconSize, StrokeWeight, IconVariant } from '@/scripts/icon-gen/tokens';
+import { IconSize, StrokeWeight, IconVariant } from '@workspace/scripts/icon-gen/tokens';
 
 // ============================================================================
 // INTERFACES Y TIPOS
