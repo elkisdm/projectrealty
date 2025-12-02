@@ -1,38 +1,46 @@
-import '@testing-library/jest-dom';
+// Solo cargar jest-dom si estamos en entorno jsdom
+if (typeof window !== 'undefined') {
+  require('@testing-library/jest-dom');
+}
 
 // Silence Next.js router warnings if any component uses it indirectly
 // and provide generic mocks where helpful.
-window.scrollTo = window.scrollTo || (() => {});
+// Solo ejecutar si estamos en entorno con window (jsdom)
+if (typeof window !== 'undefined') {
+  window.scrollTo = window.scrollTo || (() => {});
+}
 
 // Polyfill fetch for jsdom if not present
 if (!(global as any).fetch) {
   (global as any).fetch = jest.fn();
 }
 
-// Mock matchMedia for components that use it
-Object.defineProperty(window, 'matchMedia', {
-  writable: true,
-  value: jest.fn().mockImplementation(query => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: jest.fn(), // deprecated
-    removeListener: jest.fn(), // deprecated
-    addEventListener: jest.fn(),
-    removeEventListener: jest.fn(),
-    dispatchEvent: jest.fn(),
-  })),
-});
+// Mock matchMedia for components that use it (solo en jsdom)
+if (typeof window !== 'undefined') {
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: jest.fn().mockImplementation(query => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: jest.fn(), // deprecated
+      removeListener: jest.fn(), // deprecated
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+      dispatchEvent: jest.fn(),
+    })),
+  });
+}
 
-// Mock ResizeObserver
-global.ResizeObserver = jest.fn().mockImplementation(() => ({
+// Mock ResizeObserver (disponible tanto en node como jsdom)
+global.ResizeObserver = global.ResizeObserver || jest.fn().mockImplementation(() => ({
   observe: jest.fn(),
   unobserve: jest.fn(),
   disconnect: jest.fn(),
 }));
 
-// Mock IntersectionObserver
-global.IntersectionObserver = jest.fn().mockImplementation(() => ({
+// Mock IntersectionObserver (disponible tanto en node como jsdom)
+global.IntersectionObserver = global.IntersectionObserver || jest.fn().mockImplementation(() => ({
   observe: jest.fn(),
   unobserve: jest.fn(),
   disconnect: jest.fn(),

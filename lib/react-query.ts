@@ -43,6 +43,17 @@ export const queryKeys = {
     infinite: (filters: BuildingFilters) => 
       [...queryKeys.buildingsPaginated.all, 'infinite', { filters }] as const,
   },
+  
+  // Admin queries
+  admin: {
+    all: ['admin'] as const,
+    stats: () => [...queryKeys.admin.all, 'stats'] as const,
+    buildings: (page: number, limit: number, search?: string, comuna?: string) =>
+      [...queryKeys.admin.all, 'buildings', { page, limit, search, comuna }] as const,
+    units: (page: number, limit: number, filters?: Record<string, unknown>) =>
+      [...queryKeys.admin.all, 'units', { page, limit, filters }] as const,
+    completeness: () => [...queryKeys.admin.all, 'completeness'] as const,
+  },
 } as const;
 
 // Tipos para respuesta paginada
@@ -76,6 +87,20 @@ export const invalidateQueries = {
       invalidateQueries.buildings(queryClient),
       invalidateQueries.buildingsPaginated(queryClient),
     ]);
+  },
+  admin: {
+    stats: (queryClient: QueryClient) => {
+      return queryClient.invalidateQueries({ queryKey: queryKeys.admin.stats() });
+    },
+    buildings: (queryClient: QueryClient) => {
+      return queryClient.invalidateQueries({ queryKey: [...queryKeys.admin.all, 'buildings'] });
+    },
+    units: (queryClient: QueryClient) => {
+      return queryClient.invalidateQueries({ queryKey: [...queryKeys.admin.all, 'units'] });
+    },
+    all: (queryClient: QueryClient) => {
+      return queryClient.invalidateQueries({ queryKey: queryKeys.admin.all });
+    },
   },
 } as const;
 

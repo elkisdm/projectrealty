@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { server } from '../mocks/server';
-import { http, HttpResponse } from 'msw';
+import { rest } from 'msw';
 
 // Componente de prueba que hace llamadas a la API
 const TestComponent = () => {
@@ -72,10 +72,10 @@ describe('MSW Integration Tests', () => {
     it('debería manejar errores de API correctamente', async () => {
         // Configurar un handler que retorne error
         server.use(
-            http.get('/api/buildings', () => {
-                return HttpResponse.json(
-                    { error: 'Error de servidor' },
-                    { status: 500 }
+            rest.get('/api/buildings', (req, res, ctx) => {
+                return res(
+                    ctx.status(500),
+                    ctx.json({ error: 'Error de servidor' })
                 );
             })
         );

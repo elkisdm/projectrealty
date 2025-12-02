@@ -24,7 +24,11 @@ class TremendoUnitsProcessor {
       const csvPath = path.join(process.cwd(), 'data', 'sources', 'tremendo_units.csv');
       
       if (!fs.existsSync(csvPath)) {
-        console.log('⚠️ Archivo tremendo_units.csv no encontrado');
+        // Archivo no encontrado - silenciar en producción
+        if (process.env.NODE_ENV === 'development') {
+          // eslint-disable-next-line no-console
+          console.log('⚠️ Archivo tremendo_units.csv no encontrado');
+        }
         return;
       }
 
@@ -56,12 +60,21 @@ class TremendoUnitsProcessor {
         this.buildings.get(unit.building)!.units.push(unit);
       });
 
-      console.log(`📊 Tremendo Units cargados: ${this.units.length} unidades`);
-      console.log(`🏢 Edificios Tremendo: ${this.buildings.size} edificios`);
+      // Logs solo en desarrollo
+      if (process.env.NODE_ENV === 'development') {
+        // eslint-disable-next-line no-console
+        console.log(`📊 Tremendo Units cargados: ${this.units.length} unidades`);
+        // eslint-disable-next-line no-console
+        console.log(`🏢 Edificios Tremendo: ${this.buildings.size} edificios`);
+      }
       
       this.isInitialized = true;
     } catch (error) {
-      console.error('❌ Error cargando Tremendo Units:', error);
+      // Error solo en desarrollo o si hay variable de entorno
+      if (process.env.NODE_ENV === 'development' || process.env.DEBUG_TREMENDO) {
+        // eslint-disable-next-line no-console
+        console.error('❌ Error cargando Tremendo Units:', error);
+      }
     }
   }
 

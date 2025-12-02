@@ -1,10 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createRateLimiter } from "@lib/rate-limit";
+
+// Rate limiter: 20 requests per minute per IP
+const rateLimiter = createRateLimiter({ windowMs: 60_000, max: 20 });
 
 // Simulación de base de datos en memoria (en producción usar Supabase/DB)
 let cuposDisponibles = 10;
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    // Rate limiting check
+    const forwarded = request.headers.get('x-forwarded-for');
+    const ip = forwarded ? forwarded.split(',')[0] : 'unknown';
+    const rateLimitResult = await rateLimiter.check(ip);
+    
+    if (!rateLimitResult.ok) {
+      return NextResponse.json(
+        { error: 'Rate limit exceeded', retryAfter: rateLimitResult.retryAfter },
+        { 
+          status: 429,
+          headers: {
+            'Retry-After': rateLimitResult.retryAfter?.toString() || '60',
+            'X-RateLimit-Limit': '20',
+            'X-RateLimit-Window': '60'
+          }
+        }
+      );
+    }
+
     return NextResponse.json({
       cuposDisponibles,
       total: 10,
@@ -22,6 +45,25 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting check
+    const forwarded = request.headers.get('x-forwarded-for');
+    const ip = forwarded ? forwarded.split(',')[0] : 'unknown';
+    const rateLimitResult = await rateLimiter.check(ip);
+    
+    if (!rateLimitResult.ok) {
+      return NextResponse.json(
+        { error: 'Rate limit exceeded', retryAfter: rateLimitResult.retryAfter },
+        { 
+          status: 429,
+          headers: {
+            'Retry-After': rateLimitResult.retryAfter?.toString() || '60',
+            'X-RateLimit-Limit': '20',
+            'X-RateLimit-Window': '60'
+          }
+        }
+      );
+    }
+
     const body = await request.json();
     const { action } = body;
 

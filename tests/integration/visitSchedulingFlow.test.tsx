@@ -7,8 +7,7 @@ import { useVisitScheduler } from '@/hooks/useVisitScheduler';
 jest.mock('@/hooks/useVisitScheduler');
 const mockUseVisitScheduler = useVisitScheduler as jest.MockedFunction<typeof useVisitScheduler>;
 
-// Mock de APIs
-global.fetch = jest.fn();
+// MSW handles API mocking - no need for global fetch override
 
 describe('Flujo completo de agendamiento de visitas', () => {
     const defaultProps = {
@@ -74,7 +73,7 @@ describe('Flujo completo de agendamiento de visitas', () => {
             // Verificar que el componente se renderiza correctamente
             expect(screen.getByText('Casa Test')).toBeInTheDocument();
             expect(screen.getByText('Selecciona fecha y hora')).toBeInTheDocument();
-            
+
             // Verificar que los días están disponibles
             expect(screen.getByText('16')).toBeInTheDocument();
             expect(screen.getByText('17')).toBeInTheDocument();

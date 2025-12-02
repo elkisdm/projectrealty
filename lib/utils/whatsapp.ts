@@ -81,7 +81,10 @@ export function buildWhatsAppUrlWithUTM(
 }
 
 // Telemetría mínima para eventos de WhatsApp
-export function trackWhatsAppClick(eventName: string, properties?: Record<string, any>) {
+export function trackWhatsAppClick(
+  eventName: string,
+  properties?: Record<string, unknown>
+) {
   if (typeof window === 'undefined') return;
   
   try {
@@ -94,11 +97,17 @@ export function trackWhatsAppClick(eventName: string, properties?: Record<string
       });
     }
     
-    // Log local para debugging
-    console.log(`[WhatsApp] ${eventName}`, properties);
+    // Log local solo en desarrollo
+    if (process.env.NODE_ENV === 'development') {
+      // eslint-disable-next-line no-console
+      console.log(`[WhatsApp] ${eventName}`, properties);
+    }
   } catch (error) {
-    // Silenciar errores de telemetría
-    console.warn('[WhatsApp] Error tracking event:', error);
+    // Silenciar errores de telemetría en producción
+    if (process.env.NODE_ENV === 'development') {
+      // eslint-disable-next-line no-console
+      console.warn('[WhatsApp] Error tracking event:', error);
+    }
   }
 }
 

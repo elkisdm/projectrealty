@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { createRateLimiter } from '@lib/rate-limit';
 import { 
   AvailabilityResponse, 
   VisitSlot, 
@@ -7,6 +8,9 @@ import {
   TIME_SLOTS_30MIN,
   OPERATIONAL_HOURS 
 } from '@/types/visit';
+
+// Rate limiter: 20 requests per minute per IP
+const rateLimiter = createRateLimiter({ windowMs: 60_000, max: 20 });
 
 // Schema de validación para query params
 const availabilityQuerySchema = z.object({
@@ -61,12 +65,24 @@ const generateMockSlots = (listingId: string, startDate: Date, endDate: Date): V
 
 export async function GET(request: NextRequest) {
   try {
-    // Rate limiting básico (20 requests por minuto por IP)
-    const ip = request.headers.get('x-forwarded-for') || 'unknown';
-    const rateLimitKey = `availability_${ip}`;
+    // Rate limiting check
+    const forwarded = request.headers.get('x-forwarded-for');
+    const ip = forwarded ? forwarded.split(',')[0] : 'unknown';
+    const rateLimitResult = await rateLimiter.check(ip);
     
-    // En producción usar Redis o similar para rate limiting
-    // Por ahora solo validamos que la request sea válida
+    if (!rateLimitResult.ok) {
+      return NextResponse.json(
+        { error: 'Rate limit exceeded', retryAfter: rateLimitResult.retryAfter },
+        { 
+          status: 429,
+          headers: {
+            'Retry-After': rateLimitResult.retryAfter?.toString() || '60',
+            'X-RateLimit-Limit': '20',
+            'X-RateLimit-Window': '60'
+          }
+        }
+      );
+    }
     
     // Parsear y validar query params
     const { searchParams } = new URL(request.url);

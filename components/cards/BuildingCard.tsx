@@ -9,10 +9,10 @@ import { track } from "@lib/analytics";
 
 import type { BuildingSummary } from "../../hooks/useFetchBuildings";
 
-export function BuildingCard({ building }: { building: BuildingSummary }){
+export function BuildingCard({ building }: { building: BuildingSummary }) {
   const minPrice = building.precioDesde;
   const imageSrc = building.coverImage ?? building.gallery?.[0] ?? "/images/nunoa-cover.jpg";
-  const href = `/property/${building.slug ?? building.id}`;
+  const href = `/property/${building.slug}`;
   const handleClick = () => {
     track("property_view", {
       property_id: building.id,
@@ -44,9 +44,9 @@ export function BuildingCard({ building }: { building: BuildingSummary }){
         {/* Amenities removed for BuildingSummary compatibility */}
         <div className="flex items-center justify-between pt-1">
           <div className="hidden sm:flex items-center gap-3 text-[12px] text-[var(--subtext)]">
-            <span className="inline-flex items-center gap-1"><Bed className="w-4 h-4" aria-hidden/>Varías tipologías</span>
-            <span className="inline-flex items-center gap-1"><Bath className="w-4 h-4" aria-hidden/>1-2 baños</span>
-            <span className="inline-flex items-center gap-1"><Maximize2 className="w-4 h-4" aria-hidden/>28–55 m²</span>
+            <span className="inline-flex items-center gap-1"><Bed className="w-4 h-4" aria-hidden />Varías tipologías</span>
+            <span className="inline-flex items-center gap-1"><Bath className="w-4 h-4" aria-hidden />1-2 baños</span>
+            <span className="inline-flex items-center gap-1"><Maximize2 className="w-4 h-4" aria-hidden />28–55 m²</span>
           </div>
           <div className="flex items-center gap-2">
             <Link href={`${href}#unidades`} className="inline-flex" onClick={handleClick}>

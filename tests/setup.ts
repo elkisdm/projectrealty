@@ -194,8 +194,7 @@ Object.defineProperty(window, 'sessionStorage', {
     value: sessionStorageMock,
 });
 
-// Mock de fetch
-global.fetch = jest.fn();
+// MSW handles fetch mocking - no need for global override
 
 // Mock de console para evitar ruido en los tests
 const originalConsole = console;

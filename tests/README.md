@@ -134,6 +134,13 @@ open coverage/lcov-report/index.html
 - **Setup**: `tests/setup.ts`
 - **Mocks**: framer-motion, Next.js router, APIs
 
+### MSW (Mock Service Worker)
+- **Versión**: 1.3.2 (MSW v1)
+- **Setup**: `tests/setup.ts` (integración), `tests/setupTests.ts` (unitarios)
+- **Handlers**: `tests/mocks/handlers.ts`
+- **Server**: `tests/mocks/server.ts`
+- **Uso**: Tests de integración usan MSW para mocking de APIs HTTP
+
 ### Playwright
 - **Configuración**: `playwright.config.visitScheduler.ts`
 - **Browsers**: Chrome, Firefox, Safari, Mobile
@@ -217,6 +224,12 @@ npx playwright test --debug tests/e2e/visitScheduling.e2e.test.ts
 1. **Verificar servidor**: `pnpm run dev` debe estar corriendo
 2. **Limpiar cache**: `pnpm run test:debug`
 3. **Verificar mocks**: Revisar `tests/setup.ts`
+
+### MSW Issues
+1. **MSW no intercepta**: Verificar que `global.fetch = jest.fn()` no esté presente en tests de integración
+2. **Version mismatch**: Asegurar uso de MSW v1 API (`rest` en lugar de `http`)
+3. **Handlers no funcionan**: Verificar que `server.resetHandlers()` se llame en `beforeEach`
+4. **Setup incorrecto**: MSW debe inicializarse antes de cualquier test que use fetch
 
 ### Performance Issues
 1. **Verificar bundle size**: Revisar imports innecesarios

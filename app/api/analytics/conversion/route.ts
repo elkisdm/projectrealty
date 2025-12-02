@@ -1,4 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createRateLimiter } from "@lib/rate-limit";
+
+// Rate limiter: 20 requests per minute per IP
+const rateLimiter = createRateLimiter({ windowMs: 60_000, max: 20 });
 
 // Tipos para eventos de conversión
 type ConversionEvent = {
@@ -10,6 +14,25 @@ type ConversionEvent = {
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting check
+    const forwarded = request.headers.get('x-forwarded-for');
+    const ip = forwarded ? forwarded.split(',')[0] : 'unknown';
+    const rateLimitResult = await rateLimiter.check(ip);
+    
+    if (!rateLimitResult.ok) {
+      return NextResponse.json(
+        { error: 'Rate limit exceeded', retryAfter: rateLimitResult.retryAfter },
+        { 
+          status: 429,
+          headers: {
+            'Retry-After': rateLimitResult.retryAfter?.toString() || '60',
+            'X-RateLimit-Limit': '20',
+            'X-RateLimit-Window': '60'
+          }
+        }
+      );
+    }
+
     const event: ConversionEvent = await request.json();
     
     // Validar evento básico
@@ -53,7 +76,26 @@ export async function POST(request: NextRequest) {
 }
 
 // GET para verificar que el endpoint funciona
-export async function GET() {
+export async function GET(request: NextRequest) {
+  // Rate limiting check para GET también
+  const forwarded = request.headers.get('x-forwarded-for');
+  const ip = forwarded ? forwarded.split(',')[0] : 'unknown';
+  const rateLimitResult = await rateLimiter.check(ip);
+  
+  if (!rateLimitResult.ok) {
+    return NextResponse.json(
+      { error: 'Rate limit exceeded', retryAfter: rateLimitResult.retryAfter },
+      { 
+        status: 429,
+        headers: {
+          'Retry-After': rateLimitResult.retryAfter?.toString() || '60',
+          'X-RateLimit-Limit': '20',
+          'X-RateLimit-Window': '60'
+        }
+      }
+    );
+  }
+
   return NextResponse.json({
     status: "ok",
     message: "Analytics endpoint funcionando",

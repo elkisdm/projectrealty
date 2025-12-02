@@ -93,6 +93,7 @@ export const UnitSchema = z.object({
   rentas_necesarias: z.number().positive().optional(),
   link_listing: z.string().url().optional(),
   renta_minima: z.number().positive().optional(),
+  gastosComunes: z.number().int().nonnegative().optional(),
 });
 
 export const BuildingSchema = z.object({

@@ -1,0 +1,158 @@
+{
+  "id": "alferez-real-3203",
+  "slug": "alferez-real",
+  "name": "Alférez Real",
+  "comuna": "Providencia",
+  "address": "Alférez Real 1050, Providencia",
+  "amenities": [
+    "Accesos Controlados",
+    "Áreas verdes",
+    "Ascensor",
+    "Baño de servicio",
+    "Bicicletero",
+    "Bodega",
+    "Calefacción Central",
+    "Cerca a áreas verdes",
+    "Cerca a comercios",
+    "Cerca a vía principal",
+    "Circuito cerrado de TV",
+    "Citófono",
+    "Conserjería",
+    "Cowork",
+    "Cuarto de servicio",
+    "Estacionamiento",
+    "Estacionamiento de visitas",
+    "Estacionamiento subterráneo",
+    "Gimnasio",
+    "Jardines",
+    "Lavandería",
+    "Lockers",
+    "Piscina",
+    "Portón eléctrico",
+    "Propiedades nuevas",
+    "Quincho",
+    "Sala de eventos/gourmet",
+    "Salón de reuniones",
+    "Salón lounge",
+    "Seguridad",
+    "Transporte urbano cercano",
+    "Ventanas termopanel"
+  ],
+  "gallery": [
+    "/images/alferez-real-cover.jpg",
+    "/images/alferez-real-1.jpg",
+    "/images/alferez-real-2.jpg",
+    "/images/alferez-real-3.jpg",
+    "/images/alferez-real-4.jpg",
+    "/images/alferez-real-5.jpg"
+  ],
+  "coverImage": "/images/alferez-real-cover.jpg",
+  "units": [
+    {
+      "id": "alferez-real-1d1b-001",
+      "tipologia": "1D1B",
+      "m2": 44,
+      "price": 893000,
+      "estacionamiento": true,
+      "bodega": true,
+      "disponible": true,
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "area_interior_m2": 44,
+      "area_exterior_m2": 0,
+      "orientacion": "N",
+      "petFriendly": true,
+      "status": "available"
+    },
+    {
+      "id": "alferez-real-2d2b-001",
+      "tipologia": "2D2B",
+      "m2": 70,
+      "price": 1152000,
+      "estacionamiento": true,
+      "bodega": true,
+      "disponible": true,
+      "bedrooms": 2,
+      "bathrooms": 2,
+      "area_interior_m2": 70,
+      "area_exterior_m2": 0,
+      "orientacion": "NE",
+      "petFriendly": true,
+      "status": "available"
+    },
+    {
+      "id": "alferez-real-2d2b-002",
+      "tipologia": "2D2B",
+      "m2": 94,
+      "price": 1590000,
+      "estacionamiento": true,
+      "bodega": true,
+      "disponible": true,
+      "bedrooms": 2,
+      "bathrooms": 2,
+      "area_interior_m2": 94,
+      "area_exterior_m2": 0,
+      "orientacion": "E",
+      "petFriendly": true,
+      "status": "available"
+    },
+    {
+      "id": "alferez-real-3d2b-001",
+      "tipologia": "3D2B",
+      "m2": 101,
+      "price": 1460000,
+      "estacionamiento": true,
+      "bodega": true,
+      "disponible": true,
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "area_interior_m2": 101,
+      "area_exterior_m2": 0,
+      "orientacion": "SE",
+      "petFriendly": true,
+      "status": "available"
+    },
+    {
+      "id": "alferez-real-3d2b-002",
+      "tipologia": "3D2B",
+      "m2": 119,
+      "price": 1783000,
+      "estacionamiento": true,
+      "bodega": true,
+      "disponible": true,
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "area_interior_m2": 119,
+      "area_exterior_m2": 0,
+      "orientacion": "S",
+      "petFriendly": true,
+      "status": "available"
+    }
+  ],
+  "serviceLevel": "pro",
+  "hasAvailability": true,
+  "precio_desde": 893000,
+  "precio_hasta": 1783000,
+  "featured": true,
+  "media": {
+    "images": [
+      "/images/alferez-real-cover.jpg",
+      "/images/alferez-real-1.jpg",
+      "/images/alferez-real-2.jpg",
+      "/images/alferez-real-3.jpg",
+      "/images/alferez-real-4.jpg",
+      "/images/alferez-real-5.jpg"
+    ]
+  },
+  "badges": [
+    {
+      "type": "service_pro",
+      "label": "Nuevo"
+    },
+    {
+      "type": "free_commission",
+      "label": "Pet Friendly"
+    }
+  ]
+}
+

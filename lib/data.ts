@@ -122,6 +122,7 @@ async function readFromSupabase(): Promise<Building[]> {
             piso: u.piso,
             amoblado: u.amoblado,
             petFriendly: u.pet_friendly,
+            gastosComunes: u.gastos_comunes,
             parking_ids: u.parking_ids,
             storage_ids: u.storage_ids,
             parking_opcional: u.parking_opcional,

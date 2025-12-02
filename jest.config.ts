@@ -4,6 +4,7 @@ const config: Config = {
   preset: 'ts-jest',
   testEnvironment: 'jsdom',
   roots: ['<rootDir>/tests'],
+  setupFiles: ['<rootDir>/tests/setup-polyfills.ts'],
   setupFilesAfterEnv: ['<rootDir>/tests/setupTests.ts'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',

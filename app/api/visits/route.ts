@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { createRateLimiter } from '@lib/rate-limit';
 import { 
   CreateVisitRequest, 
   CreateVisitResponse, 
@@ -8,6 +9,9 @@ import {
   Agent,
   generateIdempotencyKey 
 } from '@/types/visit';
+
+// Rate limiter: 10 requests per minute per IP (more restrictive for visit creation)
+const rateLimiter = createRateLimiter({ windowMs: 60_000, max: 10 });
 
 // Schema de validación para crear visitas
 const createVisitSchema = z.object({
@@ -213,8 +217,24 @@ class MockDatabase {
 
 export async function POST(request: NextRequest) {
   try {
-    // Rate limiting básico
-    const ip = request.headers.get('x-forwarded-for') || 'unknown';
+    // Rate limiting check
+    const forwarded = request.headers.get('x-forwarded-for');
+    const ip = forwarded ? forwarded.split(',')[0] : 'unknown';
+    const rateLimitResult = await rateLimiter.check(ip);
+    
+    if (!rateLimitResult.ok) {
+      return NextResponse.json(
+        { error: 'Rate limit exceeded', retryAfter: rateLimitResult.retryAfter },
+        { 
+          status: 429,
+          headers: {
+            'Retry-After': rateLimitResult.retryAfter?.toString() || '60',
+            'X-RateLimit-Limit': '10',
+            'X-RateLimit-Window': '60'
+          }
+        }
+      );
+    }
     
     // Verificar idempotency key en headers
     const idempotencyKey = request.headers.get('idempotency-key');

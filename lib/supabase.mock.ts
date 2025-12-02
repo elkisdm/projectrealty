@@ -10,7 +10,11 @@ export function createMockSupabaseClient() {
             data: { id: 'mock-id', ...(data as any) },
             error: null
           })
-        })
+        }),
+        then: (onResolve: (value: any) => any) => {
+          const result = { data: { id: 'mock-id', ...(data as any) }, error: null };
+          return Promise.resolve(result).then(onResolve);
+        }
       }),
       select: (_query?: string) => ({
         limit: (_count: number) => Promise.resolve({
@@ -40,6 +44,24 @@ export function createMockSupabaseClient() {
               gallery_status: '✅'
             }
           ],
+          error: null
+        }),
+        eq: (_column: string, _value: unknown) => ({
+          single: () => Promise.resolve({
+            data: { id: 'mock-id', nombre: 'Mock', comuna: 'Las Condes' },
+            error: null
+          })
+        })
+      }),
+      update: (_data: unknown) => ({
+        eq: (_column: string, _value: unknown) => Promise.resolve({
+          data: null,
+          error: null
+        })
+      }),
+      delete: () => ({
+        eq: (_column: string, _value: unknown) => Promise.resolve({
+          data: null,
           error: null
         })
       })

@@ -20,3 +20,21 @@ if (!global.fetch) {
     global.fetch = globalThis.fetch;
   }
 }
+
+// Polyfills para Web APIs necesarias para Next.js Server Components
+// Request, Response, Headers son necesarios para NextRequest y NextResponse
+// En Node.js 18+, estas APIs están disponibles en globalThis pero jsdom no las expone en global
+if (typeof global.Request === 'undefined') {
+  if (typeof globalThis.Request !== 'undefined') {
+    // Copiar desde globalThis a global para que estén disponibles en el scope global de Jest
+    // Necesario porque jsdom no expone estas APIs globalmente
+    Object.assign(global, {
+      Request: globalThis.Request,
+      Response: globalThis.Response,
+      Headers: globalThis.Headers,
+      URL: globalThis.URL,
+      URLSearchParams: globalThis.URLSearchParams,
+    });
+  }
+  // Si no están disponibles, los tests de API fallarán con mensaje claro
+}

@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roadmap de Sprints - Sistema Admin</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .content {
+            padding: 2rem;
+        }
+        
+        .sprint-timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        
+        .sprint-card {
+            border-left: 6px solid;
+            border-radius: 8px;
+            padding: 1.5rem;
+            background: #f8f9fa;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .sprint-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .sprint-card.critical {
+            border-left-color: #dc3545;
+            background: #fff5f5;
+        }
+        
+        .sprint-card.high {
+            border-left-color: #ffc107;
+            background: #fffbf0;
+        }
+        
+        .sprint-card.medium {
+            border-left-color: #17a2b8;
+            background: #f0f9fa;
+        }
+        
+        .sprint-card.low {
+            border-left-color: #6c757d;
+            background: #f8f9fa;
+        }
+        
+        .sprint-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .sprint-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .sprint-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        
+        .badge-critical {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .badge-high {
+            background: #ffc107;
+            color: #333;
+        }
+        
+        .badge-medium {
+            background: #17a2b8;
+            color: white;
+        }
+        
+        .badge-low {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .sprint-meta {
+            display: flex;
+            gap: 2rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #666;
+        }
+        
+        .sprint-stories {
+            margin-top: 1rem;
+        }
+        
+        .story-item {
+            background: white;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: 6px;
+            border-left: 3px solid #667eea;
+        }
+        
+        .story-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+        
+        .story-tasks {
+            list-style: none;
+            padding-left: 1rem;
+        }
+        
+        .story-tasks li {
+            padding: 0.25rem 0;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .story-tasks li:before {
+            content: "▸ ";
+            color: #667eea;
+            font-weight: bold;
+        }
+        
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        
+        .summary-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .summary-card h3 {
+            color: #667eea;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+        
+        .summary-stat {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .summary-label {
+            color: #666;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+        
+        .gantt-container {
+            margin-top: 3rem;
+            padding: 2rem;
+            background: #f8f9fa;
+            border-radius: 12px;
+        }
+        
+        .gantt-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: #333;
+        }
+        
+        .gantt-bar {
+            height: 40px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            position: relative;
+        }
+        
+        .gantt-label {
+            width: 200px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .gantt-track {
+            flex: 1;
+            height: 100%;
+            background: #e9ecef;
+            border-radius: 4px;
+            position: relative;
+            margin-left: 1rem;
+        }
+        
+        .gantt-progress {
+            height: 100%;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+        
+        .progress-critical {
+            background: #dc3545;
+        }
+        
+        .progress-high {
+            background: #ffc107;
+        }
+        
+        .progress-medium {
+            background: #17a2b8;
+        }
+        
+        .progress-low {
+            background: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎯 Roadmap de Sprints - Sistema de Administración</h1>
+            <p>Plan de implementación en 8 sprints (16 semanas)</p>
+        </header>
+        
+        <div class="content">
+            <!-- Summary Cards -->
+            <div class="summary-grid">
+                <div class="summary-card">
+                    <h3>📅 Duración Total</h3>
+                    <div class="summary-stat">16 semanas</div>
+                    <div class="summary-label">8 sprints de 2 semanas</div>
+                </div>
+                <div class="summary-card">
+                    <h3>📊 Puntos Totales</h3>
+                    <div class="summary-stat">202</div>
+                    <div class="summary-label">Story points estimados</div>
+                </div>
+                <div class="summary-card">
+                    <h3>👥 Equipo</h3>
+                    <div class="summary-stat">1-2 devs</div>
+                    <div class="summary-label">Desarrolladores</div>
+                </div>
+                <div class="summary-card">
+                    <h3>🎯 Velocidad</h3>
+                    <div class="summary-stat">~25 pts</div>
+                    <div class="summary-label">Por sprint</div>
+                </div>
+            </div>
+            
+            <!-- Sprint Timeline -->
+            <div class="sprint-timeline">
+                <!-- Sprint 1 -->
+                <div class="sprint-card critical">
+                    <div class="sprint-header">
+                        <div class="sprint-title">🚀 Sprint 1: Autenticación Mejorada y Login</div>
+                        <span class="sprint-badge badge-critical">CRÍTICO</span>
+                    </div>
+                    <div class="sprint-meta">
+                        <div class="meta-item">⏱️ <strong>2 semanas</strong></div>
+                        <div class="meta-item">📊 <strong>18 puntos</strong></div>
+                        <div class="meta-item">🎯 <strong>Seguridad</strong></div>
+                    </div>
+                    <div class="sprint-stories">
+                        <div class="story-item">
+                            <div class="story-title">Story 1.1: Integración Supabase Auth</div>
+                            <ul class="story-tasks">
+                                <li>Configurar Supabase Auth</li>
+                                <li>Crear tabla admin_users</li>
+                                <li>Migrar lógica de autenticación</li>
+                                <li>Implementar refresh tokens</li>
+                            </ul>
+                        </div>
+                        <div class="story-item">
+                            <div class="story-title">Story 1.2: Página de Login</div>
+                            <ul class="story-tasks">
+                                <li>Crear /admin/login page</li>
+                                <li>Formulario con validación</li>
+                                <li>Manejo de errores</li>
+                                <li>Tests E2E</li>
+                            </ul>
+                        </div>
+                        <div class="story-item">
+                            <div class="story-title">Story 1.3: Middleware Mejorado</div>
+                            <ul class="story-tasks">
+                                <li>Actualizar middleware</li>
+                                <li>Verificación de sesión</li>
+                                <li>Manejo de tokens expirados</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Sprint 2 -->
+                <div class="sprint-card critical">
+                    <div class="sprint-header">
+                        <div class="sprint-title">🔐 Sprint 2: Sistema de Roles y Permisos</div>
+                        <span class="sprint-badge badge-critical">CRÍTICO</span>
+                    </div>
+                    <div class="sprint-meta">
+                        <div class="meta-item">⏱️ <strong>2 semanas</strong></div>
+                        <div class="meta-item">📊 <strong>24 puntos</strong></div>
+                        <div class="meta-item">🎯 <strong>Control de Acceso</strong></div>
+                    </div>
+                    <div class="sprint-stories">
+                        <div class="story-item">
+                            <div class="story-title">Story 2.1: Modelo de Roles</div>
+                            <ul class="story-tasks">
+                                <li>Diseñar schema de roles</li>
+                                <li>Crear tablas admin_roles</li>
+                                <li>API para gestionar roles</li>
+                            </ul>
+                        </div>
+                        <div class="story-item">
+                            <div class="story-title">Story 2.2: Middleware de Permisos</div>
+                            <ul class="story-tasks">
+                                <li>Función hasPermission()</li>
+                                <li>Protección de endpoints</li>
+                                <li>Respuestas 403</li>
+                            </ul>
+                        </div>
+                        <div class="story-item">
+                            <div class="story-title">Story 2.3: UI de Gestión de Usuarios</div>
+                            <ul class="story-tasks">
+                                <li>Crear /admin/users page</li>
+                                <li>Lista de usuarios con roles</li>
+                                <li>Formulario para asignar roles</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Sprint 3 -->
+                <div class="sprint-card high">
+                    <div class="sprint-header">
+                        <div class="sprint-title">🎨 Sprint 3: Mejoras de UX - Búsqueda y Filtros</div>
+                        <span class="sprint-badge badge-high">ALTO</span>
+                    </div>
+                    <div class="sprint-meta">
+                        <div class="meta-item">⏱️ <strong>2 semanas</strong></div>
+                        <div class="meta-item">📊 <strong>24 puntos</strong></div>
+                        <div class="meta-item">🎯 <strong>Productividad</strong></div>
+                    </div>
+                    <div class="sprint-stories">
+                        <div class="story-item">
+                            <div class="story-title">Story 3.1: Búsqueda Avanzada</div>
+                            <ul class="story-tasks">
+                                <li>Mejorar SearchBar component</li>
+                                <li>Búsqueda por texto completo</li>
+                                <li>Guardar búsquedas frecuentes</li>
+                            </ul>
+                        </div>
+                        <div class="story-item">
+                            <div class="story-title">Story 3.2: Filtros Avanzados</div>
+                            <ul class="story-tasks">
+                                <li>Mejorar FilterPanel</li>
+                                <li>Filtros múltiples simultáneos</li>
+                                <li>Persistencia en URL</li>
+                            </ul>
+                        </div>
+                        <div class="story-item">
+                            <div class="story-title">Story 3.3: Mejoras en DataTable</div>
+                            <ul class="story-tasks">
+                                <li>Sorting multi-columna</li>
+                                <li>Virtual scrolling</li>
+                                <li>Selección múltiple mejorada</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Sprint 4 -->
+                <div class="sprint-card high">
+                    <div class="sprint-header">
+                        <div class="sprint-title">📊 Sprint 4: Exportaciones y Dashboard Personalizable</div>
+                        <span class="sprint-badge badge-high">ALTO</span>
+                    </div>
+                    <div class="sprint-meta">
+                        <div class="meta-item">⏱️ <strong>2 semanas</strong></div>
+                        <div class="meta-item">📊 <strong>28 puntos</strong></div>
+                        <div class="meta-item">🎯 <strong>Reportes</strong></div>
+                    </div>
+                    <div class="sprint-stories">
+                        <div class="story-item">
+                            <div class="story-title">Story 4.1: Exportaciones Avanzadas</div>
+                            <ul class="story-tasks">
+                                <li>Integrar librería Excel</li>
+                                <li>Integrar librería PDF</li>
+                                <li>Templates personalizables</li>
+                            </ul>
+                        </div>
+                        <div class="story-item">
+                            <div class="story-title">Story 4.2: Dashboard Personalizable</div>
+                            <ul class="story-tasks">
+                                <li>Sistema de widgets</li>
+                                <li>Drag & drop</li>
+                                <li>Guardar layout</li>
+                            </ul>
+                        </div>
+                        <div class="story-item">
+                            <div class="story-title">Story 4.3: Notificaciones en Tiempo Real</div>
+                            <ul class="story-tasks">
+                                <li>Integrar WebSockets</li>
+                                <li>Sistema de notificaciones</li>
+                                <li>Preferencias de usuario</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Sprint 5 -->
+                <div class="sprint-card high">
+                    <div class="sprint-header">
+                        <div class="sprint-title">📝 Sprint 5: Sistema de Auditoría</div>
+                        <span class="sprint-badge badge-high">ALTO</span>
+                    </div>
+                    <div class="sprint-meta">
+                        <div class="meta-item">⏱️ <strong>2 semanas</strong></div>
+                        <div class="meta-item">📊 <strong>23 puntos</strong></div>
+                        <div class="meta-item">🎯 <strong>Cumplimiento</strong></div>
+                    </div>
+                    <div class="sprint-stories">
+                        <div class="story-item">
+                            <div class="story-title">Story 5.1: Tabla de Auditoría</div>
+                            <ul class="story-tasks">
+                                <li>Diseñar schema admin_audit_log</li>
+                                <li>Crear tabla en Supabase</li>
+                                <li>Índices para búsqueda</li>
+                            </ul>
+                        </div>
+                        <div class="story-item">
+                            <div class="story-title">Story 5.2: Logging Automático</div>
+                            <ul class="story-tasks">
+                                <li>Middleware de logging</li>
+                                <li>Registro de acciones</li>
+                                <li>Logging de cambios</li>
+                            </ul>
+                        </div>
+                        <div class="story-item">
+                            <div class="story-title">Story 5.3: Panel de Auditoría</div>
+                            <ul class="story-tasks">
+                                <li>Crear /admin/audit page</li>
+                                <li>Lista con filtros</li>
+                                <li>Detalles de cambios</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Sprint 6 -->
+                <div class="sprint-card medium">
+                    <div class="sprint-header">
+                        <div class="sprint-title">⚡ Sprint 6: Optimización de Performance</div>
+                        <span class="sprint-badge badge-medium">MEDIO</span>
+                    </div>
+                    <div class="sprint-meta">
+                        <div class="meta-item">⏱️ <strong>2 semanas</strong></div>
+                        <div class="meta-item">📊 <strong>26 puntos</strong></div>
+                        <div class="meta-item">🎯 <strong>Velocidad</strong></div>
+                    </div>
+                    <div class="sprint-stories">
+                        <div class="story-item">
+                            <div class="story-title">Story 6.1: Caché Inteligente</div>
+                            <ul class="story-tasks">
+                                <li>Integrar Redis</li>
+                                <li>Estrategia de caché</li>
+                                <li>Invalidación selectiva</li>
+                            </ul>
+                        </div>
+                        <div class="story-item">
+                            <div class="story-title">Story 6.2: Optimización de Queries</div>
+                            <ul class="story-tasks">
+                                <li>Análisis de queries lentas</li>
+                                <li>Crear índices</li>
+                                <li>Query batching</li>
+                            </ul>
+                        </div>
+                        <div class="story-item">
+                            <div class="story-title">Story 6.3: Paginación Cursor-based</div>
+                            <ul class="story-tasks">
+                                <li>Implementar cursor pagination</li>
+                                <li>Reemplazar offset-based</li>
+                                <li>Infinite scroll</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Sprint 7 -->
+                <div class="sprint-card medium">
+                    <div class="sprint-header">
+                        <div class="sprint-title">🔄 Sprint 7: Workflow y Automatización</div>
+                        <span class="sprint-badge badge-medium">MEDIO</span>
+                    </div>
+                    <div class="sprint-meta">
+                        <div class="meta-item">⏱️ <strong>2 semanas</strong></div>
+                        <div class="meta-item">📊 <strong>27 puntos</strong></div>
+                        <div class="meta-item">🎯 <strong>Eficiencia</strong></div>
+                    </div>
+                    <div class="sprint-stories">
+                        <div class="story-item">
+                            <div class="story-title">Story 7.1: Acciones Masivas Mejoradas</div>
+                            <ul class="story-tasks">
+                                <li>Mejorar BulkActions</li>
+                                <li>Preview de cambios</li>
+                                <li>Validación batch</li>
+                            </ul>
+                        </div>
+                        <div class="story-item">
+                            <div class="story-title">Story 7.2: Validación Mejorada</div>
+                            <ul class="story-tasks">
+                                <li>Validación en tiempo real</li>
+                                <li>Validación cruzada</li>
+                                <li>Mensajes claros</li>
+                            </ul>
+                        </div>
+                        <div class="story-item">
+                            <div class="story-title">Story 7.3: Templates y Duplicación</div>
+                            <ul class="story-tasks">
+                                <li>Función de duplicación</li>
+                                <li>Templates guardables</li>
+                                <li>UI para templates</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Sprint 8 -->
+                <div class="sprint-card low">
+                    <div class="sprint-header">
+                        <div class="sprint-title">🚀 Sprint 8: Features Avanzadas y Polish</div>
+                        <span class="sprint-badge badge-low">BAJO</span>
+                    </div>
+                    <div class="sprint-meta">
+                        <div class="meta-item">⏱️ <strong>2 semanas</strong></div>
+                        <div class="meta-item">📊 <strong>32 puntos</strong></div>
+                        <div class="meta-item">🎯 <strong>Polish</strong></div>
+                    </div>
+                    <div class="sprint-stories">
+                        <div class="story-item">
+                            <div class="story-title">Story 8.1: Analytics Avanzado</div>
+                            <ul class="story-tasks">
+                                <li>Dashboard de analytics</li>
+                                <li>Métricas de uso</li>
+                                <li>Gráficos y visualizaciones</li>
+                            </ul>
+                        </div>
+                        <div class="story-item">
+                            <div class="story-title">Story 8.2: Sistema de Notas</div>
+                            <ul class="story-tasks">
+                                <li>Tabla de comentarios</li>
+                                <li>UI para notas</li>
+                                <li>Notas privadas/públicas</li>
+                            </ul>
+                        </div>
+                        <div class="story-item">
+                            <div class="story-title">Story 8.3: Versionado</div>
+                            <ul class="story-tasks">
+                                <li>Sistema de versionado</li>
+                                <li>Historial de cambios</li>
+                                <li>Opción de revertir</li>
+                            </ul>
+                        </div>
+                        <div class="story-item">
+                            <div class="story-title">Story 8.4: Polish Final</div>
+                            <ul class="story-tasks">
+                                <li>Revisión UI/UX</li>
+                                <li>Mejoras de accesibilidad</li>
+                                <li>Animaciones y transiciones</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Gantt Chart -->
+            <div class="gantt-container">
+                <div class="gantt-title">📅 Timeline Visual</div>
+                <div class="gantt-bar">
+                    <div class="gantt-label">Sprint 1 (Crítico)</div>
+                    <div class="gantt-track">
+                        <div class="gantt-progress progress-critical" style="width: 12.5%;">Semana 1-2</div>
+                    </div>
+                </div>
+                <div class="gantt-bar">
+                    <div class="gantt-label">Sprint 2 (Crítico)</div>
+                    <div class="gantt-track">
+                        <div class="gantt-progress progress-critical" style="width: 12.5%; margin-left: 12.5%;">Semana 3-4</div>
+                    </div>
+                </div>
+                <div class="gantt-bar">
+                    <div class="gantt-label">Sprint 3 (Alto)</div>
+                    <div class="gantt-track">
+                        <div class="gantt-progress progress-high" style="width: 12.5%; margin-left: 25%;">Semana 5-6</div>
+                    </div>
+                </div>
+                <div class="gantt-bar">
+                    <div class="gantt-label">Sprint 4 (Alto)</div>
+                    <div class="gantt-track">
+                        <div class="gantt-progress progress-high" style="width: 12.5%; margin-left: 37.5%;">Semana 7-8</div>
+                    </div>
+                </div>
+                <div class="gantt-bar">
+                    <div class="gantt-label">Sprint 5 (Alto)</div>
+                    <div class="gantt-track">
+                        <div class="gantt-progress progress-high" style="width: 12.5%; margin-left: 50%;">Semana 9-10</div>
+                    </div>
+                </div>
+                <div class="gantt-bar">
+                    <div class="gantt-label">Sprint 6 (Medio)</div>
+                    <div class="gantt-track">
+                        <div class="gantt-progress progress-medium" style="width: 12.5%; margin-left: 62.5%;">Semana 11-12</div>
+                    </div>
+                </div>
+                <div class="gantt-bar">
+                    <div class="gantt-label">Sprint 7 (Medio)</div>
+                    <div class="gantt-track">
+                        <div class="gantt-progress progress-medium" style="width: 12.5%; margin-left: 75%;">Semana 13-14</div>
+                    </div>
+                </div>
+                <div class="gantt-bar">
+                    <div class="gantt-label">Sprint 8 (Bajo)</div>
+                    <div class="gantt-track">
+                        <div class="gantt-progress progress-low" style="width: 12.5%; margin-left: 87.5%;">Semana 15-16</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Dependencies Diagram -->
+            <div style="margin-top: 3rem; padding: 2rem; background: #f8f9fa; border-radius: 12px;">
+                <h2 style="margin-bottom: 1.5rem; color: #333;">🔗 Dependencias entre Sprints</h2>
+                <div class="mermaid">
+graph LR
+    S1[Sprint 1<br/>Auth] --> S2[Sprint 2<br/>Roles]
+    S2 --> S3[Sprint 3<br/>UX]
+    S3 --> S4[Sprint 4<br/>Export]
+    S5[Sprint 5<br/>Audit] --> S8[Sprint 8<br/>Features]
+    S6[Sprint 6<br/>Performance] --> S7[Sprint 7<br/>Workflow]
+    
+    style S1 fill:#dc3545,color:#fff
+    style S2 fill:#dc3545,color:#fff
+    style S3 fill:#ffc107,color:#333
+    style S4 fill:#ffc107,color:#333
+    style S5 fill:#ffc107,color:#333
+    style S6 fill:#17a2b8,color:#fff
+    style S7 fill:#17a2b8,color:#fff
+    style S8 fill:#6c757d,color:#fff
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        mermaid.initialize({ 
+            startOnLoad: true,
+            theme: 'default',
+            themeVariables: {
+                primaryColor: '#667eea',
+                primaryTextColor: '#fff',
+                primaryBorderColor: '#764ba2',
+                lineColor: '#667eea',
+                secondaryColor: '#f8f9fa',
+                tertiaryColor: '#e9ecef'
+            }
+        });
+    </script>
+</body>
+</html>
+

@@ -74,3 +74,4 @@ La configuración de ingesta apunta a `_workspace/`:
 - La documentación está en `_workspace/docs/` para mantenerla separada del código
 - Los scripts mantienen su funcionalidad pero están organizados en `_workspace/scripts/`
 
+
