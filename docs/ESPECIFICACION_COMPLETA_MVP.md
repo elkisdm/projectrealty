@@ -2758,6 +2758,8 @@ Antes de devolver este documento, verifica que hayas:
 **👤 Creado para:** Revisión y redefinición del MVP  
 **🎯 Próximo paso:** Implementación según `docs/PLAN_SPRINTS_MVP.md`
 
+> **⚠️ IMPORTANTE:** Antes de modificar cualquier componente o página, revisar `docs/CONTEXTO_RECIENTE.md` para entender cambios recientes y evitar romper código existente.
+
 ---
 
 ## 📊 ESTADO DE IMPLEMENTACIÓN

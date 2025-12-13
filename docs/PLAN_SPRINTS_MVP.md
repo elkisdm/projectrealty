@@ -6,11 +6,20 @@
 **Fecha inicio:** Enero 2025  
 **Estado:** 📋 PLANIFICACIÓN
 
+**📋 Documentos relacionados:**
+- `docs/ESPECIFICACION_COMPLETA_MVP.md` - Especificación completa
+- `docs/CONTEXTO_RECIENTE.md` - ⚠️ **REVISAR ANTES DE CADA TAREA**
+- `docs/PLAN_SPRINTS_MVP.md` - Este documento
+
 > **📝 INSTRUCCIONES DE USO:**
-> 1. **Antes de iniciar cada sprint:** Extender y detallar todas las microtareas del sprint
-> 2. **Al completar una microtarea:** Marcar con `[x]` y actualizar estado en `ESPECIFICACION_COMPLETA_MVP.md`
-> 3. **Al completar un sprint:** Actualizar progreso general y pasar al siguiente
-> 4. **Tracking:** Ambos documentos se actualizan en paralelo para mantener sincronización
+> 1. **ANTES de iniciar cualquier tarea:** Revisar `docs/CONTEXTO_RECIENTE.md` para entender cambios recientes
+> 2. **Antes de iniciar cada sprint:** Extender y detallar todas las microtareas del sprint
+> 3. **Al completar una microtarea:** 
+>    - Marcar con `[x]` en este documento
+>    - Actualizar estado en `ESPECIFICACION_COMPLETA_MVP.md`
+>    - Agregar entrada en `docs/CONTEXTO_RECIENTE.md` con archivos modificados
+> 4. **Al completar un sprint:** Actualizar progreso general y pasar al siguiente
+> 5. **Tracking:** Todos los documentos se actualizan en paralelo para mantener sincronización
 
 ---
 
@@ -794,33 +803,49 @@ Sprint 8 (Finalización)
 
 ### Antes de Iniciar un Sprint
 
-1. **Extender el Sprint:**
+1. **Revisar Contexto Reciente:**
+   - ⚠️ **OBLIGATORIO:** Leer `docs/CONTEXTO_RECIENTE.md` completo
+   - Entender cambios recientes y archivos modificados
+   - Revisar advertencias y consideraciones
+   - Verificar estado actual del proyecto
+
+2. **Extender el Sprint:**
    - Detallar cada microtarea con sub-tareas específicas
    - Definir criterios técnicos detallados
    - Identificar dependencias exactas
    - Estimar tiempos más precisos
    - Definir orden de ejecución interno
 
-2. **Revisar Dependencias:**
+3. **Revisar Dependencias:**
    - Verificar que sprints dependientes estén completos
    - Revisar componentes/APIs necesarios
    - Confirmar que el Design System está listo
 
-3. **Preparar Ambiente:**
+4. **Preparar Ambiente:**
    - Verificar que el código base está actualizado
    - Revisar documentación relevante
    - Preparar herramientas necesarias
 
 ### Durante el Sprint
 
-1. **Ejecutar Microtareas:**
+1. **Antes de Cada Microtarea:**
+   - ⚠️ **OBLIGATORIO:** Revisar `docs/CONTEXTO_RECIENTE.md` (últimas 3-5 entradas)
+   - Verificar archivos críticos a revisar
+   - Revisar advertencias relevantes
+
+2. **Ejecutar Microtareas:**
    - Una microtarea por sesión (1 chat = 1 microtarea)
    - Seguir criterios de aceptación
    - Mantener código limpio y documentado
 
-2. **Actualizar Progreso:**
+3. **Actualizar Progreso:**
    - Marcar microtarea como `[x]` completada
    - Actualizar estado en `ESPECIFICACION_COMPLETA_MVP.md`
+   - **Agregar entrada en `docs/CONTEXTO_RECIENTE.md`:**
+     - Descripción del cambio
+     - Archivos modificados/creados/eliminados
+     - Notas importantes
+     - Contexto relevante
    - Actualizar progreso general
 
 ### Al Completar un Sprint
