@@ -6,6 +6,12 @@
 **Fecha inicio:** Enero 2025  
 **Estado:** 📋 PLANIFICACIÓN
 
+> **📝 INSTRUCCIONES DE USO:**
+> 1. **Antes de iniciar cada sprint:** Extender y detallar todas las microtareas del sprint
+> 2. **Al completar una microtarea:** Marcar con `[x]` y actualizar estado en `ESPECIFICACION_COMPLETA_MVP.md`
+> 3. **Al completar un sprint:** Actualizar progreso general y pasar al siguiente
+> 4. **Tracking:** Ambos documentos se actualizan en paralelo para mantener sincronización
+
 ---
 
 ## 📊 RESUMEN EJECUTIVO
@@ -34,7 +40,24 @@
 
 ## 🎯 SPRINT 1: FUNDACIÓN Y DISEÑO SYSTEM
 
-**Objetivo:** Implementar el Design System v2.0 y componentes base
+**Objetivo:** Implementar el Design System v2.0 y componentes base  
+**Estado:** 📋 PENDIENTE - Listo para extender  
+**Fecha inicio:** _Por definir_  
+**Fecha fin:** _Por definir_
+
+> **⚠️ ANTES DE INICIAR:** Este sprint debe ser extendido con más detalle antes de comenzar.  
+> Agregar sub-tareas específicas, criterios técnicos detallados, y dependencias exactas.
+
+### 📋 EXTENSIÓN DEL SPRINT 1
+
+**Pendiente de extender antes de iniciar:**
+- [ ] Detallar cada microtarea con sub-tareas específicas
+- [ ] Definir criterios técnicos detallados
+- [ ] Identificar dependencias exactas
+- [ ] Estimar tiempos más precisos
+- [ ] Definir orden de ejecución interno
+
+---
 
 ### Microtarea 1.1: Implementar Elkis Unit Card
 **Prioridad:** 🔴 CRÍTICA  
@@ -102,7 +125,25 @@
 
 ## 🎯 SPRINT 2: PÁGINA HOME
 
-**Objetivo:** Implementar página Home según especificación
+**Objetivo:** Implementar página Home según especificación  
+**Estado:** 📋 PENDIENTE - Listo para extender  
+**Fecha inicio:** _Por definir_  
+**Fecha fin:** _Por definir_  
+**Depende de:** Sprint 1 (UnitCard, StickySearchBar)
+
+> **⚠️ ANTES DE INICIAR:** Este sprint debe ser extendido con más detalle antes de comenzar.  
+> Agregar sub-tareas específicas, criterios técnicos detallados, y dependencias exactas.
+
+### 📋 EXTENSIÓN DEL SPRINT 2
+
+**Pendiente de extender antes de iniciar:**
+- [ ] Detallar cada microtarea con sub-tareas específicas
+- [ ] Definir criterios técnicos detallados
+- [ ] Identificar dependencias exactas
+- [ ] Estimar tiempos más precisos
+- [ ] Definir orden de ejecución interno
+
+---
 
 ### Microtarea 2.1: Header con Sticky Search Bar
 **Prioridad:** 🔴 CRÍTICA  
@@ -180,7 +221,25 @@
 
 ## 🎯 SPRINT 3: PÁGINA DE RESULTADOS
 
-**Objetivo:** Implementar página de resultados de búsqueda
+**Objetivo:** Implementar página de resultados de búsqueda  
+**Estado:** 📋 PENDIENTE - Listo para extender  
+**Fecha inicio:** _Por definir_  
+**Fecha fin:** _Por definir_  
+**Depende de:** Sprint 1 (UnitCard), Sprint 2 (Formulario búsqueda)
+
+> **⚠️ ANTES DE INICIAR:** Este sprint debe ser extendido con más detalle antes de comenzar.  
+> Agregar sub-tareas específicas, criterios técnicos detallados, y dependencias exactas.
+
+### 📋 EXTENSIÓN DEL SPRINT 3
+
+**Pendiente de extender antes de iniciar:**
+- [ ] Detallar cada microtarea con sub-tareas específicas
+- [ ] Definir criterios técnicos detallados
+- [ ] Identificar dependencias exactas
+- [ ] Estimar tiempos más precisos
+- [ ] Definir orden de ejecución interno
+
+---
 
 ### Microtarea 3.1: Página `/buscar` con Filtros
 **Prioridad:** 🔴 CRÍTICA  
@@ -221,7 +280,25 @@
 
 ## 🎯 SPRINT 4: PÁGINA DE PROPIEDAD/UNIDAD
 
-**Objetivo:** Rediseñar página de propiedad según Assetplan
+**Objetivo:** Rediseñar página de propiedad según Assetplan  
+**Estado:** 📋 PENDIENTE - Listo para extender  
+**Fecha inicio:** _Por definir_  
+**Fecha fin:** _Por definir_  
+**Depende de:** Sprint 1 (Design System), Sprint 6 (APIs)
+
+> **⚠️ ANTES DE INICIAR:** Este sprint debe ser extendido con más detalle antes de comenzar.  
+> Agregar sub-tareas específicas, criterios técnicos detallados, y dependencias exactas.
+
+### 📋 EXTENSIÓN DEL SPRINT 4
+
+**Pendiente de extender antes de iniciar:**
+- [ ] Detallar cada microtarea con sub-tareas específicas
+- [ ] Definir criterios técnicos detallados
+- [ ] Identificar dependencias exactas
+- [ ] Estimar tiempos más precisos
+- [ ] Definir orden de ejecución interno
+
+---
 
 ### Microtarea 4.1: Breadcrumb y Header
 **Prioridad:** 🟡 MEDIA  
@@ -314,7 +391,25 @@
 
 ## 🎯 SPRINT 5: MODAL DE AGENDAMIENTO
 
-**Objetivo:** Implementar modal de agendamiento según especificación
+**Objetivo:** Implementar modal de agendamiento según especificación  
+**Estado:** 📋 PENDIENTE - Listo para extender  
+**Fecha inicio:** _Por definir_  
+**Fecha fin:** _Por definir_  
+**Depende de:** Sprint 4 (Property Page)
+
+> **⚠️ ANTES DE INICIAR:** Este sprint debe ser extendido con más detalle antes de comenzar.  
+> Agregar sub-tareas específicas, criterios técnicos detallados, y dependencias exactas.
+
+### 📋 EXTENSIÓN DEL SPRINT 5
+
+**Pendiente de extender antes de iniciar:**
+- [ ] Detallar cada microtarea con sub-tareas específicas
+- [ ] Definir criterios técnicos detallados
+- [ ] Identificar dependencias exactas
+- [ ] Estimar tiempos más precisos
+- [ ] Definir orden de ejecución interno
+
+---
 
 ### Microtarea 5.1: Calendario (6 días, sin domingos)
 **Prioridad:** 🔴 CRÍTICA  
@@ -372,7 +467,25 @@
 
 ## 🎯 SPRINT 6: APIs Y DATOS
 
-**Objetivo:** Ajustar APIs según especificación
+**Objetivo:** Ajustar APIs según especificación  
+**Estado:** 📋 PENDIENTE - Listo para extender  
+**Fecha inicio:** _Por definir_  
+**Fecha fin:** _Por definir_  
+**Depende de:** Ninguna (puede ejecutarse en paralelo)
+
+> **⚠️ ANTES DE INICIAR:** Este sprint debe ser extendido con más detalle antes de comenzar.  
+> Agregar sub-tareas específicas, criterios técnicos detallados, y dependencias exactas.
+
+### 📋 EXTENSIÓN DEL SPRINT 6
+
+**Pendiente de extender antes de iniciar:**
+- [ ] Detallar cada microtarea con sub-tareas específicas
+- [ ] Definir criterios técnicos detallados
+- [ ] Identificar dependencias exactas
+- [ ] Estimar tiempos más precisos
+- [ ] Definir orden de ejecución interno
+
+---
 
 ### Microtarea 6.1: API `/api/buildings` - Retornar Unidades
 **Prioridad:** 🔴 CRÍTICA  
@@ -428,7 +541,25 @@
 
 ## 🎯 SPRINT 7: SEO Y OPTIMIZACIÓN
 
-**Objetivo:** Implementar estrategia SEO según especificación
+**Objetivo:** Implementar estrategia SEO según especificación  
+**Estado:** 📋 PENDIENTE - Listo para extender  
+**Fecha inicio:** _Por definir_  
+**Fecha fin:** _Por definir_  
+**Depende de:** Sprint 2, 3, 4 (páginas implementadas)
+
+> **⚠️ ANTES DE INICIAR:** Este sprint debe ser extendido con más detalle antes de comenzar.  
+> Agregar sub-tareas específicas, criterios técnicos detallados, y dependencias exactas.
+
+### 📋 EXTENSIÓN DEL SPRINT 7
+
+**Pendiente de extender antes de iniciar:**
+- [ ] Detallar cada microtarea con sub-tareas específicas
+- [ ] Definir criterios técnicos detallados
+- [ ] Identificar dependencias exactas
+- [ ] Estimar tiempos más precisos
+- [ ] Definir orden de ejecución interno
+
+---
 
 ### Microtarea 7.1: Estructura de URLs
 **Prioridad:** 🟡 MEDIA  
@@ -480,7 +611,25 @@
 
 ## 🎯 SPRINT 8: INTEGRACIONES Y FINALIZACIÓN
 
-**Objetivo:** Integraciones finales y testing
+**Objetivo:** Integraciones finales y testing  
+**Estado:** 📋 PENDIENTE - Listo para extender  
+**Fecha inicio:** _Por definir_  
+**Fecha fin:** _Por definir_  
+**Depende de:** Todos los sprints anteriores
+
+> **⚠️ ANTES DE INICIAR:** Este sprint debe ser extendido con más detalle antes de comenzar.  
+> Agregar sub-tareas específicas, criterios técnicos detallados, y dependencias exactas.
+
+### 📋 EXTENSIÓN DEL SPRINT 8
+
+**Pendiente de extender antes de iniciar:**
+- [ ] Detallar cada microtarea con sub-tareas específicas
+- [ ] Definir criterios técnicos detallados
+- [ ] Identificar dependencias exactas
+- [ ] Estimar tiempos más precisos
+- [ ] Definir orden de ejecución interno
+
+---
 
 ### Microtarea 8.1: Integración WhatsApp
 **Prioridad:** 🟡 MEDIA  
@@ -564,22 +713,35 @@ Sprint 8 (Finalización)
 
 ## ✅ CHECKLIST DE PROGRESO
 
+> **📝 INSTRUCCIÓN:** Al completar una microtarea:
+> 1. Marca con `[x]` en esta sección
+> 2. Actualiza el estado correspondiente en `ESPECIFICACION_COMPLETA_MVP.md`
+> 3. Agrega fecha de completación si aplica
+
 ### Sprint 1: Fundación
+**Estado:** 📋 PENDIENTE | **Progreso:** 0/3 microtareas
+
 - [ ] 1.1 - Elkis Unit Card
 - [ ] 1.2 - Sticky Search Bar
 - [ ] 1.3 - Tipografía Premium
 
 ### Sprint 2: Home
+**Estado:** 📋 PENDIENTE | **Progreso:** 0/4 microtareas
+
 - [ ] 2.1 - Header con Sticky Search Bar
 - [ ] 2.2 - Formulario de Búsqueda
 - [ ] 2.3 - Grids de Unidades Destacadas
 - [ ] 2.4 - Sección de Beneficios
 
 ### Sprint 3: Resultados
+**Estado:** 📋 PENDIENTE | **Progreso:** 0/2 microtareas
+
 - [ ] 3.1 - Página `/buscar` con Filtros
 - [ ] 3.2 - Estados de Resultados
 
 ### Sprint 4: Property Page
+**Estado:** 📋 PENDIENTE | **Progreso:** 0/5 microtareas
+
 - [ ] 4.1 - Breadcrumb y Header
 - [ ] 4.2 - Hero con Galería
 - [ ] 4.3 - Sticky Booking Card
@@ -587,24 +749,91 @@ Sprint 8 (Finalización)
 - [ ] 4.5 - Unidades Similares
 
 ### Sprint 5: Modal
+**Estado:** 📋 PENDIENTE | **Progreso:** 0/3 microtareas
+
 - [ ] 5.1 - Calendario (6 días, sin domingos)
 - [ ] 5.2 - Formulario de Agendamiento
 - [ ] 5.3 - Estados y Confirmación
 
 ### Sprint 6: APIs
+**Estado:** 📋 PENDIENTE | **Progreso:** 0/3 microtareas
+
 - [ ] 6.1 - API `/api/buildings` - Retornar Unidades
 - [ ] 6.2 - API `/api/buildings/[slug]` - Retornar Unit
 - [ ] 6.3 - Modelos de Datos
 
 ### Sprint 7: SEO
+**Estado:** 📋 PENDIENTE | **Progreso:** 0/3 microtareas
+
 - [ ] 7.1 - Estructura de URLs
 - [ ] 7.2 - Metadata Dinámica
 - [ ] 7.3 - Sitemap y Robots
 
 ### Sprint 8: Finalización
+**Estado:** 📋 PENDIENTE | **Progreso:** 0/3 microtareas
+
 - [ ] 8.1 - Integración WhatsApp
 - [ ] 8.2 - Analytics (GA4 + Meta Pixel)
 - [ ] 8.3 - Testing y QA
+
+---
+
+## 📊 PROGRESO GENERAL
+
+**Total de microtareas:** 25  
+**Completadas:** 0  
+**En progreso:** 0  
+**Pendientes:** 25  
+**Progreso:** 0%
+
+**Última actualización:** Enero 2025
+
+---
+
+## 📝 PROCESO DE TRABAJO
+
+### Antes de Iniciar un Sprint
+
+1. **Extender el Sprint:**
+   - Detallar cada microtarea con sub-tareas específicas
+   - Definir criterios técnicos detallados
+   - Identificar dependencias exactas
+   - Estimar tiempos más precisos
+   - Definir orden de ejecución interno
+
+2. **Revisar Dependencias:**
+   - Verificar que sprints dependientes estén completos
+   - Revisar componentes/APIs necesarios
+   - Confirmar que el Design System está listo
+
+3. **Preparar Ambiente:**
+   - Verificar que el código base está actualizado
+   - Revisar documentación relevante
+   - Preparar herramientas necesarias
+
+### Durante el Sprint
+
+1. **Ejecutar Microtareas:**
+   - Una microtarea por sesión (1 chat = 1 microtarea)
+   - Seguir criterios de aceptación
+   - Mantener código limpio y documentado
+
+2. **Actualizar Progreso:**
+   - Marcar microtarea como `[x]` completada
+   - Actualizar estado en `ESPECIFICACION_COMPLETA_MVP.md`
+   - Actualizar progreso general
+
+### Al Completar un Sprint
+
+1. **Revisión:**
+   - Verificar que todas las microtareas están completas
+   - Revisar criterios de aceptación
+   - Testing básico
+
+2. **Actualización:**
+   - Marcar sprint como completado
+   - Actualizar estado en ambos documentos
+   - Preparar siguiente sprint
 
 ---
 
@@ -613,9 +842,10 @@ Sprint 8 (Finalización)
 - **Metodología:** Cada microtarea es abordable en una sola sesión (1 chat = 1 microtarea)
 - **Prioridades:** 🔴 CRÍTICA | 🟡 MEDIA | 🟢 BAJA
 - **Estimación:** En sesiones (1 sesión ≈ 1-2 horas de trabajo)
-- **Actualización:** Este documento se actualiza al completar cada microtarea
+- **Actualización:** Ambos documentos (`PLAN_SPRINTS_MVP.md` y `ESPECIFICACION_COMPLETA_MVP.md`) se actualizan en paralelo
+- **Extensión:** Cada sprint debe ser extendido antes de iniciar con más detalle
 
 ---
 
 **📅 Última actualización:** Enero 2025  
-**🎯 Estado:** 📋 PLANIFICACIÓN - Listo para comenzar Sprint 1
+**🎯 Estado:** 📋 PLANIFICACIÓN - Listo para extender Sprint 1
