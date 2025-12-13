@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createRateLimiter } from "@lib/rate-limit";
+import { logger } from "@lib/logger";
 
 // Rate limiter: 20 requests per minute per IP
 const rateLimiter = createRateLimiter({ windowMs: 60_000, max: 20 });
@@ -46,7 +47,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Log de la métrica (en producción usaría un servicio de analytics)
-    console.log(`[Performance] ${metric.name}: ${metric.value}ms (${metric.rating})`, {
+    logger.log(`[Performance] ${metric.name}: ${metric.value}ms (${metric.rating})`, {
       page_url: metric.page_url,
       user_agent: metric.user_agent,
       timestamp: new Date(metric.timestamp).toISOString(),
@@ -68,7 +69,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error("Error procesando métrica de performance:", error);
+    logger.error("Error procesando métrica de performance:", error);
     return NextResponse.json(
       { error: "Error interno del servidor" },
       { status: 500 }

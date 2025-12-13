@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseProcessor } from '@/lib/supabase-data-processor';
 import { createRateLimiter } from '@lib/rate-limit';
+import { logger } from '@lib/logger';
 
 // Rate limiter: 20 requests per minute per IP
 const rateLimiter = createRateLimiter({ windowMs: 60_000, max: 20 });
@@ -47,7 +48,8 @@ export async function GET(request: NextRequest) {
       precioDesde: building.precioDesde,
       hasAvailability: building.hasAvailability,
       badges: building.badges.map(badge => ({
-        type: badge.type as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Badge type compatibility with API response
+        type: badge.type as unknown as string,
         label: badge.label,
         description: badge.description,
       })),
@@ -64,7 +66,7 @@ export async function GET(request: NextRequest) {
     });
     
   } catch (error) {
-    console.error('Error en API buildings:', error);
+    logger.error('Error en API buildings:', error);
     return NextResponse.json(
       { error: 'Error interno del servidor' },
       { status: 500 }

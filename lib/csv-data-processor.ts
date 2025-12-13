@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { logger } from './logger';
 
 export interface CSVUnit {
   op: string;
@@ -160,9 +161,9 @@ class CSVDataProcessor {
         this.csvData.push(unit);
       }
 
-      console.log(`📊 CSV cargado: ${this.csvData.length} unidades`);
+      logger.log(`📊 CSV cargado: ${this.csvData.length} unidades`);
     } catch (error) {
-      console.error('❌ Error cargando CSV:', error);
+      logger.error('❌ Error cargando CSV:', error);
       throw error;
     }
   }
@@ -248,7 +249,7 @@ class CSVDataProcessor {
       this.condominios.set(condominioNombre, condominioData);
     });
 
-    console.log(`🏢 Condominios procesados: ${this.condominios.size}`);
+    logger.log(`🏢 Condominios procesados: ${this.condominios.size}`);
   }
 
   private generateSlug(text: string): string {

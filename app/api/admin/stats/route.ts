@@ -3,6 +3,7 @@ import { unstable_cache } from "next/cache";
 import { createRateLimiter } from "@lib/rate-limit";
 import { readAll } from "@lib/data";
 import type { Building, Unit } from "@schemas/models";
+import { logger } from "@lib/logger";
 
 // Force dynamic rendering
 export const dynamic = "force-dynamic";
@@ -132,7 +133,7 @@ export async function GET(request: Request) {
   } catch (error) {
     // En caso de error, devolver stats vacías en lugar de fallar completamente
     const errorMessage = error instanceof Error ? error.message : "Error interno del servidor";
-    console.error("Error al obtener stats del admin:", errorMessage);
+    logger.error("Error al obtener stats del admin:", errorMessage);
     
     // Devolver valores por defecto para que el dashboard no se rompa
     const defaultStats: DashboardStats = {

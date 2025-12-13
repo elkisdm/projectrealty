@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSession } from '@lib/admin/auth-supabase';
+import { logger } from '@lib/logger';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const session = await getAdminSession();
 
@@ -27,7 +28,7 @@ export async function GET(request: NextRequest) {
       { status: 200 }
     );
   } catch (error) {
-    console.error('[AUTH] Error en verificación de sesión:', error);
+    logger.error('[AUTH] Error en verificación de sesión:', error);
     
     return NextResponse.json(
       { authenticated: false },
@@ -35,4 +36,11 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+
+
+
+
+
+
 

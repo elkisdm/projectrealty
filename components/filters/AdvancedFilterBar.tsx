@@ -2,7 +2,6 @@
 import React, { useState, useCallback } from 'react';
 import { Filter, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { SearchInput } from './SearchInput';
 import { FilterChips } from './FilterChips';
 import { SortSelect } from './SortSelect';
 import { useAdvancedFilters } from '../../hooks/useAdvancedFilters';
@@ -40,12 +39,10 @@ export function AdvancedFilterBar({
     setQuery,
     clearFilters,
     filteredBuildings,
-    searchResults,
     resultsCount,
     hasActiveFilters,
     activeFilterChips,
     updateURL,
-    // getFilterAnalytics: _getFilterAnalytics
   } = useAdvancedFilters({
     buildings,
     initialFilters,
@@ -66,32 +63,32 @@ export function AdvancedFilterBar({
   }, [filters, urlSync, updateURL]);
 
   // Get search suggestions from buildings data
-  const searchSuggestions = React.useMemo(() => {
+  const _searchSuggestions = React.useMemo(() => {
     if (!showSearchSuggestions) return [];
-    
+
     const suggestions = new Set<string>();
-    
+
     buildings.forEach(building => {
       // Add building names
       suggestions.add(building.name);
-      
+
       // Add comuna names
       suggestions.add(building.comuna);
-      
+
       // Add amenities
       building.amenities.forEach(amenity => suggestions.add(amenity));
-      
+
       // Add typologies
       building.units.forEach(unit => {
         if (unit.tipologia) suggestions.add(unit.tipologia);
       });
     });
-    
+
     return Array.from(suggestions).sort();
   }, [buildings, showSearchSuggestions]);
 
   // Handle search input
-  const handleSearchChange = useCallback((query: string) => {
+  const _handleSearchChange = useCallback((query: string) => {
     setQuery(query);
   }, [setQuery]);
 
@@ -120,16 +117,16 @@ export function AdvancedFilterBar({
     const comunas = new Set<string>();
     const tipologias = new Set<string>();
     const amenities = new Set<string>();
-    
+
     buildings.forEach(building => {
       comunas.add(building.comuna);
       building.amenities.forEach(amenity => amenities.add(amenity));
-      
+
       building.units.forEach(unit => {
         if (unit.tipologia) tipologias.add(unit.tipologia);
       });
     });
-    
+
     return {
       comunas: Array.from(comunas).sort(),
       tipologias: Array.from(tipologias).sort(),
@@ -144,10 +141,10 @@ export function AdvancedFilterBar({
         bg-black/40 backdrop-blur border border-white/20 
         rounded-2xl p-4 space-y-4
       ">
-        
+
         {/* Search and Sort Row */}
         <div className="flex flex-col lg:flex-row gap-4">
-          
+
           {/* Search Input - Disabled for MVP */}
           {/* <div className="flex-1">
             <SearchInput
@@ -246,15 +243,15 @@ export function AdvancedFilterBar({
             "
           >
             <div className="space-y-6">
-              
+
               {/* Basic Filters */}
               <div>
                 <h3 className="text-lg font-semibold text-white mb-4">
                   Filtros Básicos
                 </h3>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  
+
                   {/* Comuna Filter */}
                   <div>
                     <label htmlFor="comuna-filter" className="block text-sm font-medium text-white mb-2">
@@ -352,7 +349,7 @@ export function AdvancedFilterBar({
                 <h3 className="text-lg font-semibold text-white mb-4">
                   Filtros Avanzados
                 </h3>
-                
+
                 {/* Advanced filters disabled for MVP - only comuna and price */}
                 <div className="text-center text-white/60 py-4">
                   <p className="text-sm">Filtros avanzados disponibles próximamente</p>

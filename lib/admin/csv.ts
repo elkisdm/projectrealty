@@ -265,7 +265,6 @@ export function csvToUnits(
           break;
         case "gastoscomunes":
         case "gastos_comunes":
-        case "gastoscomunes":
           unit.gastosComunes = value ? parseInt(value, 10) : undefined;
           break;
         case "status":
@@ -277,7 +276,7 @@ export function csvToUnits(
     // Validar campos requeridos antes de agregar
     if (!unit.id || !unit.tipologia || !unit.m2 || !unit.price) {
       // Omitir unidades incompletas en lugar de agregarlas
-      return;
+      continue;
     }
 
     // Asegurar valores por defecto para campos requeridos

@@ -305,8 +305,8 @@ export function assetPlanCSVToBuildings(csv: string): {
       const price = parseChileanNumber(row["Arriendo Total"]);
       
       // Parsear áreas - pueden venir en centímetros cuadrados, convertir a m²
-      let m2DeptoRaw = parseChileanDecimal(row["m2 Depto"]);
-      let m2TerrazaRaw = parseChileanDecimal(row["m2 Terraza"]);
+      const m2DeptoRaw = parseChileanDecimal(row["m2 Depto"]);
+      const m2TerrazaRaw = parseChileanDecimal(row["m2 Terraza"]);
       
       // Convertir de cm² a m² si el valor es muy grande (> 100)
       // Los valores como 3859 cm² = 38.59 m²

@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { Home, Users, Zap, ArrowRight, Percent, Shield, Clock, CreditCard, UserCheck, ChevronLeft, ChevronRight, Bed, Building2, Castle, Hotel, Flame } from "lucide-react";
+import { Home, Zap, ArrowRight, Percent, Shield, Clock, CreditCard, UserCheck, ChevronLeft, ChevronRight, Bed, Building2, Castle, Hotel, Flame } from "lucide-react";
 import Link from "next/link";
 import type { BuildingSummary } from "@/hooks/useFetchBuildings";
 
@@ -24,7 +24,7 @@ const getMinPrice = (typologySummary: BuildingSummary['typologySummary']) => {
 
 const getTypologyIcon = (label: string) => {
   const labelLower = label.toLowerCase();
-  
+
   if (labelLower.includes('estudio')) return <Home className="w-4 h-4" aria-hidden="true" />;
   if (labelLower.includes('1 dormitorio') || labelLower.includes('1d')) return <Bed className="w-4 h-4" aria-hidden="true" />;
   if (labelLower.includes('2 dormitorios') || labelLower.includes('2d')) return <Building2 className="w-4 h-4" aria-hidden="true" />;
@@ -80,12 +80,12 @@ const getTypologyOrder = (label: string) => {
 
 export default function ArriendaSinComisionBuildingCard({ building }: ArriendaSinComisionBuildingCardProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  
+
   // Memoizar cálculos costosos
   const {
     minPrice,
     maxPrice,
-    totalUnits,
+    totalUnits: _totalUnits,
     sinComisionBadge,
     otherBadges,
     sortedTypologies,
@@ -94,26 +94,26 @@ export default function ArriendaSinComisionBuildingCard({ building }: ArriendaSi
     const minPrice = getMinPrice(building.typologySummary);
     const maxPrice = getMaxPrice(building.typologySummary);
     const totalUnits = building.typologySummary?.reduce((sum, t) => sum + t.count, 0) || 0;
-    
+
     // Encontrar el badge de "Comisión gratis" para el principal
-    const sinComisionBadge = building.badges?.find(badge => 
+    const sinComisionBadge = building.badges?.find(badge =>
       badge.label.includes('Comisión gratis') || badge.label.includes('0% Comisión')
     );
-    
+
     // Resto de badges para mostrar debajo (hasta 5 badges)
-    const otherBadges = building.badges?.filter(badge => 
+    const otherBadges = building.badges?.filter(badge =>
       !badge.label.includes('Comisión gratis') && !badge.label.includes('0% Comisión')
     ).slice(0, 5) || [];
 
     // Ordenar tipologías de la más pequeña a la más grande
-    const sortedTypologies = building.typologySummary?.sort((a, b) => 
+    const sortedTypologies = building.typologySummary?.sort((a, b) =>
       getTypologyOrder(a.label) - getTypologyOrder(b.label)
     ) || [];
 
     // Obtener todas las imágenes disponibles
-    const allImages = building.gallery && building.gallery.length > 0 
+    const allImages = building.gallery && building.gallery.length > 0
       ? building.gallery.filter((img): img is string => Boolean(img))
-      : building.coverImage 
+      : building.coverImage
         ? [building.coverImage]
         : ['/images/nunoa-cover.jpg'];
 
@@ -159,7 +159,7 @@ export default function ArriendaSinComisionBuildingCard({ building }: ArriendaSi
           />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-        
+
         {/* Badge principal: Comisión gratis */}
         {sinComisionBadge && (
           <motion.div
@@ -172,12 +172,12 @@ export default function ArriendaSinComisionBuildingCard({ building }: ArriendaSi
               <div className="relative">
                 {/* Fuego principal */}
                 <motion.div
-                  animate={{ 
+                  animate={{
                     scale: [1, 1.2, 0.8, 1.1, 1],
                     rotate: [0, 10, -8, 5, 0],
                     y: [0, -2, 1, -1, 0]
                   }}
-                  transition={{ 
+                  transition={{
                     duration: 1.5,
                     repeat: Infinity,
                     ease: "easeInOut"
@@ -186,17 +186,17 @@ export default function ArriendaSinComisionBuildingCard({ building }: ArriendaSi
                 >
                   <Flame className="w-4 h-4 text-cyan-200 drop-shadow-lg" aria-hidden="true" />
                 </motion.div>
-                
+
                 {/* Chispas de magma y humo */}
                 <motion.div
-                  animate={{ 
+                  animate={{
                     scale: [0, 1.2, 0],
                     opacity: [0, 1, 0],
                     y: [0, -15, -30],
                     x: [0, 4, -3],
                     rotate: [0, 45, 90, 180]
                   }}
-                  transition={{ 
+                  transition={{
                     duration: 1.4,
                     repeat: Infinity,
                     delay: 0.3,
@@ -206,14 +206,14 @@ export default function ArriendaSinComisionBuildingCard({ building }: ArriendaSi
                   style={{ transformOrigin: 'center bottom' }}
                 />
                 <motion.div
-                  animate={{ 
+                  animate={{
                     scale: [0, 1, 0],
                     opacity: [0, 0.8, 0],
                     y: [0, -8, -20],
                     x: [0, -3, 2],
                     rotate: [0, -30, 60, -90]
                   }}
-                  transition={{ 
+                  transition={{
                     duration: 1.6,
                     repeat: Infinity,
                     delay: 0.7,
@@ -223,14 +223,14 @@ export default function ArriendaSinComisionBuildingCard({ building }: ArriendaSi
                   style={{ transformOrigin: 'center bottom' }}
                 />
                 <motion.div
-                  animate={{ 
+                  animate={{
                     scale: [0, 1.5, 0],
                     opacity: [0, 0.6, 0],
                     y: [0, -25, -40],
                     x: [0, 2, -4],
                     rotate: [0, 90, 180, 270]
                   }}
-                  transition={{ 
+                  transition={{
                     duration: 1.8,
                     repeat: Infinity,
                     delay: 1.1,
@@ -240,14 +240,14 @@ export default function ArriendaSinComisionBuildingCard({ building }: ArriendaSi
                   style={{ transformOrigin: 'center bottom' }}
                 />
                 <motion.div
-                  animate={{ 
+                  animate={{
                     scale: [0, 1.1, 0],
                     opacity: [0, 0.7, 0],
                     y: [0, -12, -25],
                     x: [0, -2, 3],
                     rotate: [0, -45, 90, -135]
                   }}
-                  transition={{ 
+                  transition={{
                     duration: 1.5,
                     repeat: Infinity,
                     delay: 0.5,
@@ -256,16 +256,16 @@ export default function ArriendaSinComisionBuildingCard({ building }: ArriendaSi
                   className="absolute top-0 left-0 w-0.5 h-2.5 bg-gradient-to-t from-cyan-200 to-transparent rounded-full drop-shadow-lg"
                   style={{ transformOrigin: 'center bottom' }}
                 />
-                
+
                 {/* Humo sutil */}
                 <motion.div
-                  animate={{ 
+                  animate={{
                     scale: [0, 1.3, 0],
                     opacity: [0, 0.4, 0],
                     y: [0, -5, -15],
                     x: [0, 1, -1]
                   }}
-                  transition={{ 
+                  transition={{
                     duration: 2,
                     repeat: Infinity,
                     delay: 0.2,
@@ -313,7 +313,7 @@ export default function ArriendaSinComisionBuildingCard({ building }: ArriendaSi
         {/* Contenido principal */}
         <div className="space-y-4">
           {/* Nombre del edificio */}
-          <motion.h3 
+          <motion.h3
             id={`building-${building.id}-title`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -326,7 +326,7 @@ export default function ArriendaSinComisionBuildingCard({ building }: ArriendaSi
           </motion.h3>
 
           {/* Dirección */}
-          <motion.p 
+          <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.15 }}
@@ -337,7 +337,7 @@ export default function ArriendaSinComisionBuildingCard({ building }: ArriendaSi
 
           {/* Badges principales con colores modernos */}
           {otherBadges.length > 0 && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2 }}
@@ -359,7 +359,7 @@ export default function ArriendaSinComisionBuildingCard({ building }: ArriendaSi
           )}
 
           {/* Precio */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.25 }}
@@ -375,54 +375,54 @@ export default function ArriendaSinComisionBuildingCard({ building }: ArriendaSi
 
           {/* Tipologías disponibles */}
           {sortedTypologies.length > 0 && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3 }}
               className="space-y-3"
             >
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Tipologías disponibles:
-            </p>
-            <div className="grid grid-cols-2 gap-2" role="list" aria-label="Tipologías de departamentos">
-              {sortedTypologies.map((typology, index) => (
-                <div
-                  key={typology.key}
-                  className="flex items-center justify-between p-2.5 bg-gray-900:bg-gray-800 rounded-lg border border-gray-700:border-gray-700 hover:bg-gray-800:hover:bg-gray-700 transition-colors group cursor-pointer"
-                  role="listitem"
-                  tabIndex={0}
-                  aria-label={`${typology.label}, ${typology.count} unidades disponibles`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-md">
-                      {getTypologyIcon(typology.label)}
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Tipologías disponibles:
+              </p>
+              <div className="grid grid-cols-2 gap-2" role="list" aria-label="Tipologías de departamentos">
+                {sortedTypologies.map((typology, index) => (
+                  <div
+                    key={typology.key}
+                    className="flex items-center justify-between p-2.5 bg-gray-900:bg-gray-800 rounded-lg border border-gray-700:border-gray-700 hover:bg-gray-800:hover:bg-gray-700 transition-colors group cursor-pointer"
+                    role="listitem"
+                    tabIndex={0}
+                    aria-label={`${typology.label}, ${typology.count} unidades disponibles`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-md">
+                        {getTypologyIcon(typology.label)}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-white:text-white truncate">
+                          {typology.label}
+                        </p>
+                        <p className="text-xs text-gray-300:text-gray-400">
+                          {typology.count} disp.
+                        </p>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-white:text-white truncate">
-                        {typology.label}
-                      </p>
-                      <p className="text-xs text-gray-300:text-gray-400">
-                        {typology.count} disp.
-                      </p>
-                    </div>
+                    <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors flex-shrink-0" aria-hidden="true" />
                   </div>
-                  <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors flex-shrink-0" aria-hidden="true" />
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        )}
+                ))}
+              </div>
+            </motion.div>
+          )}
         </div>
 
         {/* CTA - posición fija al final */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
           className="pt-4 pb-2 flex-shrink-0"
         >
           <Link href={`/arrienda-sin-comision/${building.slug}`}>
-            <button 
+            <button
               className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               aria-label={`Ver detalles completos del edificio ${building.name}`}
             >

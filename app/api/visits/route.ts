@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createRateLimiter } from '@lib/rate-limit';
+import { logger } from '@lib/logger';
 import { 
   CreateVisitRequest, 
   CreateVisitResponse, 
   Visit, 
   VisitSlot,
-  Agent,
-  generateIdempotencyKey 
+  Agent 
 } from '@/types/visit';
 
 // Rate limiter: 10 requests per minute per IP (more restrictive for visit creation)
@@ -305,7 +305,7 @@ export async function POST(request: NextRequest) {
     };
     
     // Log de métricas (sin PII)
-    console.log(`✅ Visita creada: ${visit.id} para listing ${visit.listingId} en slot ${visit.slotId}`);
+    logger.log(`✅ Visita creada: ${visit.id} para listing ${visit.listingId} en slot ${visit.slotId}`);
     
     // En producción aquí se enviaría la notificación por WhatsApp
     // await sendWhatsAppConfirmation(visit, agent, slot);
@@ -313,7 +313,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(response, { status: 201 });
     
   } catch (error) {
-    console.error('❌ Error creando visita:', error);
+    logger.error('❌ Error creando visita:', error);
     
     if (error instanceof Error && error.message.includes('Slot no disponible')) {
       return NextResponse.json(
@@ -372,7 +372,7 @@ export async function GET(request: NextRequest) {
     });
     
   } catch (error) {
-    console.error('❌ Error obteniendo visitas:', error);
+    logger.error('❌ Error obteniendo visitas:', error);
     
     return NextResponse.json(
       { error: 'Error interno del servidor' },

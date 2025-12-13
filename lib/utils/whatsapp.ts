@@ -2,6 +2,8 @@
  * Utilidades para WhatsApp con fallbacks controlados
  */
 
+import { logger } from '../logger';
+
 export interface WhatsAppConfig {
   phone: string;
   message: string;
@@ -98,16 +100,10 @@ export function trackWhatsAppClick(
     }
     
     // Log local solo en desarrollo
-    if (process.env.NODE_ENV === 'development') {
-      // eslint-disable-next-line no-console
-      console.log(`[WhatsApp] ${eventName}`, properties);
-    }
+    logger.log(`[WhatsApp] ${eventName}`, properties);
   } catch (error) {
     // Silenciar errores de telemetría en producción
-    if (process.env.NODE_ENV === 'development') {
-      // eslint-disable-next-line no-console
-      console.warn('[WhatsApp] Error tracking event:', error);
-    }
+    logger.warn('[WhatsApp] Error tracking event:', error);
   }
 }
 

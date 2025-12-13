@@ -3,6 +3,7 @@ import { QuotationInputSchema } from "@schemas/quotation";
 import { getUnitWithBuilding } from "@lib/data";
 import { computeQuotation } from "@lib/quotation";
 import { createRateLimiter } from "@lib/rate-limit";
+import { logger } from "@lib/logger";
 
 // Rate limiter: 10 requests per minute per IP (same as booking)
 const rateLimiter = createRateLimiter({ windowMs: 60_000, max: 10 });
@@ -60,7 +61,7 @@ export async function POST(request: NextRequest) {
     );
 
     // Log sin PII
-    console.log(`Quotation computed for unit ${unit.id} in building ${building.id}`);
+    logger.log(`Quotation computed for unit ${unit.id} in building ${building.id}`);
 
     return NextResponse.json(quotation, { status: 200 });
 
@@ -72,7 +73,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.error('Error computing quotation:', error);
+    logger.error('Error computing quotation:', error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

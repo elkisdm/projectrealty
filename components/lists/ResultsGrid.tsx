@@ -4,7 +4,7 @@ import { BuildingCard } from "../BuildingCard";
 import { BuildingCardV2 } from "../ui/BuildingCardV2";
 import { BuildingCardSkeleton } from "../ui/BuildingCardSkeleton";
 import { useFetchBuildings, type FilterValues, type BuildingSummary } from "../../hooks/useFetchBuildings";
-import { CARD_V2, getFlagValue } from "@lib/flags";
+import { getFlagValue } from "@lib/flags";
 import { Building } from "@types";
 
 interface ResultsGridProps {
@@ -45,7 +45,7 @@ export function ResultsGrid({
   filters,
   sort,
   onResultsChange,
-  paginationMode = 'traditional'
+  paginationMode: _paginationMode = 'traditional'
 }: ResultsGridProps) {
   // Use React Query hook directly
   const {

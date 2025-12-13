@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { LANDING_BUILDINGS_MOCK } from "@/lib/arrienda-sin-comision-mocks";
 import { createRateLimiter } from "@lib/rate-limit";
+import { logger } from "@lib/logger";
 
 // Rate limiter: 20 requests per minute per IP
 const rateLimiter = createRateLimiter({ windowMs: 60_000, max: 20 });
@@ -47,7 +48,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error("Error en API arrienda-sin-comision:", error);
+    logger.error("Error en API arrienda-sin-comision:", error);
     return NextResponse.json(
       { 
         success: false, 

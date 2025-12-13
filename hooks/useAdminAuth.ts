@@ -25,6 +25,7 @@ interface LoginResponse {
 interface LogoutResponse {
   success: boolean;
   message?: string;
+  error?: string;
 }
 
 // Función para obtener sesión
@@ -71,7 +72,11 @@ async function logoutUser(): Promise<LogoutResponse> {
   const data = (await response.json()) as LogoutResponse;
 
   if (!response.ok) {
-    throw new Error('Error al cerrar sesión');
+    const errorMessage = data.message || data.error || 'Error al cerrar sesión';
+    const error = new Error(errorMessage);
+    // Agregar el código de error como propiedad
+    (error as Error & { code?: string }).code = data.error;
+    throw error;
   }
 
   return data;
@@ -112,16 +117,34 @@ export function useAdminAuth() {
   // Mutation para logout
   const logoutMutation = useMutation({
     mutationFn: logoutUser,
-    onSuccess: () => {
+    onSuccess: (data) => {
       // Limpiar todas las queries de admin
       queryClient.invalidateQueries({ queryKey: ['admin'] });
       queryClient.clear();
-      toast.success('Sesión cerrada correctamente');
+      
+      // Si el logout fue parcialmente exitoso (cookies limpiadas pero error en servidor)
+      if (!data.success) {
+        toast.warning('Sesión cerrada localmente, pero hubo un problema en el servidor');
+      } else {
+        toast.success('Sesión cerrada correctamente');
+      }
+      
       router.push('/admin/login');
       router.refresh();
     },
-    onError: () => {
-      toast.error('Error al cerrar sesión');
+    onError: (error: Error) => {
+      // Si las cookies fueron limpiadas pero hubo error, aún redirigir
+      // pero mostrar mensaje de advertencia
+      const errorCode = 'code' in error ? (error as Error & { code?: string }).code : null;
+      if (errorCode === 'logout_failed' || error.message.includes('cookies fueron limpiadas')) {
+        toast.warning('Sesión cerrada localmente, pero hubo un problema en el servidor');
+        queryClient.invalidateQueries({ queryKey: ['admin'] });
+        queryClient.clear();
+        router.push('/admin/login');
+        router.refresh();
+      } else {
+        toast.error(error.message || 'Error al cerrar sesión');
+      }
     },
   });
 

@@ -52,7 +52,8 @@ export async function POST(req: NextRequest) {
       busy: b.busy ?? true,
     })) as CalendarEvent[];
 
-    const slots = buildAvailability(body.date as any, visibleHours, {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Zod validated body.date
+    const slots = buildAvailability(body.date as string, visibleHours, {
       externalEvents: [...googleEvents, ...icsEvents],
       internalBlocks: internal,
     }, 60);

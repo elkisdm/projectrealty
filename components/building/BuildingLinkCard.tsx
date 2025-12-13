@@ -30,12 +30,12 @@ export const BuildingLinkCard: React.FC<BuildingLinkCardProps> = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-      whileHover={{ 
+      whileHover={{
         y: -4,
         scale: 1.02,
         transition: { duration: 0.3, ease: [0.4, 0, 0.2, 1] }
       }}
-      whileTap={{ 
+      whileTap={{
         scale: 0.98,
         transition: { duration: 0.1, ease: [0.4, 0, 0.2, 1] }
       }}
@@ -52,10 +52,10 @@ export const BuildingLinkCard: React.FC<BuildingLinkCardProps> = ({
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             priority={false}
           />
-          
+
           {/* Overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-          
+
           {/* Badge con contador de unidades */}
           {unitCount && (
             <div className="absolute top-3 right-3 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg px-2 py-1 flex items-center gap-1">
@@ -117,7 +117,7 @@ export const BuildingLinkCardSkeleton: React.FC = () => {
     <div className="relative overflow-hidden rounded-2xl border border-gray-700:border-gray-700 bg-gray-800:bg-gray-800 shadow-lg">
       {/* Image skeleton */}
       <div className="aspect-video bg-gray-200 dark:bg-gray-700 animate-pulse" />
-      
+
       {/* Content skeleton */}
       <div className="p-4 space-y-3">
         <div className="flex items-center gap-2">
@@ -127,12 +127,12 @@ export const BuildingLinkCardSkeleton: React.FC = () => {
             <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-1/2" />
           </div>
         </div>
-        
+
         <div className="space-y-2">
           <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
           <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-5/6" />
         </div>
-        
+
         <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-1/3" />
       </div>
     </div>
@@ -144,7 +144,7 @@ export const BuildingLinkCardCompact: React.FC<BuildingLinkCardProps> = ({
   buildingName,
   photo,
   href,
-  unitCount,
+  unitCount: _unitCount,
   commune,
   className = ""
 }) => {

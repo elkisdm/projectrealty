@@ -2,13 +2,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { getAllBuildings } from "@lib/data";
 import { formatPrice } from "@lib/utils";
+import { logger } from "@lib/logger";
 
 type FeaturedGridProps = Record<string, never>;
 
 async function getFeaturedBuildings() {
   try {
     const allBuildings = await getAllBuildings({});
-    
+
     // Filtrar edificios con disponibilidad y tomar los primeros 3
     const featuredBuildings = allBuildings
       .filter(building => {
@@ -16,10 +17,10 @@ async function getFeaturedBuildings() {
         return available.length > 0;
       })
       .slice(0, 3);
-    
+
     return featuredBuildings;
   } catch (error) {
-    console.error('Error getting featured buildings:', error);
+    logger.error('Error getting featured buildings:', error);
     return [];
   }
 }
@@ -70,7 +71,7 @@ export default async function FeaturedGrid(_: FeaturedGridProps) {
             const available = building.units.filter((u) => u.disponible);
             const hasAvailability = available.length > 0;
             const coverImage = building.coverImage || building.gallery?.[0] || '/images/lascondes-cover.jpg';
-            
+
             return (
               <article
                 key={building.id}

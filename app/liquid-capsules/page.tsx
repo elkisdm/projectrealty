@@ -21,8 +21,6 @@ import {
     Heart,
     Eye,
     Calendar,
-    Clock,
-    User,
     Phone,
     Mail,
     CheckCircle,

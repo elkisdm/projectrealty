@@ -102,7 +102,7 @@ export function UnitForm({
 
     try {
       await onSubmit(validation.data, selectedBuildingId || "");
-    } catch (error) {
+    } catch {
       // El error será manejado por el componente padre
     }
   };
@@ -122,9 +122,8 @@ export function UnitForm({
                 setSelectedBuildingId(e.target.value);
                 setErrors((prev) => ({ ...prev, buildingId: "" }));
               }}
-              className={`w-full px-4 py-2 rounded-lg bg-[var(--bg)] text-[var(--text)] border ${
-                errors.buildingId ? "border-red-500" : "border-white/10"
-              } focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--bg)]`}
+              className={`w-full px-4 py-2 rounded-lg bg-[var(--bg)] text-[var(--text)] border ${errors.buildingId ? "border-red-500" : "border-white/10"
+                } focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--bg)]`}
               required
             >
               <option value="">Seleccionar edificio...</option>
@@ -150,9 +149,8 @@ export function UnitForm({
             value={formData.id || ""}
             onChange={(e) => handleChange("id", e.target.value)}
             onBlur={() => handleBlur("id")}
-            className={`w-full px-4 py-2 rounded-lg bg-[var(--bg)] text-[var(--text)] border ${
-              errors.id ? "border-red-500" : "border-white/10"
-            } focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--bg)]`}
+            className={`w-full px-4 py-2 rounded-lg bg-[var(--bg)] text-[var(--text)] border ${errors.id ? "border-red-500" : "border-white/10"
+              } focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--bg)]`}
             required
           />
           {errors.id && (
@@ -169,9 +167,8 @@ export function UnitForm({
             value={formData.tipologia || ""}
             onChange={(e) => handleChange("tipologia", e.target.value)}
             onBlur={() => handleBlur("tipologia")}
-            className={`w-full px-4 py-2 rounded-lg bg-[var(--bg)] text-[var(--text)] border ${
-              errors.tipologia ? "border-red-500" : "border-white/10"
-            } focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--bg)]`}
+            className={`w-full px-4 py-2 rounded-lg bg-[var(--bg)] text-[var(--text)] border ${errors.tipologia ? "border-red-500" : "border-white/10"
+              } focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--bg)]`}
             required
           >
             {TIPOLOGIAS.map((tip) => (
@@ -197,9 +194,8 @@ export function UnitForm({
             value={formData.m2 || ""}
             onChange={(e) => handleChange("m2", parseFloat(e.target.value) || 0)}
             onBlur={() => handleBlur("m2")}
-            className={`w-full px-4 py-2 rounded-lg bg-[var(--bg)] text-[var(--text)] border ${
-              errors.m2 ? "border-red-500" : "border-white/10"
-            } focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--bg)]`}
+            className={`w-full px-4 py-2 rounded-lg bg-[var(--bg)] text-[var(--text)] border ${errors.m2 ? "border-red-500" : "border-white/10"
+              } focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--bg)]`}
             required
           />
           {errors.m2 && (
@@ -219,9 +215,8 @@ export function UnitForm({
             value={formData.price || ""}
             onChange={(e) => handleChange("price", parseInt(e.target.value, 10) || 0)}
             onBlur={() => handleBlur("price")}
-            className={`w-full px-4 py-2 rounded-lg bg-[var(--bg)] text-[var(--text)] border ${
-              errors.price ? "border-red-500" : "border-white/10"
-            } focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--bg)]`}
+            className={`w-full px-4 py-2 rounded-lg bg-[var(--bg)] text-[var(--text)] border ${errors.price ? "border-red-500" : "border-white/10"
+              } focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--bg)]`}
             required
           />
           {errors.price && (
@@ -299,9 +294,8 @@ export function UnitForm({
               )
             }
             onBlur={() => handleBlur("area_interior_m2")}
-            className={`w-full px-4 py-2 rounded-lg bg-[var(--bg)] text-[var(--text)] border ${
-              errors.area_interior_m2 ? "border-red-500" : "border-white/10"
-            } focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--bg)]`}
+            className={`w-full px-4 py-2 rounded-lg bg-[var(--bg)] text-[var(--text)] border ${errors.area_interior_m2 ? "border-red-500" : "border-white/10"
+              } focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--bg)]`}
           />
           {errors.area_interior_m2 && (
             <p className="mt-1 text-sm text-red-400">{errors.area_interior_m2}</p>
@@ -326,9 +320,8 @@ export function UnitForm({
               )
             }
             onBlur={() => handleBlur("area_exterior_m2")}
-            className={`w-full px-4 py-2 rounded-lg bg-[var(--bg)] text-[var(--text)] border ${
-              errors.area_exterior_m2 ? "border-red-500" : "border-white/10"
-            } focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--bg)]`}
+            className={`w-full px-4 py-2 rounded-lg bg-[var(--bg)] text-[var(--text)] border ${errors.area_exterior_m2 ? "border-red-500" : "border-white/10"
+              } focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--bg)]`}
           />
           {errors.area_exterior_m2 && (
             <p className="mt-1 text-sm text-red-400">{errors.area_exterior_m2}</p>

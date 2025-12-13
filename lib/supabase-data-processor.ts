@@ -1,15 +1,35 @@
-// Importación condicional de Supabase
-let createClient: any;
-try {
-  const supabaseModule = require('@supabase/supabase-js');
-  createClient = supabaseModule.createClient;
-} catch (error) {
-  console.warn('⚠️  @supabase/supabase-js no disponible, usando mock');
-  const { createMockSupabaseClient } = require('./supabase.mock');
-  createClient = () => createMockSupabaseClient();
-}
+// Importación de Supabase
+import { createClient as createSupabaseClient, type SupabaseClient } from '@supabase/supabase-js';
+import { createMockSupabaseClient } from './supabase.mock';
+import { getTremendoUnitsProcessor, type TremendoUnitsProcessor } from './tremendo-units-processor';
+import { logger } from './logger';
 
-import { getTremendoUnitsProcessor } from './tremendo-units-processor';
+/**
+ * Función helper para crear cliente Supabase (real o mock según disponibilidad)
+ * @param url - URL de Supabase
+ * @param key - Clave de autenticación (service role key)
+ * @param options - Opciones de configuración del cliente
+ * @returns Cliente Supabase real o mock
+ */
+function createClient(
+  url?: string, 
+  key?: string, 
+  options?: { auth?: { persistSession?: boolean } }
+): ReturnType<typeof createSupabaseClient> | ReturnType<typeof createMockSupabaseClient> {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  // Si no hay configuración, usar mock
+  if (!supabaseUrl || !supabaseServiceKey || !url || !key) {
+    // eslint-disable-next-line no-console -- Early init warning before logger setup
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.warn('⚠️  Supabase no configurado, usando mock');
+    }
+    return createMockSupabaseClient();
+  }
+  
+  return createSupabaseClient(url, key, options);
+}
 
 export interface SupabaseUnit {
   id: string;
@@ -87,18 +107,28 @@ export interface LandingBuilding {
   }>;
 }
 
+// Tipo para las filas de unidades devueltas por Supabase (con relación a buildings)
+export interface SupabaseUnitRow extends SupabaseUnit {
+  buildings: {
+    id: string;
+    nombre: string;
+    comuna: string;
+    direccion: string;
+  } | null;
+}
+
 class SupabaseDataProcessor {
-  private supabase: any;
+  private supabase: SupabaseClient | ReturnType<typeof createMockSupabaseClient>;
   private condominios: Map<string, CondominioData> = new Map();
   private isInitialized = false;
-  private tremendoProcessor: any = null;
+  private tremendoProcessor: TremendoUnitsProcessor | null = null;
 
   constructor() {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!supabaseUrl || !supabaseKey) {
-      console.warn('⚠️  Variables de entorno de Supabase no encontradas, usando mock');
+      logger.warn('⚠️  Variables de entorno de Supabase no encontradas, usando mock');
       this.supabase = createClient(); // Mock
     } else {
       this.supabase = createClient(supabaseUrl, supabaseKey);
@@ -107,15 +137,15 @@ class SupabaseDataProcessor {
 
   async loadDataFromSupabase(): Promise<void> {
     try {
-      console.log('🔍 Cargando datos desde Supabase...');
+      logger.log('🔍 Cargando datos desde Supabase...');
       
       // Cargar el procesador de Tremendo Units
       this.tremendoProcessor = await getTremendoUnitsProcessor();
       const tremendoBuildings = this.tremendoProcessor.getTremendoBuildings();
       const tremendoCondominios = this.tremendoProcessor.getTremendoCondominios();
       
-      console.log(`🏢 Edificios Tremendo disponibles: ${tremendoBuildings.length}`);
-      console.log(`🏘️ Condominios Tremendo: ${tremendoCondominios.join(', ')}`);
+      logger.log(`🏢 Edificios Tremendo disponibles: ${tremendoBuildings.length}`);
+      logger.log(`🏘️ Condominios Tremendo: ${tremendoCondominios.join(', ')}`);
       
       // Obtener todas las unidades desde Supabase usando las columnas correctas
       const { data: units, error } = await this.supabase
@@ -163,14 +193,14 @@ class SupabaseDataProcessor {
         .order('precio', { ascending: true });
 
       if (error) {
-        console.error('❌ Error cargando unidades:', error);
+        logger.error('❌ Error cargando unidades:', error);
         throw error;
       }
 
-      console.log(`📊 Unidades cargadas desde Supabase: ${units.length}`);
+      logger.log(`📊 Unidades cargadas desde Supabase: ${units.length}`);
       
       // Filtrar solo las unidades que pertenecen a edificios Tremendo
-      const filteredUnits = units.filter((unit: any) => {
+      const filteredUnits = (units as SupabaseUnitRow[]).filter((unit) => {
         const buildingName = unit.buildings?.nombre;
         
         if (!buildingName) {
@@ -178,30 +208,30 @@ class SupabaseDataProcessor {
         }
         
         // Verificar si el edificio está en la lista de Tremendo
-        const isTremendoBuilding = this.tremendoProcessor.isTremendoBuilding(buildingName);
+        const isTremendoBuilding = this.tremendoProcessor?.isTremendoBuilding(buildingName) ?? false;
         
         if (isTremendoBuilding) {
-          console.log(`✅ Edificio Tremendo encontrado: ${buildingName}`);
+          logger.log(`✅ Edificio Tremendo encontrado: ${buildingName}`);
         }
         
         return isTremendoBuilding;
       });
 
-      console.log(`✅ Unidades Tremendo filtradas: ${filteredUnits.length} de ${units.length}`);
+      logger.log(`✅ Unidades Tremendo filtradas: ${filteredUnits.length} de ${units.length}`);
       
       if (filteredUnits.length === 0) {
-        console.log('⚠️ No se encontraron unidades de edificios Tremendo');
-        console.log('📋 Edificios disponibles en Supabase:');
-        const uniqueBuildings = [...new Set(units.map((u: any) => u.buildings?.nombre).filter(Boolean))];
-        uniqueBuildings.forEach((building: any) => {
-          console.log(`   - ${building}`);
+        logger.warn('⚠️ No se encontraron unidades de edificios Tremendo');
+        logger.log('📋 Edificios disponibles en Supabase:');
+        const uniqueBuildings = [...new Set((units as SupabaseUnitRow[]).map((u) => u.buildings?.nombre).filter(Boolean))];
+        uniqueBuildings.forEach((building) => {
+          logger.log(`   - ${building}`);
         });
       }
       
       await this.processCondominios(filteredUnits);
       
     } catch (error) {
-      console.error('❌ Error cargando datos de Supabase:', error);
+      logger.error('❌ Error cargando datos de Supabase:', error);
       throw error;
     }
   }
@@ -265,7 +295,7 @@ class SupabaseDataProcessor {
       amenities.push('Seguridad 24/7', 'Áreas Comunes');
 
       // Obtener información del building
-      const buildingInfo = unidades[0] as any;
+      const buildingInfo = unidades[0] as SupabaseUnitRow;
       const buildingName = buildingInfo.buildings?.nombre || `Edificio ${buildingId}`;
       const buildingComuna = buildingInfo.buildings?.comuna || 'Santiago';
       const buildingDireccion = buildingInfo.buildings?.direccion || 'Dirección no disponible';
@@ -291,7 +321,7 @@ class SupabaseDataProcessor {
       this.condominios.set(buildingId, condominioData);
     });
 
-    console.log(`🏢 Condominios procesados: ${this.condominios.size}`);
+    logger.log(`🏢 Condominios procesados: ${this.condominios.size}`);
     this.isInitialized = true;
   }
 

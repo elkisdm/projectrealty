@@ -10,6 +10,7 @@ export default function Error({
     reset: () => void;
 }) {
     useEffect(() => {
+        // eslint-disable-next-line no-console -- Error boundary logging
         console.error(error);
     }, [error]);
 

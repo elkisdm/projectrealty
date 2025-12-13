@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { isAuthenticatedAdmin } from "@lib/admin/auth-middleware";
+import { validateAdminRedirect } from "@lib/admin/validate-redirect";
 
 // Rutas que requieren autenticación
 const PROTECTED_ROUTES = ["/admin"];
@@ -40,10 +41,13 @@ export async function middleware(request: NextRequest) {
       }
 
       // Para rutas de página, redirigir a login preservando la URL original
+      // Validar pathname para prevenir open redirect attacks
       const url = request.nextUrl.clone();
       url.pathname = "/admin/login";
       if (pathname !== "/admin/login") {
-        url.searchParams.set("redirect", pathname);
+        // Validar que el pathname sea seguro antes de agregarlo como redirect
+        const safeRedirect = validateAdminRedirect(pathname, '/admin');
+        url.searchParams.set("redirect", safeRedirect);
       }
       return NextResponse.redirect(url);
     }

@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { logger } from './logger';
 
 export interface TremendoUnit {
   building: string;
@@ -25,10 +26,7 @@ class TremendoUnitsProcessor {
       
       if (!fs.existsSync(csvPath)) {
         // Archivo no encontrado - silenciar en producción
-        if (process.env.NODE_ENV === 'development') {
-          // eslint-disable-next-line no-console
-          console.log('⚠️ Archivo tremendo_units.csv no encontrado');
-        }
+        logger.log('⚠️ Archivo tremendo_units.csv no encontrado');
         return;
       }
 
@@ -61,19 +59,14 @@ class TremendoUnitsProcessor {
       });
 
       // Logs solo en desarrollo
-      if (process.env.NODE_ENV === 'development') {
-        // eslint-disable-next-line no-console
-        console.log(`📊 Tremendo Units cargados: ${this.units.length} unidades`);
-        // eslint-disable-next-line no-console
-        console.log(`🏢 Edificios Tremendo: ${this.buildings.size} edificios`);
-      }
+      logger.log(`📊 Tremendo Units cargados: ${this.units.length} unidades`);
+      logger.log(`🏢 Edificios Tremendo: ${this.buildings.size} edificios`);
       
       this.isInitialized = true;
     } catch (error) {
       // Error solo en desarrollo o si hay variable de entorno
       if (process.env.NODE_ENV === 'development' || process.env.DEBUG_TREMENDO) {
-        // eslint-disable-next-line no-console
-        console.error('❌ Error cargando Tremendo Units:', error);
+        logger.error('❌ Error cargando Tremendo Units:', error);
       }
     }
   }

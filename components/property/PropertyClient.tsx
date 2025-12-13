@@ -5,6 +5,7 @@ import { AlertCircle } from "lucide-react";
 import { ImageGallery } from "@components/gallery/ImageGallery";
 
 import { track } from "@lib/analytics";
+import { logger } from "@lib/logger";
 import type { Unit, Building } from "@schemas/models";
 import { QuintoAndarVisitScheduler } from "@components/flow/QuintoAndarVisitScheduler";
 import { usePropertyUnit } from "@hooks/usePropertyUnit";
@@ -36,7 +37,7 @@ class ErrorBoundary extends React.Component<
     }
 
     componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-        console.error("PropertyClient Error:", error, errorInfo);
+        logger.error("PropertyClient Error:", error, errorInfo);
         track("error", { error: error.message, component: "PropertyClient" });
     }
 
@@ -161,7 +162,7 @@ export function PropertyClient({
 
     // Handle modal confirmation
     const handleModalConfirm = (date: string, time: string, leadData: any) => {
-        console.log('Visita confirmada:', { date, time, leadData, building: building.name });
+        logger.log('Visita confirmada:', { date, time, leadData, building: building.name });
         track("visit_scheduled", {
             property_id: building.id,
             property_name: building.name,
@@ -256,15 +257,15 @@ export function PropertyClient({
                                 onScheduleVisit={() => setIsModalOpen(true)}
                                 onWhatsApp={() => {
                                     // TODO: Implementar WhatsApp
-                                    console.log("WhatsApp clicked");
+                                    logger.log("WhatsApp clicked");
                                 }}
                                 onSave={() => {
                                     // TODO: Implementar guardar en favoritos
-                                    console.log("Save clicked");
+                                    logger.log("Save clicked");
                                 }}
                                 onShare={() => {
                                     // TODO: Implementar compartir
-                                    console.log("Share clicked");
+                                    logger.log("Share clicked");
                                 }}
                             />
 
@@ -275,7 +276,7 @@ export function PropertyClient({
                                 onScheduleVisit={() => setIsModalOpen(true)}
                                 onPreapproval={() => {
                                     // TODO: Implementar modal de preaprobación
-                                    console.log("Preaprobación iniciada");
+                                    logger.log("Preaprobación iniciada");
                                 }}
                             />
 
@@ -352,7 +353,7 @@ export function PropertyClient({
                     propertyAddress={building.address}
                     propertyImage={building.coverImage}
                     onSuccess={(visitData) => {
-                        console.log('✅ Visita creada exitosamente:', visitData);
+                        logger.log('✅ Visita creada exitosamente:', visitData);
                         track("visit_scheduled", {
                             property_id: building.id,
                             property_name: building.name,

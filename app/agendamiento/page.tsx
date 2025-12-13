@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { VisitSchedulerModal } from '@components/flow/VisitSchedulerModal';
+import { logger } from '@lib/logger';
 import { Calendar, Clock, MapPin, User, Phone, CreditCard } from 'lucide-react';
 
 export default function AgendamientoPage() {
@@ -177,7 +178,7 @@ export default function AgendamientoPage() {
                     price: 850000
                 }}
                 onConfirm={(date, time, leadData) => {
-                    console.log('Visita confirmada:', { date, time, leadData });
+                    logger.log('Visita confirmada:', { date, time, leadData });
                     alert(`¡Visita agendada exitosamente!\n\nFecha: ${date}\nHora: ${time}\n\nTe contactaremos pronto.`);
                     setIsModalOpen(false);
                 }}

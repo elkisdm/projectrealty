@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createRateLimiter } from "@lib/rate-limit";
+import { logger } from "@lib/logger";
 
 // Rate limiter: 20 requests per minute per IP
 const rateLimiter = createRateLimiter({ windowMs: 60_000, max: 20 });
@@ -44,7 +45,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Log del evento (en producción usaría un servicio de analytics)
-    console.log(`[Analytics] ${event.eventName}`, {
+    logger.log(`[Analytics] ${event.eventName}`, {
       sessionId: event.sessionId,
       properties: event.properties,
       timestamp: new Date(event.timestamp).toISOString(),
@@ -67,7 +68,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error("Error procesando evento de conversión:", error);
+    logger.error("Error procesando evento de conversión:", error);
     return NextResponse.json(
       { error: "Error interno del servidor" },
       { status: 500 }

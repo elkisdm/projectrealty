@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { logger } from './logger';
 
 type Theme = 'light' | 'dark';
 
@@ -28,7 +29,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         setThemeState('light');
       }
     } catch (error) {
-      console.warn('Error reading theme from localStorage:', error);
+      logger.warn('Error reading theme from localStorage:', error);
       setThemeState('light');
     }
     setIsHydrated(true);
@@ -49,7 +50,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     try {
       localStorage.setItem('theme', theme);
     } catch (error) {
-      console.warn('Error saving theme to localStorage:', error);
+      logger.warn('Error saving theme to localStorage:', error);
     }
   }, [theme, isHydrated]);
 

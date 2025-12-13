@@ -126,7 +126,7 @@ export const IconWrapper = forwardRef<HTMLDivElement, IconWrapperProps>(
     ({
         name,
         size = 'md',
-        stroke = 'normal',
+        stroke: _stroke = 'normal',
         variant = 'outline',
         color,
         className = '',

@@ -2,13 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createRateLimiter } from "@lib/rate-limit";
 import { getAdminBuildingsOptimized } from "@lib/admin/data-optimized";
-import {
-  createBuilding,
-  updateBuilding,
-  deleteBuilding,
-} from "@lib/admin/data";
+import { createBuilding } from "@lib/admin/data";
 import { BuildingSchema } from "@schemas/models";
-import type { Building } from "@schemas/models";
 
 // Force dynamic rendering
 export const dynamic = "force-dynamic";

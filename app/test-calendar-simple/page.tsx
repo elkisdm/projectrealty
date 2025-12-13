@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { logger } from '@lib/logger';
 import type { AvailabilitySlot } from '@/types/calendar';
 
 // Datos de prueba simples
@@ -15,10 +16,10 @@ export default function TestCalendarSimplePage() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        console.log('🔄 Test simple: useEffect ejecutándose');
+        logger.log('🔄 Test simple: useEffect ejecutándose');
 
         const timer = setTimeout(() => {
-            console.log('✅ Test simple: Cargando datos mock');
+            logger.log('✅ Test simple: Cargando datos mock');
             setSlots(MOCK_SLOTS);
             setLoading(false);
         }, 1000);

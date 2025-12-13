@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import ArriendaSinComisionBuildingCard from "./ArriendaSinComisionBuildingCard";
 import { LazyBuildingsGrid } from "./LazyBuildingsGrid";
 import { LANDING_BUILDINGS_MOCK } from "@/lib/arrienda-sin-comision-mocks";
+import { logger } from "@lib/logger";
 import type { BuildingSummary } from "@/hooks/useFetchBuildings";
 
 interface ArriendaSinComisionGridProps {
@@ -35,7 +35,7 @@ export default function ArriendaSinComisionGrid({ initialBuildings }: ArriendaSi
 
       setBuildings(mockBuildings);
     } catch (err) {
-      console.error("Error fetching buildings:", err);
+      logger.error("Error fetching buildings:", err);
       setError("Error al cargar los edificios");
     } finally {
       setLoading(false);

@@ -1,9 +1,16 @@
-import { CalendarEvent } from "@/types/calendar";
+import { CalendarEvent, asIsoDateTime } from "@/types/calendar";
 
 export type GoogleFreeBusyInput = {
   calendarId: string;
   dateIso: string; // YYYY-MM-DD (local)
 };
+
+interface GoogleCalendarItem {
+  id?: string;
+  summary?: string;
+  start?: { dateTime?: string; date?: string };
+  end?: { dateTime?: string; date?: string };
+}
 
 export async function fetchGoogleBusy({ calendarId, dateIso }: GoogleFreeBusyInput): Promise<CalendarEvent[]> {
   if (process.env.NODE_ENV !== 'production' && !process.env.GOOGLE_API_KEY) {
@@ -25,17 +32,17 @@ export async function fetchGoogleBusy({ calendarId, dateIso }: GoogleFreeBusyInp
 
   const res = await fetch(url.toString());
   if (!res.ok) return [];
-  const data = await res.json();
+  const data = await res.json() as { items?: GoogleCalendarItem[] };
   const items = Array.isArray(data.items) ? data.items : [];
   const events: CalendarEvent[] = items
-    .filter((it: any) => it.start && it.end)
-    .map((it: any) => ({
+    .filter((it): it is GoogleCalendarItem => Boolean(it.start && it.end))
+    .map((it) => ({
       id: String(it.id ?? `${it.start?.dateTime}-${it.end?.dateTime}`),
       title: String(it.summary ?? 'Ocupado'),
-      start: String(it.start?.dateTime ?? it.start?.date + 'T00:00:00Z') as any,
-      end: String(it.end?.dateTime ?? it.end?.date + 'T23:59:59Z') as any,
+      start: asIsoDateTime(String(it.start?.dateTime ?? (it.start?.date ? it.start.date + 'T00:00:00Z' : ''))),
+      end: asIsoDateTime(String(it.end?.dateTime ?? (it.end?.date ? it.end.date + 'T23:59:59Z' : ''))),
       busy: true,
-      source: { kind: 'google', calendarId },
+      source: { kind: 'google' as const, calendarId },
     }));
   return events;
 }

@@ -4,7 +4,6 @@ import { createRateLimiter } from "@lib/rate-limit";
 import { readAll } from "@lib/data";
 import { updateBuilding, deleteBuilding } from "@lib/admin/data";
 import { BuildingSchema } from "@schemas/models";
-import type { Building } from "@schemas/models";
 
 // Force dynamic rendering
 export const dynamic = "force-dynamic";
@@ -205,5 +204,12 @@ export async function DELETE(
     );
   }
 }
+
+
+
+
+
+
+
 
 

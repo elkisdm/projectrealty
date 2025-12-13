@@ -3,7 +3,8 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { VisitSchedulerModal } from '@components/flow/VisitSchedulerModal';
-import { Calendar, Clock, MapPin, User, Phone, Star, Bed, Bath, Car, Square, Home } from 'lucide-react';
+import { logger } from '@lib/logger';
+import { Calendar, Clock, MapPin, User, Star, Bed, Bath, Car, Square, Home } from 'lucide-react';
 
 export default function Unit207Page() {
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -255,7 +256,7 @@ export default function Unit207Page() {
                 propertyImage={unitData.image}
                 propertyDetails={unitData.details}
                 onConfirm={(date, time, leadData) => {
-                    console.log('Visita confirmada:', { date, time, leadData });
+                    logger.log('Visita confirmada:', { date, time, leadData });
                     alert(`¡Visita agendada exitosamente!\n\nFecha: ${date}\nHora: ${time}\n\nTe contactaremos pronto.`);
                     setIsModalOpen(false);
                 }}

@@ -3,11 +3,12 @@
 import { useState, useEffect } from "react";
 import Providers from "../providers";
 import { useBuildingsForQuotation } from "@hooks/useBuildingsForQuotation";
+import { logger } from "@lib/logger";
 import type { Building, Unit } from "@schemas/models";
 import { QuotationInput, QuotationResult } from "@schemas/quotation";
 
 function CotizadorContent() {
-  const [selectedUnit, setSelectedUnit] = useState<{unit: Unit, building: Building} | null>(null);
+  const [selectedUnit, setSelectedUnit] = useState<{ unit: Unit, building: Building } | null>(null);
   const [quotationResult, setQuotationResult] = useState<QuotationResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -17,13 +18,13 @@ function CotizadorContent() {
 
   // Filtrar unidades disponibles
   const availableUnits = buildings
-    ?.flatMap(building => 
+    ?.flatMap(building =>
       building.units
         ?.filter((unit: Unit) => unit.disponible)
         ?.map((unit: Unit) => ({ unit, building }))
     )
-    ?.filter(item => 
-      searchTerm === "" || 
+    ?.filter(item =>
+      searchTerm === "" ||
       item.building.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.building.comuna.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.unit.tipologia.toLowerCase().includes(searchTerm.toLowerCase())
@@ -49,7 +50,7 @@ function CotizadorContent() {
       const result: QuotationResult = await response.json();
       setQuotationResult(result);
     } catch (error) {
-      console.error('Error generating quotation:', error);
+      logger.error('Error generating quotation:', error);
       alert('Error generando cotización. Por favor intenta nuevamente.');
     } finally {
       setIsLoading(false);
@@ -78,10 +79,10 @@ function CotizadorContent() {
             <span className="text-blue-600"> 0% Comisión</span>
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-            Genera cotizaciones profesionales y detalladas con cálculos precisos de arriendos, 
+            Genera cotizaciones profesionales y detalladas con cálculos precisos de arriendos,
             garantías y promociones. Sistema automatizado con datos reales del mercado.
           </p>
-          
+
           {/* Stats bar */}
           <div className="flex justify-center items-center gap-8 mt-8 text-sm text-gray-600">
             <div className="flex items-center gap-2">
@@ -113,7 +114,7 @@ function CotizadorContent() {
                 <p className="text-sm text-gray-600">Explora propiedades disponibles</p>
               </div>
             </div>
-            
+
             {/* Búsqueda mejorada */}
             <div className="mb-6">
               <div className="relative">
@@ -130,7 +131,7 @@ function CotizadorContent() {
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                 />
               </div>
-              
+
               {/* Filtros rápidos */}
               <div className="flex gap-2 mt-3 flex-wrap">
                 {['Studio', '1D1B', '2D1B', '2D2B'].map((tipo) => (
@@ -186,14 +187,13 @@ function CotizadorContent() {
                   )}
                 </div>
               ) : (
-                availableUnits.map((item, index) => (
+                availableUnits.map((item) => (
                   <div
                     key={`${item.building.id}-${item.unit.id}`}
-                    className={`group p-5 border rounded-xl cursor-pointer transition-all duration-200 ${
-                      selectedUnit?.unit.id === item.unit.id && selectedUnit?.building.id === item.building.id
-                        ? 'border-blue-500 bg-blue-50 shadow-md'
-                        : 'border-gray-200 hover:border-blue-300 hover:shadow-sm'
-                    }`}
+                    className={`group p-5 border rounded-xl cursor-pointer transition-all duration-200 ${selectedUnit?.unit.id === item.unit.id && selectedUnit?.building.id === item.building.id
+                      ? 'border-blue-500 bg-blue-50 shadow-md'
+                      : 'border-gray-200 hover:border-blue-300 hover:shadow-sm'
+                      }`}
                     onClick={() => setSelectedUnit(item)}
                   >
                     <div className="flex justify-between items-start">
@@ -207,7 +207,7 @@ function CotizadorContent() {
                           )}
                         </div>
                         <p className="text-sm text-gray-600 mb-3">{item.building.comuna} • {item.building.address || 'Dirección disponible'}</p>
-                        
+
                         <div className="flex items-center gap-4 text-sm">
                           <div className="flex items-center gap-1">
                             <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
@@ -229,7 +229,7 @@ function CotizadorContent() {
                           )}
                         </div>
                       </div>
-                      
+
                       <div className="text-right ml-4">
                         <div className="text-2xl font-bold text-gray-900 mb-1">
                           {formatCurrency(item.unit.price)}
@@ -299,8 +299,8 @@ function CotizadorContent() {
                     <p className="text-sm text-gray-600">Personaliza los detalles de tu arriendo</p>
                   </div>
                 </div>
-                
-                <QuotationForm 
+
+                <QuotationForm
                   selectedUnit={selectedUnit}
                   onSubmit={handleGenerateQuotation}
                   isLoading={isLoading}
@@ -323,7 +323,7 @@ function CotizadorContent() {
                       <p className="text-sm text-gray-600">Desglose completo de costos</p>
                     </div>
                   </div>
-                  
+
                   {/* Botones de acción */}
                   <div className="flex gap-2">
                     <button
@@ -350,9 +350,9 @@ function CotizadorContent() {
                     </button>
                   </div>
                 </div>
-                
+
                 <QuotationResults result={quotationResult} />
-                
+
                 {/* Calculadora de affordability */}
                 <div className="mt-8 p-4 bg-gray-50 rounded-xl">
                   <h3 className="font-medium text-gray-900 mb-3">💡 Calculadora de Affordability</h3>
@@ -366,7 +366,7 @@ function CotizadorContent() {
                     Cálculo basado en regla 30% de ingresos para arriendo
                   </p>
                 </div>
-                
+
                 {/* Call to action */}
                 <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-100">
                   <div className="flex items-center justify-between">
@@ -386,7 +386,7 @@ function CotizadorContent() {
             )}
           </div>
         </div>
-        
+
         {/* Footer informativo */}
         <div className="mt-16 border-t border-gray-200 pt-8">
           <div className="text-center">
@@ -394,7 +394,7 @@ function CotizadorContent() {
               <span className="w-2 h-2 bg-green-500 rounded-full"></span>
               Sistema con datos reales del mercado
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
               <div className="text-center">
                 <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3">
@@ -405,7 +405,7 @@ function CotizadorContent() {
                 <h3 className="font-medium text-gray-900 mb-2">Cálculos Precisos</h3>
                 <p className="text-sm text-gray-600">Motor de cotización con prorrateo automático, promociones y cálculos de garantías</p>
               </div>
-              
+
               <div className="text-center">
                 <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-3">
                   <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -415,7 +415,7 @@ function CotizadorContent() {
                 <h3 className="font-medium text-gray-900 mb-2">0% Comisión</h3>
                 <p className="text-sm text-gray-600">Sin comisiones de corretaje. Arrienda directo con el propietario</p>
               </div>
-              
+
               <div className="text-center">
                 <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-3">
                   <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -426,7 +426,7 @@ function CotizadorContent() {
                 <p className="text-sm text-gray-600">Cotización instantánea con toda la información que necesitas para decidir</p>
               </div>
             </div>
-            
+
             <div className="mt-8 text-xs text-gray-500">
               <p>Cotizador Elkis Realtor v2.0 • Datos actualizados en tiempo real • Sistema validado</p>
             </div>
@@ -438,12 +438,12 @@ function CotizadorContent() {
 }
 
 // Componente de Formulario de Cotización
-function QuotationForm({ 
-  selectedUnit, 
-  onSubmit, 
-  isLoading 
+function QuotationForm({
+  selectedUnit,
+  onSubmit,
+  isLoading
 }: {
-  selectedUnit: {unit: Unit, building: Building};
+  selectedUnit: { unit: Unit, building: Building };
   onSubmit: (data: QuotationInput) => void;
   isLoading: boolean;
 }) {
@@ -465,7 +465,7 @@ function QuotationForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const quotationData: QuotationInput = {
       unitId: selectedUnit.unit.id,
       startDate,
@@ -542,7 +542,7 @@ function QuotationForm({
       {/* Servicios adicionales */}
       <div className="space-y-4">
         <h4 className="font-medium text-gray-900">🚗 Servicios Adicionales</h4>
-        
+
         {/* Estacionamiento */}
         <div className="border border-gray-200 rounded-xl p-4">
           <div className="flex items-center justify-between mb-3">
@@ -568,7 +568,7 @@ function QuotationForm({
               />
             </div>
           </div>
-          
+
           {parkingSelected && (
             <div className="animate-in slide-in-from-top-1 duration-200">
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -615,7 +615,7 @@ function QuotationForm({
               />
             </div>
           </div>
-          
+
           {storageSelected && (
             <div className="animate-in slide-in-from-top-1 duration-200">
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -755,7 +755,7 @@ function QuotationResults({ result }: { result: QuotationResult }) {
             <span className="text-gray-600">Arriendo mensual base</span>
             <span className="font-medium">{formatCurrency(result.lines.baseMonthly)}</span>
           </div>
-          
+
           <div className="flex justify-between items-center py-2">
             <span className="text-gray-600">Arriendo prorrateado</span>
             <span className="font-medium">{formatCurrency(result.lines.proratedRent)}</span>
@@ -782,7 +782,7 @@ function QuotationResults({ result }: { result: QuotationResult }) {
             <span className="text-gray-600">Garantía (entrada)</span>
             <span className="font-medium">{formatCurrency(result.lines.guaranteeEntry)}</span>
           </div>
-          
+
           <div className="flex justify-between items-center py-2">
             <span className="text-gray-600">Informe comercial</span>
             <span className="font-medium">{formatCurrency(result.lines.creditReportFee)}</span>

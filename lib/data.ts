@@ -1,5 +1,6 @@
 import { BuildingSchema } from "@schemas/models";
-import type { Building, Unit } from "@schemas/models";
+import type { Building, Unit, TypologySummary } from "@schemas/models";
+import { logger } from "./logger";
 
 type ListFilters = {
   comuna?: string;
@@ -73,14 +74,55 @@ async function readFromSupabase(): Promise<Building[]> {
     }
 
     // Mantener edificios que al menos tengan unidades
-    const buildingsWithUnits = buildingsData.filter((building: any) => {
-      const units = building.units || [];
-      return units.length > 0;
+    const buildingsWithUnits = buildingsData.filter((building: unknown): building is { units?: unknown[] } => {
+      if (typeof building !== 'object' || building === null) return false;
+      const b = building as { units?: unknown[] };
+      const units = b.units || [];
+      return Array.isArray(units) && units.length > 0;
     });
 
     // Transformar los datos al formato esperado
     const buildings: Building[] = buildingsWithUnits.map((building: unknown) => {
-      const b = building as any;
+      const b = building as {
+        id: string;
+        slug?: string;
+        nombre: string;
+        comuna: string;
+        direccion?: string;
+        amenities?: string[];
+        gallery?: string[];
+        cover_image?: string;
+        coverImage?: string;
+        precio_desde?: number;
+        precio_hasta?: number;
+        gc_mode?: 'MF' | 'variable';
+        featured?: boolean;
+        units?: Array<{
+          id: string;
+          tipologia?: string;
+          area_m2?: number;
+          area_interior_m2?: number;
+          area_exterior_m2?: number;
+          precio?: number;
+          disponible?: boolean;
+          bedrooms?: number;
+          bathrooms?: number;
+          orientacion?: string;
+          pet_friendly?: boolean;
+          gastos_comunes?: number;
+          status?: string;
+          piso?: number;
+          amoblado?: boolean;
+          parking_ids?: string;
+          storage_ids?: string;
+          parking_opcional?: boolean;
+          storage_opcional?: boolean;
+          guarantee_installments?: number;
+          guarantee_months?: number;
+          rentas_necesarias?: number;
+          renta_minima?: number;
+        }>;
+      };
       return {
         id: b.id,
         slug: b.slug || `edificio-${b.id}`,
@@ -105,12 +147,36 @@ async function readFromSupabase(): Promise<Building[]> {
         gc_mode: b.gc_mode,
         featured: b.featured,
         units: (b.units || []).map((unit: unknown) => {
-          const u = unit as any;
+          const u = unit as {
+            id: string;
+            tipologia?: string;
+            area_m2?: number;
+            area_interior_m2?: number;
+            area_exterior_m2?: number;
+            precio?: number;
+            disponible?: boolean;
+            bedrooms?: number;
+            bathrooms?: number;
+            orientacion?: string;
+            pet_friendly?: boolean;
+            gastos_comunes?: number;
+            status?: string;
+            piso?: number;
+            amoblado?: boolean;
+            parking_ids?: string;
+            storage_ids?: string;
+            parking_opcional?: boolean;
+            storage_opcional?: boolean;
+            guarantee_installments?: number;
+            guarantee_months?: number;
+            rentas_necesarias?: number;
+            renta_minima?: number;
+          };
           return {
             id: u.id,
             tipologia: u.tipologia || 'No especificada',
             m2: u.area_m2 || u.area_interior_m2 || 50,
-            price: u.precio || u.price || 500000,
+            price: u.precio || 500000,
             estacionamiento: Boolean(u.parking_ids && u.parking_ids !== 'x'),
             bodega: Boolean(u.storage_ids && u.storage_ids !== 'x'),
             disponible: u.disponible || false,
@@ -145,13 +211,13 @@ async function readFromSupabase(): Promise<Building[]> {
         validatedBuildings.push(validated);
       } catch (error) {
         // Silenciosamente omitir edificios que no pasan validación
-        console.warn(`Building ${i + 1} (${buildings[i].name}) failed validation, skipping`);
+        logger.warn(`Building ${i + 1} (${buildings[i].name}) failed validation, skipping`);
       }
     }
     
     return validatedBuildings;
   } catch (error) {
-    console.error('Error reading from Supabase:', error);
+    logger.error('Error reading from Supabase:', error);
     throw error;
   }
 }
@@ -227,8 +293,8 @@ export async function getRelatedBuildings(slug: string, n = 3): Promise<(Buildin
       }
       
       // Tipologías similares (peso bajo)
-      const currentTypologies = current.typologySummary?.map((t: any) => t.key) || [];
-      const buildingTypologies = building.typologySummary?.map((t: any) => t.key) || [];
+      const currentTypologies = current.typologySummary?.map((t: TypologySummary) => t.key) || [];
+      const buildingTypologies = building.typologySummary?.map((t: TypologySummary) => t.key) || [];
       const commonTypologies = currentTypologies.filter((t: string) => buildingTypologies.includes(t));
       score += commonTypologies.length * 5;
       
@@ -267,7 +333,7 @@ export async function getUnitWithBuilding(unitId: string): Promise<{ unit: Unit;
     }
     return null;
   } catch (error) {
-    console.error('Error getting unit with building:', error);
+    logger.error('Error getting unit with building:', error);
     throw error;
   }
 }

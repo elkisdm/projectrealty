@@ -10,6 +10,7 @@ import { BulkActions } from "@components/admin/BulkActions";
 import { ImportDialog } from "@components/admin/ImportDialog";
 import { ExportDialog } from "@components/admin/ExportDialog";
 import { unitsToCSV, validateUnitsFromCSV, downloadCSV } from "@lib/admin/csv";
+import { logger } from "@lib/logger";
 
 interface UnitWithBuilding extends Unit {
   buildingId: string;
@@ -56,7 +57,7 @@ export default function UnitsAdminPage() {
           setBuildings(data.data);
         }
       })
-      .catch(console.error);
+      .catch((error) => logger.error('Error fetching buildings:', error));
   }, []);
 
   const fetchUnits = useCallback(async () => {
@@ -188,85 +189,81 @@ export default function UnitsAdminPage() {
   };
 
   const handleImport = async (file: File) => {
-    try {
-      const text = await file.text();
-      
-      // Detectar formato: AssetPlan (separado por ;) o formato estándar (separado por ,)
-      const isAssetPlanFormat = text.includes(";") && (text.includes("Tipologia") || text.includes("OP"));
-      
-      let valid: Unit[] = [];
-      let invalid: Array<{ data: Partial<Unit>; errors: string[] }> = [];
-      
-      if (isAssetPlanFormat) {
-        // Para AssetPlan, necesitamos importar desde edificios primero
-        // o crear una función específica para unidades AssetPlan
-        alert("Para importar unidades desde CSV de AssetPlan, primero importa los edificios desde la sección de Edificios. Las unidades se crearán automáticamente.");
-        return;
-      } else {
-        // Formato estándar
-        const result = validateUnitsFromCSV(text);
-        valid = result.valid;
-        invalid = result.invalid;
-      }
+    const text = await file.text();
 
-      if (invalid.length > 0) {
-        // Mostrar detalles de los errores
-        console.error("Errores de validación:", invalid);
-        const errorDetails = invalid.slice(0, 5).map((inv, idx) => {
-          const unitId = inv.data.id || `Unidad ${idx + 1}`;
-          const allErrors = inv.errors.join('\n  - ');
-          return `${unitId}:\n  - ${allErrors}`;
-        }).join('\n\n');
-        
-        const invalidMsg = `${invalid.length} registro(s) inválido(s).\n${valid.length} registro(s) válido(s) para importar.\n\nDetalles de errores:\n\n${errorDetails}\n\n¿Deseas continuar con la importación de los ${valid.length} registro(s) válido(s)?`;
-        
-        if (!confirm(invalidMsg)) {
-          return;
-        }
-      }
+    // Detectar formato: AssetPlan (separado por ;) o formato estándar (separado por ,)
+    const isAssetPlanFormat = text.includes(";") && (text.includes("Tipologia") || text.includes("OP"));
 
-      if (valid.length === 0) {
-        throw new Error("No hay registros válidos para importar. Revisa la consola para ver los detalles de los errores.");
-      }
+    let valid: Unit[] = [];
+    let invalid: Array<{ data: Partial<Unit>; errors: string[] }> = [];
 
-      // Necesitamos buildingId para cada unidad
-      // Parsear el CSV nuevamente para obtener los buildingIds originales
-      const csvLines = text.split('\n').filter(line => line.trim());
-      const headers = csvLines[0]?.split(',').map(h => h.trim().toLowerCase()) || [];
-      const buildingIdIndex = headers.indexOf('buildingid');
-      
-      const unitsWithBuildings = valid.map((unit, index) => {
-        // Obtener el buildingId del CSV original
-        const dataLine = csvLines[index + 1]; // +1 porque la primera línea son headers
-        let buildingId = "";
-        if (dataLine && buildingIdIndex >= 0) {
-          const values = dataLine.split(',');
-          buildingId = values[buildingIdIndex]?.trim().replace(/^"|"$/g, '') || "";
-        }
-        return {
-          ...unit,
-          buildingId,
-        };
-      });
-
-      const response = await fetch("/api/admin/bulk", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          operation: "import",
-          entity: "units",
-          data: unitsWithBuildings,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Error al importar unidades");
-      }
-
-      fetchUnits();
-    } catch (err) {
-      throw err;
+    if (isAssetPlanFormat) {
+      // Para AssetPlan, necesitamos importar desde edificios primero
+      // o crear una función específica para unidades AssetPlan
+      alert("Para importar unidades desde CSV de AssetPlan, primero importa los edificios desde la sección de Edificios. Las unidades se crearán automáticamente.");
+      return;
+    } else {
+      // Formato estándar
+      const result = validateUnitsFromCSV(text);
+      valid = result.valid;
+      invalid = result.invalid;
     }
+
+    if (invalid.length > 0) {
+      // Mostrar detalles de los errores
+      logger.error("Errores de validación:", invalid);
+      const errorDetails = invalid.slice(0, 5).map((inv, idx) => {
+        const unitId = inv.data.id || `Unidad ${idx + 1}`;
+        const allErrors = inv.errors.join('\n  - ');
+        return `${unitId}:\n  - ${allErrors}`;
+      }).join('\n\n');
+
+      const invalidMsg = `${invalid.length} registro(s) inválido(s).\n${valid.length} registro(s) válido(s) para importar.\n\nDetalles de errores:\n\n${errorDetails}\n\n¿Deseas continuar con la importación de los ${valid.length} registro(s) válido(s)?`;
+
+      if (!confirm(invalidMsg)) {
+        return;
+      }
+    }
+
+    if (valid.length === 0) {
+      throw new Error("No hay registros válidos para importar. Revisa la consola para ver los detalles de los errores.");
+    }
+
+    // Necesitamos buildingId para cada unidad
+    // Parsear el CSV nuevamente para obtener los buildingIds originales
+    const csvLines = text.split('\n').filter(line => line.trim());
+    const headers = csvLines[0]?.split(',').map(h => h.trim().toLowerCase()) || [];
+    const buildingIdIndex = headers.indexOf('buildingid');
+
+    const unitsWithBuildings = valid.map((unit, index) => {
+      // Obtener el buildingId del CSV original
+      const dataLine = csvLines[index + 1]; // +1 porque la primera línea son headers
+      let buildingId = "";
+      if (dataLine && buildingIdIndex >= 0) {
+        const values = dataLine.split(',');
+        buildingId = values[buildingIdIndex]?.trim().replace(/^"|"$/g, '') || "";
+      }
+      return {
+        ...unit,
+        buildingId,
+      };
+    });
+
+    const response = await fetch("/api/admin/bulk", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        operation: "import",
+        entity: "units",
+        data: unitsWithBuildings,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Error al importar unidades");
+    }
+
+    fetchUnits();
   };
 
   const handleExport = async (format: "csv" | "json") => {

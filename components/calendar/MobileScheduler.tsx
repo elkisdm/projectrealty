@@ -3,7 +3,7 @@ import type { CalendarEvent, TimeRange, MobileSchedulerProps } from "@/types/cal
 import dynamic from "next/dynamic";
 import AvailabilitySection from "./AvailabilitySection";
 
-const SlotPicker = dynamic(() => import("./SlotPicker"), { ssr: false });
+const _SlotPicker = dynamic(() => import("./SlotPicker"), { ssr: false });
 
 // RSC, no estado/efectos. Interactividad vendrá en cliente.
 export default function MobileScheduler({ date, events = [], className }: MobileSchedulerProps) {

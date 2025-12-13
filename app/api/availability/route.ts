@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createRateLimiter } from '@lib/rate-limit';
+import { logger } from '@lib/logger';
 import { 
   AvailabilityResponse, 
   VisitSlot, 
   formatRFC3339,
-  TIME_SLOTS_30MIN,
-  OPERATIONAL_HOURS 
+  TIME_SLOTS_30MIN 
 } from '@/types/visit';
 
 // Rate limiter: 20 requests per minute per IP
@@ -147,12 +147,12 @@ export async function GET(request: NextRequest) {
     };
     
     // Log de métricas (sin PII)
-    console.log(`📊 Disponibilidad consultada para listing ${listingId}: ${availableSlots.length} slots disponibles`);
+    logger.log(`📊 Disponibilidad consultada para listing ${listingId}: ${availableSlots.length} slots disponibles`);
     
     return NextResponse.json(response);
     
   } catch (error) {
-    console.error('❌ Error en API de disponibilidad:', error);
+    logger.error('❌ Error en API de disponibilidad:', error);
     
     return NextResponse.json(
       { 

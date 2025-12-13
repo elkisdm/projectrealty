@@ -13,7 +13,7 @@ import { ExportDialog } from "@components/admin/ExportDialog";
 import { ConfirmDialog } from "@components/admin/ConfirmDialog";
 import { buildingsToCSV, validateBuildingsFromCSV, downloadCSV } from "@lib/admin/csv";
 import { validateAssetPlanCSV } from "@lib/admin/assetplan-csv";
-import Link from "next/link";
+import { logger } from "@lib/logger";
 
 interface PaginationInfo {
   page: number;
@@ -185,14 +185,14 @@ export default function BuildingsAdminPage() {
   const handleImport = async (file: File) => {
     try {
       const text = await file.text();
-      
+
       // Detectar formato: AssetPlan (separado por ;) o formato estándar (separado por ,)
       const isAssetPlanFormat = text.includes(";") && text.includes("Condominio");
-      
+
       let valid: Building[] = [];
       let invalid: Array<{ data: Partial<Building>; errors: string[] }> = [];
       let parseErrors: Array<{ row: number; error: string }> = [];
-      
+
       if (isAssetPlanFormat) {
         // Formato AssetPlan
         const result = validateAssetPlanCSV(text);
@@ -209,14 +209,14 @@ export default function BuildingsAdminPage() {
       // Mostrar errores si los hay
       if (parseErrors.length > 0) {
         const errorMsg = `Errores de parsing: ${parseErrors.length}\n${parseErrors.slice(0, 3).map(e => `Fila ${e.row}: ${e.error}`).join('\n')}`;
-        console.warn(errorMsg);
+        logger.warn(errorMsg);
       }
 
       if (invalid.length > 0) {
         // Mostrar detalles de los errores en la consola
-        console.error("Errores de validación:", invalid);
-        console.error("Datos inválidos:", invalid.map(inv => inv.data));
-        
+        logger.error("Errores de validación:", invalid);
+        logger.error("Datos inválidos:", invalid.map(inv => inv.data));
+
         toast.warning(
           `${invalid.length} edificio(s) con errores de validación. Continuando con ${valid.length} válido(s)...`,
           { duration: 5000 }
@@ -234,7 +234,7 @@ export default function BuildingsAdminPage() {
 
       for (let i = 0; i < valid.length; i += batchSize) {
         const batch = valid.slice(i, i + batchSize);
-        
+
         const response = await fetch("/api/admin/bulk", {
           method: "POST",
           headers: { "Content-Type": "application/json" },

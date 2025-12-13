@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import ArriendaSinComisionBuildingCard from "./ArriendaSinComisionBuildingCard";
+import { logger } from "@lib/logger";
 import type { BuildingSummary } from "@/hooks/useFetchBuildings";
 
 interface LazyBuildingsGridProps {
@@ -17,14 +18,14 @@ export function LazyBuildingsGrid({ initialBuildings, hasMore, total }: LazyBuil
 
   const loadMore = useCallback(async () => {
     if (loading || !hasMore) return;
-    
+
     setLoading(true);
     try {
       // Simular carga de más edificios (en este caso no hay más)
       await new Promise(resolve => setTimeout(resolve, 1000));
       setBuildings(prev => [...prev]);
     } catch (error) {
-      console.error("Error loading more buildings:", error);
+      logger.error("Error loading more buildings:", error);
     } finally {
       setLoading(false);
     }
@@ -33,7 +34,7 @@ export function LazyBuildingsGrid({ initialBuildings, hasMore, total }: LazyBuil
   return (
     <div className="space-y-8">
       {/* Grid de edificios - siempre 3 columnas con altura uniforme */}
-      <motion.div 
+      <motion.div
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -89,7 +90,7 @@ export function LazyBuildingsGrid({ initialBuildings, hasMore, total }: LazyBuil
             ✨ Departamentos destacados
           </h3>
           <p className="text-amber-700 dark:text-amber-300 text-sm">
-            Estos son nuestros mejores departamentos con las promociones más atractivas. 
+            Estos son nuestros mejores departamentos con las promociones más atractivas.
             ¡Encuentra tu próximo hogar aquí!
           </p>
         </motion.div>

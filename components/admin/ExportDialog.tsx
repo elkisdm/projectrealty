@@ -24,7 +24,7 @@ export function ExportDialog({
     try {
       await onExport(format);
       onClose();
-    } catch (error) {
+    } catch {
       // El error será manejado por el componente padre
     }
   };
@@ -100,5 +100,12 @@ export function ExportDialog({
     </>
   );
 }
+
+
+
+
+
+
+
 
 

@@ -97,3 +97,19 @@ export type MobileSchedulerProps = {
   events?: CalendarEvent[];
   className?: string;
 };
+
+// Helper functions para branded types
+/**
+ * Convierte un string a Uuid (branded type)
+ */
+export const asUuid = (s: string): Uuid => s as Uuid;
+
+/**
+ * Convierte un string a IsoDateTime (branded type)
+ */
+export const asIsoDateTime = (s: string): IsoDateTime => s as IsoDateTime;
+
+/**
+ * Convierte un string a IsoDate (branded type)
+ */
+export const asIsoDate = (s: string): IsoDate => s as IsoDate;

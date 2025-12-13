@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { z } from 'zod';
 import { useAdminAuth } from '@hooks/useAdminAuth';
+import { validateAdminRedirect } from '@lib/admin/validate-redirect';
 
 // Schema de validación
 const LoginSchema = z.object({
@@ -81,11 +82,12 @@ export default function LoginForm() {
         try {
             await login(formData.email, formData.password);
 
-            // Redirigir después de login exitoso
-            const redirectTo = searchParams.get('redirect') || '/admin';
+            // Redirigir después de login exitoso (validado para prevenir open redirect)
+            const redirectParam = searchParams.get('redirect');
+            const redirectTo = validateAdminRedirect(redirectParam, '/admin');
             router.push(redirectTo);
             router.refresh();
-        } catch (err) {
+        } catch {
             // El error ya está manejado en el hook
             // Solo necesitamos asegurarnos de que se muestre
         }
@@ -127,8 +129,8 @@ export default function LoginForm() {
                     aria-invalid={touched.email && !!errors.email}
                     aria-describedby={touched.email && errors.email ? 'email-error' : undefined}
                     className={`w-full px-4 py-3 rounded-lg bg-[var(--bg)] border ${touched.email && errors.email
-                            ? 'border-red-500 focus:ring-red-500'
-                            : 'border-white/10 focus:ring-brand-violet'
+                        ? 'border-red-500 focus:ring-red-500'
+                        : 'border-white/10 focus:ring-brand-violet'
                         } text-[var(--text)] placeholder-[var(--subtext)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[var(--soft)] transition-colors`}
                     placeholder="admin@example.com"
                     disabled={isLoading}
@@ -159,8 +161,8 @@ export default function LoginForm() {
                         touched.password && errors.password ? 'password-error' : undefined
                     }
                     className={`w-full px-4 py-3 rounded-lg bg-[var(--bg)] border ${touched.password && errors.password
-                            ? 'border-red-500 focus:ring-red-500'
-                            : 'border-white/10 focus:ring-brand-violet'
+                        ? 'border-red-500 focus:ring-red-500'
+                        : 'border-white/10 focus:ring-brand-violet'
                         } text-[var(--text)] placeholder-[var(--subtext)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[var(--soft)] transition-colors`}
                     placeholder="••••••••"
                     disabled={isLoading}

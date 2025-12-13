@@ -7,8 +7,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let buildings: Awaited<ReturnType<typeof getAllBuildings>> = [];
   try {
     buildings = await getAllBuildings();
-  } catch (error) {
-    console.error('Error fetching buildings for sitemap:', error);
+  } catch {
     // Si falla, retornar solo la página principal
   }
 

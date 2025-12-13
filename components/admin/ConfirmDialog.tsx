@@ -1,7 +1,5 @@
 "use client";
 
-import { Fragment } from "react";
-
 interface ConfirmDialogProps {
   isOpen: boolean;
   title: string;
@@ -101,7 +99,7 @@ export function ConfirmDialog({
             <p className="text-sm text-[var(--subtext)]">{message}</p>
           </div>
         </div>
-        
+
         <div className="flex items-center justify-end gap-3">
           <button
             onClick={onCancel}

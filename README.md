@@ -1,3 +1,30 @@
+# Hommie 0% Comisión
+
+Plataforma de arriendo sin comisión - Next.js 15 + TypeScript + Supabase
+
+---
+
+## 🚀 Preparación para Producción
+
+**Estado actual:** Proyecto funcional con errores bloqueantes menores  
+**Plan de acción:** Ver `PLAN_SPRINTS_PRODUCCION.md` para plan completo
+
+### Plan de Sprints (5 sprints, 20 microtareas)
+
+📋 **Resumen rápido:** `SPRINTS_RESUMEN.md`  
+📖 **Plan completo:** `PLAN_SPRINTS_PRODUCCION.md`
+
+**Sprint 1 (CRÍTICO):** Corrección de errores TypeScript bloqueantes  
+**Sprint 2:** Limpieza de código (lint, console.log, tipos)  
+**Sprint 3:** Limpieza de estructura (carpetas de prueba, componentes)  
+**Sprint 4:** Verificación y tests  
+**Sprint 5:** Preparación para producción (documentación, checklist)
+
+**Tiempo estimado:** 8-13 horas (2-3 días)  
+**Próximo paso:** Comenzar Sprint 1, Microtarea 1.1
+
+---
+
 ## Sistema de Feature Flags - Coming Soon
 
 El proyecto usa un sistema de feature flags unificado que permite activar/desactivar el modo "coming soon" simplemente con commit & push.

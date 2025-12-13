@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { clx } from '@lib/utils';
 import type { WeekViewProps, WeekViewData, CalendarEventType } from '@/types/calendar';
-import { generateWeekView, formatWeekRange, getWeekStart } from '@/lib/calendar/week-view';
+import { asIsoDateTime, asUuid } from '@/types/calendar';
+import { generateWeekView, formatWeekRange } from '@/lib/calendar/week-view';
 import VisitCard from './VisitCard';
 import BlockEvent from './BlockEvent';
 // import VisitQuoteModal from './VisitQuoteModal';
@@ -17,10 +18,10 @@ export default function WeekView({
     className
 }: WeekViewProps) {
     const [weekData, setWeekData] = useState<WeekViewData | null>(null);
-    const [loading, setLoading] = useState(false);
+    const [_loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [selectedVisit, setSelectedVisit] = useState<CalendarEventType | null>(null);
-    const [modalOpen, setModalOpen] = useState(false);
+    const [_selectedVisit, setSelectedVisit] = useState<CalendarEventType | null>(null);
+    const [_modalOpen, setModalOpen] = useState(false);
 
     useEffect(() => {
         try {
@@ -185,7 +186,7 @@ export default function WeekView({
 // Datos de prueba
 const MOCK_VISITS = [
     {
-        id: 'visit-1' as any,
+        id: asUuid('visit-1'),
         clientName: 'María González',
         clientEmail: 'maria@email.com',
         clientPhone: '+56912345678',
@@ -194,14 +195,14 @@ const MOCK_VISITS = [
         unitId: 'A-101',
         unitLabel: 'A-101 · 2D1B',
         address: 'Av. Apoquindo 1234, Las Condes',
-        start: '2025-01-15T10:00:00Z' as any,
-        end: '2025-01-15T11:00:00Z' as any,
+        start: asIsoDateTime('2025-01-15T10:00:00Z'),
+        end: asIsoDateTime('2025-01-15T11:00:00Z'),
         status: 'confirmed' as const,
         notes: 'Cliente interesado en 2 dormitorios',
-        createdAt: '2025-01-10T09:00:00Z' as any
+        createdAt: asIsoDateTime('2025-01-10T09:00:00Z')
     },
     {
-        id: 'visit-2' as any,
+        id: asUuid('visit-2'),
         clientName: 'Carlos Rodríguez',
         clientEmail: 'carlos@email.com',
         clientPhone: '+56987654321',
@@ -210,11 +211,11 @@ const MOCK_VISITS = [
         unitId: 'A-102',
         unitLabel: 'A-102 · 3D2B',
         address: 'Av. Apoquindo 1234, Las Condes',
-        start: '2025-01-16T14:00:00Z' as any,
-        end: '2025-01-16T15:00:00Z' as any,
+        start: asIsoDateTime('2025-01-16T14:00:00Z'),
+        end: asIsoDateTime('2025-01-16T15:00:00Z'),
         status: 'confirmed' as const,
         notes: 'Familia con 2 niños',
-        createdAt: '2025-01-11T14:30:00Z' as any
+        createdAt: asIsoDateTime('2025-01-11T14:30:00Z')
     }
 ];
 
@@ -222,8 +223,8 @@ const MOCK_EXTERNAL_EVENTS = [
     {
         id: 'google-1',
         title: 'Reunión externa',
-        start: '2025-01-15T13:00:00Z' as any,
-        end: '2025-01-15T14:00:00Z' as any,
+        start: asIsoDateTime('2025-01-15T13:00:00Z'),
+        end: asIsoDateTime('2025-01-15T14:00:00Z'),
         busy: true,
         source: { kind: 'google' as const, calendarId: 'primary' },
         description: 'Reunión con proveedor'
@@ -234,8 +235,8 @@ const MOCK_INTERNAL_BLOCKS = [
     {
         id: 'block-1',
         title: 'Mantenimiento',
-        start: '2025-01-17T09:00:00Z' as any,
-        end: '2025-01-17T11:00:00Z' as any,
+        start: asIsoDateTime('2025-01-17T09:00:00Z'),
+        end: asIsoDateTime('2025-01-17T11:00:00Z'),
         busy: true,
         type: 'maintenance' as const,
         description: 'Mantenimiento de ascensores'

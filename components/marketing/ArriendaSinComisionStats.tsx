@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import MotionWrapper from "@/components/ui/MotionWrapper";
+import { logger } from "@lib/logger";
 
 interface StatsData {
   totalBuildings: number;
@@ -31,10 +32,10 @@ export default function ArriendaSinComisionStats() {
 
         // Simular delay de red
         await new Promise(resolve => setTimeout(resolve, 500));
-        
+
         setStats(mockStats);
       } catch (error) {
-        console.error('Error fetching stats:', error);
+        logger.error('Error fetching stats:', error);
       } finally {
         setLoading(false);
       }

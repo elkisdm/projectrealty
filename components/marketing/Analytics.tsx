@@ -52,7 +52,7 @@ export function Analytics({ pageName, conversionGoal = 'flash_offer_conversion' 
         };
 
         // Track time on page
-        let startTime = Date.now();
+        const startTime = Date.now();
         const trackTimeOnPage = () => {
             const timeOnPage = Math.round((Date.now() - startTime) / 1000);
 

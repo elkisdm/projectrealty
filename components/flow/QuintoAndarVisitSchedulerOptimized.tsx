@@ -5,30 +5,19 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     Calendar,
     Clock,
-    User,
-    Phone,
-    Mail,
     CheckCircle,
     AlertCircle,
     Loader2,
     X,
-    ChevronLeft,
-    ChevronRight,
-    ArrowLeft,
     Check,
     AlertTriangle,
     Sun,
-    Moon,
-    Bell,
-    MessageCircle,
-    Calendar as CalendarIcon,
-    BarChart3,
-    Smartphone,
-    Download
+    Moon
 } from 'lucide-react';
 import { useVisitScheduler } from '@/hooks/useVisitScheduler';
 import { DaySlot, TimeSlot, ContactData } from '@/types/visit';
 import { PremiumFeaturesStep } from './PremiumFeaturesStep';
+import { logger } from '@lib/logger';
 
 interface QuintoAndarVisitSchedulerProps {
     isOpen: boolean;
@@ -37,7 +26,7 @@ interface QuintoAndarVisitSchedulerProps {
     propertyName: string;
     propertyAddress: string;
     propertyImage?: string;
-    onSuccess?: (visitData: any) => void;
+    onSuccess?: (visitData: { date: string; time: string; contact: { name: string; email: string; phone: string } }) => void;
 }
 
 interface FieldValidation {
@@ -177,7 +166,7 @@ export function QuintoAndarVisitScheduler({
     }, [propertyName, propertyAddress]);
 
     const trackAnalytics = useCallback((event: string, data: any) => {
-        console.log('Analytics:', event, data);
+        logger.log('Analytics:', event, data);
         setAnalyticsData(prev => ({
             ...prev,
             userEngagement: prev.userEngagement + 1

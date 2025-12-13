@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { supabaseAdmin } from '@lib/supabase';
+import { logger } from '@lib/logger';
 
 /**
  * Obtiene los nombres de cookies de Supabase basados en el project ref
@@ -80,7 +81,7 @@ export async function isAuthenticatedAdmin(request: NextRequest): Promise<boolea
 
     return !!adminUser;
   } catch (error) {
-    console.error('[MIDDLEWARE] Error verificando autenticación:', error);
+    logger.error('[MIDDLEWARE] Error verificando autenticación:', error);
     return false;
   }
 }
@@ -105,7 +106,7 @@ export async function getSupabaseSessionFromRequest(request: NextRequest) {
 
     return session;
   } catch (error) {
-    console.error('[MIDDLEWARE] Error obteniendo sesión:', error);
+    logger.error('[MIDDLEWARE] Error obteniendo sesión:', error);
     return null;
   }
 }

@@ -7,7 +7,7 @@
  * del sistema de íconos glass minimal.
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 // ============================================================================
 // COMPONENTES PRINCIPALES
@@ -210,6 +210,7 @@ export function useIconPreloader(iconNames: string[]) {
 
   const preloadAll = useCallback(async () => {
     await Promise.all(iconNames.map(preloadIcon));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- preloadIcon is stable
   }, [iconNames]);
 
   useEffect(() => {

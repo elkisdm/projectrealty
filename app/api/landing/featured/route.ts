@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createRateLimiter } from "@lib/rate-limit";
 import { getAllBuildings } from "@lib/data";
+import { logger } from "@lib/logger";
 
 // Force dynamic rendering to avoid static generation issues
 export const dynamic = 'force-dynamic';
@@ -23,7 +24,7 @@ async function getFeaturedBuildings(): Promise<FeaturedBuildingItem[]> {
     // Usar el sistema de datos existente que ya funciona
     const allBuildings = await getAllBuildings({});
     
-    console.log(`📊 Total de edificios disponibles: ${allBuildings.length}`);
+    logger.log(`📊 Total de edificios disponibles: ${allBuildings.length}`);
     
     // Calcular hasAvailability basado en unidades disponibles (igual que el endpoint de buildings)
     const buildingsWithAvailability = allBuildings.map(building => {
@@ -47,11 +48,11 @@ async function getFeaturedBuildings(): Promise<FeaturedBuildingItem[]> {
         has_availability: building.hasAvailability,
       }));
 
-    console.log(`⭐ Edificios destacados encontrados: ${featuredBuildings.length}`);
+    logger.log(`⭐ Edificios destacados encontrados: ${featuredBuildings.length}`);
     
     return featuredBuildings;
   } catch (error) {
-    console.error('Error in getFeaturedBuildings:', error);
+    logger.error('Error in getFeaturedBuildings:', error);
     return [];
   }
 }
@@ -88,7 +89,7 @@ export async function GET(request: Request) {
       }
     });
   } catch (error) {
-    console.error("API Error in /api/landing/featured:", error);
+    logger.error("API Error in /api/landing/featured:", error);
     return NextResponse.json(
       { 
         error: "Error inesperado", 

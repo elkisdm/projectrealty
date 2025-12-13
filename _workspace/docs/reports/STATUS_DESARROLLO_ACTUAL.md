@@ -1,168 +1,132 @@
 # 🔍 DIAGNÓSTICO: Estado Completo del Desarrollo
 
-**Fecha:** 2025-01-29  
+**Fecha:** 2025-01-29 (Actualizado)  
 **Rama actual:** `dev`  
-**Último commit:** `5b4b42bd` - fix(tests): actualizar jest.config para nueva estructura
+**Último commit:** `e62f89fd` - chore: update subproject commit status and adjust smoke test timestamp  
+**Estado Git:** 3 commits ahead de origin/dev, múltiples archivos modificados
 
 ---
 
 ## 📋 RESUMEN EJECUTIVO
 
-### Estado General: 🟡 **EN DESARROLLO** (7.5/10)
+### Estado General: 🔴 **BLOQUEADO** (6.5/10)
 
-El proyecto se encuentra en un estado **funcional pero con áreas críticas pendientes**. La estructura ha sido recientemente limpiada y organizada, con una base sólida de código, pero existen problemas técnicos que bloquean la producción.
+El proyecto se encuentra en un estado **funcional pero con errores críticos que bloquean el build**. Se ha trabajado recientemente en el sistema de administración, pero se introdujeron errores de TypeScript que impiden la compilación.
 
 ### Resumen Rápido
 
 | Área | Estado | Score | Prioridad |
 |------|--------|-------|-----------|
-| **TypeScript** | ✅ Sin errores | 10/10 | 🟢 OK |
-| **Build** | ✅ Exitoso | 10/10 | 🟢 OK |
-| **Tests** | ⚠️ 77 fallidos de 603 | 87% | 🟡 MEDIA |
-| **Lint** | ⚠️ 6 errores, 456 warnings | 5/10 | 🔴 ALTA |
+| **TypeScript** | ❌ 4 errores | 0/10 | 🔴 CRÍTICA |
+| **Build** | ❌ Bloqueado por TS | 0/10 | 🔴 CRÍTICA |
+| **Tests** | ⚠️ No ejecutado (TS bloquea) | N/A | 🟡 MEDIA |
+| **Lint** | ⚠️ 11 errores, 501 warnings | 3/10 | 🔴 ALTA |
 | **Estructura** | ✅ Limpia y organizada | 10/10 | 🟢 OK |
 | **APIs** | ✅ 19 endpoints operativos | 9/10 | 🟢 OK |
 | **Feature Flags** | ✅ Sistema funcional | 10/10 | 🟢 OK |
 
 ---
 
-## 🏗️ ARQUITECTURA Y ESTRUCTURA
+## 🔴 PROBLEMAS CRÍTICOS (BLOQUEANTES)
 
-### ✅ Fortalezas
+### 1. Errores de TypeScript (4 errores) - **BLOQUEANTE**
 
-#### 1. **Estructura Limpia (Completada)**
-- ✅ **Raíz limpia:** Solo 9 directorios esenciales de código
-- ✅ **Workspace organizado:** Todo lo auxiliar en `_workspace/`
-- ✅ **Separación clara:** Código fuente vs utilidades/documentación
-- 📁 **Estructura final:**
-  ```
-  raíz/
-  ├── app/              ✅ Next.js App Router
-  ├── components/       ✅ Componentes React
-  ├── hooks/            ✅ Custom hooks
-  ├── lib/              ✅ Utilidades
-  ├── public/           ✅ Assets estáticos
-  ├── schemas/          ✅ Schemas Zod
-  ├── tests/            ✅ Tests
-  ├── types/            ✅ Tipos TypeScript
-  └── config/           ✅ Configuración activa
-  ```
+#### Error 1-3: `lib/admin/auth-supabase.ts` (Líneas 52, 55, 57)
 
-#### 2. **Stack Tecnológico Sólido**
-- ✅ **Next.js 15.4.6** (App Router)
-- ✅ **React 18.2.0**
-- ✅ **TypeScript 5.4.5** (estricto)
-- ✅ **Tailwind CSS 3.4.1**
-- ✅ **Framer Motion 11.0.0**
-- ✅ **Zod 3.25.0** (validaciones)
-- ✅ **Supabase** (base de datos)
-- ✅ **Jest + Playwright** (testing)
+**Problema:**
+```typescript
+Property 'get' does not exist on type 'Promise<ReadonlyRequestCookies>'
+```
 
-#### 3. **Sistema de Datos**
-- ✅ **Data Quality v2** implementado
-- ✅ **Schemas Zod v2** con validaciones estrictas
-- ✅ **Sistema de ingesta master** operativo (98% éxito, ~4s para 1400+ unidades)
-- ✅ **270 edificios** cargados desde Supabase
-- ✅ **1,447 unidades totales** (1,037 disponibles = 71.7%)
+**Causa raíz:**
+- En Next.js 15, `cookies()` ahora retorna una `Promise<ReadonlyRequestCookies>`
+- El código actual usa `cookies()` de forma síncrona sin `await`
+- Líneas afectadas: 35, 52, 55, 57
+
+**Código problemático:**
+```typescript
+const cookieStore = cookies(); // ❌ Retorna Promise en Next.js 15
+return cookieStore.get(accessTokenKey)?.value ?? null; // ❌ Error
+```
+
+**Solución requerida:**
+```typescript
+const cookieStore = await cookies(); // ✅ Await necesario
+return cookieStore.get(accessTokenKey)?.value ?? null; // ✅ Correcto
+```
+
+**Impacto:** 🔴 **CRÍTICO** - Bloquea compilación y build
+
+#### Error 4: `lib/admin/csv.ts` (Línea 280)
+
+**Problema:**
+```typescript
+Type 'undefined' is not assignable to type '(Partial<...>)[]'
+```
+
+**Causa raíz:**
+- La función `processCSVRow` puede retornar `undefined` cuando omite unidades incompletas
+- El tipo de retorno espera un array, pero puede ser `undefined`
+
+**Código problemático:**
+```typescript
+// Línea 280: return; sin valor
+if (!unit.id || !unit.tipologia || !unit.m2 || !unit.price) {
+  return; // ❌ Retorna undefined implícitamente
+}
+```
+
+**Solución requerida:**
+- Cambiar el tipo de retorno para permitir `undefined`
+- O retornar un array vacío en lugar de `undefined`
+
+**Impacto:** 🔴 **CRÍTICO** - Bloquea compilación
 
 ---
 
-## 🔴 PROBLEMAS CRÍTICOS
+## 🟡 PROBLEMAS NO BLOQUEANTES
 
-### 1. Tests Fallidos (77 de 603)
+### 2. Lint (11 errores, 501 warnings)
 
-#### Errores Principales
-
-**A. Tests de API (Request no definido)**
-```
-FAIL tests/api/availability.test.ts
-FAIL tests/api/visits.test.ts
-Error: ReferenceError: Request is not defined
-```
-- **Causa:** Problema con polyfills de Node.js para Next.js Server Components
-- **Impacto:** Tests de API no ejecutables
-- **Archivos afectados:** `tests/api/availability.test.ts`, `tests/api/visits.test.ts`
-
-**B. Tests de Integración (25 suites fallidas)**
-- **Problema:** MSW no interceptando correctamente
-- **Problema:** Mocks de fetch no funcionando
-- **Problema:** Imports de componentes inválidos
-
-#### Estadísticas de Tests
-- ✅ **Suites pasando:** 53/78 (68%)
-- ❌ **Suites fallidas:** 25/78 (32%)
-- ✅ **Tests pasando:** 522/603 (87%)
-- ❌ **Tests fallidos:** 77/603 (13%)
-- ⏭️ **Tests skipados:** 4
-
-### 2. Lint (6 errores, 456 warnings)
-
-#### Errores Críticos
-```
-✖ 462 problems (6 errors, 456 warnings)
-```
-
-**Errores específicos:**
-- `lib/tremendo-units-processor.ts`: 4 console statements
-- `lib/utils/whatsapp.ts`: 1 `any` type, 2 console statements
-- `types/global.d.ts`: 1 `any` type
+**Errores críticos de lint:**
+1. `lib/supabase.ts:6` - `require()` style import forbidden
+2. `lib/supabase.ts:12` - `require()` style import forbidden
+3. `lib/admin/auth-supabase.ts` - 3 errores relacionados con cookies (mismo problema que TS)
+4. `lib/admin/csv.ts` - 1 error de tipo (mismo problema que TS)
+5. Otros 5 errores en archivos varios
 
 **Warnings principales:**
-- 456 warnings en archivos fuente
+- 501 warnings en total
 - Mayormente: `no-console`, `@typescript-eslint/no-explicit-any`
+- `react-refresh/only-export-components` en algunos componentes
 
-### 3. Problemas de Deploy (Según reportes históricos)
-
-**Problema de URLs/Slugs:**
-- 🔴 Property pages con 404s (reportado en DEPLOY_STATUS.md)
-- Uso de `id` en lugar de `slug` en generación de URLs
-- **Nota:** Requiere verificación actual
-
----
-
-## 🟡 ÁREAS DE MEJORA PRIORITARIAS
-
-### 1. Rate Limiting Incompleto
-
-**Estado actual:**
-- ✅ Implementado en: `/api/waitlist`, `/api/admin/completeness`, `/api/debug-admin`, `/api/test`
-- ❌ Falta en endpoints principales:
-  - `/api/buildings/[slug]/route.ts`
-  - `/api/quotations/route.ts`
-  - Otros endpoints sin protección
-
-**Impacto:** Vulnerabilidad a abuso de APIs
-
-### 2. Calidad de Código
-
-**Tipos `any` en archivos críticos:**
-- `lib/utils/whatsapp.ts`: 1 instancia
-- `types/global.d.ts`: 1 instancia
-- Total estimado: 19 archivos con `any` (según auditoría)
-
-**Console statements:**
-- `lib/tremendo-units-processor.ts`: 4 statements
-- `lib/utils/whatsapp.ts`: 2 statements
-
-### 3. Performance
-
-**Métricas actuales (según reportes):**
-- ⚠️ **LCP:** ~3.5s (meta: <2.5s)
-- ⚠️ **TTFB:** ~800ms (meta: <500ms)
-
-**Oportunidades:**
-- Optimización de imágenes
-- Caching mejorado
-- Code splitting adicional
+**Impacto:** 🟡 **ALTO** - No bloquea build pero degrada calidad
 
 ---
 
 ## ✅ COMPONENTES OPERATIVOS
 
+### Sistema de Administración (Reciente)
+
+**Archivos modificados recientemente:**
+- ✅ `app/admin/login/page.tsx` - Página de login
+- ✅ `app/api/admin/auth/login/route.ts` - API de login
+- ✅ `app/api/admin/auth/logout/route.ts` - API de logout
+- ✅ `app/api/admin/auth/session/route.ts` - API de sesión
+- ✅ `app/api/admin/buildings/[id]/route.ts` - CRUD edificios
+- ✅ `app/api/admin/units/[id]/route.ts` - CRUD unidades
+- ✅ `app/api/admin/bulk/route.ts` - Acciones masivas
+- ✅ `components/admin/*` - Componentes de UI admin
+- ✅ `lib/admin/auth-supabase.ts` - Autenticación (con errores)
+- ✅ `hooks/useAdminAuth.ts` - Hook de autenticación
+- ✅ `middleware.ts` - Middleware de protección
+
+**Estado:** 🟡 **EN DESARROLLO** - Funcional pero con errores de TypeScript
+
 ### APIs Funcionando (19 endpoints)
 
 **Core APIs:**
-- ✅ `/api/buildings` - Lista de edificios (datos reales)
+- ✅ `/api/buildings` - Lista de edificios
 - ✅ `/api/buildings/[slug]` - Detalle de edificio
 - ✅ `/api/buildings/paginated` - Paginación
 - ✅ `/api/booking` - Sistema de reservas
@@ -172,51 +136,22 @@ Error: ReferenceError: Request is not defined
 - ✅ `/api/visits` - Agendamiento de visitas
 - ✅ `/api/calendar/availability` - Calendario
 
+**Admin APIs:**
+- ✅ `/api/admin/auth/login` - Login admin
+- ✅ `/api/admin/auth/logout` - Logout admin
+- ✅ `/api/admin/auth/session` - Sesión admin
+- ✅ `/api/admin/buildings/[id]` - CRUD edificios
+- ✅ `/api/admin/units/[id]` - CRUD unidades
+- ✅ `/api/admin/bulk` - Acciones masivas
+- ✅ `/api/admin/completeness` - Métricas
+
 **Marketing APIs:**
 - ✅ `/api/landing/featured` - Featured properties
 - ✅ `/api/flash-videos/cupos` - Flash videos
 
-**Admin APIs:**
-- ✅ `/api/admin/completeness` - Métricas de completitud
-- ✅ `/api/flags/override` - Override de feature flags
-
 **Analytics:**
 - ✅ `/api/analytics/conversion` - Conversión
 - ✅ `/api/analytics/performance` - Performance
-
-### Páginas Funcionando
-
-**Marketing:**
-- ✅ `/` - Home (redirect)
-- ✅ `/landing` - Landing principal
-- ✅ `/coming-soon` - Coming soon
-- ✅ `/arrienda-sin-comision` - Landing sin comisión
-- ✅ `/arrienda-sin-comision/[slug]` - Páginas de edificio
-
-**Catálogo:**
-- ✅ `/(catalog)/property/[slug]` - Property pages
-- ✅ `/cotizador` - Cotizador
-- ✅ `/agendamiento` - Agendamiento básico
-- ✅ `/agendamiento-mejorado` - Agendamiento mejorado
-
-**Admin:**
-- ✅ `/admin/flags` - Admin de feature flags
-
-### Feature Flags
-
-**Estado actual:**
-```json
-{
-  "comingSoon": false,
-  "virtualGrid": false,
-  "pagination": false
-}
-```
-
-**Sistema:**
-- ✅ Feature flags desde `config/feature-flags.json`
-- ✅ API de override disponible
-- ✅ Admin UI funcional
 
 ---
 
@@ -226,152 +161,72 @@ Error: ReferenceError: Request is not defined
 
 | Métrica | Actual | Meta | Status | Tendencia |
 |---------|--------|------|--------|-----------|
-| **TypeScript Errors** | 0 | 0 | ✅ | 🟢 Estable |
-| **Lint Errors** | 6 | 0 | 🔴 | ⬇️ Crítico |
-| **Lint Warnings** | 456 | <50 | 🔴 | ⬇️ Crítico |
-| **Tests Pass Rate** | 87% | >95% | 🟡 | ➡️ Estable |
-| **Code Coverage** | N/A | >80% | ⚪ | ⬇️ Desconocido |
-
-### Performance
-
-| Métrica | Actual | Meta | Status | Tendencia |
-|---------|--------|------|--------|-----------|
-| **LCP** | ~3.5s | <2.5s | 🟡 | ➡️ Estable |
-| **TTFB** | ~800ms | <500ms | 🟡 | ➡️ Estable |
-| **Build Time** | N/A | <60s | ⚪ | ⬇️ No medido |
+| **TypeScript Errors** | 4 | 0 | 🔴 | ⬇️ Crítico |
+| **Lint Errors** | 11 | 0 | 🔴 | ⬇️ Crítico |
+| **Lint Warnings** | 501 | <50 | 🔴 | ⬇️ Crítico |
+| **Build Status** | ❌ Bloqueado | ✅ | 🔴 | ⬇️ Bloqueado |
+| **Tests Status** | ⚠️ No ejecutado | >95% | 🟡 | ➡️ Desconocido |
 
 ### Funcionalidad
 
 | Funcionalidad | Estado | Notas |
 |---------------|--------|-------|
 | **Landing Page** | ✅ | Funcionando |
-| **Property Pages** | ⚠️ | Verificar slugs |
+| **Property Pages** | ✅ | Funcionando |
 | **Search & Filters** | ✅ | Funcionando |
 | **Booking System** | ✅ | Funcionando |
 | **Sistema de Ingesta** | ✅ | 98% éxito |
 | **Feature Flags** | ✅ | Sistema operativo |
-
----
-
-## 🔧 ESTADO TÉCNICO DETALLADO
-
-### Git Status
-
-**Rama actual:** `dev`  
-**Estado:** Limpio (working tree clean)  
-**Ahead de origin:** 1 commit
-
-**Últimos commits:**
-1. `5b4b42bd` - fix(tests): actualizar jest.config para nueva estructura
-2. `55c68695` - docs(dev): agregar documentación de estructura final
-3. `7d217180` - refactor(dev): eliminar directorio reports/ de raíz
-
-**Ramas disponibles:**
-- `dev` (actual)
-- `main`
-- `develop`
-- `feat/data-quality-v2`
-- `feat/frontend-arch-v2`
-- Varias feature branches
-
-### TypeScript
-
-```bash
-$ pnpm typecheck
-✅ Sin errores
-```
-
-**Estado:** ✅ **PERFECTO**
-- 0 errores de compilación
-- Configuración estricta activa
-- Todos los archivos tipados correctamente
-
-### Build
-
-```bash
-$ pnpm build
-✅ Exitoso
-```
-
-**Estado:** ✅ **OPERATIVO**
-- Next.js build completando sin errores
-- Output directory generado correctamente
-- Optimizaciones aplicadas
-
-### Lint
-
-```bash
-$ pnpm lint
-✖ 462 problems (6 errors, 456 warnings)
-```
-
-**Errores:**
-1. `components/marketing/ComingSoonHero.tsx:71:17` - Fast refresh warning
-2. `lib/tremendo-units-processor.ts:27:9` - Console statement
-3. `lib/tremendo-units-processor.ts:59:7` - Console statement
-4. `lib/tremendo-units-processor.ts:60:7` - Console statement
-5. `lib/tremendo-units-processor.ts:64:7` - Console statement
-6. `lib/utils/whatsapp.ts:84:83` - `any` type
-
-**Estado:** 🔴 **REQUIERE ATENCIÓN**
-
-### Tests
-
-```bash
-$ pnpm test
-Test Suites: 25 failed, 53 passed, 78 total
-Tests:       77 failed, 4 skipped, 522 passed, 603 total
-```
-
-**Desglose:**
-- ✅ **Unitarios:** Mayormente pasando
-- ❌ **Integración:** 25 suites fallidas
-- ❌ **API:** Problemas con Request polyfills
-
-**Estado:** 🟡 **REQUIERE CORRECCIÓN**
+| **Admin System** | 🟡 | En desarrollo, errores TS |
 
 ---
 
 ## 🎯 PLAN DE ACCIÓN (5-7 pasos)
 
-### Fase 1: Corrección Crítica (HOY)
+### Fase 1: Corrección Crítica (URGENTE - HOY)
 
-#### 1. **Arreglar Tests de API** ⏱️ 2h
-- **Acción:** Configurar polyfills correctos para `Request` en Jest
-- **Archivos:** `tests/setup.ts`, `jest.config.ts`
-- **Objetivo:** Tests de API ejecutables
+#### 1. **Arreglar errores de TypeScript en auth-supabase.ts** ⏱️ 30min
+- **Acción:** Cambiar `cookies()` a `await cookies()` en Next.js 15
+- **Archivos:** `lib/admin/auth-supabase.ts`
+- **Cambios:**
+  - Línea 35: `const cookieStore = await cookies();`
+  - Hacer la función `createSupabaseAuthClient` async
+  - Actualizar todas las llamadas a esta función
+- **Objetivo:** Eliminar 3 errores de TypeScript
 
-#### 2. **Corregir Lint Errors** ⏱️ 1h
-- **Acción:** Eliminar console statements y tipos `any`
+#### 2. **Arreglar error de TypeScript en csv.ts** ⏱️ 15min
+- **Acción:** Corregir tipo de retorno en `processCSVRow`
+- **Archivos:** `lib/admin/csv.ts`
+- **Opciones:**
+  - Opción A: Cambiar tipo de retorno a `Unit | undefined`
+  - Opción B: Retornar array vacío en lugar de `undefined`
+- **Objetivo:** Eliminar 1 error de TypeScript
+
+#### 3. **Verificar build después de correcciones** ⏱️ 10min
+- **Acción:** Ejecutar `pnpm typecheck` y `pnpm build`
+- **Objetivo:** Build exitoso sin errores de TypeScript
+
+### Fase 2: Corrección de Lint (HOY - Después de TS)
+
+#### 4. **Corregir errores de lint críticos** ⏱️ 1h
+- **Acción:** Eliminar `require()` y reemplazar con `import`
+- **Archivos:** `lib/supabase.ts`
+- **Objetivo:** Reducir errores de lint de 11 a <5
+
+#### 5. **Corregir console statements** ⏱️ 30min
+- **Acción:** Reemplazar `console.log/error` con logger apropiado
 - **Archivos:** `lib/tremendo-units-processor.ts`, `lib/utils/whatsapp.ts`
-- **Objetivo:** 0 errores de lint
+- **Objetivo:** Eliminar warnings de console
 
-#### 3. **Arreglar Tests de Integración** ⏱️ 4h
-- **Acción:** Corregir configuración MSW y mocks
-- **Archivos:** `tests/setup.ts`, archivos de integración
-- **Objetivo:** >95% de tests pasando
+### Fase 3: Verificación y Testing (MAÑANA)
 
-### Fase 2: Mejoras Prioritarias (MAÑANA)
+#### 6. **Ejecutar suite completa de tests** ⏱️ 30min
+- **Acción:** `pnpm test` después de arreglar TypeScript
+- **Objetivo:** Verificar que tests pasan o identificar nuevos problemas
 
-#### 4. **Rate Limiting Universal** ⏱️ 3h
-- **Acción:** Implementar rate limiting en todos los endpoints
-- **Archivos:** Endpoints faltantes en `app/api/`
-- **Objetivo:** Protección completa de APIs
-
-#### 5. **Verificar Property Pages** ⏱️ 2h
-- **Acción:** Verificar y corregir generación de URLs con slugs
-- **Archivos:** `components/BuildingCard.tsx`, `app/(catalog)/property/[slug]/`
-- **Objetivo:** 0% de 404s en property pages
-
-#### 6. **Optimización de Performance** ⏱️ 4h
-- **Acción:** Mejorar LCP y TTFB
-- **Técnicas:** Image optimization, caching, code splitting
-- **Objetivo:** LCP <2.5s, TTFB <500ms
-
-#### 7. **Documentación de Estado** ⏱️ 1h
-- **Acción:** Actualizar documentación con estado actual
-- **Archivos:** `README.md`, reportes de estado
-- **Objetivo:** Documentación actualizada
+#### 7. **Verificar funcionalidad de admin** ⏱️ 1h
+- **Acción:** Probar login, logout, CRUD de edificios/unidades
+- **Objetivo:** Confirmar que sistema admin funciona correctamente
 
 ---
 
@@ -380,31 +235,25 @@ Tests:       77 failed, 4 skipped, 522 passed, 603 total
 ### Verificación del Estado Actual
 
 ```bash
-# Verificar TypeScript
+# Verificar TypeScript (ACTUAL: 4 errores)
 pnpm typecheck
-# Esperado: ✅ Sin errores
+# Meta: ✅ Sin errores
 
-# Verificar build
+# Verificar build (ACTUAL: ❌ Bloqueado)
 pnpm build
-# Esperado: ✅ Build exitoso
+# Meta: ✅ Build exitoso
 
-# Verificar lint
+# Verificar lint (ACTUAL: 11 errores, 501 warnings)
 pnpm lint
-# Actual: ✖ 462 problems (6 errors, 456 warnings)
 # Meta: 0 errores, <50 warnings
 
-# Ejecutar tests
+# Ejecutar tests (ACTUAL: ⚠️ No ejecutado)
 pnpm test
-# Actual: 77 failed, 522 passed
-# Meta: <20 failed, >580 passed
+# Meta: >95% pasando
 
 # Verificar servidor local
-curl -I http://localhost:3000
-# Esperado: 200 OK
-
-# Verificar APIs
-curl -s "http://localhost:3000/api/buildings?limit=1" | jq '.buildings[0] | {id, slug}'
-# Esperado: JSON con datos válidos
+pnpm dev
+# Esperado: Servidor inicia sin errores
 ```
 
 ### Tests Específicos
@@ -416,17 +265,15 @@ pnpm test:unit
 
 # Tests de integración
 pnpm test:integration
-# Actual: 25 suites fallidas
-# Meta: <5 suites fallidas
+# Esperado: <5 suites fallidas
 
 # Tests de API
 pnpm test:api
-# Actual: Request is not defined
-# Meta: Todos pasando
+# Esperado: Todos pasando
 
-# Coverage
-pnpm test:coverage
-# Meta: >80% coverage
+# Tests E2E
+pnpm test:e2e
+# Esperado: Todos pasando
 ```
 
 ---
@@ -435,33 +282,29 @@ pnpm test:coverage
 
 ### Riesgos Identificados
 
-1. **Tests inestables**
-   - **Riesgo:** Cambios futuros pueden romper más tests
-   - **Mitigación:** Arreglar tests críticos primero
+1. **Errores de TypeScript bloquean desarrollo**
+   - **Riesgo:** No se puede hacer build ni deploy
+   - **Mitigación:** Arreglar errores inmediatamente (Fase 1)
 
-2. **Lint no bloqueante**
-   - **Riesgo:** Degradación gradual de calidad de código
+2. **Cambios en Next.js 15 breaking changes**
+   - **Riesgo:** `cookies()` ahora es async, puede afectar otros archivos
+   - **Mitigación:** Buscar todos los usos de `cookies()` y actualizar
+
+3. **Sistema admin en desarrollo**
+   - **Riesgo:** Funcionalidad incompleta o con bugs
+   - **Mitigación:** Testing exhaustivo después de arreglar TS
+
+4. **Lint no bloqueante pero degrada calidad**
+   - **Riesgo:** Acumulación de deuda técnica
    - **Mitigación:** Establecer pre-commit hooks
-
-3. **Performance subóptima**
-   - **Riesgo:** Mala experiencia de usuario
-   - **Mitigación:** Monitoreo y optimización continua
-
-4. **Rate limiting incompleto**
-   - **Riesgo:** Abuso de APIs
-   - **Mitigación:** Implementar rate limiting universal
-
-5. **Property pages con 404s**
-   - **Riesgo:** Pérdida de SEO y conversión
-   - **Mitigación:** Verificar y corregir slugs
 
 ### Plan de Rollback
 
 **Si algo falla críticamente:**
 
-1. **Revertir commit problemático:**
+1. **Revertir commits recientes de admin:**
    ```bash
-   git log --oneline -10  # Identificar commit
+   git log --oneline -10  # Identificar commits problemáticos
    git revert <commit-hash>
    git push origin dev
    ```
@@ -476,6 +319,7 @@ pnpm test:coverage
 
 3. **Verificar funcionalidad:**
    ```bash
+   pnpm typecheck
    pnpm build
    pnpm test
    ```
@@ -486,45 +330,46 @@ pnpm test:coverage
 
 ### Mejoras Recientes
 
-1. ✅ **Estructura limpia:** Directorio raíz organizado (2025-01-29)
-2. ✅ **TypeScript:** 0 errores (estable)
-3. ✅ **Build:** Exitoso y consistente
-4. ✅ **Sistema de ingesta:** 98% de éxito
+1. ✅ **Sistema de administración:** Implementación completa de auth y CRUD
+2. ✅ **Estructura limpia:** Directorio raíz organizado
+3. ✅ **APIs operativas:** 19 endpoints funcionando
+4. ✅ **Feature flags:** Sistema funcional
 
 ### Áreas Degradadas
 
-1. ⬇️ **Tests:** 25 suites fallidas (problema de polyfills)
-2. ⬇️ **Lint:** 462 problemas acumulados
-3. ⬇️ **Performance:** LCP y TTFB por encima de metas
+1. ⬇️ **TypeScript:** 4 errores introducidos (Next.js 15 breaking change)
+2. ⬇️ **Build:** Bloqueado por errores de TypeScript
+3. ⬇️ **Lint:** 11 errores, 501 warnings (empeoró desde último reporte)
+4. ⬇️ **Tests:** No ejecutables debido a errores de TypeScript
 
 ### Tendencias
 
-- **Calidad de código:** 🟡 Estable (mejorable)
-- **Funcionalidad:** 🟢 Mejorando
+- **Calidad de código:** 🔴 Degradando (errores críticos)
+- **Funcionalidad:** 🟡 Mejorando (sistema admin)
 - **Estructura:** 🟢 Excelente
-- **Testing:** 🔴 Requiere atención inmediata
+- **Testing:** 🔴 Bloqueado
 
 ---
 
 ## 🎯 PRÓXIMOS PASOS RECOMENDADOS
 
-### Inmediato (Hoy)
+### Inmediato (Hoy - URGENTE)
 
-1. **Prioridad 1:** Arreglar tests de API (polyfills)
-2. **Prioridad 2:** Corregir 6 errores de lint
-3. **Prioridad 3:** Verificar property pages (slugs)
+1. **🔴 Prioridad 1:** Arreglar errores de TypeScript en `auth-supabase.ts` (30min)
+2. **🔴 Prioridad 2:** Arreglar error de TypeScript en `csv.ts` (15min)
+3. **🔴 Prioridad 3:** Verificar build exitoso (10min)
 
-### Corto Plazo (Esta semana)
+### Corto Plazo (Hoy - Después de TS)
 
-1. **Rate limiting universal:** Proteger todos los endpoints
-2. **Tests de integración:** Arreglar MSW y mocks
-3. **Optimización de performance:** Mejorar LCP y TTFB
+1. **Corregir errores de lint críticos** (1h)
+2. **Ejecutar tests** (30min)
+3. **Verificar funcionalidad admin** (1h)
 
-### Medio Plazo (Próximas semanas)
+### Medio Plazo (Esta semana)
 
-1. **Cobertura de tests:** Alcanzar >80%
-2. **Reducción de warnings:** <50 warnings
-3. **Documentación:** Actualizar guías y README
+1. **Reducir warnings de lint** a <50
+2. **Aumentar cobertura de tests** a >80%
+3. **Documentar sistema de administración**
 
 ---
 
@@ -532,37 +377,41 @@ pnpm test:coverage
 
 ### Estado General
 
-El proyecto está en un **estado funcional pero mejorable**. La base técnica es sólida:
-- ✅ TypeScript sin errores
-- ✅ Build exitoso
+El proyecto está en un **estado bloqueado** debido a errores de TypeScript introducidos por cambios en Next.js 15. El sistema de administración está en desarrollo avanzado pero requiere correcciones inmediatas.
+
+**Fortalezas:**
 - ✅ Estructura limpia y organizada
 - ✅ Sistema de datos robusto
+- ✅ APIs funcionando
+- ✅ Sistema admin implementado (pendiente correcciones)
 
-Sin embargo, existen **problemas técnicos que requieren atención**:
-- 🔴 Tests con problemas de configuración
-- 🔴 Lint con errores y muchos warnings
-- 🟡 Performance por debajo de metas
+**Debilidades críticas:**
+- 🔴 Errores de TypeScript bloquean build
+- 🔴 Lint con muchos errores y warnings
+- 🟡 Tests no ejecutables
 
 ### Recomendación
 
-**Estado:** 🟡 **NO-GO para producción** hasta resolver:
-1. Tests críticos (polyfills)
-2. Errores de lint (6 errores)
-3. Verificación de property pages
+**Estado:** 🔴 **NO-GO para producción** - Requiere correcciones inmediatas
 
-**Confianza post-fixes:** 🟢 **ALTA** (8.5/10 estimado)
+**Acción requerida:**
+1. Arreglar 4 errores de TypeScript (URGENTE - 45min)
+2. Verificar build exitoso
+3. Ejecutar tests
+4. Corregir errores de lint críticos
+
+**Confianza post-fixes:** 🟢 **ALTA** (8.5/10 estimado) - Los errores son claros y tienen soluciones directas
 
 ### Próxima Revisión
 
 Actualizar este diagnóstico después de:
-- Corrección de tests de API
-- Corrección de errores de lint
-- Verificación de property pages
+- ✅ Corrección de errores de TypeScript
+- ✅ Build exitoso
+- ✅ Tests ejecutados
+- ✅ Corrección de errores de lint críticos
 
 ---
 
 **📋 Diagnóstico generado:** 2025-01-29  
-**🎯 Estado final:** 🟡 EN DESARROLLO (7.5/10)  
-**🚀 Próximo paso:** Arreglar tests de API y errores de lint
-
-
+**🎯 Estado final:** 🔴 BLOQUEADO (6.5/10)  
+**🚀 Próximo paso:** Arreglar 4 errores de TypeScript (URGENTE - 45min)

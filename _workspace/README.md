@@ -29,3 +29,10 @@ pnpm run check:production # Ejecuta _workspace/scripts/check-production-readines
 Este directorio está separado del código fuente principal para mantener el directorio raíz limpio y enfocado solo en el código de la aplicación.
 
 
+
+
+
+
+
+
+

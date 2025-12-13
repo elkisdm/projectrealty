@@ -3,6 +3,7 @@ import React from "react";
 import { Bed, Bath, Square, Calendar, Phone } from "lucide-react";
 import { FirstPaymentSummary } from "./FirstPaymentSummary";
 import { useScrollVisibility } from "@hooks/useScrollVisibility";
+import { logger } from "@lib/logger";
 import type { Unit, Building } from "@schemas/models";
 
 interface PropertySidebarProps {
@@ -77,14 +78,14 @@ export function PropertySidebar({
         {
           label: "Editar propiedad",
           icon: Calendar,
-          onClick: () => console.log("Editar propiedad"),
+          onClick: () => logger.log("Editar propiedad"),
           variant: "primary" as const,
           className: "bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800"
         },
         {
           label: "Ver estadísticas",
           icon: Phone,
-          onClick: () => console.log("Ver estadísticas"),
+          onClick: () => logger.log("Ver estadísticas"),
           variant: "secondary" as const,
           className: "bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800"
         }

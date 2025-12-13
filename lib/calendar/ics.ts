@@ -1,4 +1,11 @@
-import { CalendarEvent } from "@/types/calendar";
+import { CalendarEvent, asIsoDateTime } from "@/types/calendar";
+
+interface IcsEventParsing {
+  uid?: string;
+  summary?: string;
+  dtstart: string;
+  dtend: string;
+}
 
 export async function fetchIcsEvents(url: string): Promise<CalendarEvent[]> {
   if (process.env.NODE_ENV !== 'production' && !url) {
@@ -12,23 +19,34 @@ export async function fetchIcsEvents(url: string): Promise<CalendarEvent[]> {
     return parseIcs(text).map((ev, idx) => ({
       id: ev.uid ?? String(idx),
       title: ev.summary ?? 'Ocupado',
-      start: toIso(ev.dtstart) as any,
-      end: toIso(ev.dtend) as any,
+      start: asIsoDateTime(toIso(ev.dtstart)),
+      end: asIsoDateTime(toIso(ev.dtend)),
       busy: true,
-      source: { kind: 'ics', url }
+      source: { kind: 'ics' as const, url }
     }));
   } catch {
     return [];
   }
 }
 
-function parseIcs(content: string): Array<{ uid?: string; summary?: string; dtstart: string; dtend: string }>{
-  const events: Array<{ uid?: string; summary?: string; dtstart: string; dtend: string }> = [];
+function parseIcs(content: string): IcsEventParsing[] {
+  const events: IcsEventParsing[] = [];
   const lines = content.split(/\r?\n/);
-  let cur: any = null;
+  let cur: Partial<IcsEventParsing> | null = null;
   for (const line of lines) {
     if (line === 'BEGIN:VEVENT') { cur = {}; continue; }
-    if (line === 'END:VEVENT') { if (cur?.dtstart && cur?.dtend) events.push(cur); cur = null; continue; }
+    if (line === 'END:VEVENT') { 
+      if (cur?.dtstart && cur?.dtend) {
+        events.push({
+          uid: cur.uid,
+          summary: cur.summary,
+          dtstart: cur.dtstart,
+          dtend: cur.dtend,
+        });
+      }
+      cur = null; 
+      continue; 
+    }
     if (!cur) continue;
     if (line.startsWith('UID:')) cur.uid = line.slice(4).trim();
     if (line.startsWith('SUMMARY:')) cur.summary = line.slice(8).trim();

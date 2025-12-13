@@ -92,11 +92,13 @@ export function ImageGallery({
   const nextImage = useCallback(() => {
     if (!imageList || imageList.length === 0) return;
     setActive((prev) => (prev + 1) % imageList.length);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Only depends on length for modular arithmetic
   }, [imageList.length]);
 
   const prevImage = useCallback(() => {
     if (!imageList || imageList.length === 0) return;
     setActive((prev) => (prev - 1 + imageList.length) % imageList.length);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Only depends on length for modular arithmetic
   }, [imageList.length]);
 
   // Toggle fullscreen

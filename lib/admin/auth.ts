@@ -25,6 +25,7 @@ export function verifyAdminToken(token: string | null | undefined): boolean {
   if (!ADMIN_TOKEN) {
     // En desarrollo, si no hay token configurado, permitir acceso
     if (process.env.NODE_ENV === "development") {
+      // eslint-disable-next-line no-console -- Development warning for missing token
       console.warn("⚠️ ADMIN_TOKEN no configurado. Acceso permitido en desarrollo.");
       return true;
     }

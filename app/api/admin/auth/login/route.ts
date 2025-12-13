@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { createRateLimiter } from '@lib/rate-limit';
 import { signInAdmin } from '@lib/admin/auth-supabase';
 import { setSupabaseCookies } from '@lib/admin/supabase-cookies';
+import { logger } from '@lib/logger';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -59,7 +60,7 @@ export async function POST(request: NextRequest) {
 
     if (!session) {
       // Logging sin password (solo email)
-      console.warn(`[AUTH] Intento de login fallido para: ${email}`);
+      logger.warn(`[AUTH] Intento de login fallido para: ${email}`);
       
       return NextResponse.json(
         { 
@@ -71,7 +72,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Logging exitoso (sin password)
-    console.log(`[AUTH] Login exitoso para: ${email} (${session.user.role})`);
+    logger.log(`[AUTH] Login exitoso para: ${email} (${session.user.role})`);
 
     // Crear respuesta con cookies
     const response = NextResponse.json(
@@ -89,7 +90,7 @@ export async function POST(request: NextRequest) {
     // Establecer cookies de sesión
     return setSupabaseCookies(response, session);
   } catch (error) {
-    console.error('[AUTH] Error inesperado en login:', error);
+    logger.error('[AUTH] Error inesperado en login:', error);
     
     return NextResponse.json(
       { 
@@ -100,4 +101,11 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+
+
+
+
+
+
 

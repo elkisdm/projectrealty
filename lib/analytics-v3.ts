@@ -1,4 +1,5 @@
 // Analytics V3 - Sistema mejorado para tracking de eventos
+import { logger } from './logger';
 interface AnalyticsEvent {
   event: string;
   properties?: Record<string, unknown>;
@@ -100,9 +101,7 @@ class AnalyticsV3 {
     this.sendToAnalytics(analyticsEvent);
 
     // Console log for development
-    if (process.env.NODE_ENV === 'development') {
-      console.log('📊 Analytics Event:', analyticsEvent);
-    }
+    logger.log('📊 Analytics Event:', analyticsEvent);
   }
 
   private sendToAnalytics(event: AnalyticsEvent): void {
@@ -113,7 +112,7 @@ class AnalyticsV3 {
       existingEvents.push(event);
       localStorage.setItem('analytics_events', JSON.stringify(existingEvents.slice(-100))); // Keep last 100 events
     } catch (error) {
-      console.error('Error storing analytics event:', error);
+      logger.error('Error storing analytics event:', error);
     }
   }
 

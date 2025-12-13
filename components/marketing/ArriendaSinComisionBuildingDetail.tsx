@@ -1,10 +1,8 @@
 "use client";
 import { useState, useMemo } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { ImageGallery } from "@components/gallery/ImageGallery";
-import { AmenityList } from "@components/ui/AmenityList";
 import { PromotionBadge } from "@components/ui/PromotionBadge";
 import { CommuneLifeSection } from "@components/commune/CommuneLifeSection";
 import { getFlagValue } from "@lib/flags";

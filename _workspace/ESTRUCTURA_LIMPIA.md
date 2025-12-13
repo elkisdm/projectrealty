@@ -75,3 +75,10 @@ La configuración de ingesta apunta a `_workspace/`:
 - Los scripts mantienen su funcionalidad pero están organizados en `_workspace/scripts/`
 
 
+
+
+
+
+
+
+

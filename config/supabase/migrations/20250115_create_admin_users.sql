@@ -40,3 +40,10 @@ COMMENT ON COLUMN public.admin_users.id IS 'UUID que referencia a auth.users';
 COMMENT ON COLUMN public.admin_users.email IS 'Email del usuario admin (único)';
 COMMENT ON COLUMN public.admin_users.role IS 'Rol del usuario: admin (acceso completo), editor (CRUD sin delete), viewer (solo lectura)';
 
+
+
+
+
+
+
+

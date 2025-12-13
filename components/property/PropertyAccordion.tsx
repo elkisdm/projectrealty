@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, CheckCircle, AlertCircle, Info, Building2, Shield, Star, MapPin, Clock, Home, Car, Package, Wifi, Users, Phone, FileText } from "lucide-react";
+import { logger } from "@lib/logger";
 import type { Building, Unit } from "@schemas/models";
 
 interface SubSectionProps {
@@ -481,7 +482,7 @@ export function PropertyAccordion({
                                                     Haz tu preaprobación en solo 30 segundos y asegura tu visita.
                                                 </p>
                                                 <button
-                                                    onClick={onPreapproval || (() => console.log("Preaprobación"))}
+                                                    onClick={onPreapproval || (() => logger.log("Preaprobación"))}
                                                     className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                                                 >
                                                     Preaprobación en 30s
@@ -684,7 +685,7 @@ export function PropertyAccordion({
                                                 <p className="text-sm text-slate-600 dark:text-slate-400">Explora otras opciones en este edificio</p>
                                             </div>
                                             <button
-                                                onClick={() => console.log("Ver todas las unidades")}
+                                                onClick={() => logger.log("Ver todas las unidades")}
                                                 className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                                             >
                                                 Ver todas →

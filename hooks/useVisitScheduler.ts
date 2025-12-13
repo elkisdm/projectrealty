@@ -10,6 +10,7 @@ import {
   generateIdempotencyKey,
   TIME_SLOTS_30MIN
 } from '../types/visit';
+import { logger } from '@lib/logger';
 
 interface UseVisitSchedulerProps {
   listingId: string;
@@ -67,7 +68,7 @@ export function useVisitScheduler({
           slot.startTime.startsWith(dateString)
         ) || [];
         
-        console.log(`📅 Day ${dateString}: ${slotsForDay.length} slots available`);
+        // Debug: logger.log(`📅 Day ${dateString}: ${slotsForDay.length} slots available`);
         
         days.push({
           id: `day-${i + 1}`,
@@ -267,11 +268,12 @@ export function useVisitScheduler({
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
       setError(errorMessage);
-      console.error('Error creating visit:', err);
+      logger.error('Error creating visit:', err);
       return null;
     } finally {
       setIsLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- clearSelection is stable
   }, [listingId, selectedSlot, selectedDate, selectedTime, availabilityData]);
 
   // Limpiar selección

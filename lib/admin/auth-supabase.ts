@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@lib/supabase';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { logger } from '@lib/logger';
 
 export interface AdminUser {
   id: string;
@@ -24,7 +25,7 @@ export interface AdminSession {
  * Crea un cliente de Supabase Auth con configuración correcta para el servidor
  * Este cliente puede leer cookies de sesión del request
  */
-export function createSupabaseAuthClient(): SupabaseClient {
+export async function createSupabaseAuthClient(): Promise<SupabaseClient> {
   const supabaseUrl = process.env.SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
 
@@ -32,7 +33,7 @@ export function createSupabaseAuthClient(): SupabaseClient {
     throw new Error('Supabase URL y ANON KEY deben estar configurados');
   }
 
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   
   // Supabase usa nombres de cookies específicos basados en el project ref
   // Formato: sb-<project-ref>-auth-token y sb-<project-ref>-auth-token.0
@@ -79,7 +80,7 @@ export async function signInAdmin(
   password: string
 ): Promise<AdminSession | null> {
   try {
-    const client = createSupabaseAuthClient();
+    const client = await createSupabaseAuthClient();
     
     const { data, error } = await client.auth.signInWithPassword({
       email,
@@ -87,14 +88,14 @@ export async function signInAdmin(
     });
 
     if (error || !data.session || !data.user) {
-      console.error('Error en signInAdmin:', error?.message);
+      logger.error('Error en signInAdmin:', error?.message);
       return null;
     }
 
     // Verificar que el usuario existe en admin_users
     const adminUser = await getAdminUser(data.user.id);
     if (!adminUser) {
-      console.error('Usuario no encontrado en admin_users');
+      logger.error('Usuario no encontrado en admin_users');
       return null;
     }
 
@@ -105,7 +106,7 @@ export async function signInAdmin(
       expires_at: data.session.expires_at ?? 0,
     };
   } catch (error) {
-    console.error('Error inesperado en signInAdmin:', error);
+    logger.error('Error inesperado en signInAdmin:', error);
     return null;
   }
 }
@@ -115,10 +116,10 @@ export async function signInAdmin(
  */
 export async function signOutAdmin(): Promise<void> {
   try {
-    const client = createSupabaseAuthClient();
+    const client = await createSupabaseAuthClient();
     await client.auth.signOut();
   } catch (error) {
-    console.error('Error en signOutAdmin:', error);
+    logger.error('Error en signOutAdmin:', error);
     throw error;
   }
 }
@@ -129,7 +130,7 @@ export async function signOutAdmin(): Promise<void> {
  */
 export async function getAdminSession(): Promise<AdminSession | null> {
   try {
-    const client = createSupabaseAuthClient();
+    const client = await createSupabaseAuthClient();
     
     const { data: { session }, error } = await client.auth.getSession();
 
@@ -150,7 +151,7 @@ export async function getAdminSession(): Promise<AdminSession | null> {
       expires_at: session.expires_at ?? 0,
     };
   } catch (error) {
-    console.error('Error en getAdminSession:', error);
+    logger.error('Error en getAdminSession:', error);
     return null;
   }
 }
@@ -161,7 +162,7 @@ export async function getAdminSession(): Promise<AdminSession | null> {
  */
 export async function refreshAdminSession(): Promise<AdminSession | null> {
   try {
-    const client = createSupabaseAuthClient();
+    const client = await createSupabaseAuthClient();
     
     const { data: { session }, error } = await client.auth.refreshSession();
 
@@ -182,7 +183,7 @@ export async function refreshAdminSession(): Promise<AdminSession | null> {
       expires_at: session.expires_at ?? 0,
     };
   } catch (error) {
-    console.error('Error en refreshAdminSession:', error);
+    logger.error('Error en refreshAdminSession:', error);
     return null;
   }
 }
@@ -212,7 +213,7 @@ export async function getAdminUser(userId: string): Promise<AdminUser | null> {
       updated_at: data.updated_at,
     };
   } catch (error) {
-    console.error('Error en getAdminUser:', error);
+    logger.error('Error en getAdminUser:', error);
     return null;
   }
 }

@@ -3,27 +3,6 @@
 import Link from "next/link";
 import { useAdminStats } from "@hooks/useAdminStats";
 
-interface DashboardStats {
-  totalBuildings: number;
-  totalUnits: number;
-  availableUnits: number;
-  occupiedUnits: number;
-  buildingsWithIncompleteData: number;
-  distributionByComuna: Array<{
-    comuna: string;
-    count: number;
-  }>;
-  typologyDistribution: Array<{
-    tipologia: string;
-    count: number;
-  }>;
-  priceRange: {
-    min: number;
-    max: number;
-    average: number;
-  };
-}
-
 function StatCard({
   title,
   value,
@@ -67,7 +46,7 @@ function StatCard({
 
 export default function AdminDashboardPage() {
   const { data: stats, isLoading: loading, error: queryError } = useAdminStats();
-  
+
   const error = queryError instanceof Error ? queryError.message : queryError ? "Error al cargar estadísticas" : null;
 
   if (loading) {

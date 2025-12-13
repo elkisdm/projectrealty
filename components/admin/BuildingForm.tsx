@@ -69,7 +69,7 @@ export function BuildingForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Marcar todos los campos como tocados
     const allFields = Object.keys(formData);
     allFields.forEach((field) => setTouched((prev) => ({ ...prev, [field]: true })));
@@ -88,7 +88,7 @@ export function BuildingForm({
 
     try {
       await onSubmit(validation.data);
-    } catch (error) {
+    } catch {
       // El error será manejado por el componente padre
     }
   };
@@ -106,9 +106,8 @@ export function BuildingForm({
             value={formData.id || ""}
             onChange={(e) => handleChange("id", e.target.value)}
             onBlur={() => handleBlur("id")}
-            className={`w-full px-4 py-2 rounded-lg bg-[var(--bg)] text-[var(--text)] border ${
-              errors.id ? "border-red-500" : "border-white/10"
-            } focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--bg)]`}
+            className={`w-full px-4 py-2 rounded-lg bg-[var(--bg)] text-[var(--text)] border ${errors.id ? "border-red-500" : "border-white/10"
+              } focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--bg)]`}
             required
           />
           {errors.id && (
@@ -126,9 +125,8 @@ export function BuildingForm({
             value={formData.slug || ""}
             onChange={(e) => handleChange("slug", e.target.value)}
             onBlur={() => handleBlur("slug")}
-            className={`w-full px-4 py-2 rounded-lg bg-[var(--bg)] text-[var(--text)] border ${
-              errors.slug ? "border-red-500" : "border-white/10"
-            } focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--bg)]`}
+            className={`w-full px-4 py-2 rounded-lg bg-[var(--bg)] text-[var(--text)] border ${errors.slug ? "border-red-500" : "border-white/10"
+              } focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--bg)]`}
             required
           />
           {errors.slug && (
@@ -146,9 +144,8 @@ export function BuildingForm({
             value={formData.name || ""}
             onChange={(e) => handleChange("name", e.target.value)}
             onBlur={() => handleBlur("name")}
-            className={`w-full px-4 py-2 rounded-lg bg-[var(--bg)] text-[var(--text)] border ${
-              errors.name ? "border-red-500" : "border-white/10"
-            } focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--bg)]`}
+            className={`w-full px-4 py-2 rounded-lg bg-[var(--bg)] text-[var(--text)] border ${errors.name ? "border-red-500" : "border-white/10"
+              } focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--bg)]`}
             required
           />
           {errors.name && (
@@ -166,9 +163,8 @@ export function BuildingForm({
             value={formData.comuna || ""}
             onChange={(e) => handleChange("comuna", e.target.value)}
             onBlur={() => handleBlur("comuna")}
-            className={`w-full px-4 py-2 rounded-lg bg-[var(--bg)] text-[var(--text)] border ${
-              errors.comuna ? "border-red-500" : "border-white/10"
-            } focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--bg)]`}
+            className={`w-full px-4 py-2 rounded-lg bg-[var(--bg)] text-[var(--text)] border ${errors.comuna ? "border-red-500" : "border-white/10"
+              } focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--bg)]`}
             required
           />
           {errors.comuna && (
@@ -186,9 +182,8 @@ export function BuildingForm({
             value={formData.address || ""}
             onChange={(e) => handleChange("address", e.target.value)}
             onBlur={() => handleBlur("address")}
-            className={`w-full px-4 py-2 rounded-lg bg-[var(--bg)] text-[var(--text)] border ${
-              errors.address ? "border-red-500" : "border-white/10"
-            } focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--bg)]`}
+            className={`w-full px-4 py-2 rounded-lg bg-[var(--bg)] text-[var(--text)] border ${errors.address ? "border-red-500" : "border-white/10"
+              } focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--bg)]`}
             required
           />
           {errors.address && (
@@ -212,9 +207,8 @@ export function BuildingForm({
               handleChange("amenities", amenities);
             }}
             onBlur={() => handleBlur("amenities")}
-            className={`w-full px-4 py-2 rounded-lg bg-[var(--bg)] text-[var(--text)] border ${
-              errors.amenities ? "border-red-500" : "border-white/10"
-            } focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--bg)]`}
+            className={`w-full px-4 py-2 rounded-lg bg-[var(--bg)] text-[var(--text)] border ${errors.amenities ? "border-red-500" : "border-white/10"
+              } focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--bg)]`}
             placeholder="Piscina, Gimnasio, Estacionamiento"
             required
           />
@@ -239,9 +233,8 @@ export function BuildingForm({
             }}
             onBlur={() => handleBlur("gallery")}
             rows={3}
-            className={`w-full px-4 py-2 rounded-lg bg-[var(--bg)] text-[var(--text)] border ${
-              errors.gallery ? "border-red-500" : "border-white/10"
-            } focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--bg)]`}
+            className={`w-full px-4 py-2 rounded-lg bg-[var(--bg)] text-[var(--text)] border ${errors.gallery ? "border-red-500" : "border-white/10"
+              } focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--bg)]`}
             placeholder="/images/building-1.jpg, /images/building-2.jpg, /images/building-3.jpg"
             required
           />
@@ -260,9 +253,8 @@ export function BuildingForm({
             value={formData.coverImage || ""}
             onChange={(e) => handleChange("coverImage", e.target.value)}
             onBlur={() => handleBlur("coverImage")}
-            className={`w-full px-4 py-2 rounded-lg bg-[var(--bg)] text-[var(--text)] border ${
-              errors.coverImage ? "border-red-500" : "border-white/10"
-            } focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--bg)]`}
+            className={`w-full px-4 py-2 rounded-lg bg-[var(--bg)] text-[var(--text)] border ${errors.coverImage ? "border-red-500" : "border-white/10"
+              } focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--bg)]`}
             placeholder="/images/building-cover.jpg"
           />
           {errors.coverImage && (
@@ -308,5 +300,12 @@ export function BuildingForm({
     </form>
   );
 }
+
+
+
+
+
+
+
 
 

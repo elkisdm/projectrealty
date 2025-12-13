@@ -8,6 +8,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { createOptimizedQueryClient } from "@lib/react-query";
 import { ErrorBoundary } from "@components/admin/ErrorBoundary";
 import { useAdminAuth } from "@hooks/useAdminAuth";
+import { logger } from "@lib/logger";
 import React from "react";
 
 const navItems = [
@@ -88,7 +89,7 @@ function NavBar() {
                                         logout().catch((err) => {
                                             // El error ya está manejado en el mutation's onError
                                             // Solo prevenimos el unhandled promise rejection
-                                            console.error('Error en logout:', err);
+                                            logger.error('Error en logout:', err);
                                         });
                                     }}
                                     disabled={isLoggingOut}

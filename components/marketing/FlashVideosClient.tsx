@@ -3,13 +3,14 @@
 import { useState } from "react";
 import { UpsellStepper } from "./UpsellStepper";
 import { flashOfferContent } from "@/lib/content/flashOffer";
+import { logger } from "@lib/logger";
 
 export function FlashVideosClient() {
     const [isStepperOpen, setIsStepperOpen] = useState(false);
 
     const handleStepperComplete = (selections: { chatbot: boolean; metaAds: boolean }) => {
         // Aquí se manejaría la lógica de pago
-        console.log('Selecciones completadas:', selections);
+        logger.log('Selecciones completadas:', selections);
         setIsStepperOpen(false);
     };
 

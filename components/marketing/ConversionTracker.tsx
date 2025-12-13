@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { logger } from "@lib/logger";
 
 // Tipos para eventos de conversión
 type ConversionEvent = {
@@ -81,7 +82,7 @@ export function trackConversionEvent(
     }
 
     // Log local para debugging
-    console.log(`[Conversion] ${eventName}`, event);
+    logger.log(`[Conversion] ${eventName}`, event);
 
     // Enviar a endpoint de analytics (opcional)
     try {

@@ -148,7 +148,7 @@ export function Icon({
     preload = false
 }: IconProps) {
     // Contexto de íconos
-    const { config } = useIconContext();
+    const { config: _config } = useIconContext();
     const currentPreset = useIconPreset();
 
     // Estado interno del ícono
@@ -196,6 +196,7 @@ export function Icon({
         if (preload || !state.isLoaded) {
             loadIcon();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- loadIcon is stable, triggers on svgPath/preload change only
     }, [svgPath, preload]);
 
     // Estado de loading combinado

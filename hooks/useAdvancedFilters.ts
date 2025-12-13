@@ -13,9 +13,7 @@ import type {
 import type { Building } from '../schemas/models';
 
 // Simplified AdvancedFilterValues for MVP (only comuna and price)
-export interface AdvancedFilterValues extends FilterValues {
-  // No advanced filters for MVP
-}
+export type AdvancedFilterValues = FilterValues;
 
 export interface UseAdvancedFiltersParams {
   buildings: Building[];
@@ -170,6 +168,7 @@ export function useAdvancedFilters({
     }
 
     return chips;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- setFilters is stable (useCallback with [])
   }, [filters]);
 
   // Update filters with partial values

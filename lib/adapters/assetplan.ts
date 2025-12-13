@@ -196,7 +196,9 @@ export function fromAssetPlan(raw: AssetPlanRawBuilding): Building {
     if (explicit === "pro" || explicit === "standard") return explicit as "pro" | "standard";
     // Infer from badges or from root label properties
     const buildingHasServiceProBadge = (badges ?? []).some((b) => b.type === PromotionType.SERVICE_PRO);
-    const rootHasServiceProLabel = Array.isArray((raw as any).badges) && (raw as any).badges.includes('Servicio Pro');
+    const rawWithBadges = raw as { badges?: string[] | AssetPlanRawBadge[] };
+    const rootHasServiceProLabel = Array.isArray(rawWithBadges.badges) && 
+      rawWithBadges.badges.some(b => (typeof b === 'string' ? b : b.label) === 'Servicio Pro');
     return (buildingHasServiceProBadge || rootHasServiceProLabel) ? "pro" : undefined;
   })();
 
@@ -220,16 +222,17 @@ export function fromAssetPlan(raw: AssetPlanRawBuilding): Building {
 
   if (coverImage) candidate.coverImage = coverImage;
   // Always include media object if any media-related field is present in raw
-  const mediaTour = normalizeString((raw as any).tour360) ?? normalizeString(raw.media?.tour360);
-  const mediaVideo = normalizeString((raw as any).video) ?? normalizeString(raw.media?.video);
+  const rawWithMedia = raw as { tour360?: string; video?: string; media?: AssetPlanRawMedia };
+  const mediaTour = normalizeString(rawWithMedia.tour360) ?? normalizeString(raw.media?.tour360);
+  const mediaVideo = normalizeString(rawWithMedia.video) ?? normalizeString(raw.media?.video);
   const hasAnyMedia = images.length > 0 || Boolean(mediaTour) || Boolean(mediaVideo) || (raw.media?.lat != null && raw.media?.lng != null);
   if (hasAnyMedia) {
     candidate.media = {
-      images: images.length ? images : undefined,
+      images: images.length > 0 ? images : ['/images/default.jpg'], // Media schema requires at least one image
       tour360: mediaTour,
       video: mediaVideo,
       map: raw.media?.lat != null && raw.media?.lng != null ? { lat: raw.media.lat, lng: raw.media.lng } : undefined,
-    } as any;
+    };
   }
   if (badges) candidate.badges = badges;
   if (serviceLevel) candidate.serviceLevel = serviceLevel;
@@ -251,9 +254,11 @@ export function normalizeOrientation(rawOrientation: string | undefined): 'N' | 
   if (!rawOrientation) return undefined;
   
   const normalized = rawOrientation.trim().toUpperCase();
-  const validOrientations = ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'] as const;
+  const validOrientations: readonly ('N' | 'NE' | 'E' | 'SE' | 'S' | 'SO' | 'O' | 'NO')[] = ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'] as const;
   
-  return validOrientations.includes(normalized as any) ? normalized as 'N' | 'NE' | 'E' | 'SE' | 'S' | 'SO' | 'O' | 'NO' : undefined;
+  return validOrientations.includes(normalized as 'N' | 'NE' | 'E' | 'SE' | 'S' | 'SO' | 'O' | 'NO') 
+    ? normalized as 'N' | 'NE' | 'E' | 'SE' | 'S' | 'SO' | 'O' | 'NO' 
+    : undefined;
 }
 
 /**

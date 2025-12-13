@@ -4,29 +4,15 @@ import * as React from 'react';
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Calendar,
-    Clock,
-    User,
-    Phone,
-    Mail,
     CheckCircle,
     AlertCircle,
     Loader2,
     X,
-    ChevronLeft,
-    ChevronRight,
-    ArrowLeft,
-    Check,
-    AlertTriangle,
-    Bell,
-    MessageCircle,
-    Calendar as CalendarIcon,
-    BarChart3,
-    Smartphone,
-    Download
+    ChevronRight
 } from 'lucide-react';
 import { useVisitScheduler } from '../../hooks/useVisitScheduler';
 import { DaySlot, TimeSlot, ContactData } from '../../types/visit';
+import { logger } from '@lib/logger';
 
 interface QuintoAndarVisitSchedulerProps {
     isOpen: boolean;
@@ -35,7 +21,7 @@ interface QuintoAndarVisitSchedulerProps {
     propertyName: string;
     propertyAddress: string;
     propertyImage?: string;
-    onSuccess?: (visitData: any) => void;
+    onSuccess?: (visitData: { date: string; time: string; contact: { name: string; email: string; phone: string } }) => void;
 }
 
 interface FieldValidation {
@@ -164,7 +150,7 @@ export function QuintoAndarVisitScheduler({
 
     // Debug: Log available days when they change
     useEffect(() => {
-        console.log('📅 Available days updated:', availableDays);
+        logger.log('📅 Available days updated:', availableDays);
     }, [availableDays]);
 
     // Validación en tiempo real
@@ -204,9 +190,9 @@ export function QuintoAndarVisitScheduler({
 
     // Manejar selección de fecha
     const handleDateSelect = (day: DaySlot) => {
-        console.log('🗓️ Date selected:', { day, available: day.available });
+        logger.log('🗓️ Date selected:', { day, available: day.available });
         if (!day.available) {
-            console.log('❌ Day not available, ignoring selection');
+            logger.log('❌ Day not available, ignoring selection');
             return;
         }
         selectDateTime(day.date, '');
@@ -222,7 +208,7 @@ export function QuintoAndarVisitScheduler({
 
     // Manejar respuesta de calificación
     const handleQualificationAnswer = (questionKey: string, answer: boolean | string) => {
-        console.log('📝 Answering question:', { questionKey, answer, currentQuestionIndex });
+        logger.log('📝 Answering question:', { questionKey, answer, currentQuestionIndex });
 
         setRentalQualification(prev => ({
             ...prev,
@@ -234,18 +220,18 @@ export function QuintoAndarVisitScheduler({
             if (currentQuestionIndex < qualificationQuestions.length - 1) {
                 setCurrentQuestionIndex(prev => {
                     const newIndex = prev + 1;
-                    console.log('➡️ Moving to next question:', newIndex);
+                    logger.log('➡️ Moving to next question:', newIndex);
                     return newIndex;
                 });
             } else {
-                console.log('✅ All questions completed');
+                logger.log('✅ All questions completed');
             }
         }, 300);
     };
 
     // Manejar respuesta de campo del formulario
     const handleFieldAnswer = (fieldKey: string, value: string) => {
-        console.log('📝 Answering field:', { fieldKey, value, currentFieldIndex });
+        logger.log('📝 Answering field:', { fieldKey, value, currentFieldIndex });
 
         setContactData(prev => ({
             ...prev,
@@ -256,11 +242,11 @@ export function QuintoAndarVisitScheduler({
         if (currentFieldIndex < formFields.length - 1) {
             setCurrentFieldIndex(prev => {
                 const newIndex = prev + 1;
-                console.log('➡️ Moving to next field:', newIndex);
+                logger.log('➡️ Moving to next field:', newIndex);
                 return newIndex;
             });
         } else {
-            console.log('✅ All fields completed');
+            logger.log('✅ All fields completed');
         }
     };
 
@@ -278,7 +264,7 @@ export function QuintoAndarVisitScheduler({
 
     // Debug: Log para verificar el estado
     useEffect(() => {
-        console.log('🔍 Debug canContinue:', {
+        logger.log('🔍 Debug canContinue:', {
             selectedDate,
             selectedTime,
             needsToMoveIn30Days: rentalQualification.needsToMoveIn30Days,

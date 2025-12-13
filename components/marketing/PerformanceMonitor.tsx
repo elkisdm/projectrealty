@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { logger } from "@lib/logger";
 
 // Tipos para métricas de performance
 type PerformanceMetric = {
@@ -53,7 +54,7 @@ export function usePerformanceMonitoring() {
                         metrics.push(metric);
 
                         // Log para debugging
-                        console.log(`[Performance] LCP: ${metric.value}ms (${metric.rating})`);
+                        logger.log(`[Performance] LCP: ${metric.value}ms (${metric.rating})`);
 
                         // Enviar a analytics
                         trackPerformanceMetric(metric);
@@ -62,7 +63,7 @@ export function usePerformanceMonitoring() {
 
                 lcpObserver.observe({ entryTypes: ["largest-contentful-paint"] });
             } catch (error) {
-                console.warn("LCP observer not supported");
+                logger.warn("LCP observer not supported");
             }
 
             // Observer para FID
@@ -81,14 +82,14 @@ export function usePerformanceMonitoring() {
                         };
                         metrics.push(metric);
 
-                        console.log(`[Performance] FID: ${metric.value}ms (${metric.rating})`);
+                        logger.log(`[Performance] FID: ${metric.value}ms (${metric.rating})`);
                         trackPerformanceMetric(metric);
                     });
                 });
 
                 fidObserver.observe({ entryTypes: ["first-input"] });
             } catch (error) {
-                console.warn("FID observer not supported");
+                logger.warn("FID observer not supported");
             }
 
             // Observer para CLS
@@ -110,13 +111,13 @@ export function usePerformanceMonitoring() {
                         timestamp: Date.now(),
                     };
 
-                    console.log(`[Performance] CLS: ${metric.value} (${metric.rating})`);
+                    logger.log(`[Performance] CLS: ${metric.value} (${metric.rating})`);
                     trackPerformanceMetric(metric);
                 });
 
                 clsObserver.observe({ entryTypes: ["layout-shift"] });
             } catch (error) {
-                console.warn("CLS observer not supported");
+                logger.warn("CLS observer not supported");
             }
         }
 
@@ -138,7 +139,7 @@ export function usePerformanceMonitoring() {
                         timestamp: Date.now(),
                     };
 
-                    console.log(`[Performance] ${name}: ${metric.value}ms (${metric.rating})`);
+                    logger.log(`[Performance] ${name}: ${metric.value}ms (${metric.rating})`);
                     trackPerformanceMetric(metric);
                 }
             });

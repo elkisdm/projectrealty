@@ -4,6 +4,7 @@ import React, { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { User, Mail, Phone, ArrowRight, CheckCircle, Shield } from "lucide-react";
 import { track } from "@lib/analytics";
+import { logger } from "@lib/logger";
 
 interface LeadLiteFormProps {
     propertyId: string;
@@ -60,6 +61,7 @@ export function LeadLiteForm({
         } else if (currentField === "phone" && formData.phone.trim()) {
             handleSubmit();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- handleSubmit is stable, avoid re-render loops
     }, [currentField, formData, propertyId]);
 
     const handleSubmit = useCallback(async () => {
@@ -81,7 +83,7 @@ export function LeadLiteForm({
 
             onComplete(formData);
         } catch (error) {
-            console.error('Error submitting lead:', error);
+            logger.error('Error submitting lead:', error);
         } finally {
             setIsSubmitting(false);
         }

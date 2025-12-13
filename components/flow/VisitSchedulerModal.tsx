@@ -2,12 +2,9 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Calendar, Clock, MapPin, User, Phone, ChevronLeft, ChevronRight, Bed, Bath, Car, Square, Check, Star } from 'lucide-react';
+import { X, Calendar, Clock, MapPin, User, ChevronLeft, ChevronRight, Bed, Bath, Car, Square, Check, Star } from 'lucide-react';
 import {
-    LiquidCapsule,
-    TitleLiquidCapsule,
     PriceLiquidCapsule,
-    StatusLiquidCapsule,
     FeatureLiquidCapsule,
     BadgeLiquidCapsule
 } from '@components/ui/LiquidCapsule';
@@ -26,7 +23,7 @@ interface VisitSchedulerModalProps {
         area?: number;
         price?: number;
     };
-    onConfirm: (date: string, time: string, leadData: any) => void;
+    onConfirm: (date: string, time: string, leadData: { name: string; email: string; phone: string; rut?: string }) => void;
 }
 
 interface TimeSlot {
@@ -105,7 +102,7 @@ const generateSmartCalendar = (): DaySlot[] => {
         date.setDate(date.getDate() + i);
 
         // Lógica de disponibilidad inteligente
-        const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+        const _isWeekend = date.getDay() === 0 || date.getDay() === 6;
         const isPremium = Math.random() > 0.7; // 30% días premium
         const available = Math.random() > 0.2; // 80% disponibilidad
 
@@ -182,7 +179,7 @@ const generateTimeBlocks = (): { [key: string]: TimeSlot[] } => {
 export function VisitSchedulerModal({
     isOpen,
     onClose,
-    propertyId,
+    propertyId: _propertyId,
     propertyName,
     propertyAddress,
     propertyImage = "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
@@ -218,7 +215,7 @@ export function VisitSchedulerModal({
                 try {
                     const data = JSON.parse(saved);
                     setContactData(prev => ({ ...prev, ...data }));
-                } catch (e) {
+                } catch {
                     // Ignore invalid data
                 }
             }
@@ -324,7 +321,7 @@ export function VisitSchedulerModal({
         return date.toLocaleDateString('es-CL', options);
     };
 
-    const formatPrice = (price: number): string => {
+    const _formatPrice = (price: number): string => {
         return new Intl.NumberFormat('es-CL', {
             style: 'currency',
             currency: 'CLP',
@@ -496,10 +493,10 @@ export function VisitSchedulerModal({
                                                     <button
                                                         key={day.id}
                                                         className={`relative p-3 rounded-2xl border-2 transition-all duration-200 ${selectedDay?.id === day.id
-                                                                ? 'border-blue-500 bg-blue-50 text-blue-700'
-                                                                : day.available
-                                                                    ? 'border-gray-200 hover:border-blue-300 text-gray-700'
-                                                                    : 'border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed'
+                                                            ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                                            : day.available
+                                                                ? 'border-gray-200 hover:border-blue-300 text-gray-700'
+                                                                : 'border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed'
                                                             } ${day.premium && day.available ? 'ring-2 ring-purple-200' : ''}`}
                                                         onClick={() => day.available && setSelectedDay(day)}
                                                         disabled={!day.available}
@@ -554,10 +551,10 @@ export function VisitSchedulerModal({
                                                                     <button
                                                                         key={time.id}
                                                                         className={`px-4 py-2 rounded-xl border-2 text-sm font-medium transition-all duration-200 ${selectedTime?.id === time.id
-                                                                                ? 'border-blue-500 bg-blue-50 text-blue-700'
-                                                                                : time.available
-                                                                                    ? 'border-gray-200 hover:border-blue-300 text-gray-700'
-                                                                                    : 'border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed'
+                                                                            ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                                                            : time.available
+                                                                                ? 'border-gray-200 hover:border-blue-300 text-gray-700'
+                                                                                : 'border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed'
                                                                             } ${time.premium && time.available ? 'ring-2 ring-purple-200' : ''}`}
                                                                         onClick={() => time.available && setSelectedTime(time)}
                                                                         disabled={!time.available}
@@ -760,9 +757,9 @@ export function VisitSchedulerModal({
                                 (step === 'schedule' && Object.keys(errors).length > 0)
                             }
                             className={`w-full py-4 px-6 rounded-2xl font-semibold transition-all duration-150 ${(step === 'schedule' && (!selectedDay || !selectedTime)) ||
-                                    (step === 'schedule' && Object.keys(errors).length > 0)
-                                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                                    : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl'
+                                (step === 'schedule' && Object.keys(errors).length > 0)
+                                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl'
                                 }`}
                             whileHover={{
                                 scale: ((step === 'schedule' && (!selectedDay || !selectedTime)) ||

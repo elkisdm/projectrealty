@@ -7,6 +7,7 @@
 
 import { supabaseAdmin } from "@lib/supabase";
 import type { Building } from "@schemas/models";
+import { logger } from "@lib/logger";
 
 interface AdminBuildingsQueryParams {
   search?: string;
@@ -85,7 +86,7 @@ export async function getAdminBuildingsOptimized(
       const { data, error, count } = await query;
 
       if (error) {
-        console.warn("Error en query optimizada, cayendo a fallback:", error);
+        logger.warn("Error en query optimizada, cayendo a fallback:", error);
         // Caer a método de fallback
         return getAdminBuildingsFallback(params);
       }
@@ -159,7 +160,7 @@ export async function getAdminBuildingsOptimized(
     // Si no hay Supabase, usar método de fallback
     return getAdminBuildingsFallback(params);
   } catch (error) {
-    console.warn("Error en query optimizada, cayendo a fallback:", error);
+    logger.warn("Error en query optimizada, cayendo a fallback:", error);
     return getAdminBuildingsFallback(params);
   }
 }
