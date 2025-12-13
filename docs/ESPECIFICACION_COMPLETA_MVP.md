@@ -1030,6 +1030,435 @@ Cards de UNIDADES filtradas
 
 ---
 
+## 🎨 Elkis UI/UX System v2.0 (Tech-First Adaptation)
+
+### 1. Principios de Fusión
+
+Este sistema de diseño fusiona la filosofía visual de Airbnb con la identidad técnica de Elkis Realtor:
+
+- **Forma:** Reemplazamos las curvas suaves de 12px de Airbnb por nuestro **`rounded-2xl` (20px)**. Esto da una apariencia mucho más amigable y "burbujeante".
+- **Profundidad:** En lugar de sombras difusas planas, usaremos el efecto **`glass`** para elementos flotantes (Buscador Sticky, Modals).
+- **Color:** El rojo de Airbnb se va. Entra el **Brand Violet** (`#8B6CFF`) para acciones principales y el **Brand Aqua** (`#00E6B3`) para destaques.
+
+---
+
+### 2. Paleta de Colores Aplicada (Semántica)
+
+Aquí definimos cómo se usan las variables CSS en los componentes inmobiliarios específicos.
+
+| Elemento UI | Variable / Clase | Lógica Visual |
+|-------------|------------------|---------------|
+| **Fondo General** | `bg-bg` | Limpieza total. Blanco en Light, Slate-900 en Dark. |
+| **Primary CTA** | `bg-[#8B6CFF]` (Brand Violet) | Botones "Solicitar Visita", "Buscar". |
+| **Secondary CTA** | `bg-[#00E6B3]` (Brand Aqua) | Botones de filtros activos o estados de "Éxito". |
+| **Highlights** | `text-[#00E6B3]` (Brand Aqua) | Texto como "Nuevo", "Destacado". |
+| **Precio** | `text-text` | El precio debe ser el color con mayor contraste (Slate-900 / Slate-50). |
+| **Metadata** | `text-subtext` | M², Dormitorios, Direcciones. |
+| **Bordes** | `border-border` | Divisiones sutiles. |
+| **Tags/Badges** | `bg-surface` + `text-text` | Etiquetas de características. |
+
+#### Sistema de Temas (Referencia Técnica)
+
+El proyecto usa un sistema de temas basado en CSS variables que se adapta automáticamente a modo claro/oscuro.
+
+**Tema Claro:**
+- `--bg: #ffffff` | `--text: #0f172a` | `--subtext: #64748b` | `--border: #e2e8f0`
+
+**Tema Oscuro:**
+- `--bg: #0f172a` | `--text: #f8fafc` | `--subtext: #cbd5e1` | `--border: #334155`
+
+---
+
+### 3. Componentes Críticos (Rediseñados con tu UI)
+
+#### A. The "Elkis Unit Card" (La Joya del MVP)
+
+*El elemento más repetido. Debe verse increíble en Light y Dark mode.*
+
+**Contenedor:**
+- Forma: `rounded-2xl` (Estándar del proyecto).
+- Fondo: `bg-card`.
+- Borde: `border border-border` (Sutil) o `border-0` con `shadow-md`.
+- Interacción: `hover:scale-[1.02] hover:shadow-lg transition-all duration-300`.
+
+**Imagen:**
+- Ratio: `aspect-[4/3]`.
+- Borde: `rounded-t-2xl` (o `rounded-2xl` con padding interno de 8px si quieres estilo "burbuja").
+- **Tag Flotante (Top Left):** `glass` effect. Texto: "Disponible".
+- **Like Button (Top Right):** Círculo `bg-black/20` (backdrop blur) con corazón blanco.
+
+**Contenido (Info):**
+- **Título:** `text-lg font-semibold text-text` (Ej: Edificio Smart).
+- **Subtítulo:** `text-sm text-subtext` (Ej: Ñuñoa • Estudio).
+- **Precio:** `text-xl font-bold text-text` (Ej: $290.000).
+- **Gasto Común:** `text-xs text-text-muted` (Ej: + $50k GC).
+
+**Botón (Hover Desktop):**
+- Aparece un botón `bg-[#8B6CFF] text-white rounded-xl` que dice "Ver unidad".
+
+**Código de Referencia:**
+
+```tsx
+import { Heart, MapPin } from 'lucide-react';
+
+export const UnitCard = ({ unit }) => {
+  return (
+    <div className="
+        group relative 
+        bg-card dark:bg-slate-800 
+        border border-border dark:border-slate-700
+        rounded-2xl overflow-hidden 
+        hover:shadow-xl hover:scale-[1.01] 
+        transition-all duration-300
+        cursor-pointer
+    ">
+      {/* Image Section */}
+      <div className="relative aspect-[4/3] overflow-hidden">
+        <img 
+            src={unit.image} 
+            alt={unit.title} 
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+        />
+        {/* Glass Badge */}
+        <div className="absolute top-3 left-3 glass px-3 py-1 rounded-full">
+            <span className="text-xs font-semibold text-slate-900">Disponible</span>
+        </div>
+        {/* Favorite Button */}
+        <button className="absolute top-3 right-3 p-2 rounded-full bg-black/20 hover:bg-black/40 backdrop-blur-sm transition-colors">
+            <Heart className="w-5 h-5 text-white" />
+        </button>
+      </div>
+
+      {/* Content Section */}
+      <div className="p-5">
+        <div className="flex justify-between items-start mb-2">
+            <div>
+                <h3 className="text-lg font-bold text-text leading-tight">{unit.buildingName}</h3>
+                <p className="text-sm text-subtext flex items-center gap-1 mt-1">
+                    <MapPin className="w-3 h-3" /> {unit.comuna}
+                </p>
+            </div>
+            {/* Rating or Tag */}
+            <div className="flex items-center gap-1 text-xs font-bold text-text">
+                ⭐ 4.8
+            </div>
+        </div>
+
+        <div className="my-3 h-px w-full bg-border" />
+
+        <div className="flex justify-between items-end">
+            <div>
+                <p className="text-2xl font-bold text-text tracking-tight">
+                    ${unit.price} <span className="text-sm font-normal text-subtext">/mes</span>
+                </p>
+                <p className="text-xs text-text-muted mt-1">+ ${unit.expenses} GC aprox.</p>
+            </div>
+            {/* Call to Action invisible until hover (Desktop) */}
+            <div className="opacity-0 transform translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
+                 <span className="text-[#8B6CFF] font-semibold text-sm">Ver detalle →</span>
+            </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+```
+
+---
+
+#### B. Sticky Search Bar (Glass Version)
+
+*El buscador estilo Airbnb, pero con efecto Glass.*
+
+**Contenedor:** `glass-strong` (Fondo translúcido con blur fuerte).
+
+**Forma:** `rounded-full` (Pill).
+
+**Borde:** `border border-white/20` (En dark mode brilla sutilmente).
+
+**Sombra:** `shadow-lg`.
+
+**Interacción:**
+- Al hacer scroll, el fondo de la página pasa por detrás del buscador borroso. Efecto muy premium.
+
+**Botón Buscar:** Círculo perfecto `bg-[#8B6CFF]` (Violeta) con icono de lupa `text-white`.
+
+---
+
+#### C. Página de Propiedad (Layout Híbrido)
+
+##### 1. Galería
+
+- **Grid:** Mantiene el grid 1+4 de Airbnb.
+- **Bordes:** Todas las imágenes externas tienen `rounded-2xl` en las esquinas que tocan el exterior del contenedor.
+- **Separación:** `gap-2` o `gap-4`.
+
+##### 2. Sticky Booking Card (La caja de conversión)
+
+- **Estilo:** `bg-card` + `border border-border` + `shadow-xl`.
+- **Forma:** `rounded-2xl`.
+- **Header:**
+  - Precio: `text-3xl font-bold text-text`.
+  - Label: `text-subtext`.
+- **Bloque Financiero:**
+  - Contenedor interno: `bg-surface rounded-xl p-4`.
+  - Iconos: `lucide-react` (ej: `Wallet`, `Shield`) en color `text-[#8B6CFF]` (Violeta).
+- **CTA Principal:**
+  - `w-full py-4 bg-[#8B6CFF] hover:bg-violet-600 text-white font-bold rounded-2xl shadow-lg shadow-violet-500/20 active:scale-95 transition-all`.
+  - Texto: "Solicitar Visita".
+- **CTA Secundario:**
+  - Botón simple `text-accent-success` (Verde WhatsApp, única excepción o usar Aqua) con icono de WhatsApp.
+
+---
+
+### 4. Tipografía "Tech" (Inter)
+
+Para que *Inter* se sienta premium (como Airbnb) y no genérica, usaremos estos ajustes en Tailwind:
+
+- **Títulos (H1, H2):** `font-bold tracking-tight text-text`.
+  - *Truco:* El `tracking-tight` (-0.025em) hace que los títulos grandes se vean más sólidos y profesionales.
+- **Cuerpo (Body):** `text-base text-text-secondary leading-relaxed`.
+- **Datos (Números):** `font-semibold tabular-nums`.
+  - *Importante:* `tabular-nums` alinea los números en tablas o listas de precios para que ocupen el mismo ancho.
+
+**Escala Tipográfica Aplicada:**
+
+| Elemento | Clase Tailwind | Uso |
+|----------|---------------|-----|
+| **H1** | `text-4xl font-bold tracking-tight` | Títulos principales |
+| **H2** | `text-3xl font-bold tracking-tight` | Títulos de sección |
+| **H3** | `text-2xl font-semibold` | Subtítulos |
+| **Body Large** | `text-lg leading-relaxed` | Texto destacado |
+| **Body** | `text-base text-text-secondary leading-relaxed` | Texto principal |
+| **Body Small** | `text-sm text-subtext` | Texto secundario |
+| **Caption** | `text-xs text-text-muted` | Labels, hints |
+| **Precio** | `text-2xl font-bold tabular-nums` | Números de precio |
+
+---
+
+### 5. Código de Referencia (Tailwind + React)
+
+#### Botón Primario (Brand Violet)
+
+```tsx
+<button className="
+    relative overflow-hidden
+    bg-[#8B6CFF] text-white 
+    hover:bg-[#7a5ce6] 
+    active:scale-95
+    rounded-2xl px-8 py-4 
+    font-bold text-lg tracking-wide
+    shadow-lg shadow-violet-500/25
+    transition-all duration-300 ease-out
+    flex items-center justify-center gap-2
+    min-h-[44px]
+    focus:outline-none focus:ring-2 focus:ring-[#8B6CFF] focus:ring-offset-2
+">
+  <span>Solicitar Visita</span>
+  <Calendar className="w-5 h-5" />
+</button>
+```
+
+#### Botón Secundario (Brand Aqua)
+
+```tsx
+<button className="
+    bg-[#00E6B3] text-slate-900
+    hover:bg-[#00d4a3]
+    active:scale-95
+    rounded-2xl px-6 py-3
+    font-semibold
+    shadow-md
+    transition-all duration-300
+    min-h-[44px]
+    focus:outline-none focus:ring-2 focus:ring-[#00E6B3] focus:ring-offset-2
+">
+  Filtros Activos
+</button>
+```
+
+---
+
+### 6. Estados de UI (Aplicados)
+
+#### Estados de Botones (Brand Violet)
+
+| Estado | Clases Tailwind |
+|--------|----------------|
+| **Default** | `bg-[#8B6CFF] text-white rounded-2xl px-8 py-4 font-bold` |
+| **Hover** | `hover:bg-[#7a5ce6] hover:shadow-lg transition-all` |
+| **Active** | `active:scale-95 active:shadow-md` |
+| **Focus** | `focus:outline-none focus:ring-2 focus:ring-[#8B6CFF] focus:ring-offset-2` |
+| **Disabled** | `opacity-50 cursor-not-allowed` |
+| **Loading** | `opacity-75 cursor-wait` |
+
+#### Estados de Cards
+
+| Estado | Clases Tailwind |
+|--------|----------------|
+| **Default** | `bg-card rounded-2xl border border-border shadow-md` |
+| **Hover** | `hover:shadow-lg hover:scale-[1.02] transition-all duration-300` |
+| **Selected** | `ring-2 ring-[#8B6CFF] ring-offset-2` |
+| **Loading** | `animate-pulse bg-surface` |
+
+---
+
+### 7. Animaciones y Transiciones
+
+#### Principios de Motion
+
+- **Respetar `prefers-reduced-motion`:** Todas las animaciones deben respetar la preferencia del usuario
+- **Duración estándar:** 200-300ms para transiciones
+- **Easing:** `ease-in-out` para transiciones suaves
+
+#### Transiciones Estándar
+
+```tsx
+// Transición suave (estándar)
+className="transition-all duration-300 ease-in-out"
+
+// Transición rápida
+className="transition-all duration-200 ease-in-out"
+
+// Hover en cards
+className="hover:scale-[1.02] hover:shadow-lg transition-all duration-300"
+```
+
+#### Framer Motion (Cuando se requiera)
+
+```tsx
+import { motion } from "framer-motion";
+
+// Ejemplo con prefers-reduced-motion
+<motion.div
+  initial={{ opacity: 0, y: 20 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{
+    duration: 0.3,
+    ease: "easeOut",
+  }}
+  className={window.matchMedia("(prefers-reduced-motion: reduce)").matches ? {} : {}}
+>
+  Contenido animado
+</motion.div>
+```
+
+---
+
+### 8. Iconografía
+
+- **Biblioteca:** `lucide-react`
+- **Estilo:** Outline (líneas)
+- **Tamaños estándar:** `16px` (w-4 h-4), `20px` (w-5 h-5), `24px` (w-6 h-6), `32px` (w-8 h-8)
+
+**Uso en Componentes:**
+
+```tsx
+import { Search, Home, Calendar, Phone, Heart, MapPin } from "lucide-react";
+
+// Tamaño pequeño (16px)
+<Search className="w-4 h-4" />
+
+// Tamaño medio (20px) - estándar
+<Home className="w-5 h-5" />
+
+// Tamaño grande (24px)
+<Calendar className="w-6 h-6" />
+
+// Con color Brand Violet
+<Search className="w-5 h-5 text-[#8B6CFF]" />
+```
+
+---
+
+### 9. Accesibilidad (A11y)
+
+#### Contraste de Colores
+
+- **Texto normal:** Mínimo 4.5:1 (WCAG AA)
+- **Texto grande (18px+):** Mínimo 3:1 (WCAG AA)
+- **Elementos interactivos:** Mínimo 3:1 (WCAG AA)
+
+#### Tamaños Táctiles
+
+- **Mínimo:** `44px × 44px` (iOS/Android guidelines)
+- **Recomendado:** `48px × 48px` para mejor usabilidad
+- **Espaciado entre elementos:** Mínimo `8px` (16px recomendado)
+
+#### Navegación por Teclado
+
+- **Focus visible:** Todos los elementos interactivos deben tener ring de focus
+- **Orden lógico:** Tab order debe seguir el flujo visual
+- **Skip links:** Link "Saltar al contenido principal" en header
+
+#### Screen Readers
+
+- **Labels:** Todos los inputs deben tener `<label>` asociado
+- **Roles:** Usar roles semánticos (`button`, `navigation`, `main`, etc.)
+- **ARIA:** Usar `aria-label`, `aria-describedby`, `aria-live` cuando sea necesario
+- **Alt text:** Todas las imágenes deben tener `alt` descriptivo
+
+---
+
+### 10. Dark Mode
+
+- **Método:** `class`-based (Tailwind `darkMode: 'class'`)
+- **Toggle:** Switch en header (persistido en `localStorage`)
+- **Transición:** Suave (300ms) para cambios de tema
+
+**Consideraciones:**
+- Todos los colores deben tener variantes para dark mode
+- Verificar contraste en ambos modos
+- Glass effects ajustados para dark mode
+
+---
+
+### 11. Grid y Layout Responsive
+
+#### Breakpoints (Responsive)
+
+| Breakpoint | Tamaño | Uso |
+|------------|--------|-----|
+| **Mobile** | `< 640px` | Diseño móvil (default) |
+| **Tablet** | `640px - 1024px` | Diseño tablet (`sm:`, `md:`) |
+| **Desktop** | `> 1024px` | Diseño desktop (`lg:`, `xl:`, `2xl:`) |
+
+#### Ejemplo de Grid Responsive (Unit Cards)
+
+```tsx
+// Grid de cards
+<div className="grid grid-cols-1 
+                sm:grid-cols-2 
+                lg:grid-cols-3 
+                xl:grid-cols-4 
+                gap-6">
+  {units.map(unit => (
+    <UnitCard key={unit.id} unit={unit} />
+  ))}
+</div>
+```
+
+---
+
+### 12. Checklist de Implementación UI/UX v2.0
+
+- [ ] Todos los botones primarios usan `bg-[#8B6CFF]` (Brand Violet)
+- [ ] Todos los botones secundarios usan `bg-[#00E6B3]` (Brand Aqua)
+- [ ] Todos los cards usan `rounded-2xl` (20px) como estándar
+- [ ] Sticky Search Bar usa efecto `glass-strong`
+- [ ] Unit Cards tienen hover `scale-[1.02]` y `shadow-lg`
+- [ ] Precios usan `tabular-nums` para alineación
+- [ ] Títulos usan `tracking-tight` para apariencia premium
+- [ ] Iconos usan `lucide-react` con tamaños estándar
+- [ ] Animaciones respetan `prefers-reduced-motion`
+- [ ] Contraste de colores cumple WCAG AA (4.5:1 mínimo)
+- [ ] Elementos interactivos tienen mínimo 44px × 44px
+- [ ] Focus visible en todos los elementos interactivos
+- [ ] Dark mode funciona correctamente en todos los componentes
+- [ ] Glass effects aplicados en modals y sticky elements
+
+---
+
 ## 📊 ESTADOS Y PUNTOS DE CONVERSIÓN
 
 ### Estados Globales de la Aplicación
