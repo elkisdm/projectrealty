@@ -49,6 +49,42 @@
 
 ## 📋 LOG DE CAMBIOS RECIENTES
 
+### 2025-01-XX - Extensión Completa del Sprint 1
+
+**Descripción:** Sprint 1 extendido con detalle completo, listo para iniciar implementación inmediatamente
+
+**Archivos modificados:**
+- `docs/PLAN_SPRINTS_MVP.md`
+  - Microtarea 1.1 (UnitCard): 10 sub-tareas detalladas con archivos exactos
+  - Microtarea 1.2 (StickySearchBar): 9 sub-tareas detalladas con implementación completa
+  - Microtarea 1.3 (Tipografía): 6 sub-tareas para tracking-tight y tabular-nums
+  - Criterios de aceptación detallados para cada microtarea
+  - Archivos exactos a crear/modificar especificados
+  - Dependencias y notas importantes documentadas
+  - Checklist de progreso por microtarea agregado
+
+**Notas importantes:**
+- Sprint 1 está completamente extendido y listo para comenzar
+- Cada microtarea tiene sub-tareas específicas y archivos exactos
+- Código de referencia incluido para cada componente
+- Orden de ejecución: 1.1 → 1.2 → 1.3 (1.3 puede hacerse en paralelo)
+
+**Contexto relevante:**
+- Microtarea 1.1 es crítica y base para todo (UnitCard)
+- Microtarea 1.2 es independiente (StickySearchBar)
+- Microtarea 1.3 puede hacerse en paralelo o después
+- Todas las microtareas tienen estimación de tiempo (1 + 1 + 0.5 sesiones)
+- Próximo paso: Iniciar Microtarea 1.1 (UnitCard)
+
+**Archivos a crear en próximas sesiones:**
+- `components/ui/UnitCard.tsx`
+- `components/ui/UnitCardSkeleton.tsx`
+- `components/marketing/StickySearchBar.tsx`
+- `tests/unit/components/UnitCard.test.tsx`
+- `tests/unit/components/StickySearchBar.test.tsx`
+
+---
+
 ### 2025-01-XX - Aprobación de Especificación Completa del MVP
 
 **Descripción:** Especificación completa del MVP aprobada y lista para implementación
