@@ -19,10 +19,14 @@
 
 ### Al Completar una Tarea:
 
-1. **Agregar entrada al log** - Registrar qué se hizo
-2. **Listar archivos modificados** - Documentar qué archivos cambiaron
-3. **Agregar notas relevantes** - Cualquier consideración importante
-4. **Actualizar estado actual** - Reflejar el nuevo estado del proyecto
+1. **Ejecutar checklist de validación** - Ver `PLAN_SPRINTS_MVP.md` sección "Checklist de Validación"
+2. **Ejecutar smoke test rápido** - Verificar que no se rompió nada
+3. **Hacer commit** - Con mensaje descriptivo (Conventional Commits)
+4. **Agregar entrada al log** - Registrar qué se hizo
+5. **Listar archivos modificados** - Documentar qué archivos cambiaron
+6. **Agregar notas relevantes** - Cualquier consideración importante
+7. **Actualizar estado actual** - Reflejar el nuevo estado del proyecto
+8. **Actualizar otros documentos** - `PLAN_SPRINTS_MVP.md` y `ESPECIFICACION_COMPLETA_MVP.md`
 
 ---
 
@@ -183,6 +187,22 @@
 
 ## ⚠️ ADVERTENCIAS Y CONSIDERACIONES
 
+### Proceso de Validación
+
+**Antes de marcar cualquier microtarea como completada:**
+1. Ejecutar checklist de validación completo (ver `PLAN_SPRINTS_MVP.md`)
+2. Ejecutar smoke test rápido
+3. Verificar que no se rompió código existente
+4. Solo entonces marcar como completada
+
+### Proceso de Rollback
+
+**Si algo se rompe después de completar una tarea:**
+1. Revisar este log para identificar último cambio
+2. Seguir proceso de rollback en `PLAN_SPRINTS_MVP.md`
+3. Documentar el rollback en este archivo
+4. Re-evaluar la microtarea
+
 ### Reglas del Proyecto (según `.cursor/rules/`):
 
 1. **TypeScript estricto:** Prohibido usar `any`
@@ -238,6 +258,9 @@
 - **Plan de sprints:** `docs/PLAN_SPRINTS_MVP.md`
 - **Estado de implementación:** `docs/ESPECIFICACION_COMPLETA_MVP.md#-estado-de-implementación`
 - **Design System v2.0:** `docs/ESPECIFICACION_COMPLETA_MVP.md#-elkis-uiux-system-v20-tech-first-adaptation`
+- **Checklist de validación:** `docs/PLAN_SPRINTS_MVP.md#-checklist-de-validación-antes-de-marcar-completada`
+- **Proceso de rollback:** `docs/PLAN_SPRINTS_MVP.md#-proceso-de-rollback`
+- **Proceso de commits:** `docs/PLAN_SPRINTS_MVP.md#-proceso-de-commits`
 - **Reglas del proyecto:** `.cursor/rules/`
 
 ---

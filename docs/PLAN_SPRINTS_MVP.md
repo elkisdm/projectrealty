@@ -799,6 +799,106 @@ Sprint 8 (Finalización)
 
 ---
 
+## ✅ CHECKLIST DE VALIDACIÓN (Antes de Marcar Completada)
+
+> **⚠️ OBLIGATORIO:** Ejecutar este checklist antes de marcar cualquier microtarea como completada.
+
+### Validación Funcional
+- [ ] La funcionalidad implementada funciona según especificación
+- [ ] Criterios de aceptación cumplidos
+- [ ] Casos edge manejados correctamente
+- [ ] Manejo de errores implementado
+
+### Validación Técnica
+- [ ] TypeScript sin errores (`pnpm run type-check` o equivalente)
+- [ ] Lint sin errores críticos (`pnpm run lint`)
+- [ ] Build exitoso (`pnpm run build` o equivalente)
+- [ ] Sin `any` types (TypeScript estricto)
+- [ ] Código sigue convenciones del proyecto
+
+### Validación de Calidad
+- [ ] Componente/página es responsive (mobile/tablet/desktop)
+- [ ] Accesibilidad básica (focus visible, labels, aria)
+- [ ] Performance aceptable (no hay renders innecesarios)
+- [ ] Imágenes optimizadas (si aplica, usar next/image)
+
+### Smoke Test Rápido
+- [ ] La página/componente se renderiza sin errores
+- [ ] No hay errores en consola del navegador
+- [ ] Funcionalidad básica funciona (click, navegación, etc.)
+- [ ] No se rompió funcionalidad existente relacionada
+
+### Documentación
+- [ ] Código comentado si es complejo
+- [ ] Props/parámetros tipados correctamente
+- [ ] README o documentación actualizada (si aplica)
+
+### Git
+- [ ] Cambios commiteados con mensaje descriptivo
+- [ ] Commit sigue formato Conventional Commits
+- [ ] No hay archivos temporales o de debug en el commit
+
+**Si alguna validación falla:** Corregir antes de marcar como completada.
+
+---
+
+## 🔄 PROCESO DE ROLLBACK
+
+> **⚠️ IMPORTANTE:** Si algo se rompe después de completar una microtarea, seguir este proceso.
+
+### Identificar el Problema
+1. Revisar `docs/CONTEXTO_RECIENTE.md` para ver último cambio
+2. Verificar qué archivos se modificaron
+3. Identificar qué commit introdujo el problema
+
+### Opciones de Rollback
+
+#### Opción 1: Revertir Último Commit
+```bash
+# Ver último commit
+git log --oneline -1
+
+# Revertir último commit (mantiene historial)
+git revert HEAD
+
+# O deshacer commit (si no se ha pusheado)
+git reset --soft HEAD~1
+```
+
+#### Opción 2: Restaurar Archivo Específico
+```bash
+# Ver cambios en archivo
+git diff HEAD archivo.tsx
+
+# Restaurar desde último commit
+git checkout HEAD -- archivo.tsx
+
+# O desde commit específico
+git checkout <commit-hash> -- archivo.tsx
+```
+
+#### Opción 3: Revisar y Corregir Manualmente
+1. Revisar `docs/CONTEXTO_RECIENTE.md` para contexto
+2. Revisar archivos modificados según el log
+3. Corregir el problema específico
+4. Ejecutar validaciones nuevamente
+
+### Después del Rollback
+1. **Actualizar `CONTEXTO_RECIENTE.md`:**
+   - Agregar entrada sobre el rollback
+   - Explicar qué se revirtió y por qué
+   - Documentar la solución aplicada
+
+2. **Actualizar estado:**
+   - Marcar microtarea como "en revisión" o "revertida"
+   - Actualizar `ESPECIFICACION_COMPLETA_MVP.md` si aplica
+
+3. **Re-evaluar:**
+   - Revisar si la microtarea necesita ser re-diseñada
+   - Identificar dependencias que pueden haber causado el problema
+
+---
+
 ## 📝 PROCESO DE TRABAJO
 
 ### Antes de Iniciar un Sprint
@@ -838,7 +938,13 @@ Sprint 8 (Finalización)
    - Seguir criterios de aceptación
    - Mantener código limpio y documentado
 
-3. **Actualizar Progreso:**
+3. **Validar Antes de Marcar Completada:**
+   - ⚠️ **OBLIGATORIO:** Ejecutar checklist de validación (ver abajo)
+   - Verificar que todos los criterios de aceptación se cumplen
+   - Ejecutar smoke test rápido (ver abajo)
+   - Verificar que no se rompió código existente
+
+4. **Actualizar Progreso:**
    - Marcar microtarea como `[x]` completada
    - Actualizar estado en `ESPECIFICACION_COMPLETA_MVP.md`
    - **Agregar entrada en `docs/CONTEXTO_RECIENTE.md`:**
@@ -847,18 +953,56 @@ Sprint 8 (Finalización)
      - Notas importantes
      - Contexto relevante
    - Actualizar progreso general
+   - **Hacer commit con mensaje descriptivo:**
+     - Formato: `feat|fix|docs|refactor: [descripción breve]`
+     - Ejemplo: `feat: implementar UnitCard según Design System v2.0`
 
 ### Al Completar un Sprint
 
-1. **Revisión:**
+1. **Revisión Final:**
    - Verificar que todas las microtareas están completas
-   - Revisar criterios de aceptación
-   - Testing básico
+   - Revisar criterios de aceptación de todas las microtareas
+   - Ejecutar tests relacionados al sprint
+   - Verificar integración con código existente
 
 2. **Actualización:**
    - Marcar sprint como completado
-   - Actualizar estado en ambos documentos
-   - Preparar siguiente sprint
+   - Actualizar estado en todos los documentos
+   - Agregar resumen del sprint en `CONTEXTO_RECIENTE.md`
+   - Preparar siguiente sprint (extender si es necesario)
+
+---
+
+## 📝 PROCESO DE COMMITS
+
+### Formato de Commits (Conventional Commits)
+
+```bash
+# Estructura
+<tipo>(<alcance>): <descripción breve>
+
+# Ejemplos
+feat(components): implementar UnitCard según Design System v2.0
+fix(api): corregir endpoint buildings para retornar unidades
+docs(specs): actualizar estado de implementación de UnitCard
+refactor(components): extraer lógica común de cards
+```
+
+### Tipos de Commits
+- `feat`: Nueva funcionalidad
+- `fix`: Corrección de bug
+- `docs`: Cambios en documentación
+- `refactor`: Refactorización de código
+- `test`: Agregar o modificar tests
+- `chore`: Tareas de mantenimiento
+
+### Alcance (Opcional pero Recomendado)
+- `components`, `api`, `pages`, `docs`, `types`, `utils`, etc.
+
+### Buenas Prácticas
+- Un commit por microtarea completada
+- Mensaje descriptivo pero conciso
+- Incluir referencia a microtarea si aplica: `(Sprint 1.1)`
 
 ---
 
@@ -867,8 +1011,13 @@ Sprint 8 (Finalización)
 - **Metodología:** Cada microtarea es abordable en una sola sesión (1 chat = 1 microtarea)
 - **Prioridades:** 🔴 CRÍTICA | 🟡 MEDIA | 🟢 BAJA
 - **Estimación:** En sesiones (1 sesión ≈ 1-2 horas de trabajo)
-- **Actualización:** Ambos documentos (`PLAN_SPRINTS_MVP.md` y `ESPECIFICACION_COMPLETA_MVP.md`) se actualizan en paralelo
+- **Actualización:** Todos los documentos se actualizan en paralelo:
+  - `PLAN_SPRINTS_MVP.md` - Progreso de microtareas
+  - `ESPECIFICACION_COMPLETA_MVP.md` - Estado de implementación
+  - `CONTEXTO_RECIENTE.md` - Log de cambios
 - **Extensión:** Cada sprint debe ser extendido antes de iniciar con más detalle
+- **Validación:** Checklist obligatorio antes de marcar como completada
+- **Rollback:** Proceso documentado para revertir cambios si algo se rompe
 
 ---
 
