@@ -27,7 +27,7 @@ export default function FAQ() {
     return (
         <section aria-labelledby="faq" className="mt-12 space-y-6">
             <div className="text-center">
-                <h2 id="faq" className="text-xl sm:text-2xl font-bold mb-3 text-white">
+                <h2 id="faq" className="text-xl sm:text-2xl font-bold tracking-tight mb-3 text-white">
                     ❓ Preguntas frecuentes
                 </h2>
                 <p className="text-sm sm:text-base text-text-muted max-w-2xl mx-auto px-4">

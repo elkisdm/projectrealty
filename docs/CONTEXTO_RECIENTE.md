@@ -22,34 +22,138 @@
 1. **Ejecutar checklist de validación** - Ver `PLAN_SPRINTS_MVP.md` sección "Checklist de Validación"
 2. **Ejecutar smoke test rápido** - Verificar que no se rompió nada
 3. **Hacer commit** - Con mensaje descriptivo (Conventional Commits)
-4. **Agregar entrada al log** - Registrar qué se hizo
-5. **Listar archivos modificados** - Documentar qué archivos cambiaron
-6. **Agregar notas relevantes** - Cualquier consideración importante
-7. **Actualizar estado actual** - Reflejar el nuevo estado del proyecto
-8. **Actualizar otros documentos** - `PLAN_SPRINTS_MVP.md` y `ESPECIFICACION_COMPLETA_MVP.md`
+4. **⚠️ OBLIGATORIO: Actualizar ambos documentos en paralelo:**
+   - **`docs/CONTEXTO_RECIENTE.md`** - Agregar entrada al log con:
+     - Descripción del cambio
+     - Archivos creados/modificados/eliminados
+     - Notas importantes
+     - Contexto relevante
+     - Actualizar estado actual del proyecto
+   - **`docs/PLAN_SPRINTS_MVP.md`** - Marcar microtarea como completada:
+     - Marcar todas las sub-tareas con `[x]`
+     - Marcar criterios de aceptación con `[x]`
+     - Actualizar checklist de progreso
+     - Actualizar contador de progreso general
+5. **Actualizar otros documentos si aplica** - `ESPECIFICACION_COMPLETA_MVP.md` (estado de implementación)
 
 ---
 
 ## 📊 ESTADO ACTUAL DEL PROYECTO
 
 **Última sesión:** Enero 2025  
-**Sprint activo:** Sprint 1 - Fundación y Design System  
-**Última microtarea completada:** 1.2 - Sticky Search Bar (Glass)  
-**Próxima tarea:** Microtarea 1.3 - Tipografía Premium
+**Sprint activo:** Sprint 1 - Fundación y Design System ✅ COMPLETADO  
+**Última microtarea completada:** 1.3 - Tipografía Premium  
+**Próxima tarea:** Extender Sprint 2 antes de iniciar
 
 **Estado general:**
 - ✅ Especificación completa del MVP **APROBADA**
 - ✅ Plan de sprints creado
 - ✅ Sistema de tracking configurado
 - ✅ Checklist de validación y rollback configurado
-- ✅ **Sprint 1 EXTENDIDO** - Listo para iniciar implementación
+- ✅ **Sprint 1 COMPLETADO** - Todas las microtareas finalizadas
 - ✅ **Microtarea 1.1 COMPLETADA** - UnitCard implementado según Design System v2.0
 - ✅ **Microtarea 1.2 COMPLETADA** - StickySearchBar implementado con efecto glass
-- ⚠️ Pendiente: Microtarea 1.3 (Tipografía)
+- ✅ **Microtarea 1.3 COMPLETADA** - Tipografía Premium actualizada (tracking-tight y tabular-nums)
+- ⚠️ Próximo paso: Extender Sprint 2 antes de iniciar
 
 ---
 
 ## 📋 LOG DE CAMBIOS RECIENTES
+
+### 2025-01-XX - Microtarea 1.3: Actualización de Tipografía Premium (Inter)
+
+**Descripción:** Actualización completa de tipografía según Design System v2.0 - Inter Premium con tracking-tight y tabular-nums
+
+**Archivos modificados:**
+- `components/ui/BuildingCardV2.tsx` - Agregado `tabular-nums` a precio
+- `components/BuildingCard.tsx` - Agregado `tabular-nums` a precio
+- `components/marketing/FeaturedGrid.tsx` - Agregado `tracking-tight` a H2 y `tabular-nums` a precio
+- `components/marketing/FeaturedGridClient.tsx` - Agregado `tracking-tight` a H2 y `tabular-nums` a precio
+- `components/marketing/SocialProof.tsx` - Agregado `tracking-tight` a H2
+- `components/marketing/ValueProps.tsx` - Agregado `tracking-tight` a H2
+- `components/marketing/FAQ.tsx` - Agregado `tracking-tight` a H2
+- `components/marketing/Benefits.tsx` - Agregado `tracking-tight` a H2
+- `components/marketing/ComingSoonHero.tsx` - Agregado `tracking-tight` a H2
+- `components/marketing/ArriendaSinComisionGrid.tsx` - Agregado `tracking-tight` a títulos
+- `components/marketing/ArriendaSinComisionBuildingDetail.tsx` - Agregado `tracking-tight` a H1 y `tabular-nums` a precio
+- `components/marketing/ArriendaSinComisionStats.tsx` - Agregado `tabular-nums` a precio promedio
+- `components/marketing/UpsellStepper.tsx` - Agregado `tracking-tight` a H3
+- `components/marketing/Trust.tsx` - Agregado `tracking-tight` a H3
+
+**Archivos verificados (ya tenían las clases correctas):**
+- `app/layout.tsx` - Inter configurado con `display: 'swap'` y `preload: true` ✅
+- `components/marketing/HeroV2.tsx` - Ya tenía `tracking-tight` en H1 ✅
+- `components/marketing/ArriendaSinComisionHero.tsx` - Ya tenía `tracking-tight` en H1 ✅
+- `components/ui/UnitCard.tsx` - Ya tenía `tabular-nums` en precio ✅
+
+**Notas importantes:**
+- Inter ya estaba configurado correctamente en `app/layout.tsx`
+- Todos los H1 y H2 principales ahora tienen `tracking-tight`
+- Todos los precios principales ahora tienen `tabular-nums`
+- No se rompió ningún componente existente
+- Solo se agregaron clases, no se cambió estructura
+- TypeScript estricto mantenido
+- Sin errores de lint
+- Build exitoso
+
+**Contexto relevante:**
+- Sprint 1 completamente finalizado (3/3 microtareas)
+- Tipografía ahora sigue estándares del Design System v2.0
+- Consistencia visual mejorada en toda la aplicación
+- Próximo paso: Extender Sprint 2 antes de iniciar
+
+**Dependencias afectadas:**
+- Ninguna (solo agregado de clases CSS, no rompe código existente)
+- Mejora la consistencia visual en toda la app
+
+---
+
+### 2025-01-XX - Microtarea 1.2: Implementación de Sticky Search Bar (Glass)
+
+**Descripción:** Implementación completa del componente StickySearchBar según Design System v2.0 y especificación del MVP
+
+**Archivos creados:**
+- `components/marketing/StickySearchBar.tsx` - Componente principal con todas las funcionalidades
+  - Props tipadas con TypeScript estricto
+  - Contenedor con efecto `glass-strong` y forma pill (`rounded-full`)
+  - Sticky behavior con scroll detection (se activa después de 100px de scroll)
+  - Input de búsqueda con estilos y variables CSS
+  - Botón buscar circular con Brand Violet `#8B6CFF`
+  - Animaciones estilo Airbnb (elevación y scale al activar sticky)
+  - Responsive (mobile/tablet/desktop)
+  - Funcionalidad de búsqueda con callback opcional o navegación a `/buscar`
+  - Soporte para `prefers-reduced-motion`
+  - Accesibilidad completa (focus visible, aria-labels, navegación por teclado)
+  
+- `tests/unit/components/StickySearchBar.test.tsx` - Tests básicos
+  - 15 tests cubriendo funcionalidad, accesibilidad y casos edge
+  - Mocks de next/navigation y lucide-react
+  - Verificación de renderizado, búsqueda, navegación y sticky behavior
+
+**Archivos modificados:**
+- Ninguno (componente nuevo)
+
+**Notas importantes:**
+- Componente implementado según especificación exacta de `ESPECIFICACION_COMPLETA_MVP.md` líneas 1175-1190
+- Usa variables CSS del sistema de temas (`text-text`, `text-text-muted`, etc.)
+- Efecto `glass-strong` definido en `tailwind.config.ts`
+- Sticky behavior: Se activa cuando `scrollY > 100px`
+- Animaciones: Elevación y scale al activar sticky (respetando `prefers-reduced-motion`)
+- Navegación: Si hay `onSearch` callback, lo usa; si no, navega a `/buscar?q=query`
+- TypeScript estricto (sin `any`)
+- Sin errores de lint
+- Build exitoso
+
+**Contexto relevante:**
+- Componente independiente, puede usarse en cualquier página
+- Listo para integrar en Header o como componente standalone
+- Próximo paso: Integrar en páginas existentes o continuar con Microtarea 1.3
+
+**Dependencias afectadas:**
+- Ninguna (componente nuevo, no rompe código existente)
+- Puede ser usado por: `components/marketing/Header.tsx`, páginas de home, etc.
+
+---
 
 ### 2025-01-XX - Microtarea 1.1: Implementación de Elkis Unit Card
 

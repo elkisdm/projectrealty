@@ -108,7 +108,7 @@ export default function Trust() {
             transition={{ duration: 0.6 }}
             className="text-center mb-12"
           >
-            <h3 className="text-2xl font-semibold text-foreground">
+            <h3 className="text-2xl font-semibold tracking-tight text-foreground">
               Historias que inspiran
             </h3>
             <p className="mt-2 text-muted-foreground">

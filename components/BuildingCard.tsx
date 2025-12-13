@@ -112,7 +112,7 @@ export function BuildingCard({ building, priority = false, showBadge = true }: C
             <div className="text-right shrink-0">
               {hasAvailability ? (
                 <>
-                  <div className="font-bold">{formatPrice(building.precioDesde)}</div>
+                  <div className="font-bold tabular-nums">{formatPrice(building.precioDesde)}</div>
                   <div className="text-[12px] text-[var(--subtext)]">Desde</div>
                 </>
               ) : (

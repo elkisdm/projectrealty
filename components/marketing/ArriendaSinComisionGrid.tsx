@@ -50,7 +50,7 @@ export default function ArriendaSinComisionGrid({ initialBuildings }: ArriendaSi
             <motion.h2
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-3xl md:text-4xl font-bold mb-4"
+              className="text-3xl md:text-4xl font-bold tracking-tight mb-4"
             >
               Cargando edificios disponibles...
             </motion.h2>
@@ -106,7 +106,7 @@ export default function ArriendaSinComisionGrid({ initialBuildings }: ArriendaSi
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-12"
         >
-          <h2 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4 bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
             Departamentos que inspiran
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">

@@ -33,7 +33,7 @@ export default async function FeaturedGrid(_: FeaturedGridProps) {
     return (
       <section aria-labelledby="featured-heading" className="px-6 py-12 lg:px-8">
         <div className="mx-auto max-w-6xl">
-          <h2 id="featured-heading" className="text-2xl font-semibold">
+          <h2 id="featured-heading" className="text-2xl font-semibold tracking-tight">
             Proyectos destacados
           </h2>
           <div className="mt-8 rounded-2xl border border-border bg-card p-8 text-center">
@@ -110,7 +110,7 @@ export default async function FeaturedGrid(_: FeaturedGridProps) {
                   </div>
 
                   <div className="mb-4">
-                    <p className="text-2xl font-bold text-primary">
+                    <p className="text-2xl font-bold text-primary tabular-nums">
                       {formatPrice(building.precioDesde ?? undefined)}
                     </p>
                     <p className="text-xs text-muted-foreground">Desde</p>

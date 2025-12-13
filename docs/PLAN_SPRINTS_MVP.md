@@ -428,56 +428,69 @@ export function StickySearchBar({ onSearch, placeholder = "Buscar...", className
 #### 📋 Sub-tareas Detalladas
 
 **1. Verificar configuración de Inter:**
-- [ ] Revisar `app/layout.tsx` - Verificar que Inter está configurado
-- [ ] Verificar `display: 'swap'` y `preload: true`
-- [ ] Verificar que Inter se aplica globalmente
+- [x] Revisar `app/layout.tsx` - Verificar que Inter está configurado
+- [x] Verificar `display: 'swap'` y `preload: true`
+- [x] Verificar que Inter se aplica globalmente
 
 **2. Agregar tracking-tight a títulos:**
-- [ ] Buscar todos los `<h1>` y `<h2>` en componentes
-- [ ] Agregar clase `tracking-tight` a títulos principales
-- [ ] Archivos a revisar:
-  - `components/marketing/HeroV2.tsx` o similar
-  - `components/marketing/Header.tsx`
-  - `app/page.tsx`
-  - Cualquier componente con títulos grandes
+- [x] Buscar todos los `<h1>` y `<h2>` en componentes
+- [x] Agregar clase `tracking-tight` a títulos principales
+- [x] Archivos actualizados:
+  - `components/marketing/HeroV2.tsx` ✅ (ya tenía tracking-tight)
+  - `components/marketing/FeaturedGrid.tsx` ✅
+  - `components/marketing/FeaturedGridClient.tsx` ✅
+  - `components/marketing/SocialProof.tsx` ✅
+  - `components/marketing/ValueProps.tsx` ✅
+  - `components/marketing/FAQ.tsx` ✅
+  - `components/marketing/Benefits.tsx` ✅
+  - `components/marketing/ComingSoonHero.tsx` ✅
+  - `components/marketing/ArriendaSinComisionGrid.tsx` ✅
+  - `components/marketing/ArriendaSinComisionBuildingDetail.tsx` ✅
+  - `components/marketing/UpsellStepper.tsx` ✅
+  - `components/marketing/Trust.tsx` ✅
+  - Y otros componentes con títulos grandes
 
 **3. Agregar tabular-nums a precios:**
-- [ ] Buscar todos los elementos que muestran precios
-- [ ] Agregar clase `tabular-nums` a números de precio
-- [ ] Archivos a revisar:
-  - `components/BuildingCard.tsx`
-  - `components/ui/BuildingCardV2.tsx`
-  - `components/ui/UnitCard.tsx` (recién creado)
-  - Cualquier componente que muestre precios
+- [x] Buscar todos los elementos que muestran precios
+- [x] Agregar clase `tabular-nums` a números de precio
+- [x] Archivos actualizados:
+  - `components/BuildingCard.tsx` ✅
+  - `components/ui/BuildingCardV2.tsx` ✅
+  - `components/ui/UnitCard.tsx` ✅ (ya tenía tabular-nums)
+  - `components/marketing/FeaturedGrid.tsx` ✅
+  - `components/marketing/FeaturedGridClient.tsx` ✅
+  - `components/marketing/ArriendaSinComisionStats.tsx` ✅
+  - `components/marketing/ArriendaSinComisionBuildingDetail.tsx` ✅
+  - Y otros componentes que muestran precios
 
 **4. Verificar escala tipográfica:**
-- [ ] Revisar que H1 usa: `text-4xl font-bold tracking-tight`
-- [ ] Revisar que H2 usa: `text-3xl font-bold tracking-tight`
-- [ ] Revisar que precios usan: `tabular-nums`
-- [ ] Documentar en comentarios si es necesario
+- [x] Revisar que H1 usa: `text-4xl font-bold tracking-tight`
+- [x] Revisar que H2 usa: `text-3xl font-bold tracking-tight`
+- [x] Revisar que precios usan: `tabular-nums`
+- [x] Documentar en comentarios si es necesario
 
 **5. Actualizar componentes base:**
-- [ ] Revisar botones - Verificar tipografía
-- [ ] Revisar cards - Verificar tipografía
-- [ ] Crear componentes base tipográficos si es necesario (opcional)
+- [x] Revisar botones - Verificar tipografía
+- [x] Revisar cards - Verificar tipografía
+- [x] Crear componentes base tipográficos si es necesario (opcional)
 
 **6. Verificar consistencia:**
-- [ ] Buscar en todo el proyecto: `font-bold` sin `tracking-tight`
-- [ ] Buscar números sin `tabular-nums`
-- [ ] Actualizar donde sea necesario
+- [x] Buscar en todo el proyecto: `font-bold` sin `tracking-tight`
+- [x] Buscar números sin `tabular-nums`
+- [x] Actualizar donde sea necesario
 
 #### ✅ Criterios de Aceptación Detallados
 
 **Tipografía:**
-- [ ] Todos los H1 tienen `tracking-tight`
-- [ ] Todos los H2 tienen `tracking-tight`
-- [ ] Todos los precios tienen `tabular-nums`
-- [ ] Consistencia en toda la app
+- [x] Todos los H1 tienen `tracking-tight`
+- [x] Todos los H2 tienen `tracking-tight`
+- [x] Todos los precios tienen `tabular-nums`
+- [x] Consistencia en toda la app
 
 **Código:**
-- [ ] Sin errores de lint
-- [ ] Build exitoso
-- [ ] No se rompió ningún componente existente
+- [x] Sin errores de lint
+- [x] Build exitoso
+- [x] No se rompió ningún componente existente
 
 #### 📝 Referencias
 
@@ -524,13 +537,13 @@ Ver sección "4. Tipografía 'Tech' (Inter)" en `docs/ESPECIFICACION_COMPLETA_MV
 - [x] ✅ COMPLETADA
 
 ### Microtarea 1.3: Tipografía
-- [ ] Configuración de Inter verificada
-- [ ] tracking-tight agregado a títulos
-- [ ] tabular-nums agregado a precios
-- [ ] Escala tipográfica verificada
-- [ ] Componentes base actualizados
-- [ ] Consistencia verificada
-- [ ] ✅ COMPLETADA
+- [x] Configuración de Inter verificada
+- [x] tracking-tight agregado a títulos
+- [x] tabular-nums agregado a precios
+- [x] Escala tipográfica verificada
+- [x] Componentes base actualizados
+- [x] Consistencia verificada
+- [x] ✅ COMPLETADA
 
 ---
 
@@ -1169,16 +1182,25 @@ Sprint 8 (Finalización)
 ## ✅ CHECKLIST DE PROGRESO
 
 > **📝 INSTRUCCIÓN:** Al completar una microtarea:
-> 1. Marca con `[x]` en esta sección
-> 2. Actualiza el estado correspondiente en `ESPECIFICACION_COMPLETA_MVP.md`
-> 3. Agrega fecha de completación si aplica
+> 1. **⚠️ OBLIGATORIO:** Actualizar `docs/PLAN_SPRINTS_MVP.md`:
+>    - Marca con `[x]` todas las sub-tareas en esta sección
+>    - Marca con `[x]` todos los criterios de aceptación
+>    - Actualiza el checklist de progreso del sprint
+>    - Actualiza el contador de progreso general
+> 2. **⚠️ OBLIGATORIO:** Actualizar `docs/CONTEXTO_RECIENTE.md`:
+>    - Agrega entrada al log con descripción completa
+>    - Lista archivos creados/modificados/eliminados
+>    - Actualiza estado actual del proyecto
+>    - Actualiza última microtarea completada
+> 3. Actualiza el estado correspondiente en `ESPECIFICACION_COMPLETA_MVP.md` (si aplica)
+> 4. Agrega fecha de completación si aplica
 
 ### Sprint 1: Fundación
-**Estado:** ✅ EN PROGRESO | **Progreso:** 2/3 microtareas
+**Estado:** ✅ COMPLETADO | **Progreso:** 3/3 microtareas
 
 - [x] 1.1 - Elkis Unit Card (🔴 CRÍTICA - 1 sesión) ✅ COMPLETADA
 - [x] 1.2 - Sticky Search Bar (🔴 CRÍTICA - 1 sesión) ✅ COMPLETADA
-- [ ] 1.3 - Tipografía Premium (🟡 MEDIA - 0.5 sesión)
+- [x] 1.3 - Tipografía Premium (🟡 MEDIA - 0.5 sesión) ✅ COMPLETADA
 
 ### Sprint 2: Home
 **Estado:** 📋 PENDIENTE | **Progreso:** 0/4 microtareas
@@ -1236,10 +1258,10 @@ Sprint 8 (Finalización)
 ## 📊 PROGRESO GENERAL
 
 **Total de microtareas:** 25  
-**Completadas:** 2  
+**Completadas:** 3  
 **En progreso:** 0  
-**Pendientes:** 23  
-**Progreso:** 8%
+**Pendientes:** 22  
+**Progreso:** 12%
 
 **Última actualización:** Enero 2025
 
@@ -1390,14 +1412,23 @@ git checkout <commit-hash> -- archivo.tsx
    - Ejecutar smoke test rápido (ver abajo)
    - Verificar que no se rompió código existente
 
-4. **Actualizar Progreso:**
-   - Marcar microtarea como `[x]` completada
-   - Actualizar estado en `ESPECIFICACION_COMPLETA_MVP.md`
-   - **Agregar entrada en `docs/CONTEXTO_RECIENTE.md`:**
-     - Descripción del cambio
-     - Archivos modificados/creados/eliminados
-     - Notas importantes
-     - Contexto relevante
+4. **Actualizar Progreso (⚠️ OBLIGATORIO - Ambos documentos):**
+   - **`docs/PLAN_SPRINTS_MVP.md`:**
+     - Marcar microtarea como `[x]` completada
+     - Marcar todas las sub-tareas con `[x]`
+     - Marcar todos los criterios de aceptación con `[x]`
+     - Actualizar checklist de progreso del sprint
+     - Actualizar contador de progreso general
+   - **`docs/CONTEXTO_RECIENTE.md`:**
+     - Agregar entrada al log con:
+       - Descripción del cambio
+       - Archivos creados/modificados/eliminados
+       - Notas importantes
+       - Contexto relevante
+     - Actualizar estado actual del proyecto
+     - Actualizar última microtarea completada
+   - **`docs/ESPECIFICACION_COMPLETA_MVP.md` (si aplica):**
+     - Actualizar estado de implementación
    - Actualizar progreso general
    - **Hacer commit con mensaje descriptivo:**
      - Formato: `feat|fix|docs|refactor: [descripción breve]`

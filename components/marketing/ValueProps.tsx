@@ -37,7 +37,7 @@ export default function ValueProps() {
   return (
     <section aria-labelledby="beneficios" className="mt-16 space-y-8">
       <div className="text-center">
-        <h2 id="beneficios" className="text-2xl font-bold mb-2">
+        <h2 id="beneficios" className="text-2xl font-bold tracking-tight mb-2">
           ¿Por qué elegir este pack?
         </h2>
         <p className="text-gray-300:text-gray-300 max-w-2xl mx-auto">

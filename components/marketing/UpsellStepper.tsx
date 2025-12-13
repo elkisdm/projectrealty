@@ -49,7 +49,7 @@ export function UpsellStepper({ isOpen, onClose, onComplete }: UpsellStepperProp
     const renderStep1 = () => (
         <div className="space-y-6">
             <div className="text-center">
-                <h3 className="text-2xl font-bold mb-4">
+                <h3 className="text-2xl font-bold tracking-tight mb-4">
                     {flashOfferContent.upsells.chatbot.title}
                 </h3>
                 <p className="text-gray-300:text-gray-300 mb-6">
@@ -98,7 +98,7 @@ export function UpsellStepper({ isOpen, onClose, onComplete }: UpsellStepperProp
     const renderStep2 = () => (
         <div className="space-y-6">
             <div className="text-center">
-                <h3 className="text-2xl font-bold mb-4">
+                <h3 className="text-2xl font-bold tracking-tight mb-4">
                     {flashOfferContent.upsells.metaAds.title}
                 </h3>
                 <p className="text-gray-300:text-gray-300 mb-6">
@@ -140,7 +140,7 @@ export function UpsellStepper({ isOpen, onClose, onComplete }: UpsellStepperProp
     const renderSummary = () => (
         <div className="space-y-6">
             <div className="text-center">
-                <h3 className="text-2xl font-bold mb-4">Resumen de tu pedido</h3>
+                <h3 className="text-2xl font-bold tracking-tight mb-4">Resumen de tu pedido</h3>
             </div>
 
             <div className="space-y-4">

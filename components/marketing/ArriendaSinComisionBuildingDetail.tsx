@@ -293,7 +293,7 @@ export default function ArriendaSinComisionBuildingDetail({ building }: Arrienda
                 {/* Nombre y ubicación optimizada */}
                 <div className="space-y-4">
                   {/* Título con mejor jerarquía */}
-                  <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-foreground dark:text-white leading-tight">
+                  <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-foreground dark:text-white leading-tight">
                     {building.name}
                   </h1>
 
@@ -333,7 +333,7 @@ export default function ArriendaSinComisionBuildingDetail({ building }: Arrienda
                     <div className="flex items-center justify-between">
                       <div>
                         <div className="text-xs text-muted-foreground mb-1">Precio desde</div>
-                        <div className="text-2xl sm:text-3xl font-bold text-amber-600 dark:text-amber-400">
+                        <div className="text-2xl sm:text-3xl font-bold text-amber-600 dark:text-amber-400 tabular-nums">
                           {formatPrice(minPrice)}
                         </div>
                       </div>

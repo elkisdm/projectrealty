@@ -121,7 +121,7 @@ export default function ArriendaSinComisionStats() {
 
           <MotionWrapper direction="up" delay={0.5}>
             <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950/30 dark:to-emerald-900/30 rounded-2xl p-6 ring-1 ring-emerald-200/50 dark:ring-emerald-800/50">
-              <div className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
+              <div className="text-3xl font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
                 {formatPrice(stats.averagePrice)}
               </div>
               <div className="text-sm font-medium text-emerald-700 dark:text-emerald-300">

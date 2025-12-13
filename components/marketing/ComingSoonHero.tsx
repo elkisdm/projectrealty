@@ -170,7 +170,7 @@ export function ComingSoonHero() {
             {/* Beneficios */}
             <div className="relative bg-white/5 backdrop-blur-sm rounded-3xl p-6 md:p-8 border border-white/10 hover:bg-white/8 transition-colors duration-200">
               <div className="relative z-10">
-                <h2 className="text-xl md:text-2xl font-bold text-slate-100 mb-6 text-center">
+                <h2 className="text-xl md:text-2xl font-bold tracking-tight text-slate-100 mb-6 text-center">
                   🎉 ¡Ahorra hasta $500.000 en comisiones!
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

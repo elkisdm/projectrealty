@@ -225,7 +225,7 @@ export function BuildingCardV2({
               <div className="text-right shrink-0">
                 {hasAvailability ? (
                   <>
-                    <div className="font-bold">{formatPrice(price)}</div>
+                    <div className="font-bold tabular-nums">{formatPrice(price)}</div>
                     <div className="text-[12px] text-[var(--subtext)]">Desde</div>
                   </>
                 ) : (

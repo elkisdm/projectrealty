@@ -51,7 +51,7 @@ export default function SocialProof() {
         <section aria-labelledby="confianza" className="mt-16 space-y-12">
             {/* Credenciales principales */}
             <div className="text-center">
-                <h2 id="confianza" className="text-2xl font-bold mb-4">
+                <h2 id="confianza" className="text-2xl font-bold tracking-tight mb-4">
                     ¿Por qué confiar en mí?
                 </h2>
                 <p className="text-gray-300:text-gray-300 max-w-2xl mx-auto mb-8">
