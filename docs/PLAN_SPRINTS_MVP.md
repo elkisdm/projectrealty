@@ -512,16 +512,16 @@ Ver sección "4. Tipografía 'Tech' (Inter)" en `docs/ESPECIFICACION_COMPLETA_MV
 - [x] ✅ COMPLETADA
 
 ### Microtarea 1.2: StickySearchBar
-- [ ] Estructura base creada
-- [ ] Contenedor glass implementado
-- [ ] Sticky behavior implementado
-- [ ] Input de búsqueda implementado
-- [ ] Botón buscar implementado
-- [ ] Animaciones implementadas
-- [ ] Responsive implementado
-- [ ] Funcionalidad de búsqueda implementada
-- [ ] Tests creados
-- [ ] ✅ COMPLETADA
+- [x] Estructura base creada
+- [x] Contenedor glass implementado
+- [x] Sticky behavior implementado
+- [x] Input de búsqueda implementado
+- [x] Botón buscar implementado
+- [x] Animaciones implementadas
+- [x] Responsive implementado
+- [x] Funcionalidad de búsqueda implementada
+- [x] Tests creados
+- [x] ✅ COMPLETADA
 
 ### Microtarea 1.3: Tipografía
 - [ ] Configuración de Inter verificada
@@ -1174,10 +1174,10 @@ Sprint 8 (Finalización)
 > 3. Agrega fecha de completación si aplica
 
 ### Sprint 1: Fundación
-**Estado:** ✅ EN PROGRESO | **Progreso:** 1/3 microtareas
+**Estado:** ✅ EN PROGRESO | **Progreso:** 2/3 microtareas
 
 - [x] 1.1 - Elkis Unit Card (🔴 CRÍTICA - 1 sesión) ✅ COMPLETADA
-- [ ] 1.2 - Sticky Search Bar (🔴 CRÍTICA - 1 sesión)
+- [x] 1.2 - Sticky Search Bar (🔴 CRÍTICA - 1 sesión) ✅ COMPLETADA
 - [ ] 1.3 - Tipografía Premium (🟡 MEDIA - 0.5 sesión)
 
 ### Sprint 2: Home
@@ -1236,10 +1236,10 @@ Sprint 8 (Finalización)
 ## 📊 PROGRESO GENERAL
 
 **Total de microtareas:** 25  
-**Completadas:** 1  
+**Completadas:** 2  
 **En progreso:** 0  
-**Pendientes:** 24  
-**Progreso:** 4%
+**Pendientes:** 23  
+**Progreso:** 8%
 
 **Última actualización:** Enero 2025
 

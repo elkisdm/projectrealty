@@ -34,8 +34,8 @@
 
 **Última sesión:** Enero 2025  
 **Sprint activo:** Sprint 1 - Fundación y Design System  
-**Última microtarea completada:** 1.1 - Elkis Unit Card  
-**Próxima tarea:** Microtarea 1.2 - Sticky Search Bar (Glass)
+**Última microtarea completada:** 1.2 - Sticky Search Bar (Glass)  
+**Próxima tarea:** Microtarea 1.3 - Tipografía Premium
 
 **Estado general:**
 - ✅ Especificación completa del MVP **APROBADA**
@@ -44,7 +44,8 @@
 - ✅ Checklist de validación y rollback configurado
 - ✅ **Sprint 1 EXTENDIDO** - Listo para iniciar implementación
 - ✅ **Microtarea 1.1 COMPLETADA** - UnitCard implementado según Design System v2.0
-- ⚠️ Pendiente: Microtarea 1.2 (StickySearchBar) y 1.3 (Tipografía)
+- ✅ **Microtarea 1.2 COMPLETADA** - StickySearchBar implementado con efecto glass
+- ⚠️ Pendiente: Microtarea 1.3 (Tipografía)
 
 ---
 
