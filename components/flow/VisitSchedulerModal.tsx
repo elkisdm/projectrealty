@@ -102,7 +102,6 @@ const generateSmartCalendar = (): DaySlot[] => {
         date.setDate(date.getDate() + i);
 
         // Lógica de disponibilidad inteligente
-        const _isWeekend = date.getDay() === 0 || date.getDay() === 6;
         const isPremium = Math.random() > 0.7; // 30% días premium
         const available = Math.random() > 0.2; // 80% disponibilidad
 
@@ -298,7 +297,12 @@ export function VisitSchedulerModal({
 
     const handleConfirm = () => {
         if (selectedDay && selectedTime && validateContactData()) {
-            onConfirm(selectedDay.date, selectedTime.time, contactData);
+            onConfirm(selectedDay.date, selectedTime.time, {
+                name: contactData.name,
+                email: contactData.email ?? '',
+                phone: contactData.phone,
+                rut: contactData.rut
+            });
             onClose();
             // Reset form
             setStep('schedule');
@@ -319,15 +323,6 @@ export function VisitSchedulerModal({
             day: 'numeric'
         };
         return date.toLocaleDateString('es-CL', options);
-    };
-
-    const _formatPrice = (price: number): string => {
-        return new Intl.NumberFormat('es-CL', {
-            style: 'currency',
-            currency: 'CLP',
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0
-        }).format(price);
     };
 
     const getCurrentMonthDays = () => {

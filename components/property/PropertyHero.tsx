@@ -49,7 +49,7 @@ export function PropertyHero({ building, variant = "catalog" }: PropertyHeroProp
 
             {/* Badges promocionales optimizados para conversión */}
             <div className="flex flex-wrap gap-2 lg:gap-3" role="group" aria-label="Características destacadas">
-                {badges.map((badge, index) => (
+                {badges.map((badge) => (
                     <div
                         key={badge.type}
                         className={`flex-1 lg:flex-none inline-flex items-center justify-center gap-2 lg:gap-3 px-4 lg:px-6 py-2.5 lg:py-3 bg-gradient-to-r ${badge.color} text-white text-sm lg:text-base font-bold rounded-xl lg:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-white/20 group cursor-pointer`}

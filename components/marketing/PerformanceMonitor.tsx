@@ -62,7 +62,7 @@ export function usePerformanceMonitoring() {
                 });
 
                 lcpObserver.observe({ entryTypes: ["largest-contentful-paint"] });
-            } catch (error) {
+            } catch {
                 logger.warn("LCP observer not supported");
             }
 
@@ -88,7 +88,7 @@ export function usePerformanceMonitoring() {
                 });
 
                 fidObserver.observe({ entryTypes: ["first-input"] });
-            } catch (error) {
+            } catch {
                 logger.warn("FID observer not supported");
             }
 
@@ -98,9 +98,10 @@ export function usePerformanceMonitoring() {
                 const clsObserver = new PerformanceObserver((list) => {
                     const entries = list.getEntries();
 
-                    entries.forEach((entry: any) => {
-                        if (!entry.hadRecentInput) {
-                            clsValue += entry.value;
+                    entries.forEach((entry) => {
+                        const layoutShiftEntry = entry as PerformanceEntry & { hadRecentInput?: boolean; value?: number };
+                        if (!layoutShiftEntry.hadRecentInput) {
+                            clsValue += layoutShiftEntry.value || 0;
                         }
                     });
 
@@ -116,7 +117,7 @@ export function usePerformanceMonitoring() {
                 });
 
                 clsObserver.observe({ entryTypes: ["layout-shift"] });
-            } catch (error) {
+            } catch {
                 logger.warn("CLS observer not supported");
             }
         }
@@ -202,11 +203,9 @@ export function useInteractionMetrics() {
         if (typeof window === "undefined") return;
 
         let interactionCount = 0;
-        let lastInteractionTime = Date.now();
 
         const trackInteraction = () => {
             interactionCount++;
-            lastInteractionTime = Date.now();
 
             // Trackear cada 5 interacciones
             if (interactionCount % 5 === 0) {

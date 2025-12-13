@@ -6,13 +6,24 @@ import { useScrollVisibility } from "@hooks/useScrollVisibility";
 import { logger } from "@lib/logger";
 import type { Unit, Building } from "@schemas/models";
 
+interface UnitDetails {
+  dormitorios: number;
+  banos: number;
+  m2: number;
+  piso: string;
+}
+
+interface FirstPaymentCalculation {
+  totalFirstPayment: number;
+}
+
 interface PropertySidebarProps {
   building: Building;
   selectedUnit: Unit | null;
-  unitDetails: any;
+  unitDetails: UnitDetails;
   originalPrice: number;
   discountPrice: number;
-  firstPaymentCalculation: any;
+  firstPaymentCalculation: FirstPaymentCalculation;
   moveInDate: Date;
   includeParking: boolean;
   includeStorage: boolean;
@@ -33,13 +44,13 @@ export function PropertySidebar({
   originalPrice,
   discountPrice,
   firstPaymentCalculation,
-  moveInDate,
-  includeParking,
-  includeStorage,
-  onDateChange,
-  onParkingChange,
-  onStorageChange,
-  onSendQuotation,
+  moveInDate: _moveInDate,
+  includeParking: _includeParking,
+  includeStorage: _includeStorage,
+  onDateChange: _onDateChange,
+  onParkingChange: _onParkingChange,
+  onStorageChange: _onStorageChange,
+  onSendQuotation: _onSendQuotation,
   onScheduleVisit,
   onViewPaymentDetails,
   variant = "catalog",
@@ -186,7 +197,7 @@ export function PropertySidebar({
 
           {/* CTAs principales */}
           <div className="space-y-3">
-            {ctas.map((cta, index) => (
+            {ctas.map((cta) => (
               <button
                 key={cta.label}
                 className={`w-full ${cta.className} text-white font-bold py-3 lg:py-4 px-4 lg:px-6 rounded-lg lg:rounded-xl shadow-lg transition-colors duration-100 border border-white/20 text-sm lg:text-base`}

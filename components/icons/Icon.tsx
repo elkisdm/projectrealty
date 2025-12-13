@@ -148,7 +148,7 @@ export function Icon({
     preload = false
 }: IconProps) {
     // Contexto de íconos
-    const { config: _config } = useIconContext();
+    const { config: _ } = useIconContext();
     const currentPreset = useIconPreset();
 
     // Estado interno del ícono

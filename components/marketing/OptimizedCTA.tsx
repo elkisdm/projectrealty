@@ -2,7 +2,7 @@
 
 import React from "react";
 import { WhatsAppCTA } from "./WhatsAppCTA";
-import { AA_COLORS, isAAContrast } from "./ContrastChecker";
+import { isAAContrast } from "./ContrastChecker";
 
 // Variantes de copy para A/B testing
 export const CTA_VARIANTS = {

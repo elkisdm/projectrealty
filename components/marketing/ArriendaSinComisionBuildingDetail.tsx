@@ -3,16 +3,9 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { ImageGallery } from "@components/gallery/ImageGallery";
-import { PromotionBadge } from "@components/ui/PromotionBadge";
 import { CommuneLifeSection } from "@components/commune/CommuneLifeSection";
 import { getFlagValue } from "@lib/flags";
-import { ArrowLeft, MapPin, Users, Home, Sparkles, ExternalLink, Calendar, MessageCircle, Clock, Star, CheckCircle, Zap, TrendingUp, Eye, Wifi, Car, Dumbbell, Waves, Shield, Coffee, WashingMachine, AirVent, ParkingCircle, TreePine, Camera, Lock, Wrench, ChevronLeft, ChevronRight, Building2, Bed, Bath, Sofa, Utensils, Baby, Dog, Bike, Percent, CreditCard, Heart, Award, Gift, Tag, DollarSign, ShoppingCart, CalendarDays, Gamepad2, Tv, Music, BookOpen, Palette, Globe, Phone, Mail, Smartphone, Monitor, Printer, Projector, Headphones, Speaker, Lightbulb, Fan, Thermometer, Snowflake, Sun, Moon, Cloud, CloudRain, CloudLightning, CloudSnow, Wind, Umbrella, ChevronUp, ChevronDown, Key, Bell, Flame, Droplets, Trash2, Layers, Pill, Cat, Video, Image as ImageIcon, Leaf } from "lucide-react";
-
-// Función local para obtener el badge principal
-function getPrimaryBadge(badges?: Array<{ label: string; tag?: string; type: string }>) {
-  if (!badges || badges.length === 0) return null;
-  return badges[0];
-}
+import { ArrowLeft, MapPin, Users, Home, Sparkles, ExternalLink, Star, CheckCircle, Zap, TrendingUp, Eye, Wifi, Car, Dumbbell, Coffee, WashingMachine, Lock, Building2, Bike, Percent, CreditCard, Heart, Award, Gift, Tag, DollarSign, ShoppingCart, CalendarDays, Phone, Sun, ChevronUp, Flame, Leaf } from "lucide-react";
 
 // Función para obtener colores sobrios y consistentes
 const getBadgeColor = (label: string) => {
@@ -94,113 +87,6 @@ const getBadgeIcon = (label: string) => {
   return Sparkles; // Icono por defecto
 };
 
-// Función para obtener icono de amenidad
-const getAmenityIcon = (amenity: string) => {
-  const amenityLower = amenity.toLowerCase();
-
-  // Comunicación y Tecnología
-  if (amenityLower.includes('wifi') || amenityLower.includes('internet')) return Wifi;
-  if (amenityLower.includes('cito') || amenityLower.includes('citófono') || amenityLower.includes('citefono') || amenityLower.includes('intercom') || amenityLower.includes('interfono')) return Phone;
-  if (amenityLower.includes('teléfono') || amenityLower.includes('phone')) return Phone;
-  if (amenityLower.includes('tv') || amenityLower.includes('televisión') || amenityLower.includes('cable')) return Tv;
-  if (amenityLower.includes('smartphone') || amenityLower.includes('celular')) return Smartphone;
-  if (amenityLower.includes('monitor') || amenityLower.includes('pantalla')) return Monitor;
-  if (amenityLower.includes('impresora') || amenityLower.includes('printer')) return Printer;
-  if (amenityLower.includes('proyector') || amenityLower.includes('projector')) return Projector;
-  if (amenityLower.includes('audífonos') || amenityLower.includes('headphones')) return Headphones;
-  if (amenityLower.includes('altavoces') || amenityLower.includes('speaker')) return Speaker;
-  if (amenityLower.includes('música') || amenityLower.includes('music')) return Music;
-
-  // Transporte y Acceso
-  if (amenityLower.includes('estacionamiento') || amenityLower.includes('parking')) return Car;
-  if (amenityLower.includes('bicicletas') || amenityLower.includes('bike')) return Bike;
-  if (amenityLower.includes('ascensor') || amenityLower.includes('elevator')) return ChevronUp;
-  if (amenityLower.includes('escalera') || amenityLower.includes('stairs')) return ChevronDown;
-
-  // Deportes y Recreación
-  if (amenityLower.includes('gimnasio') || amenityLower.includes('gym')) return Dumbbell;
-  if (amenityLower.includes('piscina') || amenityLower.includes('pool')) return Waves;
-  if (amenityLower.includes('sauna') || amenityLower.includes('spa')) return Thermometer;
-  if (amenityLower.includes('juegos') || amenityLower.includes('games')) return Gamepad2;
-  if (amenityLower.includes('tenis') || amenityLower.includes('deportes')) return Dumbbell;
-  if (amenityLower.includes('yoga') || amenityLower.includes('meditación')) return Heart;
-
-  // Seguridad y Control
-  if (amenityLower.includes('seguridad') || amenityLower.includes('security')) return Shield;
-  if (amenityLower.includes('cctv') || amenityLower.includes('cámara') || amenityLower.includes('camera')) return Camera;
-  if (amenityLower.includes('portero') || amenityLower.includes('doorman') || amenityLower.includes('concierge')) return Lock;
-  if (amenityLower.includes('control de acceso') || amenityLower.includes('access control')) return Key;
-  if (amenityLower.includes('alarma') || amenityLower.includes('alarm')) return Bell;
-
-  // Servicios Básicos
-  if (amenityLower.includes('aire acondicionado') || amenityLower.includes('ac') || amenityLower.includes('clima')) return AirVent;
-  if (amenityLower.includes('calefacción') || amenityLower.includes('heating')) return Thermometer;
-  if (amenityLower.includes('luz') || amenityLower.includes('light')) return Lightbulb;
-  if (amenityLower.includes('ventilador') || amenityLower.includes('fan')) return Fan;
-  if (amenityLower.includes('agua') || amenityLower.includes('water')) return Droplets;
-  if (amenityLower.includes('gas') || amenityLower.includes('gas')) return Flame;
-
-  // Limpieza y Mantenimiento
-  if (amenityLower.includes('lavandería') || amenityLower.includes('laundry')) return WashingMachine;
-  if (amenityLower.includes('mantenimiento')) return Wrench;
-  if (amenityLower.includes('limpieza') || amenityLower.includes('cleaning')) return Sparkles;
-  if (amenityLower.includes('basura') || amenityLower.includes('trash')) return Trash2;
-
-  // Alimentación y Comercio
-  if (amenityLower.includes('café') || amenityLower.includes('cafe')) return Coffee;
-  if (amenityLower.includes('restaurante') || amenityLower.includes('restaurant')) return Utensils;
-  if (amenityLower.includes('supermercado') || amenityLower.includes('supermarket')) return ShoppingCart;
-  if (amenityLower.includes('farmacia') || amenityLower.includes('pharmacy')) return Pill;
-
-  // Espacios Comunes
-  if (amenityLower.includes('parque') || amenityLower.includes('garden') || amenityLower.includes('jardín')) return TreePine;
-  if (amenityLower.includes('terraza') || amenityLower.includes('terrace') || amenityLower.includes('balcón')) return Sun;
-  if (amenityLower.includes('quincho') || amenityLower.includes('barbecue') || amenityLower.includes('asado')) return Flame;
-  if (amenityLower.includes('sala de eventos') || amenityLower.includes('event room')) return Users;
-  if (amenityLower.includes('biblioteca') || amenityLower.includes('library')) return BookOpen;
-  if (amenityLower.includes('sala de estudio') || amenityLower.includes('study room')) return BookOpen;
-  if (amenityLower.includes('sala de reuniones') || amenityLower.includes('meeting room')) return Users;
-
-  // Habitaciones
-  if (amenityLower.includes('dormitorio') || amenityLower.includes('bedroom')) return Bed;
-  if (amenityLower.includes('baño') || amenityLower.includes('bathroom')) return Bath;
-  if (amenityLower.includes('sala') || amenityLower.includes('living')) return Sofa;
-  if (amenityLower.includes('cocina') || amenityLower.includes('kitchen')) return Utensils;
-  if (amenityLower.includes('comedor') || amenityLower.includes('dining')) return Utensils;
-  if (amenityLower.includes('oficina') || amenityLower.includes('office')) return Building2;
-
-  // Mascotas y Familia
-  if (amenityLower.includes('niños') || amenityLower.includes('kids') || amenityLower.includes('children')) return Baby;
-  if (amenityLower.includes('mascotas') || amenityLower.includes('pet') || amenityLower.includes('perros')) return Dog;
-  if (amenityLower.includes('gatos') || amenityLower.includes('cats')) return Cat;
-
-  // Arte y Cultura
-  if (amenityLower.includes('arte') || amenityLower.includes('art')) return Palette;
-  if (amenityLower.includes('galería') || amenityLower.includes('gallery')) return ImageIcon;
-  if (amenityLower.includes('teatro') || amenityLower.includes('theater')) return Video;
-
-  // Negocios y Trabajo
-  if (amenityLower.includes('coworking') || amenityLower.includes('espacio de trabajo')) return Building2;
-  if (amenityLower.includes('internacional') || amenityLower.includes('international')) return Globe;
-  if (amenityLower.includes('email') || amenityLower.includes('mail')) return Mail;
-
-  // Clima y Ambiente
-  if (amenityLower.includes('temperatura') || amenityLower.includes('thermometer')) return Thermometer;
-  if (amenityLower.includes('clima') || amenityLower.includes('weather')) return Cloud;
-  if (amenityLower.includes('lluvia') || amenityLower.includes('rain')) return CloudRain;
-  if (amenityLower.includes('nieve') || amenityLower.includes('snow')) return CloudSnow;
-  if (amenityLower.includes('viento') || amenityLower.includes('wind')) return Wind;
-  if (amenityLower.includes('sol') || amenityLower.includes('sun')) return Sun;
-  if (amenityLower.includes('luna') || amenityLower.includes('moon')) return Moon;
-
-  // Edificio y Estructura
-  if (amenityLower.includes('edificio') || amenityLower.includes('building')) return Building2;
-  if (amenityLower.includes('torre') || amenityLower.includes('tower')) return Building2;
-  if (amenityLower.includes('piso') || amenityLower.includes('floor')) return Layers;
-
-  return Sparkles; // Icono por defecto
-};
-
 // Interfaz para datos del CSV
 interface CSVUnit {
   op: string;
@@ -247,48 +133,33 @@ interface ArriendaSinComisionBuildingDetailProps {
 }
 
 export default function ArriendaSinComisionBuildingDetail({ building }: ArriendaSinComisionBuildingDetailProps) {
-  const [hoveredTypology, setHoveredTypology] = useState<string | null>(null);
   const [showUrgencyBanner, setShowUrgencyBanner] = useState(true);
-
-  const primaryBadge = getPrimaryBadge(building.badges);
 
   // Memoizar cálculos costosos
   const {
-    availableUnits,
     typologyGroups,
     availableTypologies,
     totalAvailableUnits,
-    minPrice,
-    maxPrice,
-    avgPrice
+    minPrice
   } = useMemo(() => {
-    const availableUnits = building.unidades.filter(unit =>
+    const units = building.unidades.filter(unit =>
       !unit.estado || unit.estado.toLowerCase() === 'disponible'
     );
 
-    const typologyGroups = availableUnits.reduce((acc, unit) => {
+    const groups = units.reduce((acc, unit) => {
       const key = unit.tipologia;
       if (!acc[key]) {
         acc[key] = [];
       }
       acc[key].push(unit);
       return acc;
-    }, {} as Record<string, typeof availableUnits>);
-
-    const availableTypologies = Object.keys(typologyGroups);
-    const totalAvailableUnits = availableUnits.length;
-    const minPrice = Math.min(...availableUnits.map(u => u.precio));
-    const maxPrice = Math.max(...availableUnits.map(u => u.precio));
-    const avgPrice = Math.round(availableUnits.reduce((sum, u) => sum + u.precio, 0) / totalAvailableUnits);
+    }, {} as Record<string, typeof units>);
 
     return {
-      availableUnits,
-      typologyGroups,
-      availableTypologies,
-      totalAvailableUnits,
-      minPrice,
-      maxPrice,
-      avgPrice
+      typologyGroups: groups,
+      availableTypologies: Object.keys(groups),
+      totalAvailableUnits: units.length,
+      minPrice: Math.min(...units.map(u => u.precio))
     };
   }, [building.unidades]);
 
@@ -535,10 +406,9 @@ export default function ArriendaSinComisionBuildingDetail({ building }: Arrienda
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
                       {availableTypologies.map((typology, index) => {
                         const units = typologyGroups[typology];
-                        const minPrice = Math.min(...units.map(u => u.precio));
+                        const typologyMinPrice = Math.min(...units.map(u => u.precio));
                         const maxM2 = Math.max(...units.map(u => u.m2));
                         const minM2 = Math.min(...units.map(u => u.m2));
-                        const isHovered = hoveredTypology === typology;
 
                         return (
                           <motion.div
@@ -553,8 +423,6 @@ export default function ArriendaSinComisionBuildingDetail({ building }: Arrienda
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.5 + index * 0.1 }}
-                            onHoverStart={() => setHoveredTypology(typology)}
-                            onHoverEnd={() => setHoveredTypology(null)}
                           >
                             <div className="p-4 space-y-4">
                               {/* Header de tipología */}
@@ -575,7 +443,7 @@ export default function ArriendaSinComisionBuildingDetail({ building }: Arrienda
                                 <div className="flex justify-between items-center p-3 bg-gray-800:bg-gray-800 rounded-lg">
                                   <span className="text-sm text-gray-300:text-gray-400">Precio desde:</span>
                                   <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
-                                    {formatPrice(minPrice)}
+                                    {formatPrice(typologyMinPrice)}
                                   </span>
                                 </div>
                                 <div className="flex justify-between items-center p-3 bg-gray-800:bg-gray-800 rounded-lg">

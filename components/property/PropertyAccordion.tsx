@@ -16,7 +16,7 @@ interface SubSectionProps {
     children: React.ReactNode;
 }
 
-function SubSection({ id, title, icon, summary, isExpanded, onToggle, children }: SubSectionProps) {
+function SubSection({ id: _id, title, icon, summary, isExpanded, onToggle, children }: SubSectionProps) {
     return (
         <div className="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
             <button
@@ -75,7 +75,7 @@ interface PropertyAccordionProps {
 export function PropertyAccordion({
     building,
     selectedUnit,
-    onScheduleVisit,
+    onScheduleVisit: _onScheduleVisit,
     onPreapproval
 }: PropertyAccordionProps) {
     const [isExpanded, setIsExpanded] = useState(false);

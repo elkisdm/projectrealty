@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import type { Building, Unit } from "@schemas/models";
 import { QuotationInput, QuotationResult } from "@schemas/quotation";
+import { logger } from "@lib/logger";
 
 interface PropertyQuotationPanelProps {
   building: Building;
@@ -15,7 +16,7 @@ export function PropertyQuotationPanel({ building, selectedUnit, isAdmin = false
   const [quotationResult, setQuotationResult] = useState<QuotationResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
-  
+
   const [startDate, setStartDate] = useState('');
   const [parkingSelected, setParkingSelected] = useState(false);
   const [storageSelected, setStorageSelected] = useState(false);
@@ -47,7 +48,7 @@ export function PropertyQuotationPanel({ building, selectedUnit, isAdmin = false
   const handleGenerateQuotation = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     try {
       const quotationData: QuotationInput = {
         unitId: selectedUnit.id,
@@ -76,7 +77,7 @@ export function PropertyQuotationPanel({ building, selectedUnit, isAdmin = false
       const result: QuotationResult = await response.json();
       setQuotationResult(result);
     } catch (error) {
-      console.error('Error generating quotation:', error);
+      logger.error('Error generating quotation:', error);
       alert('Error generando cotización. Por favor intenta nuevamente.');
     } finally {
       setIsLoading(false);
@@ -269,7 +270,7 @@ export function PropertyQuotationPanel({ building, selectedUnit, isAdmin = false
         {quotationResult && (
           <div className="mt-6 pt-6 border-t border-gray-200">
             <h4 className="font-medium text-gray-900 mb-4">Resultado de Cotización</h4>
-            
+
             <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-4 space-y-3">
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
@@ -289,7 +290,7 @@ export function PropertyQuotationPanel({ building, selectedUnit, isAdmin = false
                   <div className="font-medium text-green-700">{formatCurrency(quotationResult.totals.firstPayment)}</div>
                 </div>
               </div>
-              
+
               {/* Copy and Print Actions */}
               <div className="flex gap-2 pt-3 border-t border-white/50">
                 <button

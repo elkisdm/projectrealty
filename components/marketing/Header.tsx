@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import { clx } from '@lib/utils';
 import { ThemeToggle } from '@components/ui/ThemeToggle';
 import { ContactDropdown } from './ContactDropdown';
-import { Heart, Bell, User, Search, Menu, X, ChevronRight, Home } from 'lucide-react';
+import { Heart, User, Search, Menu, X, ChevronRight, Home } from 'lucide-react';
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);

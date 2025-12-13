@@ -3,12 +3,24 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { ReactNode } from "react";
 
+interface MotionProps {
+  opacity?: number;
+  x?: number;
+  y?: number;
+}
+
+interface TransitionProps {
+  duration?: number;
+  delay?: number;
+  ease?: string | number[];
+}
+
 interface MotionWrapperProps {
   children: ReactNode;
   className?: string;
-  initial?: any;
-  animate?: any;
-  transition?: any;
+  initial?: MotionProps;
+  animate?: MotionProps;
+  transition?: TransitionProps;
   delay?: number;
   direction?: "up" | "down" | "left" | "right" | "fade";
 }

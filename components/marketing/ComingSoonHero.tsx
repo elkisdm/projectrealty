@@ -2,15 +2,8 @@
 import { useEffect, useState, useRef } from "react";
 import {
   ShieldCheck,
-  Sparkles,
-  Clock,
-  Building,
   Building2,
-  MessageCircle,
-  MessageSquare,
   DollarSign,
-  Zap,
-  // CheckCircle,
   Smartphone,
   Headphones,
   FileText,
@@ -22,9 +15,10 @@ import { track } from "@lib/analytics";
 import { Modal } from "@components/ui/Modal";
 import { WaitlistForm } from "./WaitlistForm";
 
-let Motion: typeof import("framer-motion") | null = null;
-let motion: any = null;
-let MotionConfig: any = null;
+type MotionType = typeof import("framer-motion");
+let Motion: MotionType | null = null;
+let motion: MotionType["motion"] | null = null;
+let MotionConfig: MotionType["MotionConfig"] | null = null;
 
 async function ensureMotion() {
   if (!Motion) {
@@ -35,25 +29,12 @@ async function ensureMotion() {
 }
 
 export function ComingSoonHero() {
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const triggerButtonRef = useRef<HTMLButtonElement>(null);
   const emailInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     ensureMotion();
-  }, []);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setPrefersReducedMotion(mediaQuery.matches);
-
-    const handleChange = (e: MediaQueryListEvent) => {
-      setPrefersReducedMotion(e.matches);
-    };
-
-    mediaQuery.addEventListener("change", handleChange);
-    return () => mediaQuery.removeEventListener("change", handleChange);
   }, []);
 
   const handleWaitlistClick = () => {
@@ -89,17 +70,6 @@ export function ComingSoonHero() {
     },
   } as const;
 
-  const iconVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        duration: 0.3,
-        ease: "easeOut",
-      },
-    },
-  } as const;
-
   const benefitCardVariants = {
     hidden: { opacity: 0, y: 10 },
     visible: (custom: number) => ({
@@ -112,14 +82,6 @@ export function ComingSoonHero() {
       },
     }),
   } as const;
-
-  const icons = [
-    { Icon: ShieldCheck, label: "Seguridad garantizada" },
-    { Icon: Sparkles, label: "Experiencia premium" },
-    { Icon: Clock, label: "Proceso rápido" },
-    { Icon: Building, label: "Edificios exclusivos" },
-    { Icon: MessageCircle, label: "Soporte 24/7" },
-  ];
 
   return (
     <div className="relative min-h-[70vh] flex items-center overflow-hidden bg-transparent">

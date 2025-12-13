@@ -1,9 +1,7 @@
 "use client";
 import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronDown,
-  ChevronUp,
   Info,
   Star,
   CheckCircle,
@@ -20,9 +18,23 @@ import {
 } from "lucide-react";
 import type { Building } from "@schemas/models";
 
+interface UnitDetails {
+  tipologia: string;
+  m2: number;
+  piso: string;
+  orientacion: string;
+  area_interior?: number;
+  area_exterior?: number;
+  amoblado: boolean;
+  petFriendly: boolean;
+  codigoInterno?: string;
+  garantia_cuotas?: number;
+  renta_minima?: number;
+}
+
 interface PropertySectionsProps {
   building: Building;
-  unitDetails: any;
+  unitDetails: UnitDetails;
   originalPrice: number;
   variant?: "catalog" | "marketing" | "admin";
   className?: string;
@@ -308,7 +320,7 @@ export function PropertySections({
       {/* Amenidades mejoradas */}
       <CollapsibleSection title="Amenidades del edificio" icon={Star}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {amenidades.map((amenidad, index) => (
+          {amenidades.map((amenidad) => (
             <div
               key={amenidad.nombre}
               className={`flex items-center gap-3 p-3 rounded-xl transition-all duration-300 ${amenidad.disponible
@@ -347,7 +359,7 @@ export function PropertySections({
               "Agua caliente central",
               "Cocina equipada",
               "Seguridad 24/7"
-            ].map((feature, index) => (
+            ].map((feature) => (
               <div
                 key={feature}
                 className="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-700"
@@ -365,7 +377,7 @@ export function PropertySections({
               "Logia incluida",
               "Closet empotrado",
               "Vista despejada"
-            ].map((feature, index) => (
+            ].map((feature) => (
               <div
                 key={feature}
                 className="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-700"

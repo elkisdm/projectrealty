@@ -20,7 +20,7 @@ export function StickyMobileCTA({
   className = ""
 }: StickyMobileCTAProps) {
   const [isVisible, setIsVisible] = useState(false);
-  const [_isScrolled, setIsScrolled] = useState(false);
+  const [, setIsScrolled] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {

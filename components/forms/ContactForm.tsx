@@ -27,7 +27,7 @@ export function ContactForm({ buildingId, buildingName, onClose }: ContactFormPr
     phone: "",
     message: "",
   });
-  
+
   const [formState, setFormState] = useState<FormState>("idle");
   const [errors, setErrors] = useState<Partial<FormData>>({});
   const formRef = useRef<HTMLFormElement>(null);
@@ -52,7 +52,7 @@ export function ContactForm({ buildingId, buildingName, onClose }: ContactFormPr
 
   const handleInputChange = (field: keyof FormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    
+
     // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: undefined }));
@@ -68,7 +68,7 @@ export function ContactForm({ buildingId, buildingName, onClose }: ContactFormPr
 
   const validateForm = (): boolean => {
     const newErrors: Partial<FormData> = {};
-    
+
     (["name", "email", "phone"] as const).forEach(field => {
       const error = validateField(field, formData[field]);
       if (error) newErrors[field] = error;
@@ -80,7 +80,7 @@ export function ContactForm({ buildingId, buildingName, onClose }: ContactFormPr
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
     setFormState("loading");
@@ -108,12 +108,12 @@ export function ContactForm({ buildingId, buildingName, onClose }: ContactFormPr
         contacto_metodo: "form",
       });
       setFormData({ name: "", email: "", phone: "", message: "" });
-      
+
       // Auto-close after success
       setTimeout(() => {
         onClose?.();
       }, 2000);
-    } catch (_error) {
+    } catch {
       setFormState("error");
     }
   };
@@ -148,7 +148,7 @@ export function ContactForm({ buildingId, buildingName, onClose }: ContactFormPr
               Quiero ser contactado
             </h2>
             <p className="mt-2 text-sm text-gray-300:text-gray-400">
-              {buildingName 
+              {buildingName
                 ? `Te contactaremos para darte más información sobre ${buildingName}`
                 : "Te contactaremos para ayudarte a encontrar tu próximo hogar"
               }
@@ -172,11 +172,10 @@ export function ContactForm({ buildingId, buildingName, onClose }: ContactFormPr
                   value={formData.name}
                   onChange={(e) => handleInputChange("name", e.target.value)}
                   onBlur={() => handleBlur("name")}
-                  className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-                    errors.name 
-                      ? "border-red-300 dark:border-red-600 bg-red-50 dark:bg-red-900/20" 
-                      : "border-gray-300 dark:border-gray-600 bg-gray-800:bg-gray-800"
-                  }`}
+                  className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${errors.name
+                    ? "border-red-300 dark:border-red-600 bg-red-50 dark:bg-red-900/20"
+                    : "border-gray-300 dark:border-gray-600 bg-gray-800:bg-gray-800"
+                    }`}
                   placeholder="Tu nombre completo"
                   required
                 />
@@ -203,11 +202,10 @@ export function ContactForm({ buildingId, buildingName, onClose }: ContactFormPr
                   value={formData.email}
                   onChange={(e) => handleInputChange("email", e.target.value)}
                   onBlur={() => handleBlur("email")}
-                  className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-                    errors.email 
-                      ? "border-red-300 dark:border-red-600 bg-red-50 dark:bg-red-900/20" 
-                      : "border-gray-300 dark:border-gray-600 bg-gray-800:bg-gray-800"
-                  }`}
+                  className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${errors.email
+                    ? "border-red-300 dark:border-red-600 bg-red-50 dark:bg-red-900/20"
+                    : "border-gray-300 dark:border-gray-600 bg-gray-800:bg-gray-800"
+                    }`}
                   placeholder="tu@email.com"
                   required
                 />
@@ -234,11 +232,10 @@ export function ContactForm({ buildingId, buildingName, onClose }: ContactFormPr
                   value={formData.phone}
                   onChange={(e) => handleInputChange("phone", e.target.value)}
                   onBlur={() => handleBlur("phone")}
-                  className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-                    errors.phone 
-                      ? "border-red-300 dark:border-red-600 bg-red-50 dark:bg-red-900/20" 
-                      : "border-gray-300 dark:border-gray-600 bg-gray-800:bg-gray-800"
-                  }`}
+                  className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${errors.phone
+                    ? "border-red-300 dark:border-red-600 bg-red-50 dark:bg-red-900/20"
+                    : "border-gray-300 dark:border-gray-600 bg-gray-800:bg-gray-800"
+                    }`}
                   placeholder="+56 9 1234 5678"
                   required
                 />

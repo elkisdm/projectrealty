@@ -173,3 +173,4 @@ export function BasicFilters({ buildings, onFiltersChange }: BasicFiltersProps) 
 
 
 
+

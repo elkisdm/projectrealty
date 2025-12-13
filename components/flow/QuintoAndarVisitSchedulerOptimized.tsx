@@ -15,7 +15,7 @@ import {
     Moon
 } from 'lucide-react';
 import { useVisitScheduler } from '@/hooks/useVisitScheduler';
-import { DaySlot, TimeSlot, ContactData } from '@/types/visit';
+import { DaySlot, TimeSlot, ContactData, CreateVisitResponse } from '@/types/visit';
 import { PremiumFeaturesStep } from './PremiumFeaturesStep';
 import { logger } from '@lib/logger';
 
@@ -26,7 +26,7 @@ interface QuintoAndarVisitSchedulerProps {
     propertyName: string;
     propertyAddress: string;
     propertyImage?: string;
-    onSuccess?: (visitData: { date: string; time: string; contact: { name: string; email: string; phone: string } }) => void;
+    onSuccess?: (visitData: CreateVisitResponse) => void;
 }
 
 interface FieldValidation {
@@ -34,6 +34,14 @@ interface FieldValidation {
     email: { isValid: boolean; message: string };
     rut: { isValid: boolean; message: string };
     phone: { isValid: boolean; message: string };
+}
+
+interface VisitData {
+    date: string | null;
+    time: string | null;
+    name: string;
+    phone: string;
+    email: string;
 }
 
 export function QuintoAndarVisitScheduler({
@@ -66,7 +74,6 @@ export function QuintoAndarVisitScheduler({
     const [notificationsEnabled, setNotificationsEnabled] = useState(false);
     const [whatsappEnabled, setWhatsappEnabled] = useState(false);
     const [calendarSyncEnabled, setCalendarSyncEnabled] = useState(false);
-    const [showPremiumFeatures, setShowPremiumFeatures] = useState(false);
     const [analyticsData, setAnalyticsData] = useState({
         conversionRate: 0,
         avgTimeToComplete: 0,
@@ -151,13 +158,13 @@ export function QuintoAndarVisitScheduler({
         return false;
     }, []);
 
-    const sendWhatsAppConfirmation = useCallback((visitData: any) => {
+    const sendWhatsAppConfirmation = useCallback((visitData: VisitData) => {
         const message = `Hola! Confirmo mi visita para ${visitData.date} a las ${visitData.time} en ${propertyName}.`;
         const whatsappUrl = `https://wa.me/56912345678?text=${encodeURIComponent(message)}`;
         window.open(whatsappUrl, '_blank');
     }, [propertyName]);
 
-    const generateCalendarEvent = useCallback((visitData: any) => {
+    const generateCalendarEvent = useCallback((visitData: VisitData) => {
         const startDate = new Date(`${visitData.date}T${visitData.time}`);
         const endDate = new Date(startDate.getTime() + 60 * 60 * 1000); // 1 hora después
 
@@ -165,7 +172,7 @@ export function QuintoAndarVisitScheduler({
         window.open(googleCalendarUrl, '_blank');
     }, [propertyName, propertyAddress]);
 
-    const trackAnalytics = useCallback((event: string, data: any) => {
+    const trackAnalytics = useCallback((event: string, data: VisitData) => {
         logger.log('Analytics:', event, data);
         setAnalyticsData(prev => ({
             ...prev,
@@ -194,13 +201,6 @@ export function QuintoAndarVisitScheduler({
     const handleContinue = () => {
         if (canContinue) {
             setStep('contact');
-        }
-    };
-
-    // Continuar al paso premium
-    const handleContinueToPremium = () => {
-        if (isFormValid) {
-            setStep('premium');
         }
     };
 
@@ -415,7 +415,7 @@ export function QuintoAndarVisitScheduler({
                                         Fecha
                                     </h4>
                                     <div className="grid grid-cols-5 gap-2">
-                                        {availableDays.map((day, index) => (
+                                        {availableDays.map((day) => (
                                             <button
                                                 key={day.id}
                                                 onClick={() => handleDateSelect(day)}

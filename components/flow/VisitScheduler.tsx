@@ -61,7 +61,7 @@ export function VisitScheduler({
     const [selectedTime, setSelectedTime] = useState<string>("");
     const [currentStep, setCurrentStep] = useState<"date" | "time" | "confirm" | "form">("date");
     const [isLoading, setIsLoading] = useState(false);
-    const [_leadData, setLeadData] = useState<{ name: string; email: string; phone: string } | null>(null);
+    const [, setLeadData] = useState<{ name: string; email: string; phone: string } | null>(null);
 
     // Generar fechas disponibles para los próximos 5 días (QuintoAndar pattern)
     const availableDates = useMemo(() => {
@@ -147,8 +147,8 @@ export function VisitScheduler({
             });
 
             onConfirm(selectedDate, selectedTime, formData);
-        } catch (_error) {
-            // console.error('Error confirming visit:', error);
+        } catch {
+            // Error handled silently
         } finally {
             setIsLoading(false);
         }

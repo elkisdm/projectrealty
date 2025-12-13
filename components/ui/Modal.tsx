@@ -3,15 +3,14 @@
 import { useEffect, useRef, RefObject, forwardRef } from 'react';
 import { createPortal } from 'react-dom';
 
-let Motion: typeof import('framer-motion') | null = null;
-let motion: any = null;
-let useReducedMotion: any = null;
+type MotionType = typeof import('framer-motion');
+let Motion: MotionType | null = null;
+let motion: MotionType['motion'] | null = null;
 
 async function ensureMotion() {
   if (!Motion) {
     Motion = await import('framer-motion');
     motion = Motion.motion;
-    useReducedMotion = Motion.useReducedMotion;
   }
 }
 
@@ -34,12 +33,11 @@ export const Modal = forwardRef<HTMLDivElement, ModalProps>(({
 }, ref) => {
   const modalRef = useRef<HTMLDivElement>(null);
   const previousActiveElement = useRef<HTMLElement | null>(null);
-  const reducedMotion = useRef(false);
 
   // Combinar refs
   const combinedRef = (node: HTMLDivElement) => {
     if (modalRef) {
-      (modalRef as any).current = node;
+      (modalRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
     }
     if (typeof ref === 'function') {
       ref(node);

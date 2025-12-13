@@ -3,12 +3,13 @@
 import { useState, useEffect } from 'react';
 import { logger } from '@lib/logger';
 import type { AvailabilitySlot } from '@/types/calendar';
+import { asIsoDateTime } from '@/types/calendar';
 
 // Datos de prueba simples
 const MOCK_SLOTS: AvailabilitySlot[] = [
-    { start: '2024-01-15T09:00:00Z' as any, end: '2024-01-15T10:00:00Z' as any, available: true },
-    { start: '2024-01-15T10:00:00Z' as any, end: '2024-01-15T11:00:00Z' as any, available: false },
-    { start: '2024-01-15T11:00:00Z' as any, end: '2024-01-15T12:00:00Z' as any, available: true },
+    { start: asIsoDateTime('2024-01-15T09:00:00Z'), end: asIsoDateTime('2024-01-15T10:00:00Z'), available: true },
+    { start: asIsoDateTime('2024-01-15T10:00:00Z'), end: asIsoDateTime('2024-01-15T11:00:00Z'), available: false },
+    { start: asIsoDateTime('2024-01-15T11:00:00Z'), end: asIsoDateTime('2024-01-15T12:00:00Z'), available: true },
 ];
 
 export default function TestCalendarSimplePage() {

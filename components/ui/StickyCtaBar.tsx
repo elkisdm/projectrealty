@@ -18,11 +18,11 @@ export const StickyCtaBar: React.FC<StickyCtaBarProps> = ({
   priceMonthly,
   onBook,
   onWhatsApp,
-  isVisible = false,
+  isVisible: _isVisible = false,
   propertyId,
   commune
 }) => {
-  const [isScrolled, setIsScrolled] = useState(false);
+  const [, setIsScrolled] = useState(false);
 
   // Intersection Observer para detectar scroll (QuintoAndar pattern: 100-150px)
   useEffect(() => {

@@ -138,7 +138,7 @@ export function IconProvider({ children, initialConfig }: IconProviderProps) {
         ...initialConfig
     });
 
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading] = useState(false);
     const [errors, setErrors] = useState<string[]>([]);
 
     // Preset actual (memoizado)

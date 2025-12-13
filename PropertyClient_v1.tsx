@@ -61,6 +61,7 @@ import { Header } from "@components/marketing/Header";
 import { VisitSchedulerModal } from "@components/flow/VisitSchedulerModal";
 import { buildWaLink } from "@lib/whatsapp";
 import { track } from "@lib/analytics";
+import { logger } from "@lib/logger";
 import { PromotionType } from "@schemas/models";
 import type { Unit, Building, PromotionBadge as PromotionBadgeType } from "@schemas/models";
 
@@ -76,15 +77,15 @@ export function PropertyClient({ building, relatedBuildings, defaultUnitId }: Pr
   const availableUnits = building.units.filter(unit => unit.disponible);
 
   // Seleccionar unidad por defecto basada en defaultUnitId o la primera disponible
-  const getDefaultUnit = () => {
+  const getDefaultUnit = (): Unit | undefined => {
     if (defaultUnitId) {
       const unit = availableUnits.find(u => u.id === defaultUnitId);
       if (unit) return unit;
     }
-    return availableUnits[0];
+    return availableUnits.length > 0 ? availableUnits[0] : undefined;
   };
 
-  const [selectedUnit, setSelectedUnit] = useState<Unit>(getDefaultUnit());
+  const [selectedUnit, setSelectedUnit] = useState<Unit | undefined>(getDefaultUnit());
   const [showUrgencyBanner, setShowUrgencyBanner] = useState(true);
   const [activeTab, setActiveTab] = useState<'detalle' | 'caracteristicas' | 'requisitos' | 'faq'>('detalle');
   const [moveInDate, setMoveInDate] = useState<Date>(() => {
@@ -96,7 +97,6 @@ export function PropertyClient({ building, relatedBuildings, defaultUnitId }: Pr
   const [openFAQ, setOpenFAQ] = useState<string | null>(null);
   const [includeParking, setIncludeParking] = useState(false);
   const [includeStorage, setIncludeStorage] = useState(false);
-  const [guaranteeInInstallments, setGuaranteeInInstallments] = useState(true);
   const [showStickyCTA, setShowStickyCTA] = useState(false);
   const [urgencyData, setUrgencyData] = useState({ recentVisitors: 0, lastReservation: 0 });
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -316,8 +316,8 @@ export function PropertyClient({ building, relatedBuildings, defaultUnitId }: Pr
   };
 
   // Handle modal confirmation
-  const handleModalConfirm = (date: string, time: string, leadData: any) => {
-    console.log('Visita agendada:', { date, time, leadData, property: building.name });
+  const handleModalConfirm = (date: string, time: string, leadData: { name: string; email: string; phone: string; rut?: string }) => {
+    logger.debug('Visita agendada:', { date, time, leadData, property: building.name });
     track("visit_scheduled", {
       property_id: building.id,
       property_name: building.name,
@@ -1513,62 +1513,72 @@ export function PropertyClient({ building, relatedBuildings, defaultUnitId }: Pr
                     </label>
 
                     {/* Estacionamiento */}
-                    <div className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${false ? 'bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600' : 'bg-card border-gray-200 dark:border-gray-600'
-                      }`}>
-                      <div className="flex items-center gap-3">
-                        <Car className={`w-5 h-5 ${false ? 'text-gray-400' : 'text-orange-600 dark:text-orange-400'}`} />
-                        <div>
-                          <span className={`text-sm font-medium ${false ? 'text-gray-400' : 'text-gray-900 dark:text-white'}`}>
-                            Estacionamiento
-                          </span>
-                          <p className={`text-xs ${false ? 'text-gray-400' : 'text-gray-500 dark:text-gray-400'}`}>
-                            {false ? 'No disponible' : '$50.000 mensual'}
-                          </p>
+                    {(() => {
+                      const parkingAvailable = selectedUnit?.estacionamiento ?? false;
+                      return (
+                        <div className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${!parkingAvailable ? 'bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600' : 'bg-card border-gray-200 dark:border-gray-600'
+                          }`}>
+                          <div className="flex items-center gap-3">
+                            <Car className={`w-5 h-5 ${!parkingAvailable ? 'text-gray-400' : 'text-orange-600 dark:text-orange-400'}`} />
+                            <div>
+                              <span className={`text-sm font-medium ${!parkingAvailable ? 'text-gray-400' : 'text-gray-900 dark:text-white'}`}>
+                                Estacionamiento
+                              </span>
+                              <p className={`text-xs ${!parkingAvailable ? 'text-gray-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                                {!parkingAvailable ? 'No disponible' : '$50.000 mensual'}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className={`text-sm font-semibold ${!parkingAvailable ? 'text-gray-400' : 'text-gray-900 dark:text-white'}`}>
+                              ${!parkingAvailable ? '0' : '50.000'}
+                            </span>
+                            <input
+                              type="checkbox"
+                              checked={includeParking}
+                              onChange={(e) => setIncludeParking(e.target.checked)}
+                              disabled={!parkingAvailable}
+                              className={`w-4 h-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500 ${!parkingAvailable ? 'opacity-50 cursor-not-allowed' : ''
+                                }`}
+                            />
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className={`text-sm font-semibold ${false ? 'text-gray-400' : 'text-gray-900 dark:text-white'}`}>
-                          ${false ? '0' : '50.000'}
-                        </span>
-                        <input
-                          type="checkbox"
-                          checked={includeParking}
-                          onChange={(e) => setIncludeParking(e.target.checked)}
-                          disabled={false}
-                          className={`w-4 h-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500 ${false ? 'opacity-50 cursor-not-allowed' : ''
-                            }`}
-                        />
-                      </div>
-                    </div>
+                      );
+                    })()}
 
                     {/* Bodega */}
-                    <div className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${true ? 'bg-card border-gray-200 dark:border-gray-600' : 'bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600'
-                      }`}>
-                      <div className="flex items-center gap-3">
-                        <Package className={`w-5 h-5 ${true ? 'text-purple-600 dark:text-purple-400' : 'text-gray-400'}`} />
-                        <div>
-                          <span className={`text-sm font-medium ${true ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>
-                            Bodega
-                          </span>
-                          <p className={`text-xs ${true ? 'text-gray-500 dark:text-gray-400' : 'text-gray-400'}`}>
-                            {true ? 'Desde $30.000 mensual' : 'No disponible'}
-                          </p>
+                    {(() => {
+                      const storageAvailable = selectedUnit?.bodega ?? false;
+                      return (
+                        <div className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${storageAvailable ? 'bg-card border-gray-200 dark:border-gray-600' : 'bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600'
+                          }`}>
+                          <div className="flex items-center gap-3">
+                            <Package className={`w-5 h-5 ${storageAvailable ? 'text-purple-600 dark:text-purple-400' : 'text-gray-400'}`} />
+                            <div>
+                              <span className={`text-sm font-medium ${storageAvailable ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>
+                                Bodega
+                              </span>
+                              <p className={`text-xs ${storageAvailable ? 'text-gray-500 dark:text-gray-400' : 'text-gray-400'}`}>
+                                {storageAvailable ? 'Desde $30.000 mensual' : 'No disponible'}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className={`text-sm font-semibold ${storageAvailable ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>
+                              ${storageAvailable ? '30.000' : '0'}
+                            </span>
+                            <input
+                              type="checkbox"
+                              checked={includeStorage}
+                              onChange={(e) => setIncludeStorage(e.target.checked)}
+                              disabled={!storageAvailable}
+                              className={`w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500 ${!storageAvailable ? 'opacity-50 cursor-not-allowed' : ''
+                                }`}
+                            />
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className={`text-sm font-semibold ${true ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>
-                          ${true ? '30.000' : '0'}
-                        </span>
-                        <input
-                          type="checkbox"
-                          checked={includeStorage}
-                          onChange={(e) => setIncludeStorage(e.target.checked)}
-                          disabled={!true}
-                          className={`w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500 ${!true ? 'opacity-50 cursor-not-allowed' : ''
-                            }`}
-                        />
-                      </div>
-                    </div>
+                      );
+                    })()}
 
 
                   </div>

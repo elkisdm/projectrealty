@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import MotionWrapper from "@/components/ui/MotionWrapper";
+import { logger } from "@lib/logger";
 
 interface FilterOptions {
   comunas: string[];
@@ -10,6 +11,12 @@ interface FilterOptions {
     min: number;
     max: number;
   };
+}
+
+interface BuildingFromAPI {
+  comuna: string;
+  precioDesde?: number;
+  typologySummary?: Array<{ key: string }>;
 }
 
 interface ArriendaSinComisionFiltersProps {
@@ -28,13 +35,13 @@ export default function ArriendaSinComisionFilters({ onFiltersChange }: Arrienda
     minPrice: '',
     maxPrice: ''
   });
-  
+
   const [options, setOptions] = useState<FilterOptions>({
     comunas: [],
     tipologias: [],
     priceRange: { min: 0, max: 0 }
   });
-  
+
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -42,15 +49,15 @@ export default function ArriendaSinComisionFilters({ onFiltersChange }: Arrienda
       try {
         const response = await fetch('/api/arrienda-sin-comision?limit=100');
         const data = await response.json();
-        
+
         if (data.success && data.buildings) {
-          const buildings = data.buildings;
-          const comunas = [...new Set(buildings.map((b: any) => b.comuna))].sort() as string[];
-          const tipologias = [...new Set(buildings.flatMap((b: any) => 
-            b.typologySummary?.map((t: any) => t.key) || []
+          const buildings = data.buildings as BuildingFromAPI[];
+          const comunas = [...new Set(buildings.map((b) => b.comuna))].sort() as string[];
+          const tipologias = [...new Set(buildings.flatMap((b) =>
+            b.typologySummary?.map((t) => t.key) || []
           ))].sort() as string[];
-          const prices = buildings.map((b: any) => b.precioDesde).filter((p: number) => p > 0);
-          
+          const prices = buildings.map((b) => b.precioDesde).filter((p): p is number => typeof p === 'number' && p > 0);
+
           setOptions({
             comunas,
             tipologias,
@@ -61,7 +68,7 @@ export default function ArriendaSinComisionFilters({ onFiltersChange }: Arrienda
           });
         }
       } catch (error) {
-        console.error('Error fetching filter options:', error);
+        logger.error('Error fetching filter options:', error);
       } finally {
         setLoading(false);
       }
@@ -73,7 +80,7 @@ export default function ArriendaSinComisionFilters({ onFiltersChange }: Arrienda
   const handleFilterChange = (key: string, value: string) => {
     const newFilters = { ...filters, [key]: value };
     setFilters(newFilters);
-    
+
     onFiltersChange({
       comuna: newFilters.comuna || undefined,
       tipologia: newFilters.tipologia || undefined,
@@ -131,7 +138,7 @@ export default function ArriendaSinComisionFilters({ onFiltersChange }: Arrienda
                 Limpiar filtros
               </button>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Filtro por comuna */}
               <div>

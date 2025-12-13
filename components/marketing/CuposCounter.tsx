@@ -37,9 +37,8 @@ export function CuposCounter({
             const data = await response.json();
             setCuposData(data);
             setError(null);
-        } catch (err) {
+        } catch {
             setError("Error al cargar cupos");
-            // console.error("Error fetching cupos:", err);
         } finally {
             setLoading(false);
         }
@@ -87,10 +86,10 @@ export function CuposCounter({
                     exit={{ scale: 0.8, opacity: 0 }}
                     transition={{ duration: 0.3 }}
                     className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold ${isCritical
-                            ? "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400"
-                            : isLow
-                                ? "bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400"
-                                : "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400"
+                        ? "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400"
+                        : isLow
+                            ? "bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400"
+                            : "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400"
                         }`}
                 >
                     <span className="w-2 h-2 rounded-full bg-current"></span>
@@ -105,10 +104,10 @@ export function CuposCounter({
                     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                         <motion.div
                             className={`h-2 rounded-full ${isCritical
-                                    ? "bg-red-500"
-                                    : isLow
-                                        ? "bg-orange-500"
-                                        : "bg-green-500"
+                                ? "bg-red-500"
+                                : isLow
+                                    ? "bg-orange-500"
+                                    : "bg-green-500"
                                 }`}
                             initial={{ width: 0 }}
                             animate={{ width: `${porcentaje}%` }}

@@ -1,4 +1,5 @@
 import type { CalendarEvent, TimeRange } from "@/types/calendar";
+import { asIsoDate } from "@/types/calendar";
 import { buildAvailability } from "@/lib/calendar/availability";
 import SlotPicker from "./SlotPicker";
 
@@ -18,7 +19,7 @@ export default async function AvailabilitySection({
   internalBlocks = []
 }: AvailabilitySectionProps) {
   // Por ahora no consultamos Google/ICS en SSR; usaremos el motor con fuentes vacías.
-  const slots = buildAvailability(date as any, visibleHours, {
+  const slots = buildAvailability(asIsoDate(date), visibleHours, {
     externalEvents: [],
     internalBlocks,
   }, 60);

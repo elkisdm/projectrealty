@@ -184,7 +184,7 @@ async function readFromSupabase(): Promise<Building[]> {
             bathrooms: u.bathrooms || 1,
             area_interior_m2: u.area_interior_m2,
             area_exterior_m2: u.area_exterior_m2,
-            orientacion: u.orientacion,
+            orientacion: u.orientacion as "E" | "N" | "O" | "S" | "NE" | "SE" | "SO" | "NO" | undefined,
             piso: u.piso,
             amoblado: u.amoblado,
             petFriendly: u.pet_friendly,

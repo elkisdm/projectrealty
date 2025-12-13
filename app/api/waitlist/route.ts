@@ -28,7 +28,7 @@ export async function GET() {
     }
     
     return NextResponse.json({ ok: true });
-  } catch (_error) {
+  } catch {
     return NextResponse.json(
       { ok: false, error: 'health_check_failed' },
       { status: 500 }

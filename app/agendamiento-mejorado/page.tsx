@@ -8,11 +8,10 @@ import { Calendar, Clock, MapPin, User, Phone, MessageSquare, CheckCircle } from
 
 export default function AgendamientoMejoradoPage() {
     const [isSchedulerOpen, setIsSchedulerOpen] = useState(false);
-    const [lastVisitData, setLastVisitData] = useState<any>(null);
+    const [lastVisitData, setLastVisitData] = useState<unknown>(null);
 
-    const handleVisitSuccess = (visitData: any) => {
+    const handleVisitSuccess = (visitData: unknown) => {
         setLastVisitData(visitData);
-        console.log('✅ Visita creada exitosamente:', visitData);
     };
 
     return (

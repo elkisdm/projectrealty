@@ -1,6 +1,5 @@
 "use client";
 import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, Star, Quote, User, Calendar, MapPin } from "lucide-react";
 import type { Building } from "@schemas/models";
 
@@ -22,7 +21,7 @@ interface Testimonial {
     verified: boolean;
 }
 
-export function PropertyTestimonials({ building, variant = "catalog", className = "" }: PropertyTestimonialsProps) {
+export function PropertyTestimonials({ building: _building, variant: _variant = "catalog", className = "" }: PropertyTestimonialsProps) {
     const [currentIndex, setCurrentIndex] = useState(0);
 
     // Testimonios mock (en producción vendrían de la base de datos)
@@ -117,8 +116,8 @@ export function PropertyTestimonials({ building, variant = "catalog", className 
                                 <Star
                                     key={i}
                                     className={`w-5 h-5 ${i < currentTestimonial.rating
-                                            ? "text-yellow-400 fill-current"
-                                            : "text-gray-300 dark:text-gray-600"
+                                        ? "text-yellow-400 fill-current"
+                                        : "text-gray-300 dark:text-gray-600"
                                         }`}
                                 />
                             ))}
@@ -184,8 +183,8 @@ export function PropertyTestimonials({ building, variant = "catalog", className 
                         key={index}
                         onClick={() => goToTestimonial(index)}
                         className={`w-3 h-3 rounded-full transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${index === currentIndex
-                                ? "bg-blue-600 w-6"
-                                : "bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500"
+                            ? "bg-blue-600 w-6"
+                            : "bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500"
                             }`}
                         aria-label={`Ir al testimonio ${index + 1}`}
                         aria-current={index === currentIndex ? "true" : "false"}

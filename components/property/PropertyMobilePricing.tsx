@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { Info, Bed, Bath, Square, DollarSign, Shield } from "lucide-react";
+import { Info, Bed, Bath, Square, DollarSign } from "lucide-react";
 import { FirstPaymentCalculator } from "./FirstPaymentCalculator";
 import type { Unit, Building } from "@schemas/models";
 
@@ -17,7 +17,7 @@ interface PropertyMobilePricingProps {
 }
 
 export function PropertyMobilePricing({
-    building,
+    building: _building,
     selectedUnit,
     originalPrice,
     discountPrice,

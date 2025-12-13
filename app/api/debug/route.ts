@@ -46,8 +46,8 @@ export async function GET(request: Request) {
       });
     }
 
-    const buildingsWithUnits = buildingsData?.filter(building => {
-      const availableUnits = building.units?.filter(unit => unit.disponible) || [];
+    const buildingsWithUnits = (buildingsData as Array<{ nombre?: string; comuna?: string; units?: Array<{ id: string; tipologia?: string; precio?: number; disponible?: boolean }> }>)?.filter((building) => {
+      const availableUnits = building.units?.filter((unit: { disponible?: boolean }) => unit.disponible) || [];
       return availableUnits.length > 0;
     }) || [];
 

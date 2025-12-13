@@ -33,7 +33,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ 
       success: true,
       totalBuildings: buildingsData?.length || 0,
-      sample: buildingsData?.slice(0, 3).map(b => ({
+      sample: (buildingsData?.slice(0, 3) as Array<{ nombre?: string; comuna?: string }>).map((b) => ({
         name: b.nombre,
         comuna: b.comuna
       })) || []

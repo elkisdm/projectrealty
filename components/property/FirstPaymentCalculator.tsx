@@ -36,7 +36,7 @@ interface FirstPaymentCalculatorProps {
 
 export function FirstPaymentCalculator({
   originalPrice,
-  discountPrice,
+  discountPrice: _discountPrice,
   firstPaymentCalculation,
   moveInDate,
   includeParking,

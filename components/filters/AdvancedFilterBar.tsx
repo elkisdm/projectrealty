@@ -26,17 +26,16 @@ export function AdvancedFilterBar({
   sort = "relevance",
   className = "",
   initialFilters,
-  showSearchSuggestions = true,
+  showSearchSuggestions: _showSearchSuggestions = true,
   urlSync = true,
 }: AdvancedFilterBarProps) {
-  // const [_isExpanded, _setIsExpanded] = useState(false);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   // Advanced filters hook with full functionality
   const {
     filters,
     setFilters,
-    setQuery,
+    setQuery: _setQuery,
     clearFilters,
     filteredBuildings,
     resultsCount,
@@ -62,35 +61,7 @@ export function AdvancedFilterBar({
     }
   }, [filters, urlSync, updateURL]);
 
-  // Get search suggestions from buildings data
-  const _searchSuggestions = React.useMemo(() => {
-    if (!showSearchSuggestions) return [];
-
-    const suggestions = new Set<string>();
-
-    buildings.forEach(building => {
-      // Add building names
-      suggestions.add(building.name);
-
-      // Add comuna names
-      suggestions.add(building.comuna);
-
-      // Add amenities
-      building.amenities.forEach(amenity => suggestions.add(amenity));
-
-      // Add typologies
-      building.units.forEach(unit => {
-        if (unit.tipologia) suggestions.add(unit.tipologia);
-      });
-    });
-
-    return Array.from(suggestions).sort();
-  }, [buildings, showSearchSuggestions]);
-
-  // Handle search input
-  const _handleSearchChange = useCallback((query: string) => {
-    setQuery(query);
-  }, [setQuery]);
+  // Search suggestions and handler removed - they weren't being used
 
   // Handle sort change
   const handleSortChange = useCallback((newSort: string) => {

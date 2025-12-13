@@ -1,12 +1,10 @@
 "use client";
-import React, { useState, useEffect, Suspense, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useState, useEffect, Suspense } from "react";
 import { AlertCircle } from "lucide-react";
-import { ImageGallery } from "@components/gallery/ImageGallery";
 
 import { track } from "@lib/analytics";
 import { logger } from "@lib/logger";
-import type { Unit, Building } from "@schemas/models";
+import type { Building } from "@schemas/models";
 import { QuintoAndarVisitScheduler } from "@components/flow/QuintoAndarVisitScheduler";
 import { usePropertyUnit } from "@hooks/usePropertyUnit";
 import { FirstPaymentDetails } from "./FirstPaymentDetails";
@@ -108,7 +106,7 @@ export function PropertyClient({
     defaultUnitId,
     variant = "catalog"
 }: PropertyClientProps) {
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -160,20 +158,6 @@ export function PropertyClient({
         }
     }, [building]);
 
-    // Handle modal confirmation
-    const handleModalConfirm = (date: string, time: string, leadData: any) => {
-        logger.log('Visita confirmada:', { date, time, leadData, building: building.name });
-        track("visit_scheduled", {
-            property_id: building.id,
-            property_name: building.name,
-            date,
-            time,
-            variant
-        });
-        alert(`¡Visita agendada exitosamente!\n\nPropiedad: ${building.name}\nFecha: ${date}\nHora: ${time}\n\nTe contactaremos pronto.`);
-        setIsModalOpen(false);
-    };
-
     // Función para enviar cotización
     const handleSendQuotation = () => {
         track("quotation_sent", {
@@ -194,14 +178,6 @@ export function PropertyClient({
             });
         }
     };
-
-    // Handle keyboard navigation
-    const handleKeyDown = useCallback((e: React.KeyboardEvent, action: () => void) => {
-        if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            action();
-        }
-    }, []);
 
     // Show loading state
     if (isLoading) {

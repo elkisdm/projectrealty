@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useCallback } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { ChevronDown, ChevronUp, HelpCircle, Phone, Calendar, DollarSign, Shield, Users, MessageCircle } from "lucide-react";
+import { ChevronDown, HelpCircle, Phone, Calendar, DollarSign, Shield, Users, MessageCircle } from "lucide-react";
 import type { Building } from "@schemas/models";
 
 interface PropertyFAQProps {
@@ -17,7 +17,7 @@ interface FAQItem {
     icon: React.ComponentType<{ className?: string }>;
 }
 
-export function PropertyFAQ({ building, variant = "catalog", className = "" }: PropertyFAQProps) {
+export function PropertyFAQ({ building: _building, variant: _variant = "catalog", className = "" }: PropertyFAQProps) {
     const [openItems, setOpenItems] = useState<Set<number>>(new Set([0])); // Primer item abierto por defecto
     const shouldReduceMotion = useReducedMotion();
 

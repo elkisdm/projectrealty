@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { VisitEvent } from '@/types/calendar';
 import { Modal } from '@/components/ui/Modal';
 import { PropertyQuotationPanel } from '@/components/quotation/PropertyQuotationPanel';
+import type { Building } from '@schemas/models';
 
 export type VisitQuoteModalProps = {
     visit: VisitEvent;
@@ -29,21 +30,27 @@ export default function VisitQuoteModal({ visit, open, onClose }: VisitQuoteModa
             {
                 id: visit.unitId,
                 tipologia: visit.unitLabel.split(' · ')[1] || '2D1B',
-                superficie: 65,
-                precio: 850000,
+                m2: 65,
+                price: 850000,
+                status: 'available' as const,
+                estacionamiento: true,
+                bodega: false,
                 disponible: true
             },
             {
                 id: 'A-102',
                 tipologia: '3D2B',
-                superficie: 85,
-                precio: 1200000,
+                m2: 85,
+                price: 1200000,
+                status: 'available' as const,
+                estacionamiento: true,
+                bodega: true,
                 disponible: true
             }
         ]
-    } as any;
+    };
 
-    const selectedUnit = building.units.find((u: any) => u.id === selectedUnitId) || building.units[0];
+    const selectedUnit = building.units.find((u) => u.id === selectedUnitId) || building.units[0];
 
     return (
         <Modal
@@ -74,9 +81,9 @@ export default function VisitQuoteModal({ visit, open, onClose }: VisitQuoteModa
                         onChange={(e) => setSelectedUnitId(e.target.value)}
                         className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
                     >
-                        {building.units.map((unit: any) => (
+                        {building.units.map((unit) => (
                             <option key={unit.id} value={unit.id}>
-                                {unit.id} · {unit.tipologia} · ${unit.precio.toLocaleString()}
+                                {unit.id} · {unit.tipologia} · ${(unit.price || 0).toLocaleString()}
                             </option>
                         ))}
                     </select>
@@ -84,8 +91,8 @@ export default function VisitQuoteModal({ visit, open, onClose }: VisitQuoteModa
 
                 {/* Panel de cotización */}
                 <PropertyQuotationPanel
-                    building={building}
-                    selectedUnit={selectedUnit}
+                    building={building as unknown as Building}
+                    selectedUnit={selectedUnit as Building['units'][number]}
                     initialStartDate={new Date(visit.start).toISOString().slice(0, 10)}
                 />
             </div>

@@ -5,6 +5,7 @@ import { buildAvailability } from '@/lib/calendar/availability';
 import { fetchGoogleBusy } from '@/lib/calendar/google';
 import { fetchIcsEvents } from '@/lib/calendar/ics';
 import type { CalendarEvent, TimeRange } from '@/types/calendar';
+import { asIsoDate } from '@/types/calendar';
 
 const limiter = createRateLimiter({ windowMs: 60_000, max: 20 });
 
@@ -52,14 +53,13 @@ export async function POST(req: NextRequest) {
       busy: b.busy ?? true,
     })) as CalendarEvent[];
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Zod validated body.date
-    const slots = buildAvailability(body.date as string, visibleHours, {
+    const slots = buildAvailability(asIsoDate(body.date), visibleHours, {
       externalEvents: [...googleEvents, ...icsEvents],
       internalBlocks: internal,
     }, 60);
 
     return NextResponse.json({ date: body.date, slots }, { status: 200 });
-  } catch (e) {
+  } catch {
     return NextResponse.json({ error: 'server_error' }, { status: 500 });
   }
 }

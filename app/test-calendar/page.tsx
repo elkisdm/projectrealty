@@ -4,15 +4,7 @@ import CalendarVisitFlow from '@/components/calendar/CalendarVisitFlow';
 const MOCK_BUILDING = {
     id: 'test-building-1',
     name: 'Edificio Premium Las Condes',
-    address: {
-        street: 'Av. Apoquindo 1234',
-        commune: 'Las Condes',
-        city: 'Santiago',
-        region: 'Metropolitana',
-        country: 'Chile',
-        postalCode: '8320000',
-        coordinates: { lat: -33.4489, lng: -70.6693 }
-    },
+    address: 'Av. Apoquindo 1234, Las Condes, Santiago',
     units: [
         {
             id: 'A-101',

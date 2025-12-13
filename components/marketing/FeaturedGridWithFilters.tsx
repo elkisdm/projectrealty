@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { BasicFilters } from "./BasicFilters";
 import { FeaturedGridClient } from "./FeaturedGridClient";
 import type { Building } from "@schemas/models";
@@ -14,9 +14,9 @@ export function FeaturedGridWithFilters({ initialBuildings }: FeaturedGridWithFi
 
   return (
     <>
-      <BasicFilters 
-        buildings={initialBuildings} 
-        onFiltersChange={setFilteredBuildings} 
+      <BasicFilters
+        buildings={initialBuildings}
+        onFiltersChange={setFilteredBuildings}
       />
       <div className="mt-8">
         <FeaturedGridClient buildings={filteredBuildings} />
@@ -24,6 +24,7 @@ export function FeaturedGridWithFilters({ initialBuildings }: FeaturedGridWithFi
     </>
   );
 }
+
 
 
 

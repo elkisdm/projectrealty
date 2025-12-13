@@ -10,7 +10,7 @@ interface CommuneLifeSectionProps {
     className?: string;
 }
 
-export function CommuneLifeSection({ building, variant = "catalog", className = "" }: CommuneLifeSectionProps) {
+export function CommuneLifeSection({ building, variant: _variant = "catalog", className = "" }: CommuneLifeSectionProps) {
     // Datos estáticos por ahora (se pueden hacer dinámicos después)
     const communeData = {
         name: building.comuna,

@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { DollarSign, Calendar, Car, Package, Calculator } from "lucide-react";
+import { Calculator } from "lucide-react";
 import { FirstPaymentCalculator } from "./FirstPaymentCalculator";
 
 interface FirstPaymentCalculation {

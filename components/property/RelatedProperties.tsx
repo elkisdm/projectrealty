@@ -73,7 +73,7 @@ export function RelatedProperties({
 
             {/* Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
-                {filteredBuildings.map((building, index) => (
+                {filteredBuildings.map((building) => (
                     <motion.div
                         key={building.id}
                         variants={itemVariants}

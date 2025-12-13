@@ -8,10 +8,11 @@ import {
     AlertCircle,
     Loader2,
     X,
-    ChevronRight
+    ChevronRight,
+    Calendar as CalendarIcon
 } from 'lucide-react';
 import { useVisitScheduler } from '../../hooks/useVisitScheduler';
-import { DaySlot, TimeSlot, ContactData } from '../../types/visit';
+import { DaySlot, TimeSlot, ContactData, CreateVisitResponse } from '../../types/visit';
 import { logger } from '@lib/logger';
 
 interface QuintoAndarVisitSchedulerProps {
@@ -21,7 +22,7 @@ interface QuintoAndarVisitSchedulerProps {
     propertyName: string;
     propertyAddress: string;
     propertyImage?: string;
-    onSuccess?: (visitData: { date: string; time: string; contact: { name: string; email: string; phone: string } }) => void;
+    onSuccess?: (visitData: CreateVisitResponse) => void;
 }
 
 interface FieldValidation {
@@ -47,15 +48,13 @@ export function QuintoAndarVisitScheduler({
         rut: '',
         phone: ''
     });
-    const [fieldValidation, setFieldValidation] = useState<FieldValidation>({
+    const [, setFieldValidation] = useState<FieldValidation>({
         name: { isValid: false, message: '' },
         email: { isValid: false, message: '' },
         rut: { isValid: false, message: '' },
         phone: { isValid: false, message: '' }
     });
     const [isFormValid, setIsFormValid] = useState(false);
-    // Usar el tema de la página en lugar de detectar el modo oscuro del sistema
-    const isDarkMode = false; // Se heredará del tema de la página
     const [showConfetti, setShowConfetti] = useState(false);
 
     // Estados para calificación de arriendo
@@ -462,7 +461,7 @@ export function QuintoAndarVisitScheduler({
                                             Elige un día
                                         </h4>
                                         <div className="flex gap-3 overflow-x-auto pb-2">
-                                            {availableDays.map((day, index) => (
+                                            {availableDays.map((day) => (
                                                 <button
                                                     key={day.id}
                                                     onClick={() => handleDateSelect(day)}

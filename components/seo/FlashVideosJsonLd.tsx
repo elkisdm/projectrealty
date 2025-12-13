@@ -1,4 +1,3 @@
-import { Metadata } from 'next';
 
 interface FlashVideosJsonLdProps {
     title?: string;

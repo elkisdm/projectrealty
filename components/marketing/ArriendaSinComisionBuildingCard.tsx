@@ -85,15 +85,13 @@ export default function ArriendaSinComisionBuildingCard({ building }: ArriendaSi
   const {
     minPrice,
     maxPrice,
-    totalUnits: _totalUnits,
     sinComisionBadge,
     otherBadges,
     sortedTypologies,
     allImages
   } = useMemo(() => {
-    const minPrice = getMinPrice(building.typologySummary);
-    const maxPrice = getMaxPrice(building.typologySummary);
-    const totalUnits = building.typologySummary?.reduce((sum, t) => sum + t.count, 0) || 0;
+    const calcMinPrice = getMinPrice(building.typologySummary);
+    const calcMaxPrice = getMaxPrice(building.typologySummary);
 
     // Encontrar el badge de "Comisión gratis" para el principal
     const sinComisionBadge = building.badges?.find(badge =>
@@ -118,9 +116,8 @@ export default function ArriendaSinComisionBuildingCard({ building }: ArriendaSi
         : ['/images/nunoa-cover.jpg'];
 
     return {
-      minPrice,
-      maxPrice,
-      totalUnits,
+      minPrice: calcMinPrice,
+      maxPrice: calcMaxPrice,
       sinComisionBadge,
       otherBadges,
       sortedTypologies,
@@ -385,7 +382,7 @@ export default function ArriendaSinComisionBuildingCard({ building }: ArriendaSi
                 Tipologías disponibles:
               </p>
               <div className="grid grid-cols-2 gap-2" role="list" aria-label="Tipologías de departamentos">
-                {sortedTypologies.map((typology, index) => (
+                {sortedTypologies.map((typology) => (
                   <div
                     key={typology.key}
                     className="flex items-center justify-between p-2.5 bg-gray-900:bg-gray-800 rounded-lg border border-gray-700:border-gray-700 hover:bg-gray-800:hover:bg-gray-700 transition-colors group cursor-pointer"

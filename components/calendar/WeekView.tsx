@@ -18,10 +18,10 @@ export default function WeekView({
     className
 }: WeekViewProps) {
     const [weekData, setWeekData] = useState<WeekViewData | null>(null);
-    const [_loading, setLoading] = useState(false);
+    const [loading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [_selectedVisit, setSelectedVisit] = useState<CalendarEventType | null>(null);
-    const [_modalOpen, setModalOpen] = useState(false);
+    const [, setSelectedVisit] = useState<CalendarEventType | null>(null);
+    const [, setModalOpen] = useState(false);
 
     useEffect(() => {
         try {
@@ -32,9 +32,8 @@ export default function WeekView({
                 [...internalBlocks, ...MOCK_INTERNAL_BLOCKS]
             );
             setWeekData(mockData);
-        } catch (error) {
-            console.error('❌ Error en generateWeekView:', error);
-            setError('Error generando datos del calendario');
+        } catch (err) {
+            setError(`Error generando datos del calendario: ${err instanceof Error ? err.message : 'Unknown'}`);
         }
     }, [startDate, googleCalendarId, icsUrl, internalBlocks, visits]);
 

@@ -78,7 +78,7 @@ export function useAdvancedFilters({
   buildings,
   initialFilters = {},
   urlSync = true,
-  debounceMs = 300,
+  debounceMs: _debounceMs = 300,
 }: UseAdvancedFiltersParams): UseAdvancedFiltersReturn {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -187,7 +187,7 @@ export function useAdvancedFilters({
   }, [filters]);
 
   // Set search query (no-op for MVP, kept for compatibility)
-  const setQuery = useCallback((query: string) => {
+  const setQuery = useCallback((_query: string) => {
     // No search functionality in MVP
   }, []);
 

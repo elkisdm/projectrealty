@@ -97,35 +97,35 @@ export const AVAILABLE_PRESETS = ['light', 'dark', 'brand'] as const;
  * Valida si un nombre de ícono es válido
  */
 export function isValidIconName(name: string): name is typeof AVAILABLE_ICONS[number] {
-  return AVAILABLE_ICONS.includes(name as any);
+  return (AVAILABLE_ICONS as readonly string[]).includes(name);
 }
 
 /**
  * Valida si un tamaño es válido
  */
 export function isValidIconSize(size: string): size is typeof AVAILABLE_SIZES[number] {
-  return AVAILABLE_SIZES.includes(size as any);
+  return (AVAILABLE_SIZES as readonly string[]).includes(size);
 }
 
 /**
  * Valida si un stroke es válido
  */
 export function isValidIconStroke(stroke: string): stroke is typeof AVAILABLE_STROKES[number] {
-  return AVAILABLE_STROKES.includes(stroke as any);
+  return (AVAILABLE_STROKES as readonly string[]).includes(stroke);
 }
 
 /**
  * Valida si una variante es válida
  */
 export function isValidIconVariant(variant: string): variant is typeof AVAILABLE_VARIANTS[number] {
-  return AVAILABLE_VARIANTS.includes(variant as any);
+  return (AVAILABLE_VARIANTS as readonly string[]).includes(variant);
 }
 
 /**
  * Valida si un preset es válido
  */
 export function isValidIconPreset(preset: string): preset is typeof AVAILABLE_PRESETS[number] {
-  return AVAILABLE_PRESETS.includes(preset as any);
+  return (AVAILABLE_PRESETS as readonly string[]).includes(preset);
 }
 
 // ============================================================================

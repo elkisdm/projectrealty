@@ -12,19 +12,20 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
  * @param url - URL de Supabase
  * @param key - Clave de autenticación
  * @param options - Opciones de configuración del cliente
- * @returns Cliente Supabase real o mock
+ * @returns Cliente Supabase (real o mock tipado como SupabaseClient)
  */
 function createClient(
   url?: string, 
   key?: string, 
   options?: { auth: { persistSession: boolean } }
-): ReturnType<typeof createSupabaseClient> | ReturnType<typeof createMockSupabaseClient> {
+): SupabaseClientType {
   // Si no hay configuración, usar mock
   if (!supabaseUrl || !supabaseAnonKey || !url || !key) {
     if (!supabaseUrl || !supabaseAnonKey) {
       logger.warn('⚠️  Supabase no configurado, usando mock');
     }
-    return createMockSupabaseClient();
+    // Type assertion: mock implementa interfaz compatible con SupabaseClient
+    return createMockSupabaseClient() as unknown as SupabaseClientType;
   }
   
   return createSupabaseClient(url, key, options);

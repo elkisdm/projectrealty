@@ -1,5 +1,4 @@
 import { useMemo, useState, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { Building } from '../types';
 import { BuildingFilters, SortOption } from '../types/buildings';
 import { useFetchBuildings, type FilterValues } from './useFetchBuildings';

@@ -32,7 +32,7 @@ const MOCK_SLOTS: AvailabilitySlot[] = [
 ];
 
 export default function CalendarVisitFlow({ building, unit, date, slots: initialSlots, googleCalendarId, icsUrl, className }: CalendarVisitFlowProps) {
-    const [_open, setOpen] = useState(false);
+    const [, setOpen] = useState(false);
     const [selected, setSelected] = useState<AvailabilitySlot | null>(null);
     const [slots, setSlots] = useState<AvailabilitySlot[]>(initialSlots ?? []);
     const [loading, setLoading] = useState(!initialSlots);

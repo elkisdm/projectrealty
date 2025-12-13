@@ -83,7 +83,7 @@ export function useVisitScheduler({
       }
     }
     
-    console.log('📅 Generated days:', days);
+    logger.debug('📅 Generated days:', days);
     return days;
   }, [availabilityData]);
 
@@ -124,7 +124,7 @@ export function useVisitScheduler({
       const startRFC3339 = formatRFC3339(startDate, timezone);
       const endRFC3339 = formatRFC3339(endDate, timezone);
       
-      console.log('🔍 Fetching availability:', { listingId, startRFC3339, endRFC3339 });
+      logger.debug('🔍 Fetching availability:', { listingId, startRFC3339, endRFC3339 });
       
       const response = await fetch(
         `/api/availability?listingId=${listingId}&start=${startRFC3339}&end=${endRFC3339}`
@@ -136,7 +136,7 @@ export function useVisitScheduler({
       }
       
       const data: AvailabilityResponse = await response.json();
-      console.log('📅 Availability data received:', { 
+      logger.debug('📅 Availability data received:', { 
         slotsCount: data.slots.length, 
         slots: data.slots.map(s => ({ 
           id: s.id, 
@@ -150,7 +150,7 @@ export function useVisitScheduler({
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
       setError(errorMessage);
-      console.error('Error fetching availability:', err);
+      logger.error('Error fetching availability:', err);
     } finally {
       setIsLoading(false);
     }
@@ -158,7 +158,7 @@ export function useVisitScheduler({
 
   // Seleccionar fecha y hora
   const selectDateTime = useCallback((date: string, time: string) => {
-    console.log('📅 Selecting date/time:', { date, time, availabilityData: !!availabilityData });
+    logger.debug('📅 Selecting date/time:', { date, time, availabilityData: !!availabilityData });
     
     setSelectedDate(date);
     setSelectedTime(time);
@@ -175,7 +175,7 @@ export function useVisitScheduler({
     });
     
     if (realSlot) {
-      console.log('🎯 Found real slot:', realSlot);
+      logger.debug('🎯 Found real slot:', realSlot);
       setSelectedSlot(realSlot);
     } else {
       // Crear slot mock siempre disponible
@@ -188,7 +188,7 @@ export function useVisitScheduler({
         source: 'system',
         createdAt: new Date().toISOString()
       };
-      console.log('🎯 Created mock slot:', mockSlot);
+      logger.debug('🎯 Created mock slot:', mockSlot);
       setSelectedSlot(mockSlot);
     }
     
@@ -196,7 +196,7 @@ export function useVisitScheduler({
   }, [availabilityData, listingId]);
 
   // Crear visita con optimistic UI
-  const createVisit = useCallback(async (userData: { name: string; phone: string; email?: string }) => {
+  const createVisit = useCallback(async (_userData: { name: string; phone: string; email?: string }) => {
     if (!selectedSlot || !selectedDate || !selectedTime) {
       setError('Debes seleccionar una fecha y hora');
       return null;

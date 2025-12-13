@@ -497,7 +497,7 @@ export function validateAssetPlanCSV(csv: string): {
   const valid: Building[] = [];
   const invalid: Array<{ data: Partial<Building>; errors: string[] }> = [];
 
-  buildings.forEach((data, index) => {
+  buildings.forEach((data) => {
     // Validar primero las unidades individualmente
     const unitErrors: string[] = [];
     if (data.units && data.units.length > 0) {
