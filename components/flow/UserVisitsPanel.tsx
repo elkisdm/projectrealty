@@ -39,7 +39,7 @@ export function UserVisitsPanel({ userId, className = '' }: UserVisitsPanelProps
     const mockVisits: VisitWithDetails[] = [
         {
             id: 'visit_001',
-            listingId: 'home-amengual',
+            listingId: 'guillermo-mann-74012ca7',
             slotId: 'slot_001',
             userId: 'user_001',
             status: 'confirmed',
@@ -53,14 +53,14 @@ export function UserVisitsPanel({ userId, className = '' }: UserVisitsPanelProps
                 whatsappNumber: '+56912345678',
                 email: 'maria@hommie.cl'
             },
-            propertyName: 'Home Amengual - Unidad 207',
-            propertyAddress: 'Av. Amengual 1234, Providencia',
+            propertyName: 'Guillermo Mann - Unidad 2201-B',
+            propertyAddress: 'Av. Vicuña Mackenna 2362, Ñuñoa',
             slotStartTime: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // Mañana
             slotEndTime: new Date(Date.now() + 24 * 60 * 60 * 1000 + 60 * 60 * 1000).toISOString()
         },
         {
             id: 'visit_002',
-            listingId: 'home-amengual',
+            listingId: 'guillermo-mann-74012ca7',
             slotId: 'slot_002',
             userId: 'user_001',
             status: 'completed',
@@ -74,8 +74,8 @@ export function UserVisitsPanel({ userId, className = '' }: UserVisitsPanelProps
                 whatsappNumber: '+56912345678',
                 email: 'maria@hommie.cl'
             },
-            propertyName: 'Home Amengual - Unidad 207',
-            propertyAddress: 'Av. Amengual 1234, Providencia',
+            propertyName: 'Guillermo Mann - Unidad 2201-B',
+            propertyAddress: 'Av. Vicuña Mackenna 2362, Ñuñoa',
             slotStartTime: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
             slotEndTime: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000 + 60 * 60 * 1000).toISOString()
         }

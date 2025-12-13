@@ -48,7 +48,6 @@ describe('Flujo completo de agendamiento de visitas', () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
-        (fetch as jest.Mock).mockClear();
     });
 
     describe('Flujo exitoso completo', () => {

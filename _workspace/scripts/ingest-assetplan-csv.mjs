@@ -215,26 +215,30 @@ function transformToSupabaseFormat(buildings) {
   const supabaseBuildings = [];
   const supabaseUnits = [];
   
-  buildings.forEach(building => {
+  buildings.forEach((building, index) => {
     const buildingId = randomUUID();
     
     // Calcular precio_desde y precio_hasta
     const availableUnits = building.units.filter(u => isAvailable(u.Estado));
     const prices = availableUnits.map(u => parseChileanNumber(u['Arriendo Total'])).filter(p => p > 0);
     
+    // Generar slug único (usar parte del UUID si hay duplicados)
+    const baseSlug = building.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    const slug = baseSlug 
+      ? `${baseSlug}-${buildingId.substring(0, 8)}`
+      : `edificio-${buildingId.substring(0, 8)}`;
+    
     const buildingData = {
       id: buildingId,
-      provider: 'assetplan',
-      source_building_id: building.code,
-      slug: building.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
-      nombre: building.name,
+      slug: slug,
+      name: building.name,
       comuna: building.comuna,
-      direccion: building.address,
-      precio_desde: prices.length > 0 ? Math.min(...prices) : null,
-      precio_hasta: prices.length > 0 ? Math.max(...prices) : null,
-      has_availability: availableUnits.length > 0,
-      gc_mode: 'MF', // Multifamily por defecto
-      featured: false
+      address: building.address,
+      amenities: [],
+      gallery: [],
+      cover_image: null,
+      badges: [],
+      service_level: null
     };
     
     supabaseBuildings.push(buildingData);
@@ -247,35 +251,15 @@ function transformToSupabaseFormat(buildings) {
       
       const unitData = {
         id: unitId,
-        provider: 'assetplan',
-        source_unit_id: unit.OP || '',
         building_id: buildingId,
-        unidad: unit.Unidad || '',
         tipologia: tipologiaCanonica,
-        bedrooms: extractBedrooms(tipologiaOriginal),
-        bathrooms: extractBathrooms(tipologiaOriginal),
-        area_m2: parseChileanDecimal(unit['m2 Depto']),
-        area_interior_m2: parseChileanDecimal(unit['m2 Depto']),
-        area_exterior_m2: parseChileanDecimal(unit['m2 Terraza']),
-        orientacion: ORIENTACION_MAPPING[unit.Orientacion] || null,
-        pet_friendly: parseBoolean(unit['Acepta Mascotas?']),
-        precio: parseChileanNumber(unit['Arriendo Total']),
-        gastos_comunes: parseChileanNumber(unit['GC Total']),
+        m2: parseChileanDecimal(unit['m2 Depto']) ? Math.round(parseChileanDecimal(unit['m2 Depto'])) : null,
+        price: parseChileanNumber(unit['Arriendo Total']),
+        estacionamiento: parseBoolean(unit['Estacionamiento']) || false,
+        bodega: parseBoolean(unit['Bodega']) || false,
         disponible: isAvailable(unit.Estado),
-        status: isAvailable(unit.Estado) ? 'available' : 'rented',
-        // Campos v2 para cotizaciones
-        guarantee_installments: parseChileanNumber(unit['Cuotas Garantía']) || null,
-        guarantee_months: parseChileanNumber(unit['Cant. Garantías (Meses)']) || null,
-        rentas_necesarias: parseChileanDecimal(unit['Rentas Necesarias']),
-        link_listing: unit['Link Listing'] || null,
-        // Campos adicionales
-        parking_ids: null, // No viene en este CSV
-        storage_ids: null,  // No viene en este CSV
-        parking_opcional: false,
-        storage_opcional: false,
-        piso: null, // Se podría extraer del número de unidad
-        amoblado: false, // No viene en este CSV
-        comment_text: unit.Comentario || null
+        bedrooms: extractBedrooms(tipologiaOriginal),
+        bathrooms: extractBathrooms(tipologiaOriginal)
       };
       
       // Calcular renta_minima como precio * rentas_necesarias

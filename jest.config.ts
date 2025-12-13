@@ -28,6 +28,15 @@ const config: Config = {
     ],
   },
   testMatch: ['**/?(*.)+(test).[tj]s?(x)'],
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    // Exclude Playwright tests - they should be run via pnpm test:e2e
+    'tests/e2e/visitScheduling.e2e.test.ts',
+    'tests/e2e/msw-e2e.test.ts',
+    'tests/e2e/admin-login.spec.ts',
+    // Exclude performance tests that use Playwright
+    'tests/performance/visitScheduler.performance.test.ts',
+  ],
 };
 
 export default config;

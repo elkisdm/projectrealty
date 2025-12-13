@@ -19,6 +19,7 @@ import { PropertyFAQ } from "./PropertyFAQ";
 
 // Import directo para evitar problemas de lazy loading
 import { RelatedList } from "@components/lists/RelatedList";
+import { UnitsList } from "./UnitsList";
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component<
@@ -97,6 +98,8 @@ interface PropertyClientProps {
     building: Building;
     relatedBuildings: Building[];
     defaultUnitId?: string;
+    tipologiaFilter?: string;
+    showAllUnits?: boolean;
     variant?: "catalog" | "marketing" | "admin";
 }
 
@@ -104,6 +107,8 @@ export function PropertyClient({
     building,
     relatedBuildings,
     defaultUnitId,
+    tipologiaFilter,
+    showAllUnits,
     variant = "catalog"
 }: PropertyClientProps) {
     const [isLoading] = useState(false);
@@ -203,6 +208,34 @@ export function PropertyClient({
                     </button>
                 </div>
             </div>
+        );
+    }
+
+    // Si se solicita ver todas las unidades o hay filtro de tipología, mostrar lista de unidades
+    const availableUnits = building.units.filter((unit) => unit.disponible);
+
+    if (showAllUnits || tipologiaFilter) {
+        return (
+            <ErrorBoundary>
+                <div className="min-h-screen bg-bg">
+                    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 lg:py-8">
+                        <PropertyBreadcrumb building={building} variant={variant} />
+                        <div className="mt-6">
+                            <a
+                                href={`/property/${building.slug}`}
+                                className="inline-flex items-center gap-2 text-sm text-subtext hover:text-text transition-colors mb-6"
+                            >
+                                ← Volver a la propiedad
+                            </a>
+                            <UnitsList
+                                building={building}
+                                units={availableUnits}
+                                tipologiaFilter={tipologiaFilter}
+                            />
+                        </div>
+                    </main>
+                </div>
+            </ErrorBoundary>
         );
     }
 

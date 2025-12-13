@@ -57,10 +57,13 @@ const mockVisit = {
   createdAt: '2025-01-15T10:00:00Z'
 };
 
+// Base URL for handlers
+const BASE_URL = 'http://localhost:3000';
+
 // Handlers para MSW
 export const handlers = [
   // API de edificios
-  rest.get('/api/buildings', (req, res, ctx) => {
+  rest.get(`${BASE_URL}/api/buildings`, (req, res, ctx) => {
     return res(
       ctx.json({
         buildings: mockBuildings,
@@ -72,7 +75,7 @@ export const handlers = [
   }),
 
   // API de disponibilidad
-  rest.get('/api/availability', (req, res, ctx) => {
+  rest.get(`${BASE_URL}/api/availability`, (req, res, ctx) => {
     const listingId = req.url.searchParams.get('listingId');
     
     if (!listingId) {
@@ -86,7 +89,7 @@ export const handlers = [
   }),
 
   // API de visitas
-  rest.post('/api/visits', (req, res, ctx) => {
+  rest.post(`${BASE_URL}/api/visits`, (req, res, ctx) => {
     return res(
       ctx.json({
         success: true,
@@ -96,7 +99,7 @@ export const handlers = [
   }),
 
   // API de filtros
-  rest.get('/api/filters', (req, res, ctx) => {
+  rest.get(`${BASE_URL}/api/filters`, (req, res, ctx) => {
     return res(
       ctx.json({
         communes: ['Santiago', 'Providencia', 'Las Condes'],
@@ -112,7 +115,7 @@ export const handlers = [
   }),
 
   // API de health check
-  rest.get('/api/health', (req, res, ctx) => {
+  rest.get(`${BASE_URL}/api/health`, (req, res, ctx) => {
     return res(
       ctx.json({
         status: 'healthy',
@@ -125,21 +128,21 @@ export const handlers = [
 
 // Handlers para errores de red
 export const errorHandlers = [
-  rest.get('/api/availability', (req, res, ctx) => {
+  rest.get(`${BASE_URL}/api/availability`, (req, res, ctx) => {
     return res(
       ctx.status(500),
       ctx.json({ error: 'Error de servidor' })
     );
   }),
 
-  rest.post('/api/visits', (req, res, ctx) => {
+  rest.post(`${BASE_URL}/api/visits`, (req, res, ctx) => {
     return res(
       ctx.status(500),
       ctx.json({ error: 'Error de red' })
     );
   }),
 
-  rest.get('/api/buildings', (req, res, ctx) => {
+  rest.get(`${BASE_URL}/api/buildings`, (req, res, ctx) => {
     return res(
       ctx.status(503),
       ctx.json({ error: 'Servicio no disponible' })
@@ -149,11 +152,11 @@ export const errorHandlers = [
 
 // Handlers para timeouts
 export const timeoutHandlers = [
-  rest.get('/api/availability', (req, res, ctx) => {
+  rest.get(`${BASE_URL}/api/availability`, (req, res, ctx) => {
     return res(ctx.delay('infinite'));
   }),
 
-  rest.post('/api/visits', (req, res, ctx) => {
+  rest.post(`${BASE_URL}/api/visits`, (req, res, ctx) => {
     return res(ctx.delay('infinite'));
   })
 ];

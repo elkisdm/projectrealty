@@ -2,6 +2,8 @@
 
 Esta carpeta contiene archivos JSON individuales para cada edificio, listos para importar al sistema.
 
+> **Nota:** Actualmente todos los datos de edificios provienen de Supabase. Esta carpeta se mantiene para futuras importaciones manuales si es necesario.
+
 ## Estructura
 
 Cada archivo JSON sigue el schema `BuildingSchema` definido en `schemas/models.ts`:
@@ -16,14 +18,16 @@ Cada archivo JSON sigue el schema `BuildingSchema` definido en `schemas/models.t
 - **units**: Array de unidades (mínimo 1)
 - **gastosComunes**: Campo opcional en unidades para gastos comunes
 
-## Edificios Disponibles
+## Edificios en Producción
 
-### Alferex Real
-- **Archivo**: `alferex-real.json`
-- **Ubicación**: Las Condes
-- **Unidades**: 4 unidades (1D1B, 2D1B, 2D2B, 3D2B)
-- **Precio desde**: $650,000 CLP
-- **Precio hasta**: $1,350,000 CLP
+### Guillermo Mann
+- **Slug**: `guillermo-mann-74012ca7`
+- **ID**: `74012ca7-a07f-4364-9164-a8859814b739`
+- **Ubicación**: Ñuñoa
+- **Dirección**: Av. Vicuña Mackenna 2362
+- **Tipologías**: Estudio, 1D1B, 2D2B
+- **Fuente**: Supabase (datos reales)
+- **URL**: `/property/guillermo-mann-74012ca7`
 
 ## Cómo Importar
 
@@ -37,13 +41,7 @@ Cada archivo JSON sigue el schema `BuildingSchema` definido en `schemas/models.t
 ```bash
 curl -X POST http://localhost:3000/api/admin/buildings \
   -H "Content-Type: application/json" \
-  -d @data/buildings/alferex-real.json
-```
-
-### Opción 3: Script de Importación
-```bash
-# Crear script de importación (pendiente)
-pnpm run import:building data/buildings/alferex-real.json
+  -d @data/buildings/[nombre-edificio].json
 ```
 
 ## Validación
@@ -61,6 +59,7 @@ Todos los archivos deben cumplir con:
 - `gastosComunes` es opcional en unidades
 - Las imágenes deben existir en `/public/images/`
 - Los precios deben ser enteros positivos
+- **Los datos en producción provienen de Supabase**, no de archivos JSON locales
 
 
 

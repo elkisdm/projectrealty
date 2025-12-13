@@ -1,6 +1,6 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useBuildingsData, useFilteredBuildings, useBuildingsFilters, useBuildingsSort } from '../../hooks/useBuildingsData';
-import { useBuildingsStore } from '../../stores/buildingsStore';
+import { useBuildingsStore } from '../../lib/stores/buildingsStore';
 import { Building } from '../../types';
 
 // Mock de fetch

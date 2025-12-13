@@ -1,8 +1,8 @@
-import { getAdminUser, hasRole } from '../../../lib/admin/auth-supabase';
-import { supabaseAdmin } from '../../../lib/supabase';
+import { getAdminUser, hasRole } from '../../../../lib/admin/auth-supabase';
+import { supabaseAdmin } from '../../../../lib/supabase';
 
 // Mock de Supabase
-jest.mock('../../../lib/supabase', () => ({
+jest.mock('../../../../lib/supabase', () => ({
   supabaseAdmin: {
     from: jest.fn(),
   },

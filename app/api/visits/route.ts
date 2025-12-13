@@ -181,7 +181,7 @@ class MockDatabase {
           const slotId = `slot_${date.getTime()}_${time}`;
           mockSlots[slotId] = {
             id: slotId,
-            listingId: 'home-amengual',
+            listingId: 'guillermo-mann-74012ca7',
             startTime: slotDate.toISOString(),
             endTime: new Date(slotDate.getTime() + 60 * 60 * 1000).toISOString(),
             status: 'open',
@@ -204,7 +204,7 @@ class MockDatabase {
       const slotId = `slot_${testDate.getTime()}_${time}`;
       mockSlots[slotId] = {
         id: slotId,
-        listingId: 'home-amengual',
+        listingId: 'guillermo-mann',
         startTime: slotDate.toISOString(),
         endTime: new Date(slotDate.getTime() + 60 * 60 * 1000).toISOString(),
         status: 'open',

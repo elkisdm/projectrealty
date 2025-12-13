@@ -1,1 +1,0 @@
-console.log('Servidor funcionando en:', 'http://localhost:3000'); console.log('Verifica que puedas ver:'); console.log('1. Título: Elkis Realtor · 0% Comisión'); console.log('2. Hero: Invierte en arriendo sin comisión'); console.log('3. Proyectos destacados'); console.log('4. Precios desde .000');

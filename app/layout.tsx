@@ -5,6 +5,7 @@ import { ThemeProvider } from "@lib/theme-context";
 import { Header } from "@components/marketing/Header";
 import { Footer } from "@components/marketing/Footer";
 import { getFlagValue } from "@lib/flags";
+import Providers from "./providers";
 
 export const metadata: Metadata = {
   title: {
@@ -56,16 +57,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         suppressHydrationWarning={true}
       >
         <ThemeProvider>
-          <a href="#main-content" className="skip-link">
-            Saltar al contenido principal
-          </a>
-          <div className="flex flex-col min-h-screen">
-            <Header />
-            <main id="main-content" className="flex-1 bg-background text-foreground" role="main">
-              {children}
-            </main>
-            {getFlagValue('FOOTER_ENABLED') && <Footer />}
-          </div>
+          <Providers>
+            <a href="#main-content" className="skip-link">
+              Saltar al contenido principal
+            </a>
+            <div className="flex flex-col min-h-screen">
+              <Header />
+              <main id="main-content" className="flex-1 bg-background text-foreground" role="main">
+                {children}
+              </main>
+              {getFlagValue('FOOTER_ENABLED') && <Footer />}
+            </div>
+          </Providers>
         </ThemeProvider>
       </body>
     </html>

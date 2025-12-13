@@ -1,3 +1,34 @@
+// Polyfills for Next.js server APIs in Jest
+import { TextEncoder, TextDecoder } from 'util';
+global.TextEncoder = TextEncoder;
+global.TextDecoder = TextDecoder as typeof global.TextDecoder;
+
+// Mock Request/Response before importing next/server
+class MockRequest {
+  url: string;
+  method: string;
+  headers: Headers;
+  constructor(url: string, init?: RequestInit) {
+    this.url = url;
+    this.method = init?.method || 'GET';
+    this.headers = new Headers(init?.headers);
+  }
+}
+global.Request = MockRequest as unknown as typeof Request;
+global.Response = class MockResponse {
+  status: number;
+  headers: Headers;
+  body: string | null;
+  constructor(body?: BodyInit | null, init?: ResponseInit) {
+    this.status = init?.status || 200;
+    this.headers = new Headers(init?.headers);
+    this.body = body?.toString() || null;
+  }
+  json() {
+    return Promise.resolve(this.body ? JSON.parse(this.body) : {});
+  }
+} as unknown as typeof Response;
+
 import { NextRequest } from 'next/server';
 import { middleware } from '../../middleware';
 import { isAuthenticatedAdmin } from '../../lib/admin/auth-middleware';
@@ -14,8 +45,12 @@ describe('middleware', () => {
 
   const createMockRequest = (pathname: string): NextRequest => {
     const url = new URL(`http://localhost:3000${pathname}`);
+    // Add clone method to URL for Next.js middleware compatibility
+    const nextUrl = Object.assign(url, {
+      clone: () => new URL(url.href),
+    });
     return {
-      nextUrl: url,
+      nextUrl,
       cookies: {
         get: jest.fn(),
         set: jest.fn(),

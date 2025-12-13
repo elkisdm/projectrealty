@@ -10,7 +10,7 @@ type PropertyPageProps = {
 
 export const revalidate = 3600; // 1 hour
 
-export default async function PropertyPage({ params, searchParams }: PropertyPageProps & { searchParams?: Promise<{ fail?: string; unit?: string }> }) {
+export default async function PropertyPage({ params, searchParams }: PropertyPageProps & { searchParams?: Promise<{ fail?: string; unit?: string; tipologia?: string; ver?: string }> }) {
   const { slug } = await params;
   const resolvedSearchParams = await searchParams;
   // Simulate a failure to verify error.tsx boundary
@@ -63,6 +63,8 @@ export default async function PropertyPage({ params, searchParams }: PropertyPag
         building={building}
         relatedBuildings={relatedBuildings}
         defaultUnitId={resolvedSearchParams?.unit}
+        tipologiaFilter={resolvedSearchParams?.tipologia}
+        showAllUnits={resolvedSearchParams?.ver === "unidades"}
       />
     </>
   );

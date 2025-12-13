@@ -2,13 +2,13 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
 import { useBuildingsPagination, useBuildingsInfinite } from '../../hooks/useBuildingsPagination';
-import { useBuildingsStore } from '../../stores/buildingsStore';
+import { useBuildingsStore } from '../../lib/stores/buildingsStore';
 
 // Mock fetch
 global.fetch = jest.fn();
 
 // Mock store
-jest.mock('../../stores/buildingsStore');
+jest.mock('../../lib/stores/buildingsStore');
 const mockUseBuildingsStore = useBuildingsStore as jest.MockedFunction<typeof useBuildingsStore>;
 
 // Test wrapper with QueryClient
@@ -21,7 +21,7 @@ function createWrapper() {
       },
     },
   });
-  
+
   return ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={queryClient}>
       {children}
@@ -32,7 +32,7 @@ function createWrapper() {
 describe('useBuildingsPagination', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Mock store actions
     mockUseBuildingsStore.mockReturnValue({
       setLoading: jest.fn(),
@@ -204,7 +204,7 @@ describe('useBuildingsPagination', () => {
 describe('useBuildingsInfinite', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Mock store actions
     mockUseBuildingsStore.mockReturnValue({
       setLoading: jest.fn(),

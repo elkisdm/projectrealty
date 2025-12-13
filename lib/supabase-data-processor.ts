@@ -68,6 +68,7 @@ export interface SupabaseUnit {
 
 export interface CondominioData {
   id: string;
+  slug: string;
   nombre: string;
   direccion: string;
   comuna: string;
@@ -82,6 +83,8 @@ export interface CondominioData {
   promociones: string[];
   aceptaMascotas: boolean;
   amenities: string[];
+  gallery: string[];
+  coverImage: string;
 }
 
 export interface LandingBuilding {
@@ -109,12 +112,26 @@ export interface LandingBuilding {
 }
 
 // Tipo para las filas de unidades devueltas por Supabase (con relación a buildings)
-export interface SupabaseUnitRow extends SupabaseUnit {
+export interface SupabaseUnitRow {
+  id: string;
+  building_id: string;
+  tipologia: string;
+  m2?: number;
+  price?: number;
+  disponible?: boolean;
+  estacionamiento?: boolean;
+  bodega?: boolean;
+  bedrooms?: number;
+  bathrooms?: number;
   buildings: {
     id: string;
-    nombre: string;
+    name: string;
+    slug?: string;
     comuna: string;
-    direccion: string;
+    address: string;
+    amenities?: string[];
+    gallery?: string[];
+    cover_image?: string;
   } | null;
 }
 
@@ -153,77 +170,44 @@ class SupabaseDataProcessor {
         .from('units')
         .select(`
           id,
-          provider,
-          source_unit_id,
           building_id,
-          unidad,
           tipologia,
+          m2,
+          price,
+          disponible,
+          estacionamiento,
+          bodega,
           bedrooms,
           bathrooms,
-          area_m2,
-          area_interior_m2,
-          area_exterior_m2,
-          orientacion,
-          pet_friendly,
-          precio,
-          gastos_comunes,
-          disponible,
-          status,
-          promotions,
-          comment_text,
-          internal_flags,
-          piso,
-          amoblado,
-          parking_ids,
-          storage_ids,
-          parking_opcional,
-          storage_opcional,
-          guarantee_installments,
-          guarantee_months,
-          rentas_necesarias,
-          renta_minima,
-          link_listing,
           buildings!inner (
             id,
-            nombre,
+            name,
+            slug,
             comuna,
-            direccion
+            address,
+            amenities,
+            gallery,
+            cover_image
           )
         `)
-        .eq('provider', 'assetplan')
-        .order('precio', { ascending: true });
+        .order('price', { ascending: true });
 
       if (error) {
         logger.error('❌ Error cargando unidades:', error);
         throw error;
       }
 
-      logger.log(`📊 Unidades cargadas desde Supabase: ${units.length}`);
+      logger.log(`📊 Unidades cargadas desde Supabase: ${units?.length || 0}`);
       
-      // Filtrar solo las unidades que pertenecen a edificios Tremendo
-      const filteredUnits = (units as SupabaseUnitRow[]).filter((unit) => {
-        const buildingName = unit.buildings?.nombre;
-        
-        if (!buildingName) {
-          return false;
-        }
-        
-        // Verificar si el edificio está en la lista de Tremendo
-        const isTremendoBuilding = this.tremendoProcessor?.isTremendoBuilding(buildingName) ?? false;
-        
-        if (isTremendoBuilding) {
-          logger.log(`✅ Edificio Tremendo encontrado: ${buildingName}`);
-        }
-        
-        return isTremendoBuilding;
-      });
-
-      logger.log(`✅ Unidades Tremendo filtradas: ${filteredUnits.length} de ${units.length}`);
+      // Usar todas las unidades, no solo las de Tremendo
+      const filteredUnits = (units as SupabaseUnitRow[]) || [];
       
       if (filteredUnits.length === 0) {
-        logger.warn('⚠️ No se encontraron unidades de edificios Tremendo');
-        logger.log('📋 Edificios disponibles en Supabase:');
-        const uniqueBuildings = [...new Set((units as SupabaseUnitRow[]).map((u) => u.buildings?.nombre).filter(Boolean))];
+        logger.warn('⚠️ No se encontraron unidades en Supabase');
+      } else {
+        logger.log(`✅ Unidades disponibles: ${filteredUnits.length}`);
+        const uniqueBuildings = [...new Set(filteredUnits.map((u) => u.buildings?.name).filter(Boolean))];
+        logger.log(`📋 Edificios encontrados: ${uniqueBuildings.length}`);
         uniqueBuildings.forEach((building) => {
           logger.log(`   - ${building}`);
         });
@@ -252,57 +236,38 @@ class SupabaseDataProcessor {
 
     // Procesar cada condominio
     condominiosMap.forEach((unidades, buildingId) => {
-      const precios = unidades.map(u => u.precio).filter(p => p > 0);
+      const precios = unidades.map(u => (u as any).price || 0).filter(p => p > 0);
       const tipologias = [...new Set(unidades.map(u => u.tipologia).filter(t => t))];
       
       // Considerar disponibles las unidades con disponible = true
       const unidadesDisponibles = unidades.filter(u => u.disponible).length;
       
-      const tienePromociones = unidades.some(u => 
-        u.promotions && u.promotions.length > 0 || 
-        u.internal_flags && u.internal_flags.length > 0
-      );
-      const aceptaMascotas = unidades.some(u => u.pet_friendly);
+      const tienePromociones = false; // No hay campo promotions en el schema actual
+      const aceptaMascotas = false; // No hay campo pet_friendly en el schema actual
 
-      // Generar promociones
+      // Generar promociones (vacío por ahora)
       const promociones: string[] = [];
-      if (tienePromociones) {
-        // Buscar promociones en promotions array
-        unidades.forEach(u => {
-          if (u.promotions && u.promotions.length > 0) {
-            promociones.push(...u.promotions);
-          }
-        });
-        
-        // Buscar flags especiales
-        unidades.forEach(u => {
-          if (u.internal_flags && u.internal_flags.length > 0) {
-            if (u.internal_flags.includes('tremenda_promo')) {
-              promociones.push('Tremenda Promo');
-            }
-            if (u.internal_flags.includes('oferta_especial')) {
-              promociones.push('Oferta Especial');
-            }
-          }
-        });
-      }
 
       // Generar amenities basados en características del condominio
       const amenities: string[] = [];
-      if (aceptaMascotas) amenities.push('Pet Friendly');
-      if (unidades.some(u => u.parking_ids && u.parking_ids !== 'x')) amenities.push('Estacionamiento');
-      if (unidades.some(u => u.storage_ids && u.storage_ids !== 'x')) amenities.push('Bodega');
+      if (unidades.some(u => (u as any).estacionamiento)) amenities.push('Estacionamiento');
+      if (unidades.some(u => (u as any).bodega)) amenities.push('Bodega');
       if (tipologias.length > 2) amenities.push('Múltiples Tipologías');
       amenities.push('Seguridad 24/7', 'Áreas Comunes');
 
       // Obtener información del building
-      const buildingInfo = unidades[0] as SupabaseUnitRow;
-      const buildingName = buildingInfo.buildings?.nombre || `Edificio ${buildingId}`;
+      const buildingInfo = unidades[0] as any;
+      const buildingName = buildingInfo.buildings?.name || `Edificio ${buildingId}`;
+      const buildingSlug = buildingInfo.buildings?.slug || buildingId;
       const buildingComuna = buildingInfo.buildings?.comuna || 'Santiago';
-      const buildingDireccion = buildingInfo.buildings?.direccion || 'Dirección no disponible';
+      const buildingDireccion = buildingInfo.buildings?.address || 'Dirección no disponible';
+      const buildingAmenities = buildingInfo.buildings?.amenities || [];
+      const buildingGallery = buildingInfo.buildings?.gallery || [];
+      const buildingCoverImage = buildingInfo.buildings?.cover_image || this.getCoverImage(buildingComuna);
 
       const condominioData: CondominioData = {
         id: buildingId,
+        slug: buildingSlug,
         nombre: buildingName,
         direccion: buildingDireccion,
         comuna: buildingComuna,
@@ -316,7 +281,9 @@ class SupabaseDataProcessor {
         tienePromociones,
         promociones: [...new Set(promociones)], // Eliminar duplicados
         aceptaMascotas,
-        amenities,
+        amenities: buildingAmenities.length > 0 ? buildingAmenities : amenities,
+        gallery: buildingGallery.length > 0 ? buildingGallery : this.getGallery(buildingComuna),
+        coverImage: buildingCoverImage,
       };
 
       this.condominios.set(buildingId, condominioData);
@@ -368,12 +335,12 @@ class SupabaseDataProcessor {
 
       const building: LandingBuilding = {
         id: condominio.id,
-        slug: condominio.id,
+        slug: condominio.slug,
         name: condominio.nombre,
         comuna: condominio.comuna,
         address: condominio.direccion,
-        coverImage: this.getCoverImage(condominio.comuna),
-        gallery: this.getGallery(condominio.comuna),
+        coverImage: condominio.coverImage || this.getCoverImage(condominio.comuna),
+        gallery: condominio.gallery.length > 0 ? condominio.gallery : this.getGallery(condominio.comuna),
         precioDesde: condominio.precioDesde,
         hasAvailability: condominio.unidadesDisponibles > 0,
         badges: condominio.promociones.map(promo => ({
@@ -401,7 +368,8 @@ class SupabaseDataProcessor {
     }
 
     for (const condominio of this.condominios.values()) {
-      if (condominio.id === slug) {
+      // Buscar por slug primero, luego por id para compatibilidad
+      if (condominio.slug === slug || condominio.id === slug) {
         return condominio;
       }
     }

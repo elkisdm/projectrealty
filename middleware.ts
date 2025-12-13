@@ -2,12 +2,37 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { isAuthenticatedAdmin } from "@lib/admin/auth-middleware";
 import { validateAdminRedirect } from "@lib/admin/validate-redirect";
+import { readFileSync } from "fs";
+import { join } from "path";
 
 // Rutas que requieren autenticación
 const PROTECTED_ROUTES = ["/admin"];
 
 // Excepciones: rutas que no requieren autenticación
 const PUBLIC_ADMIN_ROUTES = ["/admin/login"];
+
+// Rutas MVP activas (siempre permitidas)
+const MVP_ROUTES = [
+  "/",
+  "/buscar",
+  "/search",
+  "/property",
+  "/api/buildings",
+  "/api/availability",
+  "/api/visits",
+];
+
+// Rutas deshabilitadas en MVP (retornan 404)
+const DISABLED_ROUTES = [
+  "/coming-soon",
+  "/arrienda-sin-comision",
+  "/flash-videos",
+  "/landing-v2",
+  "/cotizador",
+  "/agendamiento",
+  "/agendamiento-mejorado",
+  "/propiedad",
+];
 
 // Verificar si una ruta está protegida
 function isProtectedRoute(pathname: string): boolean {
@@ -19,10 +44,82 @@ function isProtectedRoute(pathname: string): boolean {
   return PROTECTED_ROUTES.some((route) => pathname.startsWith(route));
 }
 
+// Verificar si una ruta está deshabilitada en MVP
+function isDisabledRoute(pathname: string): boolean {
+  return DISABLED_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`));
+}
+
+// Verificar si una ruta es MVP válida
+function isMvpRoute(pathname: string): boolean {
+  // Rutas exactas MVP
+  if (pathname === "/") return true;
+  if (pathname === "/buscar" || pathname === "/search") return true;
+  
+  // Rutas de propiedad
+  if (pathname.startsWith("/property/")) return true;
+  
+  // APIs MVP
+  if (pathname.startsWith("/api/buildings")) return true;
+  if (pathname.startsWith("/api/availability")) return true;
+  if (pathname.startsWith("/api/visits")) return true;
+  
+  // APIs admin siempre permitidas (para uso interno)
+  if (pathname.startsWith("/api/admin")) return true;
+  
+  // Rutas admin siempre permitidas (para uso interno)
+  if (pathname.startsWith("/admin")) return true;
+  
+  // Archivos estáticos y assets
+  if (
+    pathname.startsWith("/_next") ||
+    pathname.startsWith("/images") ||
+    pathname.startsWith("/icons") ||
+    pathname.startsWith("/favicon") ||
+    pathname.endsWith(".ico") ||
+    pathname.endsWith(".png") ||
+    pathname.endsWith(".jpg") ||
+    pathname.endsWith(".svg") ||
+    pathname.endsWith(".json") ||
+    pathname === "/robots.txt" ||
+    pathname === "/sitemap.xml"
+  ) {
+    return true;
+  }
+  
+  return false;
+}
+
+// Función para leer feature flags del archivo JSON
+function readFeatureFlag(flagName: string): boolean {
+  try {
+    const flagsPath = join(process.cwd(), 'config', 'feature-flags.json');
+    const flagsContent = readFileSync(flagsPath, 'utf8');
+    const flags = JSON.parse(flagsContent);
+    return Boolean(flags[flagName]);
+  } catch {
+    return false;
+  }
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Verificar si es una ruta protegida
+  // Verificar modo MVP
+  const mvpMode = readFeatureFlag("mvpMode");
+  
+  if (mvpMode) {
+    // Si es una ruta deshabilitada, retornar 404
+    if (isDisabledRoute(pathname)) {
+      return new NextResponse(null, { status: 404 });
+    }
+    
+    // Si no es una ruta MVP válida y no es admin/estática, retornar 404
+    if (!isMvpRoute(pathname)) {
+      return new NextResponse(null, { status: 404 });
+    }
+  }
+
+  // Verificar si es una ruta protegida (admin)
   if (isProtectedRoute(pathname)) {
     const isAuthenticated = await isAuthenticatedAdmin(request);
     
@@ -58,8 +155,13 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/admin/:path*",
-    "/api/admin/:path*",
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     */
+    "/((?!_next/static|_next/image|favicon.ico).*)",
   ],
 };
 

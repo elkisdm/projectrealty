@@ -1,4 +1,4 @@
-import { validateAdminRedirect } from '../../../lib/admin/validate-redirect';
+import { validateAdminRedirect } from '../../../../lib/admin/validate-redirect';
 
 describe('validateAdminRedirect', () => {
   describe('Rutas válidas', () => {

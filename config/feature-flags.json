@@ -1,5 +1,6 @@
 {
   "comingSoon": false,
   "virtualGrid": false,
-  "pagination": false
+  "pagination": false,
+  "mvpMode": true
 }

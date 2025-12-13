@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Filter, X } from "lucide-react";
 import type { Building } from "@schemas/models";
 
@@ -21,9 +21,9 @@ export function BasicFilters({ buildings, onFiltersChange }: BasicFiltersProps) 
     const prices = buildings
       .map(b => b.precioDesde)
       .filter((p): p is number => p !== null && p > 0);
-    
+
     if (prices.length === 0) return { min: 0, max: 0 };
-    
+
     return {
       min: Math.min(...prices),
       max: Math.max(...prices),
@@ -62,10 +62,11 @@ export function BasicFilters({ buildings, onFiltersChange }: BasicFiltersProps) 
     return filtered;
   }, [buildings, selectedComuna, minPrice, maxPrice]);
 
-  // Notificar cambios
-  useMemo(() => {
+  // Notificar cambios (usar useEffect para efectos secundarios, no useMemo)
+  useEffect(() => {
     onFiltersChange(filteredBuildings);
-  }, [filteredBuildings, onFiltersChange]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredBuildings]); // onFiltersChange es estable (setState del padre)
 
   const hasActiveFilters = selectedComuna !== "Todas" || minPrice !== null || maxPrice !== null;
 

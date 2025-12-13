@@ -1,6 +1,7 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { PromotionBadge } from "@components/ui/PromotionBadge";
 import { formatPrice } from "@lib/utils";
@@ -144,8 +145,12 @@ export function BuildingCardV2({
   showBadge = true,
   className = ""
 }: BuildingCardV2Props) {
+  const router = useRouter();
   const cover = getCoverImage(building);
-  const href = `/propiedad/${building.id}`;
+  // Usar slug si está disponible, sino usar id
+  const href = 'slug' in building && building.slug
+    ? `/property/${building.slug}`
+    : `/property/${building.id}`;
   const unitsInfo = getUnitsInfo(building);
   const price = getPrice(building);
 
@@ -235,20 +240,58 @@ export function BuildingCardV2({
             {/* Typology chips */}
             {hasAvailability && typologyChips.length > 0 && (
               <div className="flex flex-wrap gap-1.5 min-h-[24px]">
-                {typologyChips.slice(0, 3).map((chip, _index) => (
-                  <span
-                    key={chip.key}
-                    className="inline-flex items-center px-2 py-1 rounded-md text-[11px] font-medium bg-[var(--soft)] text-[var(--text)] ring-1 ring-white/10"
-                    title={chip.label}
-                  >
-                    {formatTypologyChip(chip)}
-                  </span>
-                ))}
-                {typologyChips.length > 3 && (
-                  <span className="inline-flex items-center px-2 py-1 rounded-md text-[11px] font-medium bg-[var(--soft)] text-[var(--subtext)] ring-1 ring-white/10">
-                    +{typologyChips.length - 3} más
-                  </span>
-                )}
+                {typologyChips.slice(0, 3).map((chip) => {
+                  // Determinar href según el tipo de building
+                  const buildingHref = 'slug' in building
+                    ? `/property/${building.slug}?tipologia=${encodeURIComponent(chip.key)}`
+                    : `/property/${building.id}?tipologia=${encodeURIComponent(chip.key)}`;
+
+                  return (
+                    <button
+                      key={chip.key}
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        track("typology_click", {
+                          property_id: building.id,
+                          property_name: building.name,
+                          tipologia: chip.key,
+                        });
+                        router.push(buildingHref);
+                      }}
+                      className="inline-flex items-center px-2 py-1 rounded-md text-[11px] font-medium bg-[var(--soft)] text-[var(--text)] ring-1 ring-white/10 hover:bg-[var(--primary)]/20 hover:ring-[var(--primary)]/50 transition-colors cursor-pointer"
+                      title={`Ver unidades ${chip.label}`}
+                    >
+                      {formatTypologyChip(chip)}
+                    </button>
+                  );
+                })}
+                {typologyChips.length > 3 && (() => {
+                  const buildingHref = 'slug' in building
+                    ? `/property/${building.slug}?ver=unidades`
+                    : `/property/${building.id}?ver=unidades`;
+
+                  return (
+                    <button
+                      key="more-units"
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        track("view_all_units", {
+                          property_id: building.id,
+                          property_name: building.name,
+                        });
+                        router.push(buildingHref);
+                      }}
+                      className="inline-flex items-center px-2 py-1 rounded-md text-[11px] font-medium bg-[var(--soft)] text-[var(--subtext)] ring-1 ring-white/10 hover:bg-[var(--primary)]/20 hover:ring-[var(--primary)]/50 transition-colors cursor-pointer"
+                      title="Ver todas las unidades"
+                    >
+                      +{typologyChips.length - 3} más
+                    </button>
+                  );
+                })()}
               </div>
             )}
 
