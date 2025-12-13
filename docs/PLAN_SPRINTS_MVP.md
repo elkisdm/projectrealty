@@ -50,46 +50,492 @@
 ## 🎯 SPRINT 1: FUNDACIÓN Y DISEÑO SYSTEM
 
 **Objetivo:** Implementar el Design System v2.0 y componentes base  
-**Estado:** 📋 PENDIENTE - Listo para extender  
+**Estado:** ✅ EXTENDIDO - Listo para iniciar  
 **Fecha inicio:** _Por definir_  
-**Fecha fin:** _Por definir_
+**Fecha fin:** _Por definir_  
+**Duración estimada:** 2.5 sesiones (1 + 1 + 0.5)
 
-> **⚠️ ANTES DE INICIAR:** Este sprint debe ser extendido con más detalle antes de comenzar.  
-> Agregar sub-tareas específicas, criterios técnicos detallados, y dependencias exactas.
+> **✅ EXTENDIDO:** Este sprint ha sido extendido con detalle completo.  
+> Cada microtarea tiene sub-tareas específicas, criterios técnicos detallados, y archivos exactos a crear/modificar.
 
-### 📋 EXTENSIÓN DEL SPRINT 1
+### 📋 ORDEN DE EJECUCIÓN
 
-**Pendiente de extender antes de iniciar:**
-- [ ] Detallar cada microtarea con sub-tareas específicas
-- [ ] Definir criterios técnicos detallados
-- [ ] Identificar dependencias exactas
-- [ ] Estimar tiempos más precisos
-- [ ] Definir orden de ejecución interno
+1. **Microtarea 1.1** - UnitCard (base para todo)
+2. **Microtarea 1.2** - StickySearchBar (independiente)
+3. **Microtarea 1.3** - Tipografía (puede hacerse en paralelo o después)
 
 ---
 
 ### Microtarea 1.1: Implementar Elkis Unit Card
 **Prioridad:** 🔴 CRÍTICA  
-**Estimación:** 1 sesión
+**Estimación:** 1 sesión (1.5-2 horas)  
+**Dependencias:** Ninguna (componente base)
 
-**Tareas:**
-- [ ] Crear componente `UnitCard` según especificación v2.0
-- [ ] Implementar estados: default, hover, loading
-- [ ] Agregar tag flotante con efecto glass
-- [ ] Agregar botón de favoritos (top right)
-- [ ] Implementar hover con botón "Ver unidad" (desktop)
-- [ ] Asegurar responsive (mobile/tablet/desktop)
-- [ ] Tests básicos de renderizado
+#### 📁 Archivos a Crear/Modificar
 
-**Criterios de aceptación:**
-- [ ] Card usa `rounded-2xl` (20px)
-- [ ] Imagen con ratio 4:3
-- [ ] Tag glass funcional
-- [ ] Hover scale `[1.02]` con shadow-lg
-- [ ] Funciona en light y dark mode
-- [ ] Accesible (focus visible, aria-labels)
+**Crear:**
+- `components/ui/UnitCard.tsx` - Componente principal
+- `components/ui/UnitCardSkeleton.tsx` - Estado de carga
+- `tests/unit/components/UnitCard.test.tsx` - Tests básicos
 
-**Código de referencia:** Ver sección "Elkis Unit Card" en `ESPECIFICACION_COMPLETA_MVP.md`
+**Modificar (si existen):**
+- `lib/types/unit.ts` o similar - Verificar/agregar tipo `Unit` si falta
+- `components/lists/ResultsGrid.tsx` - Preparar para usar UnitCard (no modificar aún)
+
+#### 📋 Sub-tareas Detalladas
+
+**1. Crear estructura base del componente:**
+- [ ] Crear archivo `components/ui/UnitCard.tsx`
+- [ ] Definir interfaz `UnitCardProps` con:
+  ```typescript
+  interface UnitCardProps {
+    unit: Unit; // Tipo Unit según especificación
+    building?: Building; // Opcional, para contexto
+    onClick?: () => void;
+    variant?: 'default' | 'compact';
+    priority?: boolean; // Para next/image
+    className?: string;
+  }
+  ```
+- [ ] Importar dependencias: `lucide-react`, `next/image`, `next/link`
+- [ ] Usar variables CSS del sistema de temas
+
+**2. Implementar contenedor principal:**
+- [ ] Contenedor con clases: `group relative bg-card border border-border rounded-2xl overflow-hidden`
+- [ ] Hover: `hover:shadow-lg hover:scale-[1.02] transition-all duration-300`
+- [ ] Cursor pointer y accesibilidad: `cursor-pointer focus:outline-none focus-visible:ring-2`
+- [ ] Dark mode: Verificar que funciona con variables CSS
+
+**3. Implementar sección de imagen:**
+- [ ] Contenedor con `relative aspect-[4/3] overflow-hidden`
+- [ ] Usar `next/image` con:
+  - `fill` y `object-cover`
+  - `sizes` responsive: `"(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"`
+  - `priority` prop para primera imagen
+  - `placeholder="blur"` con blurDataURL
+- [ ] Hover en imagen: `group-hover:scale-105 transition-transform duration-500`
+- [ ] Borde superior: `rounded-t-2xl`
+
+**4. Implementar tag flotante glass (top left):**
+- [ ] Contenedor absoluto: `absolute top-3 left-3`
+- [ ] Aplicar clase `glass` (definida en tailwind.config.ts)
+- [ ] Padding: `px-3 py-1`
+- [ ] Border radius: `rounded-full`
+- [ ] Texto: `text-xs font-semibold text-slate-900` (o usar variable CSS)
+- [ ] Contenido: "Disponible" (hardcodeado por ahora, después desde `unit.status`)
+
+**5. Implementar botón de favoritos (top right):**
+- [ ] Contenedor absoluto: `absolute top-3 right-3`
+- [ ] Botón con: `p-2 rounded-full bg-black/20 hover:bg-black/40 backdrop-blur-sm`
+- [ ] Icono `Heart` de `lucide-react`: `w-5 h-5 text-white`
+- [ ] Estado hover y transición
+- [ ] Accesibilidad: `aria-label="Agregar a favoritos"`
+
+**6. Implementar sección de contenido:**
+- [ ] Contenedor con padding: `p-5`
+- [ ] Header con nombre y ubicación:
+  - Título: `text-lg font-bold text-text leading-tight` (usar variable CSS)
+  - Subtítulo: `text-sm text-subtext flex items-center gap-1 mt-1`
+  - Icono `MapPin` de `lucide-react`: `w-3 h-3`
+- [ ] Separador: `my-3 h-px w-full bg-border`
+- [ ] Sección de precio:
+  - Precio: `text-2xl font-bold text-text tracking-tight tabular-nums`
+  - Label "/mes": `text-sm font-normal text-subtext`
+  - Gasto común: `text-xs text-text-muted mt-1`
+
+**7. Implementar botón "Ver unidad" (hover desktop):**
+- [ ] Contenedor: `opacity-0 transform translate-y-2 group-hover:opacity-100 group-hover:translate-y-0`
+- [ ] Transición: `transition-all duration-300`
+- [ ] Texto: `text-[#8B6CFF] font-semibold text-sm` (Brand Violet)
+- [ ] Solo visible en desktop: `hidden lg:block` o similar
+
+**8. Implementar estado de carga (Skeleton):**
+- [ ] Crear `components/ui/UnitCardSkeleton.tsx`
+- [ ] Usar `animate-pulse` de Tailwind
+- [ ] Estructura similar a UnitCard pero con placeholders
+- [ ] Mismo aspect ratio y estructura
+
+**9. Implementar navegación:**
+- [ ] Envolver en `Link` de `next/link` si `onClick` no está definido
+- [ ] Href: `/property/${unit.slug}` o similar
+- [ ] Manejar click para analytics (preparar, no implementar aún)
+
+**10. Tests básicos:**
+- [ ] Crear `tests/unit/components/UnitCard.test.tsx`
+- [ ] Test: Renderiza correctamente
+- [ ] Test: Muestra datos de unidad
+- [ ] Test: Hover funciona (si es posible en test)
+- [ ] Test: Navegación funciona
+
+#### ✅ Criterios de Aceptación Detallados
+
+**Funcionalidad:**
+- [ ] Componente se renderiza sin errores
+- [ ] Muestra imagen de unidad correctamente
+- [ ] Muestra nombre del edificio
+- [ ] Muestra ubicación (comuna)
+- [ ] Muestra precio formateado
+- [ ] Muestra gasto común
+- [ ] Tag "Disponible" visible
+- [ ] Botón favoritos visible y funcional
+- [ ] Hover muestra botón "Ver unidad" (desktop)
+- [ ] Click navega a `/property/[slug]`
+
+**Diseño:**
+- [ ] Card usa `rounded-2xl` (20px) en todas las esquinas
+- [ ] Imagen tiene ratio `aspect-[4/3]`
+- [ ] Tag glass tiene efecto glass funcional
+- [ ] Hover scale `[1.02]` funciona
+- [ ] Shadow-lg en hover funciona
+- [ ] Transiciones suaves (300ms)
+
+**Responsive:**
+- [ ] Funciona en mobile (< 640px)
+- [ ] Funciona en tablet (640px - 1024px)
+- [ ] Funciona en desktop (> 1024px)
+- [ ] Botón "Ver unidad" solo visible en desktop
+
+**Temas:**
+- [ ] Funciona en light mode
+- [ ] Funciona en dark mode
+- [ ] Colores usan variables CSS correctamente
+
+**Accesibilidad:**
+- [ ] Focus visible en el card
+- [ ] Aria-labels en botones
+- [ ] Navegación por teclado funciona
+- [ ] Alt text en imágenes
+
+**Código:**
+- [ ] TypeScript estricto (sin `any`)
+- [ ] Props tipadas correctamente
+- [ ] Sin errores de lint
+- [ ] Build exitoso
+
+#### 📝 Código de Referencia
+
+Ver sección completa "A. The 'Elkis Unit Card'" en `docs/ESPECIFICACION_COMPLETA_MVP.md` líneas 1080-1171.
+
+**Estructura base esperada:**
+```tsx
+import { Heart, MapPin } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
+import type { Unit, Building } from '@/lib/types/unit';
+
+interface UnitCardProps {
+  unit: Unit;
+  building?: Building;
+  onClick?: () => void;
+  variant?: 'default' | 'compact';
+  priority?: boolean;
+  className?: string;
+}
+
+export function UnitCard({ unit, building, onClick, variant = 'default', priority = false, className = '' }: UnitCardProps) {
+  // Implementación según especificación
+}
+```
+
+#### 🔗 Dependencias
+
+- `next/image` - Optimización de imágenes
+- `next/link` - Navegación
+- `lucide-react` - Iconos (Heart, MapPin)
+- Variables CSS del sistema de temas
+- Clase `glass` de tailwind.config.ts
+
+#### ⚠️ Notas Importantes
+
+- **NO usar BuildingCard existente** - Este es un componente nuevo específico para unidades
+- **Usar variables CSS** - No hardcodear colores, usar `var(--text)`, `var(--card)`, etc.
+- **Imágenes:** Usar `next/image` siempre, no `<img>`
+- **Slug:** El slug debe venir de `unit.slug` según especificación
+- **Estado:** Por ahora hardcodear "Disponible", después usar `unit.status`
+
+---
+
+### Microtarea 1.2: Implementar Sticky Search Bar (Glass)
+**Prioridad:** 🔴 CRÍTICA  
+**Estimación:** 1 sesión (1.5-2 horas)  
+**Dependencias:** Ninguna (componente independiente)
+
+#### 📁 Archivos a Crear/Modificar
+
+**Crear:**
+- `components/marketing/StickySearchBar.tsx` - Componente principal
+- `components/marketing/StickySearchBarClient.tsx` - Versión cliente (si necesita estado)
+- `tests/unit/components/StickySearchBar.test.tsx` - Tests básicos
+
+**Modificar (si existen):**
+- `components/marketing/Header.tsx` - Preparar para integrar (no modificar aún)
+
+#### 📋 Sub-tareas Detalladas
+
+**1. Crear estructura base:**
+- [ ] Crear archivo `components/marketing/StickySearchBar.tsx`
+- [ ] Definir interfaz `StickySearchBarProps`:
+  ```typescript
+  interface StickySearchBarProps {
+    onSearch?: (query: string) => void;
+    placeholder?: string;
+    className?: string;
+  }
+  ```
+- [ ] Importar dependencias: `lucide-react` (Search icon)
+
+**2. Implementar contenedor glass:**
+- [ ] Contenedor con clase `glass-strong` (definida en tailwind.config.ts)
+- [ ] Forma pill: `rounded-full`
+- [ ] Borde: `border border-white/20` (visible en dark mode)
+- [ ] Sombra: `shadow-lg`
+- [ ] Padding interno: `px-4 py-3` o similar
+- [ ] Width: `w-full max-w-2xl` o similar (responsive)
+
+**3. Implementar sticky behavior:**
+- [ ] Usar `useEffect` y `useState` para detectar scroll
+- [ ] Agregar clase `sticky top-4 z-50` cuando está sticky
+- [ ] Transición suave al activar sticky
+- [ ] Considerar `prefers-reduced-motion`
+
+**4. Implementar input de búsqueda:**
+- [ ] Input con: `bg-transparent border-0 outline-none flex-1`
+- [ ] Placeholder: "Buscar por comuna, dirección..." (configurable)
+- [ ] Texto: `text-text` (variable CSS)
+- [ ] Placeholder: `placeholder:text-text-muted`
+- [ ] Font size: `text-base` o `text-sm`
+
+**5. Implementar botón buscar:**
+- [ ] Botón circular: `rounded-full`
+- [ ] Background: `bg-[#8B6CFF]` (Brand Violet)
+- [ ] Hover: `hover:bg-[#7a5ce6]`
+- [ ] Tamaño: `w-10 h-10` o `w-12 h-12`
+- [ ] Icono `Search` de `lucide-react`: `w-5 h-5 text-white`
+- [ ] Active: `active:scale-95`
+- [ ] Transición: `transition-all duration-200`
+
+**6. Implementar animaciones estilo Airbnb:**
+- [ ] Animación de aparición al hacer scroll
+- [ ] Efecto de "elevación" cuando se activa sticky
+- [ ] Transición suave del fondo glass
+- [ ] Considerar `framer-motion` si es necesario (pero verificar si ya está en proyecto)
+
+**7. Implementar responsive:**
+- [ ] Mobile: Full width, padding lateral
+- [ ] Desktop: Max width centrado
+- [ ] Tablet: Ajustar tamaños
+
+**8. Implementar funcionalidad de búsqueda:**
+- [ ] Manejar `onChange` del input
+- [ ] Manejar `onSubmit` (Enter key)
+- [ ] Llamar `onSearch` callback con query
+- [ ] Navegar a `/buscar?q=query` si no hay callback
+
+**9. Tests básicos:**
+- [ ] Test: Renderiza correctamente
+- [ ] Test: Input funciona
+- [ ] Test: Botón buscar funciona
+- [ ] Test: Sticky behavior (mock scroll)
+
+#### ✅ Criterios de Aceptación Detallados
+
+**Funcionalidad:**
+- [ ] Componente se renderiza sin errores
+- [ ] Input de búsqueda funciona
+- [ ] Botón buscar funciona
+- [ ] Enter key dispara búsqueda
+- [ ] Sticky al hacer scroll funciona
+- [ ] Navegación a `/buscar` funciona
+
+**Diseño:**
+- [ ] Efecto glass-strong funcional
+- [ ] Forma `rounded-full` (pill)
+- [ ] Borde `border-white/20` visible en dark mode
+- [ ] Botón circular con Brand Violet `#8B6CFF`
+- [ ] Sombra `shadow-lg` presente
+- [ ] Transiciones suaves
+
+**Responsive:**
+- [ ] Funciona en mobile
+- [ ] Funciona en tablet
+- [ ] Funciona en desktop
+- [ ] Width responsive correcto
+
+**Accesibilidad:**
+- [ ] Focus visible en input
+- [ ] Focus visible en botón
+- [ ] Navegación por teclado funciona
+- [ ] Aria-label en botón buscar
+- [ ] Label asociado al input (o aria-label)
+
+**Código:**
+- [ ] TypeScript estricto
+- [ ] Sin errores de lint
+- [ ] Build exitoso
+- [ ] "use client" si necesita estado
+
+#### 📝 Código de Referencia
+
+Ver sección "B. Sticky Search Bar (Glass Version)" en `docs/ESPECIFICACION_COMPLETA_MVP.md` líneas 1175-1190.
+
+**Estructura base esperada:**
+```tsx
+'use client'; // Si necesita estado para sticky
+
+import { Search } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+
+interface StickySearchBarProps {
+  onSearch?: (query: string) => void;
+  placeholder?: string;
+  className?: string;
+}
+
+export function StickySearchBar({ onSearch, placeholder = "Buscar...", className = '' }: StickySearchBarProps) {
+  // Implementación según especificación
+}
+```
+
+#### 🔗 Dependencias
+
+- `lucide-react` - Icono Search
+- `next/navigation` - useRouter para navegación
+- Clase `glass-strong` de tailwind.config.ts
+- Variables CSS del sistema de temas
+
+#### ⚠️ Notas Importantes
+
+- **Glass effect:** Verificar que `glass-strong` está definido en `tailwind.config.ts`
+- **Sticky:** Usar `position: sticky` de CSS, no JavaScript si es posible
+- **Scroll detection:** Solo si necesitas animaciones adicionales
+- **"use client":** Solo si necesitas estado para sticky behavior avanzado
+
+---
+
+### Microtarea 1.3: Actualizar Tipografía (Inter Premium)
+**Prioridad:** 🟡 MEDIA  
+**Estimación:** 0.5 sesión (30-45 minutos)  
+**Dependencias:** Ninguna (puede hacerse en paralelo)
+
+#### 📁 Archivos a Modificar
+
+**Modificar:**
+- `app/globals.css` - Agregar clases utilitarias si es necesario
+- `tailwind.config.ts` - Verificar configuración de Inter
+- Componentes existentes que usen títulos o precios (buscar y actualizar)
+
+#### 📋 Sub-tareas Detalladas
+
+**1. Verificar configuración de Inter:**
+- [ ] Revisar `app/layout.tsx` - Verificar que Inter está configurado
+- [ ] Verificar `display: 'swap'` y `preload: true`
+- [ ] Verificar que Inter se aplica globalmente
+
+**2. Agregar tracking-tight a títulos:**
+- [ ] Buscar todos los `<h1>` y `<h2>` en componentes
+- [ ] Agregar clase `tracking-tight` a títulos principales
+- [ ] Archivos a revisar:
+  - `components/marketing/HeroV2.tsx` o similar
+  - `components/marketing/Header.tsx`
+  - `app/page.tsx`
+  - Cualquier componente con títulos grandes
+
+**3. Agregar tabular-nums a precios:**
+- [ ] Buscar todos los elementos que muestran precios
+- [ ] Agregar clase `tabular-nums` a números de precio
+- [ ] Archivos a revisar:
+  - `components/BuildingCard.tsx`
+  - `components/ui/BuildingCardV2.tsx`
+  - `components/ui/UnitCard.tsx` (recién creado)
+  - Cualquier componente que muestre precios
+
+**4. Verificar escala tipográfica:**
+- [ ] Revisar que H1 usa: `text-4xl font-bold tracking-tight`
+- [ ] Revisar que H2 usa: `text-3xl font-bold tracking-tight`
+- [ ] Revisar que precios usan: `tabular-nums`
+- [ ] Documentar en comentarios si es necesario
+
+**5. Actualizar componentes base:**
+- [ ] Revisar botones - Verificar tipografía
+- [ ] Revisar cards - Verificar tipografía
+- [ ] Crear componentes base tipográficos si es necesario (opcional)
+
+**6. Verificar consistencia:**
+- [ ] Buscar en todo el proyecto: `font-bold` sin `tracking-tight`
+- [ ] Buscar números sin `tabular-nums`
+- [ ] Actualizar donde sea necesario
+
+#### ✅ Criterios de Aceptación Detallados
+
+**Tipografía:**
+- [ ] Todos los H1 tienen `tracking-tight`
+- [ ] Todos los H2 tienen `tracking-tight`
+- [ ] Todos los precios tienen `tabular-nums`
+- [ ] Consistencia en toda la app
+
+**Código:**
+- [ ] Sin errores de lint
+- [ ] Build exitoso
+- [ ] No se rompió ningún componente existente
+
+#### 📝 Referencias
+
+Ver sección "4. Tipografía 'Tech' (Inter)" en `docs/ESPECIFICACION_COMPLETA_MVP.md` líneas 1220-1232.
+
+**Clases a aplicar:**
+- Títulos: `font-bold tracking-tight`
+- Precios: `tabular-nums`
+- Body: `leading-relaxed` (ya debería estar)
+
+#### ⚠️ Notas Importantes
+
+- **No romper existente:** Solo agregar clases, no cambiar estructura
+- **Buscar sistemáticamente:** Usar grep o búsqueda en IDE
+- **Testing:** Verificar visualmente que se ve bien
+
+---
+
+## ✅ CHECKLIST DE PROGRESO - SPRINT 1
+
+### Microtarea 1.1: UnitCard
+- [ ] Estructura base creada
+- [ ] Contenedor principal implementado
+- [ ] Sección de imagen implementada
+- [ ] Tag glass implementado
+- [ ] Botón favoritos implementado
+- [ ] Sección de contenido implementada
+- [ ] Botón hover implementado
+- [ ] Skeleton implementado
+- [ ] Navegación implementada
+- [ ] Tests creados
+- [ ] ✅ COMPLETADA
+
+### Microtarea 1.2: StickySearchBar
+- [ ] Estructura base creada
+- [ ] Contenedor glass implementado
+- [ ] Sticky behavior implementado
+- [ ] Input de búsqueda implementado
+- [ ] Botón buscar implementado
+- [ ] Animaciones implementadas
+- [ ] Responsive implementado
+- [ ] Funcionalidad de búsqueda implementada
+- [ ] Tests creados
+- [ ] ✅ COMPLETADA
+
+### Microtarea 1.3: Tipografía
+- [ ] Configuración de Inter verificada
+- [ ] tracking-tight agregado a títulos
+- [ ] tabular-nums agregado a precios
+- [ ] Escala tipográfica verificada
+- [ ] Componentes base actualizados
+- [ ] Consistencia verificada
+- [ ] ✅ COMPLETADA
+
+---
+
+**📅 Última actualización:** Enero 2025  
+**🎯 Estado:** ✅ **EXTENDIDO Y LISTO PARA INICIAR**
 
 ---
 
@@ -728,11 +1174,11 @@ Sprint 8 (Finalización)
 > 3. Agrega fecha de completación si aplica
 
 ### Sprint 1: Fundación
-**Estado:** 📋 PENDIENTE | **Progreso:** 0/3 microtareas
+**Estado:** ✅ EXTENDIDO - Listo para iniciar | **Progreso:** 0/3 microtareas
 
-- [ ] 1.1 - Elkis Unit Card
-- [ ] 1.2 - Sticky Search Bar
-- [ ] 1.3 - Tipografía Premium
+- [ ] 1.1 - Elkis Unit Card (🔴 CRÍTICA - 1 sesión)
+- [ ] 1.2 - Sticky Search Bar (🔴 CRÍTICA - 1 sesión)
+- [ ] 1.3 - Tipografía Premium (🟡 MEDIA - 0.5 sesión)
 
 ### Sprint 2: Home
 **Estado:** 📋 PENDIENTE | **Progreso:** 0/4 microtareas

@@ -42,8 +42,8 @@
 - ✅ Plan de sprints creado
 - ✅ Sistema de tracking configurado
 - ✅ Checklist de validación y rollback configurado
-- ⚠️ Pendiente: Extender Sprint 1 con más detalle
-- ⚠️ Pendiente: Iniciar implementación
+- ✅ **Sprint 1 EXTENDIDO** - Listo para iniciar implementación
+- ⚠️ Pendiente: Iniciar Sprint 1 - Microtarea 1.1 (UnitCard)
 
 ---
 
