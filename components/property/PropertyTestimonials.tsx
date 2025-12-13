@@ -21,7 +21,7 @@ interface Testimonial {
     verified: boolean;
 }
 
-export function PropertyTestimonials({ building: _building, variant: _variant = "catalog", className = "" }: PropertyTestimonialsProps) {
+export function PropertyTestimonials({ building, variant: _variant = "catalog", className = "" }: PropertyTestimonialsProps) {
     const [currentIndex, setCurrentIndex] = useState(0);
 
     // Testimonios mock (en producción vendrían de la base de datos)

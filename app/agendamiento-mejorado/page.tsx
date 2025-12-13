@@ -6,11 +6,18 @@ import { QuintoAndarVisitScheduler } from '@components/flow/QuintoAndarVisitSche
 import { UserVisitsPanel } from '@components/flow/UserVisitsPanel';
 import { Calendar, Clock, MapPin, User, Phone, MessageSquare, CheckCircle } from 'lucide-react';
 
+interface VisitData {
+    visitId: string;
+    agent: {
+        name: string;
+    };
+}
+
 export default function AgendamientoMejoradoPage() {
     const [isSchedulerOpen, setIsSchedulerOpen] = useState(false);
-    const [lastVisitData, setLastVisitData] = useState<unknown>(null);
+    const [lastVisitData, setLastVisitData] = useState<VisitData | null>(null);
 
-    const handleVisitSuccess = (visitData: unknown) => {
+    const handleVisitSuccess = (visitData: VisitData) => {
         setLastVisitData(visitData);
     };
 

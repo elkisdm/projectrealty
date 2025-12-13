@@ -314,28 +314,31 @@ Crea lib/logger.ts con funciones log, error, warn que solo funcionen en desarrol
 **Tiempo estimado:** 1-2 horas  
 **Prioridad:** 🟡 MEDIA - Mejora organización
 
-### Microtarea 3.1: Eliminar carpetas de prueba de /app
+### Microtarea 3.1: Eliminar carpetas de prueba de /app ✅ COMPLETADA
 **Carpetas:** `/app/test-*`, `/app/demo`, `/app/test`, etc.
 
-**Prompt sugerido:**
-```
-Identifica y elimina todas las carpetas de prueba y demo de /app/:
-- app/test-*
-- app/demo
-- app/test
-- app/test-calendar*
-- app/test-property-client
-- app/unit-207
-- app/liquid-capsules
-- app/icon-demo
-Verifica que no haya rutas importantes antes de eliminar.
-Si alguna carpeta tiene código útil, muéstrame su contenido para decidir si moverlo o eliminarlo.
-```
+**Carpetas eliminadas (10 total):**
+- `app/test/` - Página test simple + ruta dinámica `[id]`
+- `app/test-calendar/` - Test de `CalendarVisitFlow`
+- `app/test-calendar-simple/` - Test básico de slots de calendario
+- `app/test-property-client/` - Test de `PropertyClient` con mocks
+- `app/test-week-calendar/` - Test de `WeekView`
+- `app/demo/` - Demo de `BuildingCardV2`
+- `app/icon-demo/` - Demo del sistema de iconos
+- `app/liquid-capsules/` - Demo de `LiquidCapsule` components
+- `app/unit-207/` - Demo de `VisitSchedulerModal`
+- `app/api/test/` - Endpoint de prueba
+
+**Correcciones de TypeScript adicionales:**
+- ✅ Corregido tipo `unknown` en `agendamiento-mejorado/page.tsx`
+- ✅ Corregido tipo `email` opcional en `QuintoAndarVisitSchedulerOptimized.tsx`
+- ✅ Corregido uso de `motion` con variable local `m` en `ComingSoonHero.tsx`
+- ✅ Corregido parámetro `building` vs `_building` en `PropertyTestimonials.tsx`
 
 **Criterios de aceptación:**
-- [ ] Carpetas de prueba eliminadas de /app
-- [ ] No hay rutas rotas por la eliminación
-- [ ] Build sigue funcionando
+- [x] Carpetas de prueba eliminadas de /app
+- [x] No hay rutas rotas por la eliminación
+- [x] Build sigue funcionando (32 páginas generadas)
 
 ---
 
@@ -634,7 +637,7 @@ Este documento será la referencia final antes de planear el deploy.
 - [ ] Microtarea 2.4: Lint aceptable (<5 errores, <50 warnings críticos) 🟡 EN PROGRESO (10 errores, 222 warnings)
 
 ### Sprint 3: Limpieza de Estructura
-- [ ] Microtarea 3.1: Carpetas de prueba eliminadas
+- [x] Microtarea 3.1: Carpetas de prueba eliminadas ✅ COMPLETADA
 - [ ] Microtarea 3.2: Componentes duplicados consolidados
 - [ ] Microtarea 3.3: Documentación organizada
 - [ ] Microtarea 3.4: Estructura verificada

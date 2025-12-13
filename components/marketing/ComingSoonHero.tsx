@@ -83,58 +83,61 @@ export function ComingSoonHero() {
     }),
   } as const;
 
+  // Local reference for TypeScript narrowing
+  const m = motion;
+  
   return (
     <div className="relative min-h-[70vh] flex items-center overflow-hidden bg-transparent">
       {/* Contenido principal */}
       <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center pt-20 pb-16 md:pb-24">
-        {motion && MotionConfig ? (
-          <motion.div
+        {m && MotionConfig ? (
+          <m.div
             variants={containerVariants}
             initial="hidden"
             animate="visible"
             className="space-y-8"
           >
             {/* Título principal con gradiente violeta→aqua y tipografía headline */}
-            <motion.h1
+            <m.h1
               variants={itemVariants}
               className="text-5xl md:text-6xl font-extrabold leading-tight tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[--brand-violet,#7C3AED] via-fuchsia-400 to-[--brand-aqua,#22D3EE] drop-shadow-sm"
             >
               Próximamente
-            </motion.h1>
+            </m.h1>
 
             {/* Badge "Sin letra chica" */}
-            <motion.div variants={itemVariants}>
+            <m.div variants={itemVariants}>
               <PromoBadge />
-            </motion.div>
+            </m.div>
 
             {/* Legal breve - mejorado contraste */}
-            <motion.p
+            <m.p
               variants={itemVariants}
               className="text-sm text-slate-300 max-w-lg mx-auto leading-relaxed"
             >
               Arriendos desde $210.000 pesos. Sin costos ocultos ni sorpresas.
-            </motion.p>
+            </m.p>
 
             {/* CTAs */}
-            <motion.div
+            <m.div
               variants={itemVariants}
               className="flex flex-col sm:flex-row justify-center gap-3 md:gap-4 mt-6"
             >
-              <motion.button
+              <m.button
                 ref={triggerButtonRef}
                 onClick={handleWaitlistClick}
                 className="rounded-2xl px-6 py-3 font-semibold bg-gradient-to-r from-[--brand-violet,#7C3AED] to-[--brand-aqua,#22D3EE] text-white shadow-lg focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-400/40 hover:shadow-xl transition-all duration-200 min-h-[44px] flex items-center justify-center"
                 aria-label="Notificarme cuando esté listo"
               >
                 Notificarme
-              </motion.button>
+              </m.button>
 
               {(() => {
                 const waUrl = buildWhatsAppUrl({
                   message: "Hola, me interesa el lanzamiento"
                 });
                 return waUrl ? (
-                  <motion.a
+                  <m.a
                     href={waUrl}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -143,26 +146,26 @@ export function ComingSoonHero() {
                     aria-label="Contactar por WhatsApp"
                   >
                     WhatsApp
-                  </motion.a>
+                  </m.a>
                 ) : (
-                  <motion.button
+                  <m.button
                     aria-disabled="true"
                     title="Configura WhatsApp en Vercel"
                     className="rounded-2xl px-6 py-3 font-semibold bg-gray-500 text-white shadow-lg cursor-not-allowed opacity-50 min-h-[44px] flex items-center justify-center"
                   >
                     WhatsApp
-                  </motion.button>
+                  </m.button>
                 );
               })()}
-            </motion.div>
+            </m.div>
 
             {/* Subtítulo */}
-            <motion.p
+            <m.p
               variants={itemVariants}
               className="text-lg md:text-xl text-slate-100 max-w-2xl mx-auto leading-relaxed drop-shadow-sm"
             >
               Estamos preparando la nueva experiencia de arriendo 0% comisión. Sin letra chica.
-            </motion.p>
+            </m.p>
 
             {/* Beneficios */}
             <div className="relative bg-white/5 backdrop-blur-sm rounded-3xl p-6 md:p-8 border border-white/10 hover:bg-white/8 transition-colors duration-200">
@@ -179,7 +182,7 @@ export function ComingSoonHero() {
                     { icon: FileText, text: "Sin letra chica ni sorpresas" },
                     { icon: Calendar, text: "Reserva sin compromiso" }
                   ].map(({ icon: Icon, text }, index) => (
-                    <motion.div
+                    <m.div
                       key={index}
                       variants={benefitCardVariants}
                       custom={index}
@@ -191,7 +194,7 @@ export function ComingSoonHero() {
                           {text}
                         </span>
                       </div>
-                    </motion.div>
+                    </m.div>
                   ))}
                 </div>
 
@@ -203,7 +206,7 @@ export function ComingSoonHero() {
                 </div>
               </div>
             </div>
-          </motion.div>
+          </m.div>
         ) : (
           // Static fallback while motion loads
           <div className="space-y-8">

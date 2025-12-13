@@ -41,7 +41,7 @@ interface VisitData {
     time: string | null;
     name: string;
     phone: string;
-    email: string;
+    email?: string;
 }
 
 export function QuintoAndarVisitScheduler({
