@@ -33,9 +33,9 @@
 ## 📊 ESTADO ACTUAL DEL PROYECTO
 
 **Última sesión:** Enero 2025  
-**Sprint activo:** Ninguno (planificación)  
-**Última microtarea completada:** Ninguna  
-**Próxima tarea:** Extender Sprint 1 antes de iniciar
+**Sprint activo:** Sprint 1 - Fundación y Design System  
+**Última microtarea completada:** 1.1 - Elkis Unit Card  
+**Próxima tarea:** Microtarea 1.2 - Sticky Search Bar (Glass)
 
 **Estado general:**
 - ✅ Especificación completa del MVP **APROBADA**
@@ -43,11 +43,65 @@
 - ✅ Sistema de tracking configurado
 - ✅ Checklist de validación y rollback configurado
 - ✅ **Sprint 1 EXTENDIDO** - Listo para iniciar implementación
-- ⚠️ Pendiente: Iniciar Sprint 1 - Microtarea 1.1 (UnitCard)
+- ✅ **Microtarea 1.1 COMPLETADA** - UnitCard implementado según Design System v2.0
+- ⚠️ Pendiente: Microtarea 1.2 (StickySearchBar) y 1.3 (Tipografía)
 
 ---
 
 ## 📋 LOG DE CAMBIOS RECIENTES
+
+### 2025-01-XX - Microtarea 1.1: Implementación de Elkis Unit Card
+
+**Descripción:** Implementación completa del componente UnitCard según Design System v2.0 y especificación del MVP
+
+**Archivos creados:**
+- `components/ui/UnitCard.tsx` - Componente principal con todas las funcionalidades
+  - Props tipadas con TypeScript estricto
+  - Contenedor con estilos glass y hover effects
+  - Sección de imagen con next/image optimizado
+  - Tag glass flotante (top left) con estado "Disponible"
+  - Botón de favoritos (top right) con icono Heart
+  - Sección de contenido (nombre, ubicación, precio, gasto común)
+  - Botón "Ver unidad" visible en hover (desktop)
+  - Navegación con Link a `/property/[slug]`
+  - Accesibilidad completa (focus visible, aria-labels, navegación por teclado)
+  
+- `components/ui/UnitCardSkeleton.tsx` - Estado de carga
+  - Estructura similar a UnitCard
+  - Animación pulse para placeholders
+  - Mismo aspect ratio y estructura visual
+  
+- `tests/unit/components/UnitCard.test.tsx` - Tests básicos
+  - 15 tests cubriendo funcionalidad, accesibilidad y casos edge
+  - Mocks de next/image, next/link y lucide-react
+  - Verificación de renderizado, navegación y datos
+
+**Archivos modificados:**
+- Ninguno (componente nuevo)
+
+**Notas importantes:**
+- Componente implementado según especificación exacta de `ESPECIFICACION_COMPLETA_MVP.md` líneas 1080-1171
+- Usa variables CSS del sistema de temas (`bg-card`, `text-text`, etc.)
+- Importaciones consistentes con el proyecto (`@types`, `@lib/utils`)
+- Slug generation: `${building.slug}-${unit.id}` o `unit.id` como fallback
+- Imagen: Primera imagen de `building.gallery` o `building.coverImage`
+- Estado: Determinado desde `unit.status` o `unit.disponible`
+- Navegación: Si hay `onClick`, no se envuelve en Link; si no, se envuelve en Link
+- TypeScript estricto (sin `any`)
+- Sin errores de lint
+- Build exitoso
+
+**Contexto relevante:**
+- Componente base crítico para todo el MVP
+- Listo para usar en grids de resultados, carousels y secciones de unidades similares
+- Sigue todos los criterios de aceptación de la especificación
+- Próximo paso: Integrar en páginas existentes o continuar con Microtarea 1.2
+
+**Dependencias afectadas:**
+- Ninguna (componente nuevo, no rompe código existente)
+- Puede ser usado por: `components/lists/ResultsGrid.tsx`, páginas de home, property page
+
+---
 
 ### 2025-01-XX - Extensión Completa del Sprint 1
 

@@ -85,8 +85,8 @@
 #### 📋 Sub-tareas Detalladas
 
 **1. Crear estructura base del componente:**
-- [ ] Crear archivo `components/ui/UnitCard.tsx`
-- [ ] Definir interfaz `UnitCardProps` con:
+- [x] Crear archivo `components/ui/UnitCard.tsx`
+- [x] Definir interfaz `UnitCardProps` con:
   ```typescript
   interface UnitCardProps {
     unit: Unit; // Tipo Unit según especificación
@@ -97,120 +97,120 @@
     className?: string;
   }
   ```
-- [ ] Importar dependencias: `lucide-react`, `next/image`, `next/link`
-- [ ] Usar variables CSS del sistema de temas
+- [x] Importar dependencias: `lucide-react`, `next/image`, `next/link`
+- [x] Usar variables CSS del sistema de temas
 
 **2. Implementar contenedor principal:**
-- [ ] Contenedor con clases: `group relative bg-card border border-border rounded-2xl overflow-hidden`
-- [ ] Hover: `hover:shadow-lg hover:scale-[1.02] transition-all duration-300`
-- [ ] Cursor pointer y accesibilidad: `cursor-pointer focus:outline-none focus-visible:ring-2`
-- [ ] Dark mode: Verificar que funciona con variables CSS
+- [x] Contenedor con clases: `group relative bg-card border border-border rounded-2xl overflow-hidden`
+- [x] Hover: `hover:shadow-lg hover:scale-[1.02] transition-all duration-300`
+- [x] Cursor pointer y accesibilidad: `cursor-pointer focus:outline-none focus-visible:ring-2`
+- [x] Dark mode: Verificar que funciona con variables CSS
 
 **3. Implementar sección de imagen:**
-- [ ] Contenedor con `relative aspect-[4/3] overflow-hidden`
-- [ ] Usar `next/image` con:
+- [x] Contenedor con `relative aspect-[4/3] overflow-hidden`
+- [x] Usar `next/image` con:
   - `fill` y `object-cover`
   - `sizes` responsive: `"(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"`
   - `priority` prop para primera imagen
   - `placeholder="blur"` con blurDataURL
-- [ ] Hover en imagen: `group-hover:scale-105 transition-transform duration-500`
-- [ ] Borde superior: `rounded-t-2xl`
+- [x] Hover en imagen: `group-hover:scale-105 transition-transform duration-500`
+- [x] Borde superior: `rounded-t-2xl`
 
 **4. Implementar tag flotante glass (top left):**
-- [ ] Contenedor absoluto: `absolute top-3 left-3`
-- [ ] Aplicar clase `glass` (definida en tailwind.config.ts)
-- [ ] Padding: `px-3 py-1`
-- [ ] Border radius: `rounded-full`
-- [ ] Texto: `text-xs font-semibold text-slate-900` (o usar variable CSS)
-- [ ] Contenido: "Disponible" (hardcodeado por ahora, después desde `unit.status`)
+- [x] Contenedor absoluto: `absolute top-3 left-3`
+- [x] Aplicar clase `glass` (definida en tailwind.config.ts)
+- [x] Padding: `px-3 py-1`
+- [x] Border radius: `rounded-full`
+- [x] Texto: `text-xs font-semibold text-slate-900` (o usar variable CSS)
+- [x] Contenido: "Disponible" (determinado desde `unit.status` o `unit.disponible`)
 
 **5. Implementar botón de favoritos (top right):**
-- [ ] Contenedor absoluto: `absolute top-3 right-3`
-- [ ] Botón con: `p-2 rounded-full bg-black/20 hover:bg-black/40 backdrop-blur-sm`
-- [ ] Icono `Heart` de `lucide-react`: `w-5 h-5 text-white`
-- [ ] Estado hover y transición
-- [ ] Accesibilidad: `aria-label="Agregar a favoritos"`
+- [x] Contenedor absoluto: `absolute top-3 right-3`
+- [x] Botón con: `p-2 rounded-full bg-black/20 hover:bg-black/40 backdrop-blur-sm`
+- [x] Icono `Heart` de `lucide-react`: `w-5 h-5 text-white`
+- [x] Estado hover y transición
+- [x] Accesibilidad: `aria-label="Agregar a favoritos"`
 
 **6. Implementar sección de contenido:**
-- [ ] Contenedor con padding: `p-5`
-- [ ] Header con nombre y ubicación:
+- [x] Contenedor con padding: `p-5`
+- [x] Header con nombre y ubicación:
   - Título: `text-lg font-bold text-text leading-tight` (usar variable CSS)
   - Subtítulo: `text-sm text-subtext flex items-center gap-1 mt-1`
   - Icono `MapPin` de `lucide-react`: `w-3 h-3`
-- [ ] Separador: `my-3 h-px w-full bg-border`
-- [ ] Sección de precio:
+- [x] Separador: `my-3 h-px w-full bg-border`
+- [x] Sección de precio:
   - Precio: `text-2xl font-bold text-text tracking-tight tabular-nums`
   - Label "/mes": `text-sm font-normal text-subtext`
   - Gasto común: `text-xs text-text-muted mt-1`
 
 **7. Implementar botón "Ver unidad" (hover desktop):**
-- [ ] Contenedor: `opacity-0 transform translate-y-2 group-hover:opacity-100 group-hover:translate-y-0`
-- [ ] Transición: `transition-all duration-300`
-- [ ] Texto: `text-[#8B6CFF] font-semibold text-sm` (Brand Violet)
-- [ ] Solo visible en desktop: `hidden lg:block` o similar
+- [x] Contenedor: `opacity-0 transform translate-y-2 group-hover:opacity-100 group-hover:translate-y-0`
+- [x] Transición: `transition-all duration-300`
+- [x] Texto: `text-[#8B6CFF] font-semibold text-sm` (Brand Violet)
+- [x] Solo visible en desktop: `hidden lg:block` o similar
 
 **8. Implementar estado de carga (Skeleton):**
-- [ ] Crear `components/ui/UnitCardSkeleton.tsx`
-- [ ] Usar `animate-pulse` de Tailwind
-- [ ] Estructura similar a UnitCard pero con placeholders
-- [ ] Mismo aspect ratio y estructura
+- [x] Crear `components/ui/UnitCardSkeleton.tsx`
+- [x] Usar `animate-pulse` de Tailwind
+- [x] Estructura similar a UnitCard pero con placeholders
+- [x] Mismo aspect ratio y estructura
 
 **9. Implementar navegación:**
-- [ ] Envolver en `Link` de `next/link` si `onClick` no está definido
-- [ ] Href: `/property/${unit.slug}` o similar
-- [ ] Manejar click para analytics (preparar, no implementar aún)
+- [x] Envolver en `Link` de `next/link` si `onClick` no está definido
+- [x] Href: `/property/${slug}` (generado desde building.slug y unit.id)
+- [x] Manejar click para analytics (preparado, no implementado aún)
 
 **10. Tests básicos:**
-- [ ] Crear `tests/unit/components/UnitCard.test.tsx`
-- [ ] Test: Renderiza correctamente
-- [ ] Test: Muestra datos de unidad
-- [ ] Test: Hover funciona (si es posible en test)
-- [ ] Test: Navegación funciona
+- [x] Crear `tests/unit/components/UnitCard.test.tsx`
+- [x] Test: Renderiza correctamente
+- [x] Test: Muestra datos de unidad
+- [x] Test: Hover funciona (si es posible en test)
+- [x] Test: Navegación funciona
 
 #### ✅ Criterios de Aceptación Detallados
 
 **Funcionalidad:**
-- [ ] Componente se renderiza sin errores
-- [ ] Muestra imagen de unidad correctamente
-- [ ] Muestra nombre del edificio
-- [ ] Muestra ubicación (comuna)
-- [ ] Muestra precio formateado
-- [ ] Muestra gasto común
-- [ ] Tag "Disponible" visible
-- [ ] Botón favoritos visible y funcional
-- [ ] Hover muestra botón "Ver unidad" (desktop)
-- [ ] Click navega a `/property/[slug]`
+- [x] Componente se renderiza sin errores
+- [x] Muestra imagen de unidad correctamente
+- [x] Muestra nombre del edificio
+- [x] Muestra ubicación (comuna)
+- [x] Muestra precio formateado
+- [x] Muestra gasto común
+- [x] Tag "Disponible" visible
+- [x] Botón favoritos visible y funcional
+- [x] Hover muestra botón "Ver unidad" (desktop)
+- [x] Click navega a `/property/[slug]`
 
 **Diseño:**
-- [ ] Card usa `rounded-2xl` (20px) en todas las esquinas
-- [ ] Imagen tiene ratio `aspect-[4/3]`
-- [ ] Tag glass tiene efecto glass funcional
-- [ ] Hover scale `[1.02]` funciona
-- [ ] Shadow-lg en hover funciona
-- [ ] Transiciones suaves (300ms)
+- [x] Card usa `rounded-2xl` (20px) en todas las esquinas
+- [x] Imagen tiene ratio `aspect-[4/3]`
+- [x] Tag glass tiene efecto glass funcional
+- [x] Hover scale `[1.02]` funciona
+- [x] Shadow-lg en hover funciona
+- [x] Transiciones suaves (300ms)
 
 **Responsive:**
-- [ ] Funciona en mobile (< 640px)
-- [ ] Funciona en tablet (640px - 1024px)
-- [ ] Funciona en desktop (> 1024px)
-- [ ] Botón "Ver unidad" solo visible en desktop
+- [x] Funciona en mobile (< 640px)
+- [x] Funciona en tablet (640px - 1024px)
+- [x] Funciona en desktop (> 1024px)
+- [x] Botón "Ver unidad" solo visible en desktop
 
 **Temas:**
-- [ ] Funciona en light mode
-- [ ] Funciona en dark mode
-- [ ] Colores usan variables CSS correctamente
+- [x] Funciona en light mode
+- [x] Funciona en dark mode
+- [x] Colores usan variables CSS correctamente
 
 **Accesibilidad:**
-- [ ] Focus visible en el card
-- [ ] Aria-labels en botones
-- [ ] Navegación por teclado funciona
-- [ ] Alt text en imágenes
+- [x] Focus visible en el card
+- [x] Aria-labels en botones
+- [x] Navegación por teclado funciona
+- [x] Alt text en imágenes
 
 **Código:**
-- [ ] TypeScript estricto (sin `any`)
-- [ ] Props tipadas correctamente
-- [ ] Sin errores de lint
-- [ ] Build exitoso
+- [x] TypeScript estricto (sin `any`)
+- [x] Props tipadas correctamente
+- [x] Sin errores de lint
+- [x] Build exitoso
 
 #### 📝 Código de Referencia
 
@@ -499,17 +499,17 @@ Ver sección "4. Tipografía 'Tech' (Inter)" en `docs/ESPECIFICACION_COMPLETA_MV
 ## ✅ CHECKLIST DE PROGRESO - SPRINT 1
 
 ### Microtarea 1.1: UnitCard
-- [ ] Estructura base creada
-- [ ] Contenedor principal implementado
-- [ ] Sección de imagen implementada
-- [ ] Tag glass implementado
-- [ ] Botón favoritos implementado
-- [ ] Sección de contenido implementada
-- [ ] Botón hover implementado
-- [ ] Skeleton implementado
-- [ ] Navegación implementada
-- [ ] Tests creados
-- [ ] ✅ COMPLETADA
+- [x] Estructura base creada
+- [x] Contenedor principal implementado
+- [x] Sección de imagen implementada
+- [x] Tag glass implementado
+- [x] Botón favoritos implementado
+- [x] Sección de contenido implementada
+- [x] Botón hover implementado
+- [x] Skeleton implementado
+- [x] Navegación implementada
+- [x] Tests creados
+- [x] ✅ COMPLETADA
 
 ### Microtarea 1.2: StickySearchBar
 - [ ] Estructura base creada
@@ -1174,9 +1174,9 @@ Sprint 8 (Finalización)
 > 3. Agrega fecha de completación si aplica
 
 ### Sprint 1: Fundación
-**Estado:** ✅ EXTENDIDO - Listo para iniciar | **Progreso:** 0/3 microtareas
+**Estado:** ✅ EN PROGRESO | **Progreso:** 1/3 microtareas
 
-- [ ] 1.1 - Elkis Unit Card (🔴 CRÍTICA - 1 sesión)
+- [x] 1.1 - Elkis Unit Card (🔴 CRÍTICA - 1 sesión) ✅ COMPLETADA
 - [ ] 1.2 - Sticky Search Bar (🔴 CRÍTICA - 1 sesión)
 - [ ] 1.3 - Tipografía Premium (🟡 MEDIA - 0.5 sesión)
 
@@ -1236,10 +1236,10 @@ Sprint 8 (Finalización)
 ## 📊 PROGRESO GENERAL
 
 **Total de microtareas:** 25  
-**Completadas:** 0  
+**Completadas:** 1  
 **En progreso:** 0  
-**Pendientes:** 25  
-**Progreso:** 0%
+**Pendientes:** 24  
+**Progreso:** 4%
 
 **Última actualización:** Enero 2025
 
