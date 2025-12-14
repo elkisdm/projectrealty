@@ -2,7 +2,7 @@
 import React, { useState, useCallback } from 'react';
 import { Filter, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FilterChips } from './FilterChips';
+import { FilterChip } from './FilterChip';
 import { SortSelect } from './SortSelect';
 import { useAdvancedFilters } from '../../hooks/useAdvancedFilters';
 import type { AdvancedFilterValues } from '../../types/filters';
@@ -189,12 +189,16 @@ export function AdvancedFilterBar({
 
         {/* Active Filter Chips */}
         {activeFilterChips.length > 0 && (
-          <FilterChips
-            chips={activeFilterChips}
-            onClearAll={handleClearAll}
-            maxVisible={6}
-            showClearAll={false} // We have our own clear button above
-          />
+          <div className="flex flex-wrap gap-2">
+            {activeFilterChips.map((chip) => (
+              <FilterChip
+                key={chip.id}
+                label={chip.label}
+                value={chip.value}
+                onRemove={chip.onRemove}
+              />
+            ))}
+          </div>
         )}
 
       </div>

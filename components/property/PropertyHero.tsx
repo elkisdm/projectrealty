@@ -1,14 +1,16 @@
 "use client";
 import React from "react";
 import { MapPin, DollarSign, Flame, Shield } from "lucide-react";
-import type { Building } from "@schemas/models";
+import type { Building, Unit } from "@schemas/models";
+import { PropertyGalleryGrid } from "./PropertyGalleryGrid";
 
 interface PropertyHeroProps {
     building: Building;
+    unit?: Unit;
     variant?: "catalog" | "marketing" | "admin";
 }
 
-export function PropertyHero({ building, variant = "catalog" }: PropertyHeroProps) {
+export function PropertyHero({ building, unit, variant = "catalog" }: PropertyHeroProps) {
     // Badges basados en variant
     const getBadges = () => {
         switch (variant) {
@@ -75,7 +77,10 @@ export function PropertyHero({ building, variant = "catalog" }: PropertyHeroProp
                 ))}
             </div>
 
-
+            {/* Galería con grid 1+4 estilo Airbnb */}
+            <div className="mt-6 lg:mt-8">
+                <PropertyGalleryGrid unit={unit} building={building} />
+            </div>
         </section>
     );
 }

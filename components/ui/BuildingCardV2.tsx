@@ -23,15 +23,16 @@ const DEFAULT_BLUR =
 
 // Helper functions to work with Building, BuildingSummary, and LegacyBuilding types
 function getCoverImage(building: Building | BuildingSummary | LegacyBuilding): string {
-  if ('cover' in building) return building.cover;
+  if ('cover' in building && building.cover) return building.cover;
   if ('coverImage' in building && building.coverImage) return building.coverImage;
-  if ('gallery' in building && building.gallery.length > 0) return building.gallery[0];
-  return '';
+  if ('gallery' in building && building.gallery && building.gallery.length > 0) return building.gallery[0];
+  // Fallback a imagen por defecto
+  return '/images/lascondes-cover.jpg';
 }
 
 function getUnitsInfo(building: Building | BuildingSummary | LegacyBuilding) {
   if ('units' in building) {
-    const available = building.units.filter((unit: Unit) => unit.disponible);
+    const available = building.units.filter((unit) => 'disponible' in unit && unit.disponible);
     return { available: available.length, total: building.units.length };
   }
   // For BuildingSummary, use hasAvailability flag
@@ -61,9 +62,9 @@ function getPromoInfo(building: Building | BuildingSummary | LegacyBuilding) {
 function getPrice(building: Building | BuildingSummary | LegacyBuilding): number {
   if ('precioDesde' in building) return building.precioDesde;
   if ('units' in building && building.units.length > 0) {
-    const availableUnits = building.units.filter((unit: Unit) => unit.disponible);
+    const availableUnits = building.units.filter((unit) => 'disponible' in unit && unit.disponible);
     if (availableUnits.length > 0) {
-      return Math.min(...availableUnits.map((unit: Unit) => unit.price));
+      return Math.min(...availableUnits.map((unit) => 'price' in unit ? unit.price : 0));
     }
   }
   return 0;
@@ -95,9 +96,9 @@ function calculateBuildingStats(building: Building) {
   const maxPrice = Math.max(...prices);
 
   // Calculate m2 range
-  const m2s = availableUnits.map(unit => unit.m2);
-  const minM2 = Math.min(...m2s);
-  const maxM2 = Math.max(...m2s);
+  const m2s = availableUnits.map(unit => 'm2' in unit ? unit.m2 : undefined).filter((m2): m2 is number => m2 !== undefined);
+  const minM2 = m2s.length > 0 ? Math.min(...m2s) : 0;
+  const maxM2 = m2s.length > 0 ? Math.max(...m2s) : 0;
 
   // Group by tipologia
   const tipologiaGroups = availableUnits.reduce((acc, unit) => {
@@ -113,7 +114,7 @@ function calculateBuildingStats(building: Building) {
     label: tipologia,
     count: units.length,
     minPrice: Math.min(...units.map(u => u.price)),
-    minM2: Math.min(...units.map(u => u.m2)),
+    minM2: Math.min(...units.map(u => 'm2' in u ? (u.m2 ?? 0) : 0)),
   }));
 
   return {
@@ -242,9 +243,9 @@ export function BuildingCardV2({
               <div className="flex flex-wrap gap-1.5 min-h-[24px]">
                 {typologyChips.slice(0, 3).map((chip) => {
                   // Determinar href según el tipo de building
-                  const buildingHref = 'slug' in building
+                  const buildingHref = 'slug' in building && building.slug
                     ? `/property/${building.slug}?tipologia=${encodeURIComponent(chip.key)}`
-                    : `/property/${building.id}?tipologia=${encodeURIComponent(chip.key)}`;
+                    : `/property/${'id' in building ? building.id : 'unknown'}?tipologia=${encodeURIComponent(chip.key)}`;
 
                   return (
                     <button
@@ -268,9 +269,9 @@ export function BuildingCardV2({
                   );
                 })}
                 {typologyChips.length > 3 && (() => {
-                  const buildingHref = 'slug' in building
+                  const buildingHref = 'slug' in building && building.slug
                     ? `/property/${building.slug}?ver=unidades`
-                    : `/property/${building.id}?ver=unidades`;
+                    : `/property/${'id' in building ? building.id : 'unknown'}?ver=unidades`;
 
                   return (
                     <button

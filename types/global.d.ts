@@ -8,6 +8,12 @@ declare global {
       targetId: string,
       config?: Record<string, unknown>
     ) => void;
+    // Meta Pixel fbq function
+    fbq: (
+      command: 'init' | 'track' | 'trackCustom',
+      eventName: string,
+      params?: Record<string, unknown>
+    ) => void;
   }
 }
 

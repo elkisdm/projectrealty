@@ -36,7 +36,7 @@ export function ThemeToggle() {
 
       {/* Indicador de estado */}
       <motion.div
-        className="absolute inset-0 rounded-full border-2 border-transparent"
+        className="absolute right-0 bottom-0 rounded-full border-2 border-transparent"
         initial={false}
         animate={{
           borderColor: theme === 'light' ? 'rgba(245, 158, 11, 0.3)' : 'rgba(14, 165, 233, 0.3)',

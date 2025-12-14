@@ -19,12 +19,18 @@ function adaptBuildingSummaryToBuilding(buildingSummary: BuildingSummary): Build
   // Create synthetic units based on typologySummary
   const syntheticUnits = buildingSummary.typologySummary?.map((typology, index) => ({
     id: `${buildingSummary.id}-unit-${index}`,
+    slug: `${buildingSummary.slug}-${typology.key.toLowerCase()}-${index}`,
+    codigoUnidad: `UNIT-${index}`,
+    buildingId: buildingSummary.id,
     tipologia: typology.key,
     price: typology.minPrice || buildingSummary.precioDesde,
-    m2: typology.minM2 || 40, // Default m2 if not available
-    estacionamiento: false, // Default values since not available in summary
+    disponible: true,
+    dormitorios: typology.key === 'Studio' || typology.key === 'Estudio' ? 0 : parseInt(typology.key[0]) || 1,
+    banos: 1,
+    garantia: typology.minPrice || buildingSummary.precioDesde,
+    m2: typology.minM2 || 40,
+    estacionamiento: false,
     bodega: false,
-    disponible: true // Assume available since it's in the summary
   })) || [];
 
   return {

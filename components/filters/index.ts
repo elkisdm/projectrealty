@@ -28,8 +28,7 @@ export type {
 export { SearchInput } from './SearchInput';
 export type { SearchInputProps } from './SearchInput';
 
-export { FilterChips, SingleChip, ChipsContainer } from './FilterChips';
-export type { FilterChipsProps, SingleChipProps, ChipsContainerProps } from './FilterChips';
+export { FilterChips } from './FilterChips';
 
 export { AdvancedFilterBar } from './AdvancedFilterBar';
 export type { AdvancedFilterBarProps } from './AdvancedFilterBar';

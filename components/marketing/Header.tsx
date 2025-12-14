@@ -6,11 +6,20 @@ import { usePathname } from 'next/navigation';
 import { clx } from '@lib/utils';
 import { ThemeToggle } from '@components/ui/ThemeToggle';
 import { ContactDropdown } from './ContactDropdown';
+import { StickySearchBar } from './StickySearchBar';
 import { Heart, User, Search, Menu, X, ChevronRight, Home } from 'lucide-react';
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showStickySearch, setShowStickySearch] = useState(false);
+  const [scrollDirection, setScrollDirection] = useState<'up' | 'down'>('up');
+  const [lastScrollY, setLastScrollY] = useState(0);
+  const [shouldReduceMotion, setShouldReduceMotion] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const pathname = usePathname();
+
+  // Determinar si mostrar StickySearchBar (solo en home por ahora)
+  const shouldShowStickySearch = pathname === '/';
 
   // Función para determinar si un enlace está activo
   const isActiveLink = (href: string) => {
@@ -80,6 +89,69 @@ export function Header() {
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [isMobileMenuOpen]);
+
+  // Check for prefers-reduced-motion and screen size
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const mobileQuery = window.matchMedia('(max-width: 1023px)');
+
+    setShouldReduceMotion(mediaQuery.matches);
+    setIsMobile(mobileQuery.matches);
+
+    const handleMotionChange = (e: MediaQueryListEvent) => {
+      setShouldReduceMotion(e.matches);
+    };
+
+    const handleMobileChange = (e: MediaQueryListEvent) => {
+      setIsMobile(e.matches);
+    };
+
+    mediaQuery.addEventListener('change', handleMotionChange);
+    mobileQuery.addEventListener('change', handleMobileChange);
+
+    return () => {
+      mediaQuery.removeEventListener('change', handleMotionChange);
+      mobileQuery.removeEventListener('change', handleMobileChange);
+    };
+  }, []);
+
+  // Handle scroll direction for mobile sticky search bar animation
+  useEffect(() => {
+    if (!shouldShowStickySearch) {
+      setShowStickySearch(false);
+      return;
+    }
+
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+
+      // Activate sticky search when scrolled past 100px
+      if (currentScrollY > 100) {
+        setShowStickySearch(true);
+
+        // Determine scroll direction for mobile animation
+        if (isMobile) {
+          if (currentScrollY > lastScrollY && currentScrollY > 200) {
+            // Scrolling down - hide on mobile
+            setScrollDirection('down');
+          } else if (currentScrollY < lastScrollY) {
+            // Scrolling up - show on mobile
+            setScrollDirection('up');
+          }
+        }
+      } else {
+        setShowStickySearch(false);
+      }
+
+      setLastScrollY(currentScrollY);
+    };
+
+    // Initial check
+    handleScroll();
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [shouldShowStickySearch, lastScrollY, isMobile]);
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -397,6 +469,52 @@ export function Header() {
           </>
         )}
       </AnimatePresence>
+
+      {/* StickySearchBar integrado - Solo en home */}
+      {shouldShowStickySearch && (
+        <AnimatePresence>
+          {showStickySearch && (
+            <motion.div
+              initial={false}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: shouldReduceMotion ? 0 : 0.2 }}
+              className={clx(
+                "w-full px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 py-3",
+                "sticky top-[72px] lg:top-[80px] z-50",
+                "bg-bg/80 backdrop-blur-sm border-b border-border/50",
+                "transition-all duration-300",
+                shouldReduceMotion ? '' : 'ease-out'
+              )}
+            >
+              <motion.div
+                initial={isMobile && !shouldReduceMotion
+                  ? { opacity: 0, y: scrollDirection === 'down' ? -20 : 20 }
+                  : false
+                }
+                animate={isMobile && !shouldReduceMotion
+                  ? {
+                    opacity: scrollDirection === 'up' ? 1 : 0,
+                    y: scrollDirection === 'up' ? 0 : -20
+                  }
+                  : { opacity: 1, y: 0 }
+                }
+                transition={{
+                  duration: shouldReduceMotion ? 0 : 0.3,
+                  ease: 'easeOut'
+                }}
+                className="w-full"
+              >
+                <StickySearchBar
+                  placeholder="Buscar por comuna, dirección, nombre de edificio..."
+                  className="max-w-2xl mx-auto"
+                  integrated={true}
+                />
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      )}
     </header>
   );
 }

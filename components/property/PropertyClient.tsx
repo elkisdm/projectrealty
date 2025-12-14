@@ -2,8 +2,9 @@
 import React, { useState, useEffect, Suspense } from "react";
 import { AlertCircle } from "lucide-react";
 
-import { track } from "@lib/analytics";
+import { track, ANALYTICS_EVENTS } from "@lib/analytics";
 import { logger } from "@lib/logger";
+import { buildPropertyWhatsAppUrl } from "@lib/whatsapp";
 import type { Building } from "@schemas/models";
 import { QuintoAndarVisitScheduler } from "@components/flow/QuintoAndarVisitScheduler";
 import { usePropertyUnit } from "@hooks/usePropertyUnit";
@@ -13,7 +14,9 @@ import { FirstPaymentDetails } from "./FirstPaymentDetails";
 import { PropertyAboveFoldMobile } from "./PropertyAboveFoldMobile";
 import { PropertyBreadcrumb } from "./PropertyBreadcrumb";
 import { PropertySidebar } from "./PropertySidebar";
-import { PropertyAccordion } from "./PropertyAccordion";
+import { PropertyBookingCard } from "./PropertyBookingCard";
+import { PropertyTabs } from "./PropertyTabs";
+import { PropertySimilarUnits } from "./PropertySimilarUnits";
 import { CommuneLifeSection } from "./CommuneLifeSection";
 import { PropertyFAQ } from "./PropertyFAQ";
 
@@ -47,16 +50,16 @@ class ErrorBoundary extends React.Component<
                     <div className="bg-card rounded-2xl shadow-lg p-8 max-w-md text-center">
                         <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
                         <h2 className="text-xl font-semibold text-text mb-2">
-                            Algo salió mal
+                            Algo sali? mal
                         </h2>
                         <p className="text-text-secondary mb-4">
-                            No pudimos cargar la información de la propiedad. Por favor, intenta de nuevo.
+                            No pudimos cargar la informaci?n de la propiedad. Por favor, intenta de nuevo.
                         </p>
                         <button
                             onClick={() => window.location.reload()}
                             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl font-semibold transition-colors"
                         >
-                            Recargar página
+                            Recargar p?gina
                         </button>
                     </div>
                 </div>
@@ -115,7 +118,7 @@ export function PropertyClient({
     const [error, setError] = useState<string | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    // Usar el hook para manejar la lógica de la unidad
+    // Usar el hook para manejar la l?gica de la unidad
     const {
         selectedUnit,
         moveInDate,
@@ -130,15 +133,23 @@ export function PropertyClient({
         setIncludeStorage
     } = usePropertyUnit({ building, defaultUnitId });
 
-    // Analytics tracking on mount
+    // Analytics tracking on mount - property view con datos de unidad
     useEffect(() => {
-        track("property_view", {
-            property_id: building.id,
-            property_name: building.name,
-            property_slug: building.slug,
-            variant
-        });
-    }, [building.id, building.name, building.slug, variant]);
+        if (selectedUnit) {
+            track(ANALYTICS_EVENTS.PROPERTY_VIEW, {
+                property_id: building.id,
+                property_slug: building.slug,
+                property_name: building.name,
+                unit_id: selectedUnit.id,
+                unit_slug: selectedUnit.slug,
+                price_monthly: selectedUnit.price,
+                comuna: building.comuna,
+                tipologia: selectedUnit.tipologia,
+                dormitorios: selectedUnit.dormitorios,
+                variant,
+            });
+        }
+    }, [building.id, building.slug, building.name, building.comuna, selectedUnit, variant]);
 
     // Listen for custom event to open modal
     useEffect(() => {
@@ -155,7 +166,7 @@ export function PropertyClient({
     // Handle errors gracefully
     useEffect(() => {
         if (!building) {
-            setError("No se pudo cargar la información de la propiedad");
+            setError("No se pudo cargar la informaci?n de la propiedad");
         } else if (building && building.units.filter(unit => unit.disponible).length === 0) {
             setError("No hay unidades disponibles en esta propiedad");
         } else {
@@ -163,17 +174,17 @@ export function PropertyClient({
         }
     }, [building]);
 
-    // Función para enviar cotización
+    // Funci?n para enviar cotizaci?n
     const handleSendQuotation = () => {
         track("quotation_sent", {
             property_id: building.id,
             property_name: building.name,
             variant
         });
-        alert(`Cotización enviada por email para la propiedad ${building.name}`);
+        alert(`Cotizaci?n enviada por email para la propiedad ${building.name}`);
     };
 
-    // Función para navegar a la sección de detalles del primer pago
+    // Funci?n para navegar a la secci?n de detalles del primer pago
     const handleViewPaymentDetails = () => {
         const element = document.getElementById('first-payment-details');
         if (element) {
@@ -183,6 +194,47 @@ export function PropertyClient({
             });
         }
     };
+
+    // Handler para WhatsApp click
+    const handleWhatsAppClick = React.useCallback(() => {
+        if (!selectedUnit) {
+            logger.warn("No unit selected for WhatsApp");
+            return;
+        }
+
+        // Construir URL de la propiedad
+        const baseUrl = typeof window !== 'undefined'
+            ? window.location.origin
+            : process.env.NEXT_PUBLIC_SITE_URL || '';
+        const propertyUrl = `${baseUrl}/property/${building.slug}`;
+
+        // Construir URL de WhatsApp
+        const whatsappUrl = buildPropertyWhatsAppUrl(
+            selectedUnit,
+            building,
+            propertyUrl
+        );
+
+        if (!whatsappUrl) {
+            // WhatsApp no configurado - mostrar mensaje al usuario
+            logger.warn("WhatsApp no configurado - verificar variables de entorno");
+            alert("WhatsApp no está configurado. Por favor, contacte al administrador.");
+            return;
+        }
+
+        // Trackear evento
+        track(ANALYTICS_EVENTS.CTA_WHATSAPP_CLICK, {
+            property_id: building.id,
+            property_slug: building.slug,
+            unit_id: selectedUnit.id,
+            commune: building.comuna,
+            price: selectedUnit.price,
+            variant,
+        });
+
+        // Abrir WhatsApp en nueva pestaña
+        window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+    }, [selectedUnit, building, variant]);
 
     // Show loading state
     if (isLoading) {
@@ -202,16 +254,16 @@ export function PropertyClient({
                     <button
                         onClick={() => window.location.reload()}
                         className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl font-semibold transition-colors"
-                        aria-label="Recargar página"
+                        aria-label="Recargar p?gina"
                     >
-                        Recargar página
+                        Recargar p?gina
                     </button>
                 </div>
             </div>
         );
     }
 
-    // Si se solicita ver todas las unidades o hay filtro de tipología, mostrar lista de unidades
+    // Si se solicita ver todas las unidades o hay filtro de tipolog?a, mostrar lista de unidades
     const availableUnits = building.units.filter((unit) => unit.disponible);
 
     if (showAllUnits || tipologiaFilter) {
@@ -219,13 +271,13 @@ export function PropertyClient({
             <ErrorBoundary>
                 <div className="min-h-screen bg-bg">
                     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 lg:py-8">
-                        <PropertyBreadcrumb building={building} variant={variant} />
+                        <PropertyBreadcrumb building={building} unit={selectedUnit || building.units[0] || undefined} variant={variant} />
                         <div className="mt-6">
                             <a
                                 href={`/property/${building.slug}`}
                                 className="inline-flex items-center gap-2 text-sm text-subtext hover:text-text transition-colors mb-6"
                             >
-                                ← Volver a la propiedad
+                                ? Volver a la propiedad
                             </a>
                             <UnitsList
                                 building={building}
@@ -244,13 +296,13 @@ export function PropertyClient({
             <div className="min-h-screen bg-bg">
                 <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 lg:py-8">
                     {/* Breadcrumb accesible */}
-                    <PropertyBreadcrumb building={building} variant={variant} />
+                    <PropertyBreadcrumb building={building} unit={selectedUnit || undefined} variant={variant} />
 
                     {/* Layout principal: 3 columnas */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
                         {/* Columna principal (2/3) */}
                         <div className="lg:col-span-2 space-y-6 lg:space-y-8">
-                            {/* Above the fold móvil optimizado para conversión + Galería integrada */}
+                            {/* Above the fold m?vil optimizado para conversi?n + Galer?a integrada */}
                             <PropertyAboveFoldMobile
                                 building={building}
                                 selectedUnit={selectedUnit || building.units[0] || {
@@ -264,10 +316,7 @@ export function PropertyClient({
                                 }}
                                 variant={variant}
                                 onScheduleVisit={() => setIsModalOpen(true)}
-                                onWhatsApp={() => {
-                                    // TODO: Implementar WhatsApp
-                                    logger.log("WhatsApp clicked");
-                                }}
+                                onWhatsApp={handleWhatsAppClick}
                                 onSave={() => {
                                     // TODO: Implementar guardar en favoritos
                                     logger.log("Save clicked");
@@ -278,18 +327,24 @@ export function PropertyClient({
                                 }}
                             />
 
-                            {/* Acordeones optimizados para conversión */}
-                            <PropertyAccordion
-                                building={building}
-                                selectedUnit={selectedUnit}
-                                onScheduleVisit={() => setIsModalOpen(true)}
-                                onPreapproval={() => {
-                                    // TODO: Implementar modal de preaprobación
-                                    logger.log("Preaprobación iniciada");
-                                }}
-                            />
+                            {/* Tabs de contenido según especificación Assetplan */}
+                            {selectedUnit && (
+                                <PropertyTabs
+                                    unit={selectedUnit}
+                                    building={building}
+                                />
+                            )}
 
-                            {/* Cómo es vivir en la comuna */}
+                            {/* Unidades similares */}
+                            {selectedUnit && (
+                                <PropertySimilarUnits
+                                    currentUnit={selectedUnit}
+                                    building={building}
+                                    limit={6}
+                                />
+                            )}
+
+                            {/* C?mo es vivir en la comuna */}
                             <CommuneLifeSection building={building} variant={variant} />
 
                             {/* Calculadora detallada del primer pago */}
@@ -328,28 +383,18 @@ export function PropertyClient({
                             {/* Preguntas frecuentes */}
                             <PropertyFAQ building={building} variant={variant} />
 
-                            {/* Sticky Mobile CTA ya está integrado en PropertyAboveFoldMobile */}
+                            {/* Sticky Mobile CTA ya est? integrado en PropertyAboveFoldMobile */}
                         </div>
 
-                        {/* Sidebar sticky (1/3) - Oculto en móviles */}
-                        <PropertySidebar
-                            building={building}
-                            selectedUnit={selectedUnit}
-                            unitDetails={unitDetails}
-                            originalPrice={originalPrice}
-                            discountPrice={discountPrice}
-                            firstPaymentCalculation={firstPaymentCalculation}
-                            moveInDate={moveInDate}
-                            includeParking={includeParking}
-                            includeStorage={includeStorage}
-                            onDateChange={handleDateChange}
-                            onParkingChange={setIncludeParking}
-                            onStorageChange={setIncludeStorage}
-                            onSendQuotation={handleSendQuotation}
-                            onScheduleVisit={() => setIsModalOpen(true)}
-                            onViewPaymentDetails={handleViewPaymentDetails}
-                            variant={variant}
-                        />
+                        {/* Sidebar sticky (1/3) - Booking Card según especificación Assetplan */}
+                        {selectedUnit && (
+                            <PropertyBookingCard
+                                unit={selectedUnit}
+                                building={building}
+                                onScheduleVisit={() => setIsModalOpen(true)}
+                                onWhatsApp={handleWhatsAppClick}
+                            />
+                        )}
                     </div>
                 </main>
 
@@ -362,12 +407,14 @@ export function PropertyClient({
                     propertyAddress={building.address}
                     propertyImage={building.coverImage}
                     onSuccess={(visitData) => {
-                        logger.log('✅ Visita creada exitosamente:', visitData);
-                        track("visit_scheduled", {
+                        logger.log('? Visita creada exitosamente:', visitData);
+                        track(ANALYTICS_EVENTS.VISIT_SCHEDULED, {
                             property_id: building.id,
+                            property_slug: building.slug,
                             property_name: building.name,
+                            unit_id: selectedUnit?.id,
                             visit_id: visitData.visitId,
-                            variant
+                            variant,
                         });
                         setIsModalOpen(false);
                     }}

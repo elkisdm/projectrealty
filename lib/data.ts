@@ -1,6 +1,7 @@
 import { BuildingSchema } from "@schemas/models";
-import type { Building, Unit, TypologySummary } from "@schemas/models";
+import type { Building, Unit, TypologySummary, PromotionBadge } from "@schemas/models";
 import { logger } from "./logger";
+import { normalizeUnit } from "./utils/unit";
 
 type ListFilters = {
   comuna?: string;
@@ -57,7 +58,10 @@ async function readFromSupabase(): Promise<Building[]> {
           estacionamiento,
           bodega,
           bedrooms,
-          bathrooms
+          bathrooms,
+          images_tipologia,
+          images_areas_comunes,
+          images
         )
       `)
       .order('name')
@@ -111,21 +115,33 @@ async function readFromSupabase(): Promise<Building[]> {
       const precio_desde = prices.length > 0 ? Math.min(...prices) : undefined;
       const precio_hasta = prices.length > 0 ? Math.max(...prices) : undefined;
       
+      // Asegurar que amenities tenga al menos 1 elemento
+      const amenities = Array.isArray(b.amenities) && b.amenities.length > 0
+        ? b.amenities
+        : ['Áreas comunes'];
+      
+      // Asegurar que gallery tenga al menos 1 elemento
+      let gallery: string[];
+      if (Array.isArray(b.gallery) && b.gallery.length > 0) {
+        gallery = b.gallery;
+      } else {
+        // No hay gallery, usar cover_image o default
+        gallery = b.cover_image
+          ? [b.cover_image]
+          : ['/images/default-building.jpg'];
+      }
+      
       return {
         id: b.id,
         slug: b.slug || `edificio-${b.id}`,
         name: b.name,
-        comuna: b.comuna,
+        comuna: b.comuna && b.comuna.trim() ? b.comuna.trim() : 'Santiago', // Fallback a Santiago si está vacío
         address: b.address || 'Dirección no disponible',
-        amenities: Array.isArray(b.amenities) && b.amenities.length > 0
-          ? b.amenities
-          : [],
-        gallery: Array.isArray(b.gallery) && b.gallery.length > 0
-          ? b.gallery
-          : [],
-        coverImage: b.cover_image || (Array.isArray(b.gallery) && b.gallery.length > 0 ? b.gallery[0] : undefined),
-        badges: Array.isArray(b.badges) ? b.badges : [],
-        serviceLevel: b.service_level as 'pro' | 'standard' | undefined,
+        amenities,
+        gallery,
+        coverImage: b.cover_image || gallery[0],
+        badges: Array.isArray(b.badges) ? (b.badges as PromotionBadge[]) : [],
+        serviceLevel: (b.service_level === 'pro' || b.service_level === 'standard') ? b.service_level : undefined,
         precio_desde,
         precio_hasta,
         gc_mode: undefined,
@@ -141,33 +157,30 @@ async function readFromSupabase(): Promise<Building[]> {
             bodega?: boolean;
             bedrooms?: number;
             bathrooms?: number;
+            imagesTipologia?: string[];
+            imagesAreasComunes?: string[];
+            images?: string[];
           };
-          return {
-            id: u.id,
-            tipologia: u.tipologia || 'No especificada',
-            m2: u.m2 || 50,
-            price: u.price || 500000,
-            estacionamiento: u.estacionamiento || false,
-            bodega: u.bodega || false,
-            disponible: u.disponible || false,
-            bedrooms: u.bedrooms || 1,
-            bathrooms: u.bathrooms || 1,
-            area_interior_m2: u.m2,
-            area_exterior_m2: undefined,
-            orientacion: undefined,
-            piso: undefined,
-            amoblado: undefined,
-            petFriendly: undefined,
-            gastosComunes: undefined,
-            parking_ids: undefined,
-            storage_ids: undefined,
-            parking_opcional: undefined,
-            storage_opcional: undefined,
-            guarantee_installments: undefined,
-            guarantee_months: undefined,
-            rentas_necesarias: undefined,
-            renta_minima: undefined
-          };
+          
+          // Usar helper para crear Unit completo
+          return normalizeUnit(
+            {
+              id: u.id,
+              tipologia: u.tipologia || 'Studio',
+              m2: u.m2,
+              price: u.price,
+              disponible: u.disponible ?? true, // Default a true si no está definido
+              estacionamiento: u.estacionamiento ?? false,
+              bodega: u.bodega ?? false,
+              bedrooms: u.bedrooms ?? (u.tipologia === 'Studio' ? 0 : 1), // Default según tipología
+              bathrooms: u.bathrooms ?? 1, // Default a 1
+              imagesTipologia: u.imagesTipologia,
+              imagesAreasComunes: u.imagesAreasComunes,
+              images: u.images,
+            },
+            b.id,
+            b.slug || `edificio-${b.id}`
+          );
         })
       };
     });
@@ -180,9 +193,28 @@ async function readFromSupabase(): Promise<Building[]> {
         const validated = validateBuilding(buildings[i]);
         validatedBuildings.push(validated);
       } catch (error) {
+        // Log detallado del error de validación
+        if (error && typeof error === 'object' && 'issues' in error) {
+          const zodError = error as { issues: Array<{ path: string[]; message: string }> };
+          const errorDetails = zodError.issues.map(issue => 
+            `${issue.path.join('.')}: ${issue.message}`
+          ).join(', ');
+          logger.error(`Building ${buildings[i].name} failed validation: ${errorDetails}`);
+        } else if (error instanceof Error) {
+          logger.error(`Building ${buildings[i].name} failed validation: ${error.message}`);
+        } else {
+          logger.error(`Building ${buildings[i].name} failed validation:`, error);
+        }
         // Silenciosamente omitir edificios que no pasan validación
-        logger.warn(`Building ${i + 1} (${buildings[i].name}) failed validation, skipping`);
+        logger.warn(`Building ${buildings[i].name} skipped due to validation error`);
       }
+    }
+    
+    logger.log(`[readFromSupabase] Edificios validados: ${validatedBuildings.length} de ${buildings.length}`);
+    
+    if (validatedBuildings.length === 0 && buildings.length > 0) {
+      logger.error(`[readFromSupabase] ⚠️ PROBLEMA: ${buildings.length} edificios obtenidos pero 0 pasaron validación`);
+      logger.error(`[readFromSupabase] Esto significa que todos los edificios están fallando validación del schema`);
     }
     
     return validatedBuildings;
@@ -245,18 +277,25 @@ async function readFromMock(): Promise<Building[]> {
           ? mock.amenities
           : ['Piscina', 'Gimnasio'];
         
-        // Convertir unidades y asegurar que haya al menos 1
-        const units = mock.units.map(u => ({
-            id: u.id,
-            tipologia: normalizeTipologia(u.tipologia),
-            m2: u.m2,
-            price: u.price,
-            estacionamiento: u.estacionamiento || false,
-            bodega: u.bodega || false,
-            disponible: u.disponible !== false,
-            bedrooms: 1,
-            bathrooms: 1,
-          }));
+        // Convertir unidades usando normalizeUnit para asegurar todos los campos requeridos
+        const units = mock.units.map(u => 
+          normalizeUnit(
+            {
+              id: u.id,
+              tipologia: normalizeTipologia(u.tipologia),
+              m2: u.m2,
+              price: u.price,
+              disponible: u.disponible !== false,
+              estacionamiento: u.estacionamiento || false,
+              bodega: u.bodega || false,
+              // bedrooms y bathrooms pueden no estar en LegacyUnit, normalizeUnit los calculará
+              bedrooms: (u as any).bedrooms,
+              bathrooms: (u as any).bathrooms,
+            },
+            mock.id,
+            mock.slug
+          )
+        );
         
         // Si no hay unidades, saltar este edificio
         if (units.length === 0) {
@@ -309,15 +348,30 @@ async function readFromMock(): Promise<Building[]> {
 export async function readAll(): Promise<Building[]> {
   const USE_SUPABASE = process.env.USE_SUPABASE === "true";
   
+  logger.log(`[readAll] USE_SUPABASE: ${USE_SUPABASE}`);
+  
   if (USE_SUPABASE) {
     try {
-      return await readFromSupabase();
+      const buildings = await readFromSupabase();
+      logger.log(`[readAll] Edificios desde Supabase: ${buildings.length}`);
+      if (buildings.length > 0) {
+        logger.log(`[readAll] Primer edificio: ${buildings[0].name}, unidades: ${buildings[0].units.length}`);
+        return buildings; // Retornar edificios de Supabase si hay
+      } else {
+        // Si Supabase está configurado pero no hay edificios, NO caer a mocks
+        logger.warn(`[readAll] ⚠️ USE_SUPABASE=true pero no se encontraron edificios en Supabase. Retornando array vacío en lugar de mocks.`);
+        return [];
+      }
     } catch (error) {
-      logger.warn('Failed to read from Supabase, falling back to mocks:', error);
-      return await readFromMock();
+      logger.error(`[readAll] ❌ Error leyendo de Supabase:`, error);
+      logger.warn(`[readAll] ⚠️ USE_SUPABASE=true pero falló. Retornando array vacío en lugar de mocks para evitar datos incorrectos.`);
+      // NO caer a mocks si USE_SUPABASE está activo - retornar vacío
+      return [];
     }
   }
   
+  // Solo usar mocks si USE_SUPABASE es explícitamente false
+  logger.log(`[readAll] USE_SUPABASE=false, usando datos mock`);
   return await readFromMock();
 }
 

@@ -9,6 +9,7 @@ interface StickySearchBarProps {
   placeholder?: string;
   className?: string;
   initialValue?: string;
+  integrated?: boolean; // Si está integrado en Header, no maneja su propio sticky
 }
 
 export function StickySearchBar({
@@ -16,6 +17,7 @@ export function StickySearchBar({
   placeholder = 'Buscar por comuna, dirección...',
   className = '',
   initialValue = '',
+  integrated = false,
 }: StickySearchBarProps) {
   const router = useRouter();
   const [query, setQuery] = useState(initialValue);
@@ -36,8 +38,14 @@ export function StickySearchBar({
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, []);
 
-  // Handle scroll detection for sticky behavior
+  // Handle scroll detection for sticky behavior (solo si no está integrado)
   useEffect(() => {
+    if (integrated) {
+      // Cuando está integrado, siempre está sticky
+      setIsSticky(true);
+      return;
+    }
+
     const handleScroll = () => {
       if (containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect();
@@ -51,7 +59,7 @@ export function StickySearchBar({
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [integrated]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,7 +90,7 @@ export function StickySearchBar({
       ref={containerRef}
       className={`
         w-full max-w-2xl mx-auto
-        ${isSticky ? 'sticky top-4 z-50' : 'relative'}
+        ${!integrated && isSticky ? 'sticky top-4 z-50' : 'relative'}
         transition-all duration-300
         ${shouldReduceMotion ? '' : 'ease-out'}
         ${className}

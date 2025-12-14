@@ -375,3 +375,6 @@ Configurados en `tsconfig.json`:
 ---
 
 **Última actualización:** Enero 2025
+
+
+

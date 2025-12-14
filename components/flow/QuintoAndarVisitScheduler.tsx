@@ -9,11 +9,13 @@ import {
     Loader2,
     X,
     ChevronRight,
-    Calendar as CalendarIcon
+    Calendar as CalendarIcon,
+    MessageCircle
 } from 'lucide-react';
 import { useVisitScheduler } from '../../hooks/useVisitScheduler';
 import { DaySlot, TimeSlot, ContactData, CreateVisitResponse } from '../../types/visit';
 import { logger } from '@lib/logger';
+import { visitFormSchema, type VisitFormData } from '@/lib/validations/visit';
 
 interface QuintoAndarVisitSchedulerProps {
     isOpen: boolean;
@@ -25,11 +27,10 @@ interface QuintoAndarVisitSchedulerProps {
     onSuccess?: (visitData: CreateVisitResponse) => void;
 }
 
-interface FieldValidation {
-    name: { isValid: boolean; message: string };
-    email: { isValid: boolean; message: string };
-    rut: { isValid: boolean; message: string };
-    phone: { isValid: boolean; message: string };
+interface FormErrors {
+    name?: string;
+    email?: string;
+    phone?: string;
 }
 
 export function QuintoAndarVisitScheduler({
@@ -42,20 +43,20 @@ export function QuintoAndarVisitScheduler({
     onSuccess
 }: QuintoAndarVisitSchedulerProps) {
     const [step, setStep] = useState<'selection' | 'contact' | 'premium' | 'success'>('selection');
-    const [contactData, setContactData] = useState<ContactData>({
+    type ContactFormData = {
+        name: string;
+        email: string;
+        phone: string;
+    };
+    const [contactData, setContactData] = useState<ContactFormData>({
         name: '',
         email: '',
-        rut: '',
         phone: ''
     });
-    const [, setFieldValidation] = useState<FieldValidation>({
-        name: { isValid: false, message: '' },
-        email: { isValid: false, message: '' },
-        rut: { isValid: false, message: '' },
-        phone: { isValid: false, message: '' }
-    });
+    const [formErrors, setFormErrors] = useState<FormErrors>({});
     const [isFormValid, setIsFormValid] = useState(false);
     const [showConfetti, setShowConfetti] = useState(false);
+    const [visitResponse, setVisitResponse] = useState<CreateVisitResponse | null>(null);
 
     // Estados para calificación de arriendo
     const [rentalQualification, setRentalQualification] = useState({
@@ -90,35 +91,25 @@ export function QuintoAndarVisitScheduler({
         }
     ];
 
-    // Configuración de campos del formulario
+    // Configuración de campos del formulario (sin RUT según especificación)
     const formFields = [
         {
             key: 'name',
             title: '¿Cuál es tu nombre completo?',
             type: 'text',
             placeholder: 'Tu nombre completo',
-            validation: (value: string) => value.length >= 2
         },
         {
             key: 'email',
-            title: '¿Cuál es tu email?',
+            title: '¿Cuál es tu email? (opcional)',
             type: 'email',
             placeholder: 'tu@email.com',
-            validation: (value: string) => value.includes('@') && value.includes('.')
-        },
-        {
-            key: 'rut',
-            title: '¿Cuál es tu RUT?',
-            type: 'text',
-            placeholder: '12.345.678-9',
-            validation: (value: string) => value.length >= 8
         },
         {
             key: 'phone',
             title: '¿Cuál es tu teléfono?',
             type: 'tel',
             placeholder: '+56 9 1234 5678',
-            validation: (value: string) => value.length >= 8
         }
     ];
 
@@ -142,7 +133,19 @@ export function QuintoAndarVisitScheduler({
         if (isOpen) {
             const startDate = new Date();
             const endDate = new Date();
-            endDate.setDate(endDate.getDate() + 5); // Solo 5 días como permite la API
+            // Generar 6 días válidos (excluyendo domingos)
+            // Necesitamos buscar hasta encontrar 6 días no-domingos
+            let dayCount = 0;
+            let validDays = 0;
+            while (validDays < 6) {
+                const checkDate = new Date();
+                checkDate.setDate(checkDate.getDate() + dayCount);
+                if (checkDate.getDay() !== 0) { // No es domingo
+                    validDays++;
+                }
+                dayCount++;
+            }
+            endDate.setDate(endDate.getDate() + dayCount - 1);
             fetchAvailability(startDate, endDate);
         }
     }, [isOpen, fetchAvailability]);
@@ -152,35 +155,29 @@ export function QuintoAndarVisitScheduler({
         logger.log('📅 Available days updated:', availableDays);
     }, [availableDays]);
 
-    // Validación en tiempo real
+    // Validación en tiempo real con Zod
     useEffect(() => {
         const validateForm = () => {
-            const newValidation: FieldValidation = {
-                name: {
-                    isValid: contactData.name.length >= 2,
-                    message: contactData.name.length > 0 && contactData.name.length < 2 ? 'Nombre muy corto' : ''
-                },
-                email: {
-                    isValid: contactData.email ? contactData.email.includes('@') && contactData.email.includes('.') : false,
-                    message: contactData.email && !contactData.email.includes('@') ? 'Email inválido' : ''
-                },
-                rut: {
-                    isValid: contactData.rut.length >= 8,
-                    message: contactData.rut.length > 0 && contactData.rut.length < 8 ? 'RUT muy corto' : ''
-                },
-                phone: {
-                    isValid: contactData.phone.length >= 8,
-                    message: contactData.phone.length > 0 && contactData.phone.length < 8 ? 'Teléfono muy corto' : ''
-                }
-            };
+            // Validar con Zod
+            const result = visitFormSchema.safeParse({
+                name: contactData.name,
+                email: contactData.email || undefined,
+                phone: contactData.phone,
+            });
 
-            setFieldValidation(newValidation);
-            setIsFormValid(
-                newValidation.name.isValid &&
-                newValidation.email.isValid &&
-                newValidation.rut.isValid &&
-                newValidation.phone.isValid
-            );
+            if (result.success) {
+                setFormErrors({});
+                setIsFormValid(true);
+            } else {
+                const errors: FormErrors = {};
+                result.error.errors.forEach((error) => {
+                    if (error.path[0]) {
+                        errors[error.path[0] as keyof FormErrors] = error.message;
+                    }
+                });
+                setFormErrors(errors);
+                setIsFormValid(false);
+            }
         };
 
         validateForm();
@@ -232,20 +229,35 @@ export function QuintoAndarVisitScheduler({
     const handleFieldAnswer = (fieldKey: string, value: string) => {
         logger.log('📝 Answering field:', { fieldKey, value, currentFieldIndex });
 
+        // Actualizar datos
         setContactData(prev => ({
             ...prev,
             [fieldKey]: value
         }));
 
-        // Avanzar a la siguiente pregunta inmediatamente
-        if (currentFieldIndex < formFields.length - 1) {
-            setCurrentFieldIndex(prev => {
-                const newIndex = prev + 1;
-                logger.log('➡️ Moving to next field:', newIndex);
-                return newIndex;
-            });
-        } else {
-            logger.log('✅ All fields completed');
+        // Validar campo actual con Zod
+        const testData = {
+            ...contactData,
+            [fieldKey]: value
+        };
+        const fieldResult = visitFormSchema.safeParse({
+            name: testData.name,
+            email: testData.email || undefined,
+            phone: testData.phone,
+        });
+
+        // Si el campo actual es válido, avanzar
+        if (fieldResult.success || !fieldResult.error.errors.some(e => e.path[0] === fieldKey)) {
+            // Avanzar a la siguiente pregunta inmediatamente
+            if (currentFieldIndex < formFields.length - 1) {
+                setCurrentFieldIndex(prev => {
+                    const newIndex = prev + 1;
+                    logger.log('➡️ Moving to next field:', newIndex);
+                    return newIndex;
+                });
+            } else {
+                logger.log('✅ All fields completed');
+            }
         }
     };
 
@@ -255,11 +267,15 @@ export function QuintoAndarVisitScheduler({
         rentalQualification.hasGuarantor !== null &&
         rentalQualification.hasSufficientIncome !== null;
 
-    // Verificar si se puede continuar del formulario de contacto
-    const canContinueForm = formFields.every(field => {
-        const value = contactData[field.key as keyof ContactData];
-        return value && field.validation(value);
-    });
+    // Verificar si se puede continuar del formulario de contacto (usando Zod)
+    const canContinueForm = (() => {
+        const result = visitFormSchema.safeParse({
+            name: contactData.name,
+            email: contactData.email || undefined,
+            phone: contactData.phone,
+        });
+        return result.success;
+    })();
 
     // Debug: Log para verificar el estado
     useEffect(() => {
@@ -284,14 +300,36 @@ export function QuintoAndarVisitScheduler({
 
     // Continuar al éxito
     const handleContinueToSuccess = async () => {
-        // Simular envío de datos
-        const result = await createVisit({
+        // Validar y normalizar con Zod antes de enviar
+        const validationResult = visitFormSchema.safeParse({
             name: contactData.name,
+            email: contactData.email || undefined,
             phone: contactData.phone,
-            email: contactData.email
+        });
+
+        if (!validationResult.success) {
+            // Mostrar errores
+            const errors: FormErrors = {};
+            validationResult.error.errors.forEach((error) => {
+                if (error.path[0]) {
+                    errors[error.path[0] as keyof FormErrors] = error.message;
+                }
+            });
+            setFormErrors(errors);
+            return;
+        }
+
+        // Usar datos normalizados (el teléfono ya está normalizado por Zod)
+        const normalizedData = validationResult.data;
+
+        const result = await createVisit({
+            name: normalizedData.name,
+            phone: normalizedData.phone, // Ya normalizado
+            email: normalizedData.email
         });
 
         if (result) {
+            setVisitResponse(result);
             setStep('success');
             setShowConfetti(true);
             onSuccess?.(result);
@@ -336,6 +374,20 @@ export function QuintoAndarVisitScheduler({
         const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=Visita: ${propertyName}&dates=${startDate.toISOString().replace(/[-:]/g, '').split('.')[0]}Z/${endDate.toISOString().replace(/[-:]/g, '').split('.')[0]}Z&details=Visita programada para ${propertyName} en ${propertyAddress}`;
         window.open(googleCalendarUrl, '_blank');
     }, [selectedDate, selectedTime, propertyName, propertyAddress]);
+
+    // Contactar por WhatsApp
+    const handleWhatsAppContact = useCallback(() => {
+        if (!visitResponse?.agent.whatsappNumber) return;
+        const message = encodeURIComponent(`Hola, tengo una consulta sobre la visita agendada para ${propertyName}`);
+        window.open(`https://wa.me/${visitResponse.agent.whatsappNumber.replace(/[^0-9]/g, '')}?text=${message}`, '_blank');
+    }, [visitResponse, propertyName]);
+
+    // Reintentar envío
+    const handleRetry = useCallback(() => {
+        clearError();
+        // Volver al paso de contacto para reintentar
+        setStep('contact');
+    }, [clearError]);
 
     // Manejar cierre
     const handleClose = () => {
@@ -618,7 +670,7 @@ export function QuintoAndarVisitScheduler({
                                             <div className="relative">
                                                 <input
                                                     type={formFields[currentFieldIndex].type}
-                                                    value={contactData[formFields[currentFieldIndex].key as keyof ContactData] || ''}
+                                                    value={contactData[formFields[currentFieldIndex].key as keyof ContactFormData] || ''}
                                                     onChange={(e) => {
                                                         const value = e.target.value;
                                                         setContactData(prev => ({ ...prev, [formFields[currentFieldIndex].key]: value }));
@@ -626,8 +678,9 @@ export function QuintoAndarVisitScheduler({
                                                     onKeyPress={(e) => {
                                                         if (e.key === 'Enter') {
                                                             const currentField = formFields[currentFieldIndex];
-                                                            const value = contactData[currentField.key as keyof ContactData];
-                                                            if (value && currentField.validation(value)) {
+                                                            const value = contactData[currentField.key as keyof ContactFormData];
+                                                            // Email is optional, name and phone are required
+                                                            if (value && (currentField.key !== 'email' || value.includes('@'))) {
                                                                 handleFieldAnswer(currentField.key, value);
                                                             }
                                                         }
@@ -641,16 +694,38 @@ export function QuintoAndarVisitScheduler({
                                                     type="button"
                                                     onClick={() => {
                                                         const currentField = formFields[currentFieldIndex];
-                                                        const value = contactData[currentField.key as keyof ContactData];
-                                                        if (value && currentField.validation(value)) {
+                                                        const value = contactData[currentField.key as keyof typeof contactData] || '';
+                                                        if (value) {
                                                             handleFieldAnswer(currentField.key, value);
                                                         }
                                                     }}
-                                                    disabled={!contactData[formFields[currentFieldIndex].key as keyof ContactData] || !formFields[currentFieldIndex].validation(contactData[formFields[currentFieldIndex].key as keyof ContactData] || '')}
+                                                    disabled={(() => {
+                                                        const currentField = formFields[currentFieldIndex];
+                                                        const value = contactData[currentField.key as keyof typeof contactData] || '';
+                                                        if (!value) return true;
+
+                                                        // Validar campo específico con Zod
+                                                        const testData = { ...contactData, [currentField.key]: value };
+                                                        const result = visitFormSchema.safeParse({
+                                                            name: testData.name,
+                                                            email: testData.email || undefined,
+                                                            phone: testData.phone,
+                                                        });
+
+                                                        if (result.success) return false;
+                                                        // Verificar si el error es del campo actual
+                                                        return result.error.errors.some(e => e.path[0] === currentField.key);
+                                                    })()}
                                                     className="absolute right-3 top-1/2 transform -translate-y-1/2 p-2 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white transition-colors"
                                                 >
                                                     <ChevronRight className="w-5 h-5" />
                                                 </button>
+                                                {/* Mostrar error si existe */}
+                                                {formErrors[formFields[currentFieldIndex].key as keyof FormErrors] && (
+                                                    <p className="mt-2 text-sm text-red-600 dark:text-red-400">
+                                                        {formErrors[formFields[currentFieldIndex].key as keyof FormErrors]}
+                                                    </p>
+                                                )}
                                             </div>
                                         </motion.div>
                                     </AnimatePresence>
@@ -736,7 +811,7 @@ export function QuintoAndarVisitScheduler({
                                         </h4>
                                         <div className="space-y-1 text-sm">
                                             <p className="text-gray-600 dark:text-gray-300">
-                                                <strong>Fecha:</strong> {selectedDate}
+                                                <strong>Fecha:</strong> {selectedDate ? new Date(selectedDate).toLocaleDateString('es-CL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A'}
                                             </p>
                                             <p className="text-gray-600 dark:text-gray-300">
                                                 <strong>Hora:</strong> {selectedTime}
@@ -744,18 +819,37 @@ export function QuintoAndarVisitScheduler({
                                             <p className="text-gray-600 dark:text-gray-300">
                                                 <strong>Propiedad:</strong> {propertyName}
                                             </p>
+                                            {visitResponse?.agent && (
+                                                <>
+                                                    <p className="text-gray-600 dark:text-gray-300">
+                                                        <strong>Agente:</strong> {visitResponse.agent.name}
+                                                    </p>
+                                                    <p className="text-gray-600 dark:text-gray-300">
+                                                        <strong>Teléfono:</strong> {visitResponse.agent.phone}
+                                                    </p>
+                                                </>
+                                            )}
                                         </div>
                                     </div>
 
-                                    {/* Botón de calendario */}
-                                    <div className="mb-6">
+                                    {/* Botones de acción */}
+                                    <div className="mb-6 space-y-3">
                                         <button
                                             onClick={generateCalendarEvent}
                                             className="w-full flex items-center justify-center gap-3 py-3 px-6 rounded-xl border-2 border-blue-600 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors font-semibold"
                                         >
                                             <CalendarIcon className="w-5 h-5" />
-                                            Añadir al calendario
+                                            Agregar al Calendario
                                         </button>
+                                        {visitResponse?.agent.whatsappNumber && (
+                                            <button
+                                                onClick={handleWhatsAppContact}
+                                                className="w-full flex items-center justify-center gap-3 py-3 px-6 rounded-xl border-2 border-green-600 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors font-semibold"
+                                            >
+                                                <MessageCircle className="w-5 h-5" />
+                                                Contactar por WhatsApp
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
 
@@ -772,12 +866,40 @@ export function QuintoAndarVisitScheduler({
                         )}
                     </div>
 
-                    {/* Error message */}
+                    {/* Error message mejorado */}
                     {error && (
                         <div className="p-4 border-t border-gray-200 bg-red-50 dark:border-gray-700 dark:bg-red-900/20">
-                            <div className="flex items-center gap-2 text-red-600">
-                                <AlertCircle className="w-5 h-5" />
-                                <span className="text-sm">{error}</span>
+                            <div className="flex items-start gap-3 mb-4">
+                                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                                <div className="flex-1">
+                                    <h4 className="font-semibold text-red-800 dark:text-red-400 mb-1">
+                                        Error al agendar visita
+                                    </h4>
+                                    <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+                                </div>
+                            </div>
+                            <div className="flex flex-col gap-2 mt-4">
+                                <button
+                                    onClick={handleRetry}
+                                    className="w-full py-2 px-4 rounded-lg bg-red-600 hover:bg-red-700 text-white font-semibold transition-colors text-sm"
+                                >
+                                    Reintentar
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        // Contactar directamente - abrir WhatsApp o teléfono
+                                        const phone = visitResponse?.agent?.whatsappNumber || visitResponse?.agent?.phone || '';
+                                        if (phone) {
+                                            const cleanPhone = phone.replace(/[^0-9]/g, '');
+                                            const message = encodeURIComponent(`Hola, tuve un problema al agendar una visita para ${propertyName}. ¿Pueden ayudarme?`);
+                                            window.open(`https://wa.me/${cleanPhone}?text=${message}`, '_blank');
+                                        }
+                                    }}
+                                    className="w-full py-2 px-4 rounded-lg border-2 border-red-600 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 font-semibold transition-colors text-sm flex items-center justify-center gap-2"
+                                >
+                                    <MessageCircle className="w-4 h-4" />
+                                    Contactar directamente
+                                </button>
                             </div>
                         </div>
                     )}

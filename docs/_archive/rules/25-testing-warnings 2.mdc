@@ -1,0 +1,169 @@
+# Testing y Corrección de Warnings
+
+## Reglas Obligatorias
+
+### 1. React act() - CRÍTICO
+- **Problema:** Warnings de "Warning: An update to Component inside a test was not wrapped in act()"
+- **Solución:** Envolver TODAS las actualizaciones de estado en `act()`
+- **Aplicar en:** Eventos de click, cambios de estado, llamadas async
+
+```typescript
+// ❌ Incorrecto
+fireEvent.click(button);
+
+// ✅ Correcto
+await act(async () => {
+  fireEvent.click(button);
+});
+```
+
+### 2. React.forwardRef() - CRÍTICO
+- **Problema:** Warnings de "Warning: Function components cannot be given refs"
+- **Solución:** Usar `forwardRef` para componentes que reciben refs
+- **Aplicar en:** Modals, componentes con refs externos
+
+```typescript
+// ❌ Incorrecto
+export const Modal = ({ children, ...props }) => {
+  return <div {...props}>{children}</div>;
+};
+
+// ✅ Correcto
+export const Modal = forwardRef<HTMLDivElement, ModalProps>(({ children, ...props }, ref) => {
+  return <div ref={ref} {...props}>{children}</div>;
+});
+```
+
+### 3. Framer Motion Attributes - CRÍTICO
+- **Problema:** Warnings de "Warning: Received `true` for a non-boolean attribute `layout`"
+- **Solución:** Usar strings en lugar de booleanos para atributos de layout
+- **Aplicar en:** Componentes con motion.div, motion.span
+
+```typescript
+// ❌ Incorrecto
+<motion.div layout={true} />
+
+// ✅ Correcto
+<motion.div layout="position" />
+```
+
+### 4. Next/Image Mock Props - CRÍTICO
+- **Problema:** Warnings de "Warning: Received `true` for a non-boolean attribute"
+- **Solución:** Filtrar props no válidas en mocks de Next/Image
+- **Aplicar en:** Tests de componentes con imágenes
+
+```typescript
+// ✅ Correcto
+jest.mock('next/image', () => {
+  return function MockImage({ src, alt, fill, priority, blurDataURL, ...props }: any) {
+    const imgProps = { ...props };
+    delete imgProps.fill;
+    delete imgProps.priority;
+    delete imgProps.blurDataURL;
+    return <img src={src} alt={alt} {...imgProps} />;
+  };
+});
+```
+
+## Patrones de Testing
+
+### Tests de Componentes
+```typescript
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+
+describe('ComponentName', () => {
+  it('should handle user interactions', async () => {
+    render(<ComponentName />);
+    
+    const button = screen.getByRole('button');
+    
+    await act(async () => {
+      fireEvent.click(button);
+    });
+    
+    await waitFor(() => {
+      expect(screen.getByText('Expected Text')).toBeInTheDocument();
+    });
+  });
+});
+```
+
+### Tests de Hooks
+```typescript
+import { renderHook, act } from '@testing-library/react';
+
+describe('useHookName', () => {
+  it('should update state correctly', async () => {
+    const { result } = renderHook(() => useHookName());
+    
+    await act(async () => {
+      result.current.updateState();
+    });
+    
+    expect(result.current.state).toBe('expected');
+  });
+});
+```
+
+## Comandos de Verificación
+
+### Ejecutar Tests con Warnings
+```bash
+# Ver todos los warnings
+pnpm test --passWithNoTests
+
+# Ver warnings específicos
+pnpm test --verbose
+
+# Tests con cobertura
+pnpm test --coverage
+```
+
+### Checklist de QA
+- [ ] No warnings de `act()` en consola
+- [ ] No warnings de `forwardRef()` en consola
+- [ ] No warnings de atributos booleanos en consola
+- [ ] Todos los tests pasan (472/472)
+- [ ] Cobertura de tests >80%
+
+## Troubleshooting
+
+### Warning: An update to Component inside a test was not wrapped in act()
+```typescript
+// Buscar en el test:
+fireEvent.click()
+fireEvent.change()
+fireEvent.keyDown()
+
+// Envolver en act():
+await act(async () => {
+  fireEvent.click(button);
+});
+```
+
+### Warning: Function components cannot be given refs
+```typescript
+// Buscar en el componente:
+export const Component = ({ ref, ...props }) => {
+
+// Cambiar a:
+export const Component = forwardRef<HTMLDivElement, Props>((props, ref) => {
+```
+
+### Warning: Received `true` for a non-boolean attribute
+```typescript
+// Buscar en Framer Motion:
+<motion.div layout={true} />
+
+// Cambiar a:
+<motion.div layout="position" />
+```
+
+## Recursos
+- [React Testing Library - act()](https://testing-library.com/docs/dom-testing-library/api-events#act)
+- [React - forwardRef](https://react.dev/reference/react/forwardRef)
+- [Framer Motion - Layout](https://www.framer.com/motion/layout/)
+description:
+globs:
+alwaysApply: false
+---

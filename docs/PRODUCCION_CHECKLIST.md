@@ -234,3 +234,6 @@ En caso de problemas críticos:
 - [Guía de Deploy](./DEPLOY.md)
 - [Variables de Entorno](./VARIABLES_ENTORNO.md)
 - [Arquitectura](./ARQUITECTURA.md)
+
+
+

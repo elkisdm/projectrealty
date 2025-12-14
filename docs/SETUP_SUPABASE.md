@@ -266,3 +266,6 @@ Una vez configurado Supabase:
 ```bash
 node scripts/setup-supabase-production.mjs
 ```
+
+
+

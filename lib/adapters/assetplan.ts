@@ -1,5 +1,6 @@
 import { BuildingSchema, UnitSchema, type Building, type Unit, PromotionType, type PromotionBadge } from "@schemas/models";
 import { AMENITY_LABEL_TO_KEY, BADGE_LABEL_TO_TAG, PromotionTag } from "./constants";
+import { normalizeUnit } from "../utils/unit";
 
 // Raw provider types for AssetPlan input. These are conservative and capture only
 // the fields we actually consume in the adapter.
@@ -135,34 +136,41 @@ export function mapUnit(raw: AssetPlanRawUnit): Unit {
     typeof raw.disponible === "boolean" ? raw.disponible : mapStatus(raw.status) === "available"
   );
 
-  const base: Unit = {
-    id,
-    tipologia,
-    m2,
-    price,
-    estacionamiento,
-    bodega,
-    disponible,
-  };
+  // Generate buildingId from unit id if not available
+  const unitIdStr = typeof id === 'string' ? id : String(id);
+  const buildingId = unitIdStr.includes('-') ? unitIdStr.split('-')[0] : unitIdStr.substring(0, 8);
+  const buildingSlug = buildingId; // Use buildingId as slug fallback
 
-  const extended: Partial<Unit> = {
-    codigoInterno: normalizeString(raw.codigoInterno),
-    bedrooms: typeof raw.bedrooms === "number" ? raw.bedrooms : undefined,
-    bathrooms: typeof raw.bathrooms === "number" ? raw.bathrooms : undefined,
-    area_interior_m2: typeof raw.area_interior_m2 === "number" ? raw.area_interior_m2 : undefined,
-    area_exterior_m2: typeof raw.area_exterior_m2 === "number" ? raw.area_exterior_m2 : undefined,
-    orientacion: normalizeOrientation(raw.orientacion),
-    piso: typeof raw.piso === "number" ? raw.piso : undefined,
-    amoblado: typeof raw.amoblado === "boolean" ? raw.amoblado : undefined,
-    petFriendly: typeof raw.petFriendly === "boolean" ? raw.petFriendly : undefined,
-    parkingOptions: Array.isArray(raw.parkingOptions) ? raw.parkingOptions.map((s) => s.trim()).filter(Boolean) : undefined,
-    storageOptions: Array.isArray(raw.storageOptions) ? raw.storageOptions.map((s) => s.trim()).filter(Boolean) : undefined,
-    status: mapStatus(raw.status),
-    promotions: toPromotionBadges(raw.promotions as (AssetPlanRawBadge | string)[] | undefined),
-  };
+  // Use helper to create complete Unit with all required fields
+  const completeUnit = normalizeUnit(
+    {
+      id: unitIdStr,
+      tipologia,
+      price,
+      disponible,
+      m2,
+      estacionamiento,
+      bodega,
+      codigoInterno: normalizeString(raw.codigoInterno),
+      bedrooms: typeof raw.bedrooms === "number" ? raw.bedrooms : undefined,
+      bathrooms: typeof raw.bathrooms === "number" ? raw.bathrooms : undefined,
+      area_interior_m2: typeof raw.area_interior_m2 === "number" ? raw.area_interior_m2 : undefined,
+      area_exterior_m2: typeof raw.area_exterior_m2 === "number" ? raw.area_exterior_m2 : undefined,
+      orientacion: normalizeOrientation(raw.orientacion),
+      piso: typeof raw.piso === "number" ? raw.piso : undefined,
+      amoblado: typeof raw.amoblado === "boolean" ? raw.amoblado : undefined,
+      petFriendly: typeof raw.petFriendly === "boolean" ? raw.petFriendly : undefined,
+      parkingOptions: Array.isArray(raw.parkingOptions) ? raw.parkingOptions.map((s) => s.trim()).filter(Boolean) : undefined,
+      storageOptions: Array.isArray(raw.storageOptions) ? raw.storageOptions.map((s) => s.trim()).filter(Boolean) : undefined,
+      status: mapStatus(raw.status),
+      promotions: toPromotionBadges(raw.promotions as (AssetPlanRawBadge | string)[] | undefined),
+    },
+    buildingId,
+    buildingSlug
+  );
 
   // Validate and return; rely on schema for final shape correctness
-  return UnitSchema.parse({ ...base, ...extended });
+  return UnitSchema.parse(completeUnit);
 }
 
 // Convert AssetPlan raw payload into internal Building model

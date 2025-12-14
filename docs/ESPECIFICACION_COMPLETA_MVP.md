@@ -1102,73 +1102,11 @@ El proyecto usa un sistema de temas basado en CSS variables que se adapta autom�
 **Botón (Hover Desktop):**
 - Aparece un botón `bg-[#8B6CFF] text-white rounded-xl` que dice "Ver unidad".
 
-**Código de Referencia:**
-
-```tsx
-import { Heart, MapPin } from 'lucide-react';
-
-export const UnitCard = ({ unit }) => {
-  return (
-    <div className="
-        group relative 
-        bg-card dark:bg-slate-800 
-        border border-border dark:border-slate-700
-        rounded-2xl overflow-hidden 
-        hover:shadow-xl hover:scale-[1.01] 
-        transition-all duration-300
-        cursor-pointer
-    ">
-      {/* Image Section */}
-      <div className="relative aspect-[4/3] overflow-hidden">
-        <img 
-            src={unit.image} 
-            alt={unit.title} 
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-        />
-        {/* Glass Badge */}
-        <div className="absolute top-3 left-3 glass px-3 py-1 rounded-full">
-            <span className="text-xs font-semibold text-slate-900">Disponible</span>
-        </div>
-        {/* Favorite Button */}
-        <button className="absolute top-3 right-3 p-2 rounded-full bg-black/20 hover:bg-black/40 backdrop-blur-sm transition-colors">
-            <Heart className="w-5 h-5 text-white" />
-        </button>
-      </div>
-
-      {/* Content Section */}
-      <div className="p-5">
-        <div className="flex justify-between items-start mb-2">
-            <div>
-                <h3 className="text-lg font-bold text-text leading-tight">{unit.buildingName}</h3>
-                <p className="text-sm text-subtext flex items-center gap-1 mt-1">
-                    <MapPin className="w-3 h-3" /> {unit.comuna}
-                </p>
-            </div>
-            {/* Rating or Tag */}
-            <div className="flex items-center gap-1 text-xs font-bold text-text">
-                ⭐ 4.8
-            </div>
-        </div>
-
-        <div className="my-3 h-px w-full bg-border" />
-
-        <div className="flex justify-between items-end">
-            <div>
-                <p className="text-2xl font-bold text-text tracking-tight">
-                    ${unit.price} <span className="text-sm font-normal text-subtext">/mes</span>
-                </p>
-                <p className="text-xs text-text-muted mt-1">+ ${unit.expenses} GC aprox.</p>
-            </div>
-            {/* Call to Action invisible until hover (Desktop) */}
-            <div className="opacity-0 transform translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
-                 <span className="text-[#8B6CFF] font-semibold text-sm">Ver detalle →</span>
-            </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-```
+**Estructura del Componente:**
+- Contenedor: `group relative bg-card border border-border rounded-2xl overflow-hidden`
+- Imagen: `aspect-[4/3]` con tag glass flotante (top-left) y botón favoritos (top-right)
+- Contenido: Título del edificio, ubicación con icono MapPin, precio con `tabular-nums`, gasto común
+- Hover: Botón "Ver detalle" aparece en desktop con animación suave
 
 ---
 
@@ -1242,46 +1180,20 @@ Para que *Inter* se sienta premium (como Airbnb) y no genérica, usaremos estos 
 
 ---
 
-### 5. Código de Referencia (Tailwind + React)
+### 5. Botones y CTAs
 
 #### Botón Primario (Brand Violet)
-
-```tsx
-<button className="
-    relative overflow-hidden
-    bg-[#8B6CFF] text-white 
-    hover:bg-[#7a5ce6] 
-    active:scale-95
-    rounded-2xl px-8 py-4 
-    font-bold text-lg tracking-wide
-    shadow-lg shadow-violet-500/25
-    transition-all duration-300 ease-out
-    flex items-center justify-center gap-2
-    min-h-[44px]
-    focus:outline-none focus:ring-2 focus:ring-[#8B6CFF] focus:ring-offset-2
-">
-  <span>Solicitar Visita</span>
-  <Calendar className="w-5 h-5" />
-</button>
-```
+- Background: `bg-[#8B6CFF]` con hover `hover:bg-[#7a5ce6]`
+- Forma: `rounded-2xl`
+- Tamaño mínimo: `min-h-[44px]` (accesibilidad)
+- Estados: `active:scale-95`, focus ring visible
+- Sombra: `shadow-lg shadow-violet-500/25`
 
 #### Botón Secundario (Brand Aqua)
-
-```tsx
-<button className="
-    bg-[#00E6B3] text-slate-900
-    hover:bg-[#00d4a3]
-    active:scale-95
-    rounded-2xl px-6 py-3
-    font-semibold
-    shadow-md
-    transition-all duration-300
-    min-h-[44px]
-    focus:outline-none focus:ring-2 focus:ring-[#00E6B3] focus:ring-offset-2
-">
-  Filtros Activos
-</button>
-```
+- Background: `bg-[#00E6B3]` con hover `hover:bg-[#00d4a3]`
+- Forma: `rounded-2xl`
+- Tamaño mínimo: `min-h-[44px]`
+- Estados: `active:scale-95`, focus ring visible
 
 ---
 
@@ -1319,35 +1231,16 @@ Para que *Inter* se sienta premium (como Airbnb) y no genérica, usaremos estos 
 
 #### Transiciones Estándar
 
-```tsx
-// Transición suave (estándar)
-className="transition-all duration-300 ease-in-out"
-
-// Transición rápida
-className="transition-all duration-200 ease-in-out"
-
-// Hover en cards
-className="hover:scale-[1.02] hover:shadow-lg transition-all duration-300"
-```
+- **Transición suave:** `transition-all duration-300 ease-in-out`
+- **Transición rápida:** `transition-all duration-200 ease-in-out`
+- **Hover en cards:** `hover:scale-[1.02] hover:shadow-lg transition-all duration-300`
 
 #### Framer Motion (Cuando se requiera)
 
-```tsx
-import { motion } from "framer-motion";
-
-// Ejemplo con prefers-reduced-motion
-<motion.div
-  initial={{ opacity: 0, y: 20 }}
-  animate={{ opacity: 1, y: 0 }}
-  transition={{
-    duration: 0.3,
-    ease: "easeOut",
-  }}
-  className={window.matchMedia("(prefers-reduced-motion: reduce)").matches ? {} : {}}
->
-  Contenido animado
-</motion.div>
-```
+- Usar `framer-motion` para animaciones complejas
+- **Obligatorio:** Respetar `prefers-reduced-motion` (deshabilitar animaciones si está activo)
+- Duración estándar: 300ms
+- Easing: `easeOut` para entradas, `easeInOut` para transiciones
 
 ---
 
@@ -1359,21 +1252,10 @@ import { motion } from "framer-motion";
 
 **Uso en Componentes:**
 
-```tsx
-import { Search, Home, Calendar, Phone, Heart, MapPin } from "lucide-react";
-
-// Tamaño pequeño (16px)
-<Search className="w-4 h-4" />
-
-// Tamaño medio (20px) - estándar
-<Home className="w-5 h-5" />
-
-// Tamaño grande (24px)
-<Calendar className="w-6 h-6" />
-
-// Con color Brand Violet
-<Search className="w-5 h-5 text-[#8B6CFF]" />
-```
+- Importar desde `lucide-react`
+- Tamaños estándar: `w-4 h-4` (16px), `w-5 h-5` (20px - estándar), `w-6 h-6` (24px), `w-8 h-8` (32px)
+- Color Brand Violet: `text-[#8B6CFF]`
+- Iconos comunes: `Search`, `Home`, `Calendar`, `Phone`, `Heart`, `MapPin`
 
 ---
 
@@ -1429,20 +1311,13 @@ import { Search, Home, Calendar, Phone, Heart, MapPin } from "lucide-react";
 | **Tablet** | `640px - 1024px` | Diseño tablet (`sm:`, `md:`) |
 | **Desktop** | `> 1024px` | Diseño desktop (`lg:`, `xl:`, `2xl:`) |
 
-#### Ejemplo de Grid Responsive (Unit Cards)
+#### Grid Responsive (Unit Cards)
 
-```tsx
-// Grid de cards
-<div className="grid grid-cols-1 
-                sm:grid-cols-2 
-                lg:grid-cols-3 
-                xl:grid-cols-4 
-                gap-6">
-  {units.map(unit => (
-    <UnitCard key={unit.id} unit={unit} />
-  ))}
-</div>
-```
+- **Mobile:** `grid-cols-1` (1 columna)
+- **Tablet:** `sm:grid-cols-2` (2 columnas)
+- **Desktop:** `lg:grid-cols-3` (3 columnas)
+- **Desktop XL:** `xl:grid-cols-4` (4 columnas)
+- **Gap:** `gap-6` (24px entre cards)
 
 ---
 
@@ -2153,17 +2028,9 @@ Desde cada ficha de unidad:
 - "Departamentos [Tipología] en arriendo en [Comuna]"
 
 **Ejemplo desde ficha en Providencia:**
-```html
-<a href="/arriendo/departamento/providencia-metropolitana">
-  Más departamentos en arriendo en Providencia
-</a>
-<a href="/arriendo/departamento">
-  Ver todos los departamentos en arriendo
-</a>
-<a href="/arriendo/departamento/providencia-metropolitana/2-dormitorios">
-  Departamentos 2 dormitorios en Providencia
-</a>
-```
+- Link a `/arriendo/departamento/providencia-metropolitana` - "Más departamentos en arriendo en Providencia"
+- Link a `/arriendo/departamento` - "Ver todos los departamentos en arriendo"
+- Link a `/arriendo/departamento/providencia-metropolitana/2-dormitorios` - "Departamentos 2 dormitorios en Providencia"
 
 **Esto:**
 - Transfiere autoridad entre páginas
@@ -2181,26 +2048,14 @@ Home > Arriendo > Departamento > Providencia > [Unidad]
 ```
 
 **Implementación:**
-```html
-<nav aria-label="Breadcrumb">
-  <ol>
-    <li><a href="/">Home</a></li>
-    <li><a href="/arriendo">Arriendo</a></li>
-    <li><a href="/arriendo/departamento">Departamento</a></li>
-    <li><a href="/arriendo/departamento/providencia-metropolitana">Providencia</a></li>
-    <li>Departamento 2D2B</li>
-  </ol>
-</nav>
-```
+- Usar elemento semántico `<nav aria-label="Breadcrumb">` con lista ordenada `<ol>`
+- Cada item debe ser un link `<a>` excepto el último (página actual)
+- Estructura: Home > Arriendo > Departamento > [Comuna] > [Unidad]
 
 **JSON-LD para breadcrumbs:**
-```json
-{
-  "@context": "https://schema.org",
-  "@type": "BreadcrumbList",
-  "itemListElement": [...]
-}
-```
+- Tipo: `BreadcrumbList` de Schema.org
+- Contexto: `https://schema.org`
+- Incluir `itemListElement` con todos los niveles de navegación
 
 ---
 
@@ -2253,52 +2108,18 @@ app/
 
 #### Generación de Metadata Dinámica
 
-```typescript
-// app/arriendo/departamento/[comuna]/page.tsx
-export async function generateMetadata({ params }) {
-  const { comuna } = await params;
-  const comunaFormatted = formatComuna(comuna); // "providencia-metropolitana" → "Providencia"
-  
-  return {
-    title: `Departamentos en Arriendo en ${comunaFormatted} | [Marca]`,
-    description: `Departamentos en arriendo en ${comunaFormatted} sin comisión. Encuentra tu próximo hogar.`,
-    alternates: {
-      canonical: `/arriendo/departamento/${comuna}`
-    }
-  };
-}
-```
+- Usar función `generateMetadata` de Next.js 14
+- Formato título: `"[Tipo] en Arriendo en [Comuna] | [Marca]"`
+- Formato descripción: `"[Tipo] en arriendo en [Comuna] sin comisión. [CTA]."`
+- Incluir `canonical` URL en `alternates`
+- Normalizar nombres de comunas (slug → formato legible)
 
 #### Generación de Sitemap Dinámico
 
-```typescript
-// app/sitemap.ts
-export default async function sitemap() {
-  const comunas = await getComunas();
-  const unidades = await getUnidades();
-  
-  return [
-    // Páginas estáticas
-    { url: '/', priority: 1.0 },
-    { url: '/arriendo', priority: 1.0 },
-    { url: '/arriendo/departamento', priority: 1.0 },
-    
-    // Páginas de comunas
-    ...comunas.map(comuna => ({
-      url: `/arriendo/departamento/${comuna.slug}`,
-      priority: 0.9,
-      changeFrequency: 'daily'
-    })),
-    
-    // Fichas individuales
-    ...unidades.map(unidad => ({
-      url: `/arriendo/departamento/${unidad.comunaSlug}/${unidad.slug}`,
-      priority: 0.7,
-      changeFrequency: 'weekly'
-    }))
-  ];
-}
-```
+- Usar `app/sitemap.ts` de Next.js 14
+- Prioridades: Home/Arriendo (1.0), Comunas (0.9), Fichas (0.7)
+- Frecuencia: Páginas principales `daily`, Fichas `weekly`
+- Generar dinámicamente desde base de datos (comunas y unidades)
 
 ---
 

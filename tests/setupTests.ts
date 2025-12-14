@@ -1,6 +1,9 @@
 // Solo cargar jest-dom si estamos en entorno jsdom
 if (typeof window !== 'undefined') {
   require('@testing-library/jest-dom');
+  // Configurar jest-axe para tests de accesibilidad
+  const { toHaveNoViolations } = require('jest-axe');
+  expect.extend(toHaveNoViolations);
 }
 
 // Silence Next.js router warnings if any component uses it indirectly

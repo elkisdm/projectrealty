@@ -7,14 +7,24 @@ interface PropertyClientProps {
   building: Building;
   relatedBuildings: Building[];
   defaultUnitId?: string;
+  tipologiaFilter?: string;
+  showAllUnits?: boolean;
 }
 
-export function PropertyClient({ building, relatedBuildings, defaultUnitId }: PropertyClientProps) {
+export function PropertyClient({
+  building,
+  relatedBuildings,
+  defaultUnitId,
+  tipologiaFilter,
+  showAllUnits
+}: PropertyClientProps) {
   return (
     <BasePropertyClient
       building={building}
       relatedBuildings={relatedBuildings}
       defaultUnitId={defaultUnitId}
+      tipologiaFilter={tipologiaFilter}
+      showAllUnits={showAllUnits}
       variant="catalog"
     />
   );

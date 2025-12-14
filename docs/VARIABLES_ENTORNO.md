@@ -57,6 +57,7 @@ Documentación completa de todas las variables de entorno del proyecto.
 | `NEXT_PUBLIC_FLAG_VIRTUAL_GRID` | Habilitar grid virtualizado | `0` o `1` | `0` | `0` o `1` |
 | `NEXT_PUBLIC_COMMUNE_SECTION` | Habilitar sección de comuna | `0` o `1` | `0` | `0` o `1` |
 | `NEXT_PUBLIC_FOOTER_ENABLED` | Habilitar footer | `0` o `1` | `1` | `1` |
+| `NEXT_PUBLIC_HEADER_ENABLED` | Habilitar header/menú | `0` o `1` | `0` (deshabilitado) | `0` (deshabilitado) |
 | `COMING_SOON` | Modo "próximamente" | `true` o `false` | `false` | `false` |
 
 ### Performance y Seguridad
@@ -150,3 +151,6 @@ El proyecto ya tiene configurado `.gitignore` para ignorar:
 - [Configuración de Supabase](https://supabase.com/docs/guides/getting-started)
 - [Variables de Entorno en Next.js](https://nextjs.org/docs/basic-features/environment-variables)
 - [Feature Flags del Proyecto](../lib/flags.ts)
+
+
+

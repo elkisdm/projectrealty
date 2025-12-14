@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, MessageCircle, DollarSign } from "lucide-react";
-import { track } from "@lib/analytics";
+import { track, ANALYTICS_EVENTS } from "@lib/analytics";
 
 interface StickyCtaBarProps {
   priceMonthly: number;
@@ -48,7 +48,7 @@ export const StickyCtaBar: React.FC<StickyCtaBarProps> = ({
   }, []);
 
   const handleBookClick = useCallback(() => {
-    track("cta_book_click", {
+    track(ANALYTICS_EVENTS.CTA_BOOK_CLICK, {
       context: "sticky_bar",
       propertyId,
       commune,
@@ -58,7 +58,7 @@ export const StickyCtaBar: React.FC<StickyCtaBarProps> = ({
   }, [onBook, propertyId, commune, priceMonthly]);
 
   const handleWhatsAppClick = useCallback(() => {
-    track("cta_whatsapp_click", {
+    track(ANALYTICS_EVENTS.CTA_WHATSAPP_CLICK, {
       context: "sticky_bar",
       propertyId,
       commune,
@@ -158,7 +158,7 @@ export const StickyCtaSidebar: React.FC<StickyCtaBarProps> = ({
   commune
 }) => {
   const handleBookClick = useCallback(() => {
-    track("cta_book_click", {
+    track(ANALYTICS_EVENTS.CTA_BOOK_CLICK, {
       context: "sticky_sidebar",
       propertyId,
       commune,
@@ -168,7 +168,7 @@ export const StickyCtaSidebar: React.FC<StickyCtaBarProps> = ({
   }, [onBook, propertyId, commune, priceMonthly]);
 
   const handleWhatsAppClick = useCallback(() => {
-    track("cta_whatsapp_click", {
+    track(ANALYTICS_EVENTS.CTA_WHATSAPP_CLICK, {
       context: "sticky_sidebar",
       propertyId,
       commune,

@@ -4,7 +4,7 @@ import { featureFlags } from '../config/feature-flags';
 const overrideStore = new Map<string, { value: boolean; expiresAt: number }>();
 
 // Tipos para flags soportados
-export type SupportedFlag = 'comingSoon' | 'CARD_V2' | 'VIRTUAL_GRID' | 'pagination' | 'COMMUNE_SECTION' | 'FOOTER_ENABLED';
+export type SupportedFlag = 'comingSoon' | 'CARD_V2' | 'VIRTUAL_GRID' | 'pagination' | 'COMMUNE_SECTION' | 'FOOTER_ENABLED' | 'HEADER_ENABLED';
 
 // Interface para override
 export interface FlagOverride {
@@ -41,6 +41,9 @@ export function getFlagValue(flag: SupportedFlag): boolean {
       return process.env.NEXT_PUBLIC_COMMUNE_SECTION === "1";
     case 'FOOTER_ENABLED':
       return process.env.NEXT_PUBLIC_FOOTER_ENABLED !== "0";
+    case 'HEADER_ENABLED':
+      // Por defecto deshabilitado (solo habilitar si explícitamente se configura como "1")
+      return process.env.NEXT_PUBLIC_HEADER_ENABLED === "1";
     default:
       return false;
   }
@@ -51,7 +54,7 @@ export function applyOverride(override: FlagOverride): { success: boolean; messa
   const { flag, value, duration } = override;
   
   // Validar flag soportado
-  if (!['comingSoon', 'CARD_V2', 'VIRTUAL_GRID', 'pagination', 'COMMUNE_SECTION', 'FOOTER_ENABLED'].includes(flag)) {
+  if (!['comingSoon', 'CARD_V2', 'VIRTUAL_GRID', 'pagination', 'COMMUNE_SECTION', 'FOOTER_ENABLED', 'HEADER_ENABLED'].includes(flag)) {
     throw new Error(`Flag no soportado: ${flag}`);
   }
   
@@ -93,6 +96,10 @@ export function getFlagsStatus(): Record<SupportedFlag, { value: boolean; overri
     },
     COMMUNE_SECTION: {
       value: getFlagValue('COMMUNE_SECTION'),
+      overridden: false
+    },
+    HEADER_ENABLED: {
+      value: getFlagValue('HEADER_ENABLED'),
       overridden: false
     }
   };

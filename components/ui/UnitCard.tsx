@@ -15,25 +15,48 @@ interface UnitCardProps {
 
 // Helper function to get unit image
 function getUnitImage(unit: Unit, building?: Building): string {
-  // If unit has images array (future), use first image
-  // For now, use building gallery or coverImage
+  // Prioridad 1: Imágenes de la unidad (interior)
+  if (unit.images && Array.isArray(unit.images) && unit.images.length > 0) {
+    return unit.images[0];
+  }
+
+  // Prioridad 2: Imágenes de tipología
+  if (unit.imagesTipologia && Array.isArray(unit.imagesTipologia) && unit.imagesTipologia.length > 0) {
+    return unit.imagesTipologia[0];
+  }
+
+  // Prioridad 3: Imágenes de áreas comunes
+  if (unit.imagesAreasComunes && Array.isArray(unit.imagesAreasComunes) && unit.imagesAreasComunes.length > 0) {
+    return unit.imagesAreasComunes[0];
+  }
+
+  // Prioridad 4: Galería del edificio
   if (building?.gallery && building.gallery.length > 0) {
     return building.gallery[0];
   }
+
+  // Prioridad 5: CoverImage del edificio
   if (building?.coverImage) {
     return building.coverImage;
   }
-  // Fallback to a default image
-  return '/images/default-unit.jpg';
+
+  // Fallback a imagen por defecto
+  return '/images/lascondes-cover.jpg';
 }
 
-// Helper function to generate unit slug
+// Helper function to get unit slug
 function getUnitSlug(unit: Unit, building?: Building): string {
-  // If building has slug, use building-slug-unit-id
-  if (building?.slug) {
-    return `${building.slug}-${unit.id}`;
+  // Usar el slug de la unidad si está disponible (es el correcto)
+  if (unit.slug) {
+    return unit.slug;
   }
-  // Fallback to unit id
+
+  // Fallback: generar slug si no existe
+  if (building?.slug) {
+    return `${building.slug}-${unit.id.substring(0, 8)}`;
+  }
+
+  // Último fallback: usar id de la unidad
   return unit.id;
 }
 

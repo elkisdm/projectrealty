@@ -72,7 +72,7 @@ export interface CondominioData {
   nombre: string;
   direccion: string;
   comuna: string;
-  unidades: SupabaseUnit[];
+  unidades: SupabaseUnitRow[];
   tipologias: string[];
   precioDesde: number;
   precioHasta: number;
@@ -179,6 +179,9 @@ class SupabaseDataProcessor {
           bodega,
           bedrooms,
           bathrooms,
+          images_tipologia,
+          images_areas_comunes,
+          images,
           buildings!inner (
             id,
             name,
@@ -221,9 +224,9 @@ class SupabaseDataProcessor {
     }
   }
 
-  private async processCondominios(units: SupabaseUnit[]): Promise<void> {
+  private async processCondominios(units: SupabaseUnitRow[]): Promise<void> {
     // Agrupar unidades por building_id (condominio)
-    const condominiosMap = new Map<string, SupabaseUnit[]>();
+    const condominiosMap = new Map<string, SupabaseUnitRow[]>();
 
     units.forEach(unit => {
       if (unit.building_id) {
@@ -236,7 +239,7 @@ class SupabaseDataProcessor {
 
     // Procesar cada condominio
     condominiosMap.forEach((unidades, buildingId) => {
-      const precios = unidades.map(u => (u as any).price || 0).filter(p => p > 0);
+      const precios = unidades.map(u => u.price || 0).filter(p => p > 0);
       const tipologias = [...new Set(unidades.map(u => u.tipologia).filter(t => t))];
       
       // Considerar disponibles las unidades con disponible = true
@@ -324,7 +327,7 @@ class SupabaseDataProcessor {
     paginatedCondominios.forEach(condominio => {
       const typologySummary = condominio.tipologias.map(tipologia => {
         const unidadesTipologia = condominio.unidades.filter(u => u.tipologia === tipologia);
-        const preciosTipologia = unidadesTipologia.map(u => u.precio).filter(p => p > 0);
+        const preciosTipologia = unidadesTipologia.map(u => u.price || 0).filter(p => p > 0);
         return {
           key: tipologia,
           label: tipologia,
@@ -376,21 +379,539 @@ class SupabaseDataProcessor {
     return null;
   }
 
-  async getUnitByOP(op: string): Promise<SupabaseUnit | null> {
+  async getUnitByOP(op: string): Promise<SupabaseUnitRow | null> {
     if (!this.isInitialized) {
       await this.loadDataFromSupabase();
     }
 
     for (const condominio of this.condominios.values()) {
-      const unit = condominio.unidades.find(u => u.source_unit_id === op);
+      // Buscar por id ya que source_unit_id no está disponible en SupabaseUnitRow
+      const unit = condominio.unidades.find(u => u.id === op);
       if (unit) return unit;
     }
     return null;
   }
 
-  async getUnitsByCondominio(condominioSlug: string): Promise<SupabaseUnit[]> {
+  async getUnitsByCondominio(condominioSlug: string): Promise<SupabaseUnitRow[]> {
     const condominio = await this.getCondominioBySlug(condominioSlug);
     return condominio ? condominio.unidades : [];
+  }
+
+  /**
+   * Obtiene unidades con filtros y paginación
+   * Retorna unidades individuales (no agrupadas por edificio) según especificación MVP
+   */
+  async getUnits(filters: {
+    comuna?: string;
+    precioMin?: number;
+    precioMax?: number;
+    dormitorios?: number;
+    q?: string; // Búsqueda por texto
+  }, page: number = 1, limit: number = 12): Promise<{
+    units: Array<{
+      id: string;
+      slug: string;
+      codigoUnidad: string;
+      buildingId: string;
+      tipologia: string;
+      dormitorios: number;
+      banos: number;
+      m2?: number;
+      price: number;
+      gastoComun: number;
+      garantia: number;
+      disponible: boolean;
+      images: string[];
+      building?: {
+        id: string;
+        name: string;
+        slug: string;
+        comuna: string;
+        address: string;
+      };
+      [key: string]: unknown;
+    }>;
+    total: number;
+    hasMore: boolean;
+  }> {
+    if (!this.isInitialized) {
+      await this.loadDataFromSupabase();
+    }
+
+    // Obtener todas las unidades desde Supabase
+    // Usar solo las columnas que realmente existen en la tabla units
+    let query = this.supabase
+      .from('units')
+      .select(`
+        id,
+        building_id,
+        tipologia,
+        bedrooms,
+        bathrooms,
+        m2,
+        price,
+        disponible,
+        estacionamiento,
+        bodega,
+        images_tipologia,
+        images_areas_comunes,
+        images,
+        buildings!inner (
+          id,
+          name,
+          slug,
+          comuna,
+          address,
+          gallery,
+          cover_image
+        )
+      `, { count: 'exact' })
+      .eq('disponible', true); // Solo unidades disponibles
+
+    // Aplicar filtros
+    // Nota: Filtros de campos anidados (buildings.comuna) pueden no funcionar directamente
+    // Primero obtenemos los datos y luego filtramos en memoria si es necesario
+    
+    if (filters.precioMin !== undefined) {
+      query = query.gte('price', filters.precioMin);
+    }
+
+    if (filters.precioMax !== undefined) {
+      query = query.lte('price', filters.precioMax);
+    }
+
+    if (filters.dormitorios !== undefined) {
+      query = query.eq('bedrooms', filters.dormitorios);
+    }
+
+    // Para filtros de búsqueda texto, necesitamos obtener datos primero y filtrar después
+    // ya que los campos anidados no se pueden filtrar directamente en Supabase
+
+    // Obtener datos sin paginación primero para poder filtrar por comuna y texto
+    // Nota: Para filtros complejos con relaciones anidadas, obtenemos todos los datos
+    // y filtramos en memoria (más eficiente que múltiples queries)
+    const { data: allData, error, count: totalCount } = await query;
+
+    if (error) {
+      logger.error('Error obteniendo unidades desde Supabase:', error);
+      // Si hay error, retornar vacío en lugar de fallar completamente
+      // Esto permite que la API funcione incluso si hay problemas con Supabase
+      return {
+        units: [],
+        total: 0,
+        hasMore: false,
+      };
+    }
+
+    if (!allData || allData.length === 0) {
+      logger.log('No se encontraron unidades en Supabase');
+      return {
+        units: [],
+        total: 0,
+        hasMore: false,
+      };
+    }
+
+    let filteredData = (allData || []) as Array<UnitRowWithFields & { buildings: { id: string; name: string; slug?: string; comuna: string; address: string; gallery?: string[]; cover_image?: string } | null }>;
+
+    // Filtrar por comuna en memoria (si se especifica)
+    if (filters.comuna) {
+      filteredData = filteredData.filter(u => u.buildings?.comuna?.toLowerCase() === filters.comuna!.toLowerCase());
+    }
+
+    // Filtrar por búsqueda de texto (si se especifica)
+    if (filters.q) {
+      const qLower = filters.q.toLowerCase();
+      filteredData = filteredData.filter(u => {
+        const building = u.buildings;
+        if (!building) return false;
+        
+        return (
+          building.name?.toLowerCase().includes(qLower) ||
+          building.address?.toLowerCase().includes(qLower) ||
+          building.comuna?.toLowerCase().includes(qLower) ||
+          u.tipologia?.toLowerCase().includes(qLower) ||
+          u.id?.toLowerCase().includes(qLower)
+        );
+      });
+    }
+
+    // Ordenar por precio (ascendente)
+    filteredData.sort((a, b) => (a.price || 0) - (b.price || 0));
+
+    // Paginación
+    const offset = (page - 1) * limit;
+    const filteredTotal = filteredData.length;
+    const paginatedData = filteredData.slice(offset, offset + limit);
+
+    // Type assertion: Supabase puede retornar más campos de los definidos en el tipo
+    type UnitRowWithFields = SupabaseUnitRow & {
+      unidad?: string;
+      gastos_comunes?: number;
+      area_interior_m2?: number;
+      piso?: number;
+      orientacion?: string;
+      amoblado?: boolean;
+      pet_friendly?: boolean;
+      status?: string;
+      images_tipologia?: string[];
+      images_areas_comunes?: string[];
+      images?: string[];
+    };
+    
+    const units = paginatedData;
+
+    // Mapear a formato Unit
+    const mappedUnits = units.map((unitRow) => {
+      const building = unitRow.buildings;
+      if (!building) {
+        throw new Error(`Unidad ${unitRow.id} no tiene building asociado`);
+      }
+
+      // Generar slug de unidad: building-slug-unidad-id (o usar unidad si está disponible)
+      const unidadCode = (unitRow as UnitRowWithFields).unidad || unitRow.id.substring(0, 8);
+      const unitSlug = building.slug 
+        ? `${building.slug}-${this.generateSlug(unidadCode)}-${unitRow.id.substring(0, 8)}`
+        : `${building.id}-${unitRow.id.substring(0, 8)}`;
+
+      // Calcular garantía (por defecto 1 mes de arriendo)
+      const garantia = unitRow.price ? unitRow.price : 0;
+      const gastoComun = (unitRow as UnitRowWithFields).gastos_comunes || 0;
+
+      // Obtener imágenes (usar gallery del edificio si no hay imágenes específicas)
+      // Siempre asegurar al menos una imagen para cumplir con el schema
+      let images: string[] = [];
+      if (building.gallery && building.gallery.length > 0) {
+        images = building.gallery.slice(0, 5); // Máximo 5 imágenes
+      } else if (building.cover_image) {
+        images = [building.cover_image];
+      } else {
+        images = ['/images/default-unit.jpg']; // Fallback obligatorio
+      }
+
+      const rowWithFields = unitRow as UnitRowWithFields;
+      
+      return {
+        id: unitRow.id,
+        slug: unitSlug,
+        codigoUnidad: unidadCode,
+        buildingId: building.id,
+        tipologia: unitRow.tipologia || 'Studio',
+        dormitorios: unitRow.bedrooms || 0,
+        banos: unitRow.bathrooms || 0,
+        m2: unitRow.m2 || rowWithFields.area_interior_m2 || undefined,
+        price: unitRow.price || 0,
+        gastoComun,
+        garantia,
+        disponible: unitRow.disponible ?? true,
+        images,
+        // Campos de imágenes
+        imagesTipologia: rowWithFields.images_tipologia || [],
+        imagesAreasComunes: rowWithFields.images_areas_comunes || [],
+        // Campos opcionales
+        piso: rowWithFields.piso,
+        vista: rowWithFields.orientacion,
+        amoblado: rowWithFields.amoblado,
+        politicaMascotas: rowWithFields.pet_friendly ? 'Permitidas' : undefined,
+        estacionamiento: unitRow.estacionamiento,
+        bodega: unitRow.bodega,
+        estado: rowWithFields.status === 'available' ? 'Disponible' : undefined,
+        // Información del edificio (contexto)
+        building: {
+          id: building.id,
+          name: building.name,
+          slug: building.slug || building.id,
+          comuna: building.comuna,
+          address: building.address,
+        },
+      };
+    });
+
+    return {
+      units: mappedUnits as Array<{
+        id: string;
+        slug: string;
+        codigoUnidad: string;
+        buildingId: string;
+        tipologia: string;
+        dormitorios: number;
+        banos: number;
+        m2?: number;
+        price: number;
+        gastoComun: number;
+        garantia: number;
+        disponible: boolean;
+        images: string[];
+        building?: {
+          id: string;
+          name: string;
+          slug: string;
+          comuna: string;
+          address: string;
+        };
+        [key: string]: unknown;
+      }>,
+      total: filteredTotal,
+      hasMore: offset + limit < filteredTotal,
+    };
+  }
+
+  /**
+   * Obtiene una unidad por su slug
+   * El slug identifica la unidad específica (formato: building-slug-unidad-code-id)
+   * Retorna la unidad con información del edificio como contexto
+   */
+  async getUnitBySlug(unitSlug: string): Promise<{
+    unit: {
+      id: string;
+      slug: string;
+      codigoUnidad: string;
+      buildingId: string;
+      tipologia: string;
+      dormitorios: number;
+      banos: number;
+      m2?: number;
+      price: number;
+      gastoComun: number;
+      garantia: number;
+      disponible: boolean;
+      images: string[];
+      building: {
+        id: string;
+        name: string;
+        slug: string;
+        comuna: string;
+        address: string;
+      };
+      [key: string]: unknown;
+    };
+    building: {
+      id: string;
+      name: string;
+      slug: string;
+      comuna: string;
+      address: string;
+      amenities: string[];
+      gallery: string[];
+    };
+    similarUnits?: Array<{
+      id: string;
+      slug: string;
+      codigoUnidad: string;
+      buildingId: string;
+      tipologia: string;
+      dormitorios: number;
+      banos: number;
+      m2?: number;
+      price: number;
+      gastoComun: number;
+      disponible: boolean;
+      images: string[];
+      [key: string]: unknown;
+    }>;
+  } | null> {
+    if (!this.isInitialized) {
+      await this.loadDataFromSupabase();
+    }
+
+    // El slug de unidad tiene formato: building-slug-unidad-code-id
+    // Necesitamos buscar todas las unidades y encontrar la que coincida con el slug
+    // O bien buscar por ID si el slug termina con el ID de la unidad
+
+    // Obtener todas las unidades disponibles
+    const { data: allUnits, error } = await this.supabase
+      .from('units')
+      .select(`
+        id,
+        building_id,
+        unidad,
+        tipologia,
+        bedrooms,
+        bathrooms,
+        m2,
+        area_interior_m2,
+        price,
+        gastos_comunes,
+        disponible,
+        estacionamiento,
+        bodega,
+        piso,
+        orientacion,
+        amoblado,
+        pet_friendly,
+        status,
+        images_tipologia,
+        images_areas_comunes,
+        images,
+        buildings!inner (
+          id,
+          name,
+          slug,
+          comuna,
+          address,
+          gallery,
+          cover_image,
+          amenities
+        )
+      `)
+      .eq('disponible', true);
+
+    if (error) {
+      logger.error('Error obteniendo unidad por slug:', error);
+      throw error;
+    }
+
+    // Type assertion para campos extendidos
+    type UnitRowWithFields = SupabaseUnitRow & {
+      unidad?: string;
+      gastos_comunes?: number;
+      area_interior_m2?: number;
+      piso?: number;
+      orientacion?: string;
+      amoblado?: boolean;
+      pet_friendly?: boolean;
+      status?: string;
+      images_tipologia?: string[];
+      images_areas_comunes?: string[];
+      images?: string[];
+    };
+    
+    const units = (allUnits as Array<UnitRowWithFields & { buildings: { id: string; name: string; slug?: string; comuna: string; address: string; gallery?: string[]; cover_image?: string; amenities?: string[] } | null }>) || [];
+
+    // Buscar la unidad que coincida con el slug
+    let foundUnit: typeof units[0] | null = null;
+
+    for (const unitRow of units) {
+      const building = unitRow.buildings;
+      if (!building) continue;
+
+      // Generar slug de unidad de la misma forma que en getUnits
+      const unidadCode = unitRow.unidad || unitRow.id.substring(0, 8);
+      const generatedSlug = building.slug 
+        ? `${building.slug}-${this.generateSlug(unidadCode)}-${unitRow.id.substring(0, 8)}`
+        : `${building.id}-${unitRow.id.substring(0, 8)}`;
+
+      if (generatedSlug === unitSlug) {
+        foundUnit = unitRow;
+        break;
+      }
+
+      // También buscar por ID directo como fallback
+      if (unitRow.id === unitSlug || unitSlug.endsWith(unitRow.id.substring(0, 8))) {
+        foundUnit = unitRow;
+        break;
+      }
+    }
+
+    if (!foundUnit) {
+      return null;
+    }
+
+    const building = foundUnit.buildings;
+    if (!building) {
+      return null;
+    }
+
+    // Mapear unidad encontrada
+    const unidadCode = foundUnit.unidad || foundUnit.id.substring(0, 8);
+    const unitSlugGenerated = building.slug 
+      ? `${building.slug}-${this.generateSlug(unidadCode)}-${foundUnit.id.substring(0, 8)}`
+      : `${building.id}-${foundUnit.id.substring(0, 8)}`;
+
+    const garantia = foundUnit.price ? foundUnit.price : 0;
+    const gastoComun = foundUnit.gastos_comunes || 0;
+
+    const images = building.gallery && building.gallery.length > 0 
+      ? building.gallery.slice(0, 5)
+      : (building.cover_image ? [building.cover_image] : ['/images/default-unit.jpg']);
+
+    const unit = {
+      id: foundUnit.id,
+      slug: unitSlugGenerated,
+      codigoUnidad: unidadCode,
+      buildingId: building.id,
+      tipologia: foundUnit.tipologia || 'Studio',
+      dormitorios: foundUnit.bedrooms || 0,
+      banos: foundUnit.bathrooms || 0,
+      m2: foundUnit.m2 || foundUnit.area_interior_m2 || undefined,
+      price: foundUnit.price || 0,
+      gastoComun,
+      garantia,
+      disponible: foundUnit.disponible ?? true,
+      images,
+      imagesTipologia: foundUnit.images_tipologia || [],
+      imagesAreasComunes: foundUnit.images_areas_comunes || [],
+      piso: foundUnit.piso,
+      vista: foundUnit.orientacion,
+      amoblado: foundUnit.amoblado,
+      politicaMascotas: foundUnit.pet_friendly ? 'Permitidas' : undefined,
+      estacionamiento: foundUnit.estacionamiento,
+      bodega: foundUnit.bodega,
+      estado: foundUnit.status === 'available' ? 'Disponible' : undefined,
+      building: {
+        id: building.id,
+        name: building.name,
+        slug: building.slug || building.id,
+        comuna: building.comuna,
+        address: building.address,
+      },
+    };
+
+    // Obtener unidades similares (misma comuna, precio similar, mismo número de dormitorios)
+    const similarUnits = units
+      .filter(u => {
+        const uBuilding = u.buildings;
+        if (!uBuilding || u.id === foundUnit!.id) return false;
+        
+        const sameComuna = uBuilding.comuna === building.comuna;
+        const sameDormitorios = (u.bedrooms || 0) === (foundUnit!.bedrooms || 0);
+        const similarPrice = foundUnit!.price 
+          ? Math.abs((u.price || 0) - foundUnit!.price) <= (foundUnit!.price * 0.2) // ±20%
+          : false;
+
+        return sameComuna && sameDormitorios && similarPrice;
+      })
+      .slice(0, 6)
+      .map(u => {
+        const uBuilding = u.buildings!;
+        const uCode = u.unidad || u.id.substring(0, 8);
+        const uSlug = uBuilding.slug 
+          ? `${uBuilding.slug}-${this.generateSlug(uCode)}-${u.id.substring(0, 8)}`
+          : `${uBuilding.id}-${u.id.substring(0, 8)}`;
+
+        const uImages = uBuilding.gallery && uBuilding.gallery.length > 0 
+          ? uBuilding.gallery.slice(0, 1)
+          : (uBuilding.cover_image ? [uBuilding.cover_image] : ['/images/default-unit.jpg']);
+
+        return {
+          id: u.id,
+          slug: uSlug,
+          codigoUnidad: uCode,
+          buildingId: uBuilding.id,
+          tipologia: u.tipologia || 'Studio',
+          dormitorios: u.bedrooms || 0,
+          banos: u.bathrooms || 0,
+          m2: u.m2 || u.area_interior_m2 || undefined,
+          price: u.price || 0,
+          gastoComun: u.gastos_comunes || 0,
+          disponible: u.disponible ?? true,
+          images: uImages,
+        };
+      });
+
+    return {
+      unit,
+      building: {
+        id: building.id,
+        name: building.name,
+        slug: building.slug || building.id,
+        comuna: building.comuna,
+        address: building.address,
+        amenities: Array.isArray(building.amenities) ? building.amenities : [],
+        gallery: Array.isArray(building.gallery) ? building.gallery : (building.cover_image ? [building.cover_image] : []),
+      },
+      similarUnits: similarUnits.length > 0 ? similarUnits : undefined,
+    };
   }
 
   private getCoverImage(comuna: string): string {

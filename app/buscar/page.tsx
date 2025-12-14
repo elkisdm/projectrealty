@@ -1,6 +1,7 @@
-import { Metadata } from "next";
+import type { Metadata } from "next";
 import { SearchResultsClient } from "./SearchResultsClient";
 import { Suspense } from "react";
+import { generateSearchMetadata } from "@/lib/seo/metadata";
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 3600;
@@ -8,37 +9,23 @@ export const revalidate = 3600;
 export async function generateMetadata({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; comuna?: string }>;
+  searchParams: Promise<{
+    q?: string;
+    comuna?: string;
+    precioMin?: string;
+    precioMax?: string;
+    dormitorios?: string;
+  }>;
 }): Promise<Metadata> {
   const resolvedSearchParams = await searchParams;
-  const q = resolvedSearchParams?.q || "";
-  const comuna = resolvedSearchParams?.comuna || "";
 
-  const title = q
-    ? `Resultados para "${q}"${comuna ? ` en ${comuna}` : ""} - Arrienda Sin Comisión`
-    : "Resultados de búsqueda - Arrienda Sin Comisión";
-
-  const description = q
-    ? `Encuentra propiedades en arriendo sin comisión${comuna ? ` en ${comuna}` : ""}. ${q ? `Resultados para: ${q}` : ""}`
-    : "Busca propiedades en arriendo sin comisión. Filtra por ubicación, precio y características.";
-
-  return {
-    title,
-    description,
-    alternates: {
-      canonical: "/buscar",
-    },
-    openGraph: {
-      title,
-      description,
-      type: "website",
-    },
-    twitter: {
-      card: "summary",
-      title,
-      description,
-    },
-  };
+  return generateSearchMetadata({
+    comuna: resolvedSearchParams?.comuna,
+    dormitorios: resolvedSearchParams?.dormitorios,
+    precioMin: resolvedSearchParams?.precioMin,
+    precioMax: resolvedSearchParams?.precioMax,
+    q: resolvedSearchParams?.q,
+  });
 }
 
 export default async function SearchResultsPage({
@@ -50,8 +37,8 @@ export default async function SearchResultsPage({
     precioMin?: string;
     precioMax?: string;
     dormitorios?: string;
-    banos?: string;
     sort?: string;
+    page?: string;
   }>;
 }) {
   // El componente cliente maneja los searchParams

@@ -1,8 +1,8 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import Image from "next/image";
-import { Share2, Heart, ChevronLeft, ChevronRight, MessageCircle } from "lucide-react";
+import { Share2, Heart, MessageCircle } from "lucide-react";
 import type { Building, Unit } from "@schemas/models";
+import { PropertyGalleryGrid } from "./PropertyGalleryGrid";
 
 interface PropertyAboveFoldMobileProps {
     building: Building;
@@ -23,55 +23,19 @@ export function PropertyAboveFoldMobile({
     onSave,
     onShare
 }: PropertyAboveFoldMobileProps) {
-    const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [isSaved, setIsSaved] = useState(false);
-    const [touchStart, setTouchStart] = useState<number | null>(null);
-    const [touchEnd, setTouchEnd] = useState<number | null>(null);
 
     // Calcular precio total por mes (arriendo + GGCC)
     const arriendo = selectedUnit?.price || building.precio_desde || 290000;
-    const ggcc = 45000; // Default GGCC value
+    const ggcc = selectedUnit?.gastoComun || 45000; // Usar gasto común de la unidad si está disponible
     const precioTotalMes = arriendo + ggcc;
 
     // Datos para chips y badges
     const tipologia = selectedUnit?.tipologia || "2D";
     const m2 = selectedUnit?.area_interior_m2 || selectedUnit?.m2 || 48;
-    const petFriendly = true; // Default pet friendly
+    const petFriendly = selectedUnit?.petFriendly ?? true; // Default pet friendly
     const minutosMetro = 6; // Default metro time
     const stock = building.units?.filter(u => u.disponible).length || 7;
-
-    // Navegación de imágenes
-    const totalImages = building.gallery?.length || 1;
-    const nextImage = () => setCurrentImageIndex((prev) => (prev + 1) % totalImages);
-    const prevImage = () => setCurrentImageIndex((prev) => (prev - 1 + totalImages) % totalImages);
-
-    // Gestos táctiles para navegación
-    const onTouchStart = (e: React.TouchEvent) => {
-        setTouchEnd(null);
-        setTouchStart(e.targetTouches[0].clientX);
-    };
-
-    const onTouchMove = (e: React.TouchEvent) => {
-        setTouchEnd(e.targetTouches[0].clientX);
-    };
-
-    const onTouchEnd = () => {
-        if (!touchStart || !touchEnd) return;
-
-        const distance = touchStart - touchEnd;
-        const isLeftSwipe = distance > 50;
-        const isRightSwipe = distance < -50;
-
-        if (isLeftSwipe && totalImages > 1) {
-            nextImage();
-        }
-        if (isRightSwipe && totalImages > 1) {
-            prevImage();
-        }
-    };
-
-    // Hero image con fallback
-    const heroImage = building.gallery?.[0] || building.coverImage || "/images/lascondes-cover.jpg";
 
     return (
         <section aria-labelledby="af-title" className="relative">
@@ -106,93 +70,10 @@ export function PropertyAboveFoldMobile({
                 </div>
             </div>
 
-            {/* 2. Hero visual (full-width, ratio estable 4:3) */}
-            <div
-                className="relative w-full aspect-[4/3] bg-gray-900"
-                onTouchStart={onTouchStart}
-                onTouchMove={onTouchMove}
-                onTouchEnd={onTouchEnd}
-            >
-                <Image
-                    src={heroImage}
-                    alt={`${building.name} - ${tipologia} en ${building.comuna}`}
-                    fill
-                    priority
-                    sizes="100vw"
-                    className="object-cover"
-                />
-
-                {/* Overlay de degradado suave para legibilidad */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-
-                {/* Indicador 1/N + controles de navegación */}
-                <div className="absolute top-4 right-4 bg-black/50 text-white text-sm font-medium px-3 py-1.5 rounded-full backdrop-blur">
-                    {currentImageIndex + 1} / {totalImages}
-                </div>
-
-                {/* Barra de progreso sutil */}
-                {totalImages > 1 && (
-                    <div className="absolute top-0 left-0 right-0 h-1 bg-black/20">
-                        <div
-                            className="h-full bg-cyan-500 transition-all duration-300 ease-out"
-                            style={{ width: `${((currentImageIndex + 1) / totalImages) * 100}%` }}
-                        />
-                    </div>
-                )}
-
-                {/* Controles de navegación */}
-                {totalImages > 1 && (
-                    <>
-                        <button
-                            onClick={prevImage}
-                            className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/50 text-white rounded-full flex items-center justify-center hover:bg-black/70 transition-colors"
-                            aria-label="Imagen anterior"
-                        >
-                            <ChevronLeft className="w-5 h-5" />
-                        </button>
-                        <button
-                            onClick={nextImage}
-                            className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/50 text-white rounded-full flex items-center justify-center hover:bg-black/70 transition-colors"
-                            aria-label="Imagen siguiente"
-                        >
-                            <ChevronRight className="w-5 h-5" />
-                        </button>
-                    </>
-                )}
-
-                {/* Botón "Ver fotos" */}
-                <button
-                    onClick={() => {/* TODO: Abrir galería fullscreen */ }}
-                    className="absolute bottom-4 left-4 bg-white/90 text-gray-900 px-4 py-2 rounded-full text-sm font-medium hover:bg-white transition-colors"
-                >
-                    Ver fotos
-                </button>
-
-                {/* Indicador de gestos táctiles */}
-                {totalImages > 1 && (
-                    <div className="absolute bottom-4 right-4 text-white/70 text-xs bg-black/30 px-2 py-1 rounded-full backdrop-blur">
-                        ← Desliza →
-                    </div>
-                )}
+            {/* 2. Galería con grid 1+4 estilo Airbnb */}
+            <div className="px-4 py-4">
+                <PropertyGalleryGrid unit={selectedUnit} building={building} />
             </div>
-
-            {/* Paginador visual (dots) - Solo si hay más de 1 imagen */}
-            {totalImages > 1 && (
-                <div className="flex justify-center gap-2 mt-4 px-4 py-2">
-                    {Array.from({ length: totalImages }, (_, i) => (
-                        <button
-                            key={i}
-                            onClick={() => setCurrentImageIndex(i)}
-                            className={`w-2 h-2 rounded-full transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2 ${i === currentImageIndex
-                                ? "bg-cyan-600 w-4 shadow-sm"
-                                : "bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500"
-                                }`}
-                            aria-label={`Ir a imagen ${i + 1}`}
-                            aria-current={i === currentImageIndex ? "true" : "false"}
-                        />
-                    ))}
-                </div>
-            )}
 
             {/* 3. Headline + Precio total/mes */}
             <div className="px-4 py-6 bg-gray-800:bg-gray-900 border-b border-gray-100 dark:border-gray-800">

@@ -1,6 +1,7 @@
 import type { Building, Unit } from "@schemas/models";
 import { BuildingSchema, UnitSchema } from "@schemas/models";
 import { createSupabaseClient } from "@lib/supabase.mock";
+import { normalizeUnit } from "../utils/unit";
 
 /**
  * Funciones de escritura para el panel de administración
@@ -286,34 +287,41 @@ export async function updateUnit(id: string, updates: Partial<Unit>): Promise<Un
     throw new Error(`Unidad no encontrada: ${id}`);
   }
 
-  // Construir la unidad actualizada
-  const updatedUnit: Unit = {
-    id: current.id,
-    tipologia: updates.tipologia ?? current.tipologia,
-    m2: updates.m2 ?? current.area_m2 ?? 50,
-    price: updates.price ?? current.precio,
-    estacionamiento: updates.estacionamiento ?? current.estacionamiento,
-    bodega: updates.bodega ?? current.bodega,
-    disponible: updates.disponible ?? current.disponible,
-    bedrooms: updates.bedrooms ?? current.bedrooms,
-    bathrooms: updates.bathrooms ?? current.bathrooms,
-    area_interior_m2: updates.area_interior_m2 ?? current.area_interior_m2,
-    area_exterior_m2: updates.area_exterior_m2 ?? current.area_exterior_m2,
-    orientacion: updates.orientacion ?? current.orientacion,
-    piso: updates.piso ?? current.piso,
-    amoblado: updates.amoblado ?? current.amoblado,
-    petFriendly: updates.petFriendly ?? current.pet_friendly,
-    parking_ids: updates.parking_ids ?? current.parking_ids,
-    storage_ids: updates.storage_ids ?? current.storage_ids,
-    parking_opcional: updates.parking_opcional ?? current.parking_opcional,
-    storage_opcional: updates.storage_opcional ?? current.storage_opcional,
-    guarantee_installments:
-      updates.guarantee_installments ?? current.guarantee_installments,
-    guarantee_months: updates.guarantee_months ?? current.guarantee_months,
-    rentas_necesarias: updates.rentas_necesarias ?? current.rentas_necesarias,
-    renta_minima: updates.renta_minima ?? current.renta_minima,
-    status: updates.status ?? current.status,
-  };
+  // Usar helper para crear Unit completo
+  const buildingId = current.building_id || current.id.split('-')[0] || current.id;
+  const buildingSlug = current.slug?.split('-')[0] || buildingId;
+  
+  const updatedUnit: Unit = normalizeUnit(
+    {
+      id: current.id,
+      tipologia: updates.tipologia ?? current.tipologia ?? 'Studio',
+      price: updates.price ?? current.precio,
+      disponible: updates.disponible ?? current.disponible,
+      m2: updates.m2 ?? current.area_m2,
+      estacionamiento: updates.estacionamiento ?? current.estacionamiento,
+      bodega: updates.bodega ?? current.bodega,
+      bedrooms: updates.bedrooms ?? current.bedrooms,
+      bathrooms: updates.bathrooms ?? current.bathrooms,
+      area_interior_m2: updates.area_interior_m2 ?? current.area_interior_m2,
+      area_exterior_m2: updates.area_exterior_m2 ?? current.area_exterior_m2,
+      orientacion: updates.orientacion ?? current.orientacion,
+      piso: updates.piso ?? current.piso,
+      amoblado: updates.amoblado ?? current.amoblado,
+      petFriendly: updates.petFriendly ?? current.pet_friendly,
+      parking_ids: updates.parking_ids ?? current.parking_ids,
+      storage_ids: updates.storage_ids ?? current.storage_ids,
+      parking_opcional: updates.parking_opcional ?? current.parking_opcional,
+      storage_opcional: updates.storage_opcional ?? current.storage_opcional,
+      guarantee_installments:
+        updates.guarantee_installments ?? current.guarantee_installments,
+      guarantee_months: updates.guarantee_months ?? current.guarantee_months,
+      rentas_necesarias: updates.rentas_necesarias ?? current.rentas_necesarias,
+      renta_minima: updates.renta_minima ?? current.renta_minima,
+      status: updates.status ?? current.status,
+    },
+    buildingId,
+    buildingSlug
+  );
 
   // Validar con Zod
   const validated = UnitSchema.parse(updatedUnit);

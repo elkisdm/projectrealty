@@ -26,13 +26,20 @@ export default function robots(): MetadataRoute.Robots {
     };
   }
   
-  // En modo MVP, solo permitir rutas MVP
+  // En modo MVP, permitir rutas MVP y nuevas rutas SEO
   if (mvpMode) {
     return {
       rules: [
         {
           userAgent: '*',
-          allow: ['/', '/buscar', '/property/'],
+          allow: [
+            '/',
+            '/buscar',
+            '/arriendo',
+            '/arriendo/departamento',
+            '/arriendo/departamento/*',
+            '/property/',
+          ],
           disallow: [
             '/coming-soon',
             '/arrienda-sin-comision',

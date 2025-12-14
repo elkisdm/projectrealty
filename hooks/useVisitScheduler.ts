@@ -48,30 +48,31 @@ export function useVisitScheduler({
   const [selectedSlot, setSelectedSlot] = useState<VisitSlot | null>(null);
   const [availabilityData, setAvailabilityData] = useState<AvailabilityResponse | null>(null);
 
-  // Generar días disponibles - siempre mostrar próximos 7 días
+  // Generar días disponibles - mostrar próximos 6 días (excluyendo domingos)
   const availableDays = useMemo((): DaySlot[] => {
     const days: DaySlot[] = [];
     const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
     
-    // Generar próximos 7 días a partir de hoy
-    for (let i = 0; i < 7; i++) {
+    // Generar próximos 6 días válidos (excluyendo solo domingos)
+    let dayIndex = 0;
+    let validDaysCount = 0;
+    
+    while (validDaysCount < 6) {
       const date = new Date();
-      date.setDate(date.getDate() + i);
+      date.setDate(date.getDate() + dayIndex);
       
       const dateString = date.toISOString().split('T')[0];
       const dayOfWeek = date.getDay();
       
-      // Solo incluir días laborales (lunes a viernes)
-      if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+      // Excluir solo domingos (dayOfWeek === 0), incluir todos los demás días
+      if (dayOfWeek !== 0) {
         // Contar slots disponibles para este día
         const slotsForDay = availabilityData?.slots.filter(slot => 
           slot.startTime.startsWith(dateString)
         ) || [];
         
-        // Debug: logger.log(`📅 Day ${dateString}: ${slotsForDay.length} slots available`);
-        
         days.push({
-          id: `day-${i + 1}`,
+          id: `day-${validDaysCount + 1}`,
           date: dateString,
           day: dayNames[dayOfWeek],
           number: date.getDate().toString(),
@@ -80,7 +81,11 @@ export function useVisitScheduler({
           price: undefined,
           slotsCount: slotsForDay.length
         });
+        
+        validDaysCount++;
       }
+      
+      dayIndex++;
     }
     
     logger.debug('📅 Generated days:', days);

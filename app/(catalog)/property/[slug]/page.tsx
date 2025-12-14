@@ -1,8 +1,9 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getBuildingBySlug, getRelatedBuildings } from "@lib/data";
 import { PropertyClient } from "./PropertyClient";
 import { safeJsonLd } from "@lib/seo/jsonld";
 import { PROPERTY_PAGE_CONSTANTS } from "@lib/constants/property";
+import { normalizeComunaSlug } from "@/lib/utils/slug";
 
 type PropertyPageProps = {
   params: Promise<{ slug: string }>;
@@ -13,10 +14,34 @@ export const revalidate = 3600; // 1 hour
 export default async function PropertyPage({ params, searchParams }: PropertyPageProps & { searchParams?: Promise<{ fail?: string; unit?: string; tipologia?: string; ver?: string }> }) {
   const { slug } = await params;
   const resolvedSearchParams = await searchParams;
+
   // Simulate a failure to verify error.tsx boundary
   if (resolvedSearchParams?.fail === "1") {
     throw new Error("Falló carga de propiedad (simulada)");
   }
+
+  // Intentar obtener unidad primero (nueva estructura)
+  // Si el slug es de una unidad, redirigir a la nueva URL
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || "http://localhost:3000";
+  try {
+    const unitResponse = await fetch(`${baseUrl}/api/buildings/${slug}`, {
+      next: { revalidate: 3600 },
+    });
+
+    if (unitResponse.ok) {
+      const unitData = await unitResponse.json();
+      if (unitData.unit && unitData.building) {
+        // Es una unidad, redirigir a la nueva estructura
+        const comunaSlug = normalizeComunaSlug(unitData.building.comuna);
+        redirect(`/arriendo/departamento/${comunaSlug}/${slug}`);
+      }
+    }
+  } catch (error) {
+    // Si falla, continuar con el comportamiento de edificio
+    console.error('Error checking unit:', error);
+  }
+
+  // Si no es una unidad, buscar como edificio (compatibilidad backward)
   const building = await getBuildingBySlug(slug);
 
   if (!building) {
@@ -26,8 +51,6 @@ export default async function PropertyPage({ params, searchParams }: PropertyPag
   const relatedBuildings = await getRelatedBuildings(slug, PROPERTY_PAGE_CONSTANTS.RELATED_BUILDINGS_LIMIT);
 
   // Build JSON-LD (Schema.org) for this property
-  const baseUrl =
-    process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || "http://localhost:3000";
   const canonicalUrl = `${baseUrl}/property/${slug}`;
   const primaryImage =
     building.media?.images?.[0] ||
@@ -35,6 +58,41 @@ export default async function PropertyPage({ params, searchParams }: PropertyPag
     building.gallery?.[0] ||
     PROPERTY_PAGE_CONSTANTS.DEFAULT_IMAGE;
   const toAbsoluteUrl = (url: string) => (url.startsWith("http") ? url : `${baseUrl}${url}`);
+
+  // Get first unit for breadcrumb (or use unit from searchParams if available)
+  const unitId = resolvedSearchParams?.unit;
+  const selectedUnit = unitId
+    ? building.units.find(u => u.id === unitId)
+    : building.units[0];
+
+  // Build breadcrumb items for JSON-LD
+  const breadcrumbItems = [
+    { name: "Home", item: `${baseUrl}/` },
+    { name: "Arriendo Departamentos", item: `${baseUrl}/buscar` },
+    { name: building.comuna || "Santiago", item: `${baseUrl}/buscar?comuna=${encodeURIComponent(building.comuna || "Santiago")}` },
+    { name: building.name, item: canonicalUrl },
+  ];
+
+  // Add tipología if unit is available
+  if (selectedUnit?.tipologia) {
+    const tipologiaLabel = selectedUnit.tipologia === "Studio" || selectedUnit.tipologia === "Estudio"
+      ? "Estudio"
+      : selectedUnit.tipologia;
+    breadcrumbItems.push({ name: tipologiaLabel, item: canonicalUrl });
+  } else {
+    breadcrumbItems.push({ name: "Departamento", item: canonicalUrl });
+  }
+
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: breadcrumbItems.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
+      item: item.item,
+    })),
+  };
 
   const jsonLd = {
     "@context": PROPERTY_PAGE_CONSTANTS.JSON_LD_CONTEXT,
@@ -58,6 +116,9 @@ export default async function PropertyPage({ params, searchParams }: PropertyPag
     <>
       <script type="application/ld+json">
         {safeJsonLd(jsonLd)}
+      </script>
+      <script type="application/ld+json">
+        {safeJsonLd(breadcrumbJsonLd)}
       </script>
       <PropertyClient
         building={building}

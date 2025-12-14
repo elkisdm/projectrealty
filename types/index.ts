@@ -4,13 +4,15 @@ export type {
   Building,
   BookingRequest,
   WaitlistRequest,
+  SearchFilters,
   PromotionBadge,
   TypologySummary,
   Media,
   ParkingStorage,
   UnitV2,
   BuildingV2,
-  PromotionType
+  PromotionType,
+  BuildingsResponse
 } from '../schemas/models';
 
 // Legacy types for backward compatibility

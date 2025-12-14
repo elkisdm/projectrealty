@@ -2,10 +2,39 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseProcessor } from '@/lib/supabase-data-processor';
 import { createRateLimiter } from '@lib/rate-limit';
 import { logger } from '@lib/logger';
+import { SearchFiltersSchema, type BuildingsResponse } from '@/schemas/models';
 
 // Rate limiter: 20 requests per minute per IP
 const rateLimiter = createRateLimiter({ windowMs: 60_000, max: 20 });
 
+/**
+ * GET /api/buildings
+ * 
+ * Retorna unidades (no edificios) con filtros y paginación según especificación MVP.
+ * 
+ * Query params:
+ * - q?: string - Búsqueda por texto
+ * - comuna?: string - Filtro por comuna
+ * - precioMin?: number - Precio mínimo
+ * - precioMax?: number - Precio máximo
+ * - dormitorios?: number - Cantidad de dormitorios
+ * - page?: number - Página (default: 1)
+ * - limit?: number - Límite por página (default: 12, max: 100)
+ * 
+ * ⚠️ IMPORTANTE: banos NO se filtra según especificación MVP
+ * 
+ * Response:
+ * {
+ *   units: Unit[],
+ *   total: number,
+ *   hasMore: boolean,
+ *   page: number,
+ *   limit: number
+ * }
+ * 
+ * Test curl:
+ * curl "http://localhost:3000/api/buildings?comuna=Providencia&precioMin=500000&precioMax=1000000&dormitorios=2&page=1&limit=12"
+ */
 export async function GET(request: NextRequest) {
   try {
     // Rate limiting check
@@ -27,43 +56,60 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Obtener y validar query params con Zod
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '12');
-    
-    const offset = (page - 1) * limit;
-    
-    const processor = await getSupabaseProcessor();
-    const result = await processor.getLandingBuildings(limit, offset);
-    
-    // Convertir LandingBuilding a BuildingSummary
-    const buildings = result.buildings.map(building => ({
-      id: building.id,
-      slug: building.slug,
-      name: building.name,
-      comuna: building.comuna,
-      address: building.address,
-      coverImage: building.coverImage,
-      gallery: building.gallery,
-      precioDesde: building.precioDesde,
-      hasAvailability: building.hasAvailability,
-      badges: building.badges.map(badge => ({
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Badge type compatibility with API response
-        type: badge.type as unknown as string,
-        label: badge.label,
-        description: badge.description,
-      })),
-      amenities: building.amenities,
-      typologySummary: building.typologySummary,
-    }));
+    const queryParams = {
+      q: searchParams.get('q') || undefined,
+      comuna: searchParams.get('comuna') || undefined,
+      precioMin: searchParams.get('precioMin') ? parseInt(searchParams.get('precioMin') || '0', 10) : undefined,
+      precioMax: searchParams.get('precioMax') ? parseInt(searchParams.get('precioMax') || '0', 10) : undefined,
+      dormitorios: searchParams.get('dormitorios') ? parseInt(searchParams.get('dormitorios') || '0', 10) : undefined,
+      page: searchParams.get('page') ? parseInt(searchParams.get('page') || '1', 10) : undefined,
+      limit: searchParams.get('limit') ? parseInt(searchParams.get('limit') || '12', 10) : undefined,
+    };
 
-    return NextResponse.json({
-      buildings,
+    // Validar con Zod
+    const validation = SearchFiltersSchema.safeParse(queryParams);
+    if (!validation.success) {
+      logger.warn('Validación fallida en API buildings:', validation.error.errors);
+      return NextResponse.json(
+        { 
+          error: 'Parámetros inválidos',
+          details: validation.error.errors.map(e => ({
+            path: e.path.join('.'),
+            message: e.message
+          }))
+        },
+        { status: 400 }
+      );
+    }
+
+    const filters = validation.data;
+    const page = filters.page || 1;
+    const limit = filters.limit || 12;
+
+    // Obtener unidades usando el processor
+    const processor = await getSupabaseProcessor();
+    const result = await processor.getUnits({
+      comuna: filters.comuna,
+      precioMin: filters.precioMin,
+      precioMax: filters.precioMax,
+      dormitorios: filters.dormitorios,
+      q: filters.q,
+    }, page, limit);
+
+    // Log sin PII (solo conteos y filtros, no datos de usuarios)
+    logger.log(`API buildings: ${result.units.length} unidades encontradas de ${result.total} total (página ${page})`);
+
+    const response: BuildingsResponse = {
+      units: result.units,
       total: result.total,
       hasMore: result.hasMore,
       page,
       limit
-    });
+    };
+
+    return NextResponse.json(response);
     
   } catch (error) {
     logger.error('Error en API buildings:', error);

@@ -1,9 +1,16 @@
 import MotionWrapper from "@/components/ui/MotionWrapper";
+import { RotatingCommunes } from "./RotatingCommunes";
+import Link from "next/link";
 
-export default function HeroV2() {
+interface HeroV2Props {
+  communes?: string[];
+  availableCount?: number;
+}
+
+export default function HeroV2({ communes = [], availableCount = 0 }: HeroV2Props) {
   return (
     <>
-      <section className="relative isolate overflow-hidden px-6 py-24 sm:py-32 lg:px-8">
+      <section className="relative isolate overflow-hidden px-6 py-16 sm:py-24 lg:px-8 lg:py-32">
         {/* Background gradient */}
         <div
           aria-hidden="true"
@@ -28,7 +35,7 @@ export default function HeroV2() {
                     <span className="absolute h-2 w-2 animate-ping rounded-full bg-primary opacity-75" />
                     <span className="relative h-1.5 w-1.5 rounded-full bg-primary" />
                   </span>
-                  0% comisión garantizada
+                  La forma más fácil de encontrar arriendo
                 </p>
               </div>
             </div>
@@ -37,44 +44,40 @@ export default function HeroV2() {
           {/* Título principal */}
           <MotionWrapper direction="up" delay={0.2}>
             <h1 className="text-4xl font-bold tracking-tight text-text sm:text-6xl lg:text-7xl">
-              Invierte en{" "}
-              <span className="bg-gradient-to-r from-primary via-primary to-secondary bg-clip-text text-transparent">
-                arriendo
-              </span>
-              <br />
-              sin comisión
+              Arrienda departamentos en{" "}
+              <RotatingCommunes communes={communes} />
             </h1>
           </MotionWrapper>
 
           {/* Subtítulo */}
           <MotionWrapper direction="up" delay={0.3}>
             <p className="mt-6 text-lg leading-8 text-subtext sm:text-xl lg:text-2xl lg:leading-9">
-              Proyectos nuevos verificados con disponibilidad real.{" "}
+              Propiedades dedicadas para arrendar. Experiencia hotelera.{" "}
               <br className="hidden sm:block" />
-              Precios actualizados y proceso 100% digital.
+              Agenda visitas, compara precios y arrienda 100% online.
             </p>
           </MotionWrapper>
 
           {/* CTAs */}
           <MotionWrapper direction="up" delay={0.4}>
             <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-6">
-              <a
-                href="/coming-soon"
+              <Link
+                href="#search-section"
                 className="group relative inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-primary to-primary/90 px-8 py-4 text-base font-semibold text-primary-foreground shadow-lg transition-all duration-200 hover:shadow-xl hover:shadow-primary/25 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary sm:px-10 sm:py-5 sm:text-lg"
               >
                 <span className="absolute inset-0 rounded-2xl bg-gradient-to-r from-primary to-secondary opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                <span className="relative">Quiero ser contactado</span>
-              </a>
+                <span className="relative">Buscar departamentos</span>
+              </Link>
 
-              <a
-                href="#featured-heading"
+              <Link
+                href="/buscar"
                 className="inline-flex items-center gap-2 rounded-2xl border border-soft/50 bg-bg/80 px-6 py-3 text-sm font-medium text-text backdrop-blur-sm transition-colors hover:bg-soft/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-ring sm:px-8 sm:py-4 sm:text-base"
               >
-                Ver proyectos
+                Ver todos los departamentos
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
                 </svg>
-              </a>
+              </Link>
             </div>
           </MotionWrapper>
 
@@ -95,9 +98,11 @@ export default function HeroV2() {
               </div>
               <div className="flex flex-col items-center">
                 <div className="rounded-2xl bg-gradient-to-br from-purple-50 to-violet-50 p-4 ring-1 ring-purple-200/50 dark:from-purple-950/20 dark:to-violet-950/20 dark:ring-purple-800/50">
-                  <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">24/7</div>
+                  <div className="text-2xl font-bold tabular-nums text-purple-600 dark:text-purple-400">
+                    +{availableCount}
+                  </div>
                 </div>
-                <p className="mt-2 text-sm font-medium text-subtext">Disponible</p>
+                <p className="mt-2 text-sm font-medium text-subtext">Propiedades disponibles</p>
               </div>
             </div>
           </MotionWrapper>

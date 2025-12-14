@@ -5,7 +5,8 @@
 
 export interface FilterValues {
   comuna: string;
-  tipologia: string;
+  tipologia: string; // Mantener para compatibilidad
+  dormitorios?: string; // "Estudio", "1", "2", "3" - nuevo campo para búsqueda
   minPrice: number | null;
   maxPrice: number | null;
 }

@@ -594,3 +594,6 @@ https://tudominio.com/manifest.json
 ---
 
 **Última actualización:** Enero 2025
+
+
+
