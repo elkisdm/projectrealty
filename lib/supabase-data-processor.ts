@@ -118,11 +118,28 @@ export interface SupabaseUnitRow {
   tipologia: string;
   m2?: number;
   price?: number;
+  gc?: number;
+  total_mensual?: number;
+  orientacion?: string;
+  m2_terraza?: number;
+  descuento_porcentaje?: number;
+  meses_descuento?: number;
+  garantia_meses?: number;
+  garantia_cuotas?: number;
+  rentas_necesarias?: number;
+  pet_friendly?: boolean;
+  reajuste_meses?: number;
+  link_listing?: string;
   disponible?: boolean;
   estacionamiento?: boolean;
   bodega?: boolean;
+  parking_optional?: boolean;
+  storage_optional?: boolean;
   bedrooms?: number;
   bathrooms?: number;
+  images_tipologia?: string[];
+  images_areas_comunes?: string[];
+  images?: string[];
   buildings: {
     id: string;
     name: string;
@@ -174,9 +191,23 @@ class SupabaseDataProcessor {
           tipologia,
           m2,
           price,
+          gc,
+          total_mensual,
+          orientacion,
+          m2_terraza,
+          descuento_porcentaje,
+          meses_descuento,
+          garantia_meses,
+          garantia_cuotas,
+          rentas_necesarias,
+          pet_friendly,
+          reajuste_meses,
+          link_listing,
           disponible,
           estacionamiento,
           bodega,
+          parking_optional,
+          storage_optional,
           bedrooms,
           bathrooms,
           images_tipologia,
@@ -601,18 +632,33 @@ class SupabaseDataProcessor {
         banos: unitRow.bathrooms || 0,
         m2: unitRow.m2 || rowWithFields.area_interior_m2 || undefined,
         price: unitRow.price || 0,
-        gastoComun,
-        garantia,
+        gastoComun: unitRow.gc || rowWithFields.gastos_comunes || 0, // Prefer 'gc' from DB
+        total_mensual: unitRow.total_mensual,
+        garantia: unitRow.price ? unitRow.price : 0,
         disponible: unitRow.disponible ?? true,
         images,
         // Campos de imágenes
         imagesTipologia: rowWithFields.images_tipologia || [],
         imagesAreasComunes: rowWithFields.images_areas_comunes || [],
-        // Campos opcionales
+        // Campos opcionales nuevos
+        orientacion: unitRow.orientacion || rowWithFields.orientacion,
+        m2_terraza: unitRow.m2_terraza,
+        descuento_porcentaje: unitRow.descuento_porcentaje,
+        meses_descuento: unitRow.meses_descuento,
+        garantia_meses: unitRow.garantia_meses,
+        garantia_cuotas: unitRow.garantia_cuotas,
+        rentas_necesarias: unitRow.rentas_necesarias,
+        pet_friendly: unitRow.pet_friendly,
+        reajuste_meses: unitRow.reajuste_meses,
+        link_listing: unitRow.link_listing,
+        parking_opcional: unitRow.parking_optional,
+        storage_opcional: unitRow.storage_optional,
+
+        // Campos opcionales legacy
         piso: rowWithFields.piso,
         vista: rowWithFields.orientacion,
         amoblado: rowWithFields.amoblado,
-        politicaMascotas: rowWithFields.pet_friendly ? 'Permitidas' : undefined,
+        politicaMascotas: unitRow.pet_friendly ? 'Permitidas' : undefined,
         estacionamiento: unitRow.estacionamiento,
         bodega: unitRow.bodega,
         estado: rowWithFields.status === 'available' ? 'Disponible' : undefined,
@@ -673,9 +719,24 @@ class SupabaseDataProcessor {
       m2?: number;
       price: number;
       gastoComun: number;
+      total_mensual?: number;
       garantia: number;
       disponible: boolean;
       images: string[];
+      // New fields
+      orientacion?: string;
+      pet_friendly?: boolean;
+      m2_terraza?: number;
+      descuento_porcentaje?: number;
+      meses_descuento?: number;
+      garantia_meses?: number;
+      garantia_cuotas?: number;
+      rentas_necesarias?: number;
+      reajuste_meses?: number;
+      link_listing?: string;
+      parking_opcional?: boolean;
+      storage_opcional?: boolean;
+      
       building: {
         id: string;
         name: string;
@@ -724,22 +785,28 @@ class SupabaseDataProcessor {
       .select(`
         id,
         building_id,
-        unidad,
         tipologia,
         bedrooms,
         bathrooms,
         m2,
-        area_interior_m2,
         price,
-        gastos_comunes,
+        gc,
+        total_mensual,
+        orientacion,
+        m2_terraza,
+        descuento_porcentaje,
+        meses_descuento,
+        garantia_meses,
+        garantia_cuotas,
+        rentas_necesarias,
+        pet_friendly,
+        reajuste_meses,
+        link_listing,
         disponible,
         estacionamiento,
         bodega,
-        piso,
-        orientacion,
-        amoblado,
-        pet_friendly,
-        status,
+        parking_optional,
+        storage_optional,
         images_tipologia,
         images_areas_comunes,
         images,
@@ -836,6 +903,7 @@ class SupabaseDataProcessor {
       m2: foundUnit.m2 || foundUnit.area_interior_m2 || undefined,
       price: foundUnit.price || 0,
       gastoComun,
+      total_mensual: foundUnit.total_mensual,
       garantia,
       disponible: foundUnit.disponible ?? true,
       images,
@@ -848,6 +916,20 @@ class SupabaseDataProcessor {
       estacionamiento: foundUnit.estacionamiento,
       bodega: foundUnit.bodega,
       estado: foundUnit.status === 'available' ? 'Disponible' : undefined,
+      
+      // New fields mapping
+      orientacion: foundUnit.orientacion,
+      pet_friendly: foundUnit.pet_friendly,
+      m2_terraza: foundUnit.m2_terraza,
+      descuento_porcentaje: foundUnit.descuento_porcentaje,
+      meses_descuento: foundUnit.meses_descuento,
+      garantia_meses: foundUnit.garantia_meses,
+      garantia_cuotas: foundUnit.garantia_cuotas,
+      rentas_necesarias: foundUnit.rentas_necesarias,
+      reajuste_meses: foundUnit.reajuste_meses,
+      link_listing: foundUnit.link_listing,
+      parking_opcional: foundUnit.parking_optional,
+      storage_opcional: foundUnit.storage_optional,
       building: {
         id: building.id,
         name: building.name,

@@ -45,7 +45,7 @@ export default function HeroV2({ communes = [], availableCount = 0 }: HeroV2Prop
           <MotionWrapper direction="up" delay={0.2}>
             <h1 className="text-4xl font-bold tracking-tight text-text sm:text-6xl lg:text-7xl">
               Arrienda departamentos en{" "}
-              <RotatingCommunes communes={communes} />
+              <RotatingCommunes communes={communes} interval={1500} />
             </h1>
           </MotionWrapper>
 

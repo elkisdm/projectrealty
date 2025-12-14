@@ -65,8 +65,8 @@ export function PropertyMobilePricing({
     const secondaryBadges = getSecondaryBadges();
 
     // Cálculo del precio total mensual (arriendo + gastos comunes)
-    const gastosComunes = 102000; // Esto debería venir de los datos
-    const precioTotalMensual = discountPrice + gastosComunes;
+    const gastosComunes = selectedUnit.gastoComun || 0;
+    const precioTotalMensual = selectedUnit.total_mensual || (discountPrice + gastosComunes);
 
     return (
         <section className={`lg:hidden ${className}`}>
@@ -161,6 +161,22 @@ export function PropertyMobilePricing({
                             <div className="text-sm font-semibold text-white:text-white">{unitDetails.m2}</div>
                             <div className="text-xs text-gray-400:text-gray-400">m²</div>
                         </div>
+                        {/* New Chips */}
+                        {selectedUnit.orientacion && (
+                            <div className="bg-gray-800:bg-gray-600 rounded-lg p-2 col-span-1">
+                                <div className="text-sm font-semibold text-white:text-white">{selectedUnit.orientacion}</div>
+                                <div className="text-xs text-gray-400:text-gray-400">Orient.</div>
+                            </div>
+                        )}
+                        {selectedUnit.pet_friendly && (
+                            <div className="bg-gray-800:bg-gray-600 rounded-lg p-2 col-span-2 flex items-center justify-center gap-2">
+                                <span className="text-xl">🐾</span>
+                                <div className="text-left">
+                                    <div className="text-xs font-semibold text-white:text-white">Mascotas</div>
+                                    <div className="text-[10px] text-gray-400:text-gray-400">Permitidas</div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
 

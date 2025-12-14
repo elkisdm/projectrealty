@@ -91,7 +91,8 @@ export function UnitCard({
   const statusText = getStatusText(unit);
   const buildingName = building?.name || 'Edificio';
   const comuna = building?.comuna || '';
-  const gastosComunes = unit.gastosComunes || 0;
+  const gastosComunes = unit.gastoComun || 0;
+  const precioTotal = unit.total_mensual || (unit.price + gastosComunes);
 
   // Generate href for navigation
   const href = `/property/${slug}`;
@@ -139,10 +140,15 @@ export function UnitCard({
         />
 
         {/* Glass Badge (Top Left) */}
-        <div className="absolute top-3 left-3 glass px-3 py-1 rounded-full">
+        <div className="absolute top-3 left-3 glass px-3 py-1 rounded-full flex gap-2">
           <span className="text-xs font-semibold text-slate-900 dark:text-slate-100">
             {statusText}
           </span>
+          {unit.pet_friendly && (
+            <span className="text-xs font-semibold text-slate-900 dark:text-slate-100 border-l border-slate-500 pl-2">
+              🐾 Mascotas
+            </span>
+          )}
         </div>
 
         {/* Favorite Button (Top Right) */}
@@ -162,11 +168,11 @@ export function UnitCard({
       <div className="p-5">
         {/* Header with name and location */}
         <div className="mb-2">
-          <h3 className="text-lg font-bold text-text leading-tight">
+          <h3 className="text-lg font-bold text-text leading-tight truncate">
             {buildingName}
           </h3>
-          <p className="text-sm text-subtext flex items-center gap-1 mt-1">
-            <MapPin className="w-3 h-3" aria-hidden="true" />
+          <p className="text-sm text-subtext flex items-center gap-1 mt-1 truncate">
+            <MapPin className="w-3 h-3 flex-shrink-0" aria-hidden="true" />
             {comuna} • {unit.tipologia}
           </p>
         </div>
@@ -182,8 +188,8 @@ export function UnitCard({
               <span className="text-sm font-normal text-subtext"> /mes</span>
             </p>
             {gastosComunes > 0 && (
-              <p className="text-xs text-text-muted mt-1">
-                + {formatPrice(gastosComunes)} GC aprox.
+              <p className="text-sm font-medium text-text-muted mt-1">
+                + {formatPrice(gastosComunes)} GC
               </p>
             )}
           </div>

@@ -165,38 +165,38 @@ export function useSearchResults(params: SearchResultsParams) {
     queryKey,
     queryFn: async (): Promise<SearchResultsResponse> => {
       try {
-        // Obtener todos los edificios
-        const allBuildings = await getAllBuildings();
+        const queryParams = new URLSearchParams();
+        if (params.q) queryParams.set("q", params.q);
+        if (params.comuna && params.comuna !== "Todas") queryParams.set("comuna", params.comuna);
+        if (params.precioMin) queryParams.set("precioMin", params.precioMin.toString());
+        if (params.precioMax) queryParams.set("precioMax", params.precioMax.toString());
+        if (params.dormitorios) queryParams.set("dormitorios", params.dormitorios);
+        if (params.sort) queryParams.set("sort", params.sort);
+        if (page) queryParams.set("page", page.toString());
+        if (limit) queryParams.set("limit", limit.toString());
 
-        // Flatten: convertir buildings con units a array de unidades con building
-        const allUnits: UnitWithBuilding[] = [];
+        const response = await fetch(`/api/buildings?${queryParams.toString()}`);
         
-        for (const building of allBuildings) {
-          // Solo procesar edificios con unidades disponibles
-          const availableUnits = building.units.filter((u) => u.disponible);
-          
-          for (const unit of availableUnits) {
-            allUnits.push({
-              unit,
-              building,
-            });
-          }
+        if (!response.ok) {
+          const errorBody = await response.text();
+          throw new Error(`Error fetching search results: ${response.status} ${response.statusText} - ${errorBody}`);
         }
 
-        // Aplicar filtros
-        const filteredUnits = filterUnits(allUnits, params);
+        const data = await response.json();
 
-        // Paginación
-        const startIndex = (page - 1) * limit;
-        const endIndex = startIndex + limit;
-        const paginatedUnits = filteredUnits.slice(startIndex, endIndex);
-        const totalPages = Math.ceil(filteredUnits.length / limit);
+        // Mapear la respuesta de la API (flat unit with building) a la estructura esperada por el hook (UnitWithBuilding)
+        const units: UnitWithBuilding[] = data.units.map((item: any) => ({
+          unit: item,
+          building: item.building
+        }));
+
+        const totalPages = Math.ceil(data.total / (limit || 12));
 
         return {
-          units: paginatedUnits,
-          total: filteredUnits.length,
-          page,
-          limit,
+          units,
+          total: data.total,
+          page: data.page,
+          limit: data.limit,
           totalPages,
         };
       } catch (err) {

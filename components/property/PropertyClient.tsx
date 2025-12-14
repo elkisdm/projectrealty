@@ -8,7 +8,8 @@ import { buildPropertyWhatsAppUrl } from "@lib/whatsapp";
 import type { Building } from "@schemas/models";
 import { QuintoAndarVisitScheduler } from "@components/flow/QuintoAndarVisitScheduler";
 import { usePropertyUnit } from "@hooks/usePropertyUnit";
-import { FirstPaymentDetails } from "./FirstPaymentDetails";
+// TODO: Reintegrar cuando esté pulido
+// import { FirstPaymentDetails } from "./FirstPaymentDetails";
 
 // Componentes de propiedad
 import { PropertyAboveFoldMobile } from "./PropertyAboveFoldMobile";
@@ -347,7 +348,7 @@ export function PropertyClient({
                             {/* C?mo es vivir en la comuna */}
                             <CommuneLifeSection building={building} variant={variant} />
 
-                            {/* Calculadora detallada del primer pago */}
+                            {/* TODO: Reintegrar Calculadora del primer pago cuando esté pulida
                             <FirstPaymentDetails
                                 originalPrice={originalPrice}
                                 discountPrice={discountPrice}
@@ -360,6 +361,7 @@ export function PropertyClient({
                                 onStorageChange={setIncludeStorage}
                                 onSendQuotation={handleSendQuotation}
                             />
+                            */}
 
                             {/* Propiedades relacionadas */}
                             <section

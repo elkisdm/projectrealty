@@ -23,6 +23,8 @@ export default async function PropertyPage({ params, searchParams }: PropertyPag
   // Intentar obtener unidad primero (nueva estructura)
   // Si el slug es de una unidad, redirigir a la nueva URL
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || "http://localhost:3000";
+  let redirectUrl: string | null = null;
+
   try {
     const unitResponse = await fetch(`${baseUrl}/api/buildings/${slug}`, {
       next: { revalidate: 3600 },
@@ -31,14 +33,19 @@ export default async function PropertyPage({ params, searchParams }: PropertyPag
     if (unitResponse.ok) {
       const unitData = await unitResponse.json();
       if (unitData.unit && unitData.building) {
-        // Es una unidad, redirigir a la nueva estructura
+        // Es una unidad, preparar redirect a la nueva estructura
         const comunaSlug = normalizeComunaSlug(unitData.building.comuna);
-        redirect(`/arriendo/departamento/${comunaSlug}/${slug}`);
+        redirectUrl = `/arriendo/departamento/${comunaSlug}/${slug}`;
       }
     }
   } catch (error) {
-    // Si falla, continuar con el comportamiento de edificio
+    // Si falla fetch, continuar con el comportamiento de edificio
     console.error('Error checking unit:', error);
+  }
+
+  // Ejecutar redirect fuera del try-catch para que no sea capturado
+  if (redirectUrl) {
+    redirect(redirectUrl);
   }
 
   // Si no es una unidad, buscar como edificio (compatibilidad backward)

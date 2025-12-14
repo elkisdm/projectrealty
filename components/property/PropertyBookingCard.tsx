@@ -63,15 +63,18 @@ export function PropertyBookingCard({
         <div className="sticky top-24">
           <div className="bg-card border border-border rounded-2xl shadow-lg p-6 space-y-6">
             {/* Información de unidad y edificio */}
+            {/* Información de unidad y edificio */}
             <div className="space-y-1 pb-4 border-b border-border">
-              <div className="text-xs font-medium text-subtext">
-                Unidad: {codigoUnidad}
+              <div className="text-xl font-bold text-text leading-tight">
+                DEPARTAMENTO {unit.codigoUnidad?.replace(/^\D+/, '') || ''} <span className="text-[#8B6CFF]">—</span> {unit.tipologia || 'DEPARTAMENTO'}
               </div>
-              <div className="text-sm font-semibold text-text">
-                {nombreEdificio}
-              </div>
-              <div className="text-xs text-subtext">
-                {direccionCompleta}
+              <div className="pt-1">
+                <div className="text-sm font-semibold text-text">
+                  {nombreEdificio}
+                </div>
+                <div className="text-xs text-subtext">
+                  {direccionCompleta}
+                </div>
               </div>
             </div>
 

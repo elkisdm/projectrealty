@@ -13,6 +13,14 @@ export default {
           violet: "#8B6CFF",
           aqua: "#00E6B3",
         },
+        primary: {
+          DEFAULT: "#8B6CFF",
+          foreground: "#FFFFFF",
+        },
+        secondary: {
+          DEFAULT: "#00E6B3",
+          foreground: "#000000",
+        },
         // Map CSS variables to Tailwind tokens for consistency in class usage
         bg: "var(--bg)",
         "bg-secondary": "var(--bg-secondary)",

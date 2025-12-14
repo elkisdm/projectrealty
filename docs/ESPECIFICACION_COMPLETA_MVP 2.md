@@ -19,7 +19,9 @@
 5. [Estados y Puntos de Conversión](#estados-y-puntos-de-conversión)
 6. [APIs y Endpoints](#apis-y-endpoints)
 7. [Datos y Modelos](#datos-y-modelos)
-8. [Notas de Implementación](#notas-de-implementación)
+8. [Configuración de Base de Datos (Supabase)](#configuración-de-base-de-datos-supabase)
+9. [Plan de Verificación de Base de Datos](#plan-de-verificación-de-base-de-datos)
+10. [Notas de Implementación](#notas-de-implementación)
 
 ---
 
@@ -991,6 +993,273 @@ interface SearchFilters {
   page?: number;
   limit?: number;
 }
+```
+
+---
+
+## 🗄️ CONFIGURACIÓN DE BASE DE DATOS (SUPABASE)
+
+### Variables de Entorno
+
+| Variable | Descripción | Requerida | Scope |
+|----------|-------------|-----------|-------|
+| `SUPABASE_URL` | URL del proyecto Supabase | ✅ | Server |
+| `NEXT_PUBLIC_SUPABASE_URL` | URL pública del proyecto | ✅ | Client |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Clave anónima pública | ✅ | Client |
+| `SUPABASE_ANON_KEY` | Clave anónima del servidor | ✅ | Server |
+| `SUPABASE_SERVICE_ROLE_KEY` | Clave de servicio (admin) | ✅ | Server |
+| `USE_SUPABASE` | Flag para usar datos reales (true/false) | ✅ | Server |
+
+**Archivo ejemplo:** `config/env.example`
+
+### Tablas de Base de Datos
+
+#### 1. Tabla `buildings` (Edificios)
+
+| Campo | Tipo | Restricciones | Descripción |
+|-------|------|---------------|-------------|
+| `id` | TEXT | PRIMARY KEY | Identificador único del edificio |
+| `slug` | TEXT | UNIQUE, NOT NULL | URL-friendly para SEO |
+| `name` | TEXT | NOT NULL | Nombre del edificio |
+| `comuna` | TEXT | NOT NULL | Comuna de ubicación |
+| `address` | TEXT | NOT NULL | Dirección completa |
+| `amenities` | TEXT[] | DEFAULT '{}' | Lista de amenidades |
+| `gallery` | TEXT[] | DEFAULT '{}' | URLs de imágenes de galería |
+| `cover_image` | TEXT | NULLABLE | URL de imagen de portada |
+| `badges` | JSONB | DEFAULT '[]' | Promociones y badges |
+| `service_level` | TEXT | CHECK ('pro', 'standard') | Nivel de servicio |
+| `created_at` | TIMESTAMPTZ | DEFAULT NOW() | Fecha de creación |
+| `updated_at` | TIMESTAMPTZ | DEFAULT NOW() | Última actualización |
+
+#### 2. Tabla `units` (Unidades)
+
+| Campo | Tipo | Restricciones | Descripción |
+|-------|------|---------------|-------------|
+| `id` | TEXT | PRIMARY KEY | Identificador único de la unidad |
+| `building_id` | TEXT | FK → buildings(id), ON DELETE CASCADE | Edificio al que pertenece |
+| `tipologia` | TEXT | NOT NULL | Tipología (2D2B, 1D1B, etc.) |
+| `m2` | INTEGER | NULLABLE | Metros cuadrados |
+| `price` | INTEGER | NOT NULL | Precio mensual |
+| `estacionamiento` | BOOLEAN | DEFAULT FALSE | Incluye estacionamiento |
+| `bodega` | BOOLEAN | DEFAULT FALSE | Incluye bodega |
+| `disponible` | BOOLEAN | DEFAULT TRUE | Estado de disponibilidad |
+| `bedrooms` | INTEGER | NULLABLE | Número de dormitorios |
+| `bathrooms` | INTEGER | NULLABLE | Número de baños |
+| `images` | TEXT[] | DEFAULT '{}' | URLs de imágenes de la unidad |
+| `images_tipologia` | TEXT[] | DEFAULT '{}' | Imágenes de la tipología |
+| `images_areas_comunes` | TEXT[] | DEFAULT '{}' | Imágenes de áreas comunes |
+| `created_at` | TIMESTAMPTZ | DEFAULT NOW() | Fecha de creación |
+| `updated_at` | TIMESTAMPTZ | DEFAULT NOW() | Última actualización |
+
+#### 3. Tabla `waitlist` (Lista de Espera)
+
+| Campo | Tipo | Restricciones | Descripción |
+|-------|------|---------------|-------------|
+| `id` | UUID | PRIMARY KEY, DEFAULT gen_random_uuid() | Identificador único |
+| `email` | TEXT | NOT NULL, CHECK(@) | Email del usuario |
+| `phone` | TEXT | NULLABLE | Teléfono de contacto |
+| `source` | TEXT | DEFAULT 'coming-soon' | Origen del registro |
+| `utm` | JSONB | DEFAULT '{}' | Parámetros UTM para tracking |
+| `created_at` | TIMESTAMPTZ | DEFAULT NOW() | Fecha de registro |
+
+#### 4. Tabla `admin_users` (Usuarios Admin)
+
+| Campo | Tipo | Restricciones | Descripción |
+|-------|------|---------------|-------------|
+| `id` | UUID | PRIMARY KEY, FK → auth.users(id), ON DELETE CASCADE | ID de Supabase Auth |
+| `email` | TEXT | UNIQUE, NOT NULL | Email del admin |
+| `role` | TEXT | DEFAULT 'admin', CHECK ('admin', 'editor', 'viewer') | Rol del usuario |
+| `created_at` | TIMESTAMPTZ | DEFAULT NOW() | Fecha de creación |
+| `updated_at` | TIMESTAMPTZ | DEFAULT NOW() | Última actualización |
+
+### Relaciones entre Tablas
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    SUPABASE AUTH                                │
+│  ┌─────────────┐                                                │
+│  │ auth.users  │                                                │
+│  │ (id: UUID)  │                                                │
+│  └──────┬──────┘                                                │
+│         │ 1:1 (ON DELETE CASCADE)                               │
+│         ▼                                                        │
+│  ┌─────────────────┐                                            │
+│  │  admin_users    │                                            │
+│  └─────────────────┘                                            │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│                    DATOS DE PROPIEDADES                         │
+│  ┌─────────────────┐                                            │
+│  │    buildings    │                                            │
+│  │   (id: TEXT)    │                                            │
+│  └────────┬────────┘                                            │
+│           │ 1:N (ON DELETE CASCADE)                             │
+│           ▼                                                      │
+│  ┌─────────────────┐                                            │
+│  │      units      │                                            │
+│  │ (building_id FK)│                                            │
+│  └─────────────────┘                                            │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│                    TABLA INDEPENDIENTE                          │
+│  ┌─────────────────┐                                            │
+│  │    waitlist     │  (Sin relaciones FK)                       │
+│  └─────────────────┘                                            │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Índices de Performance
+
+| Tabla | Índice | Columna(s) | Propósito |
+|-------|--------|------------|-----------|
+| buildings | `idx_buildings_comuna` | comuna | Filtrado por comuna |
+| buildings | `idx_buildings_slug` | slug | Búsqueda por slug |
+| units | `idx_units_building_id` | building_id | JOINs con buildings |
+| units | `idx_units_disponible` | disponible | Filtrado por disponibilidad |
+| units | `idx_units_price` | price | Ordenamiento por precio |
+| units | `idx_units_tipologia` | tipologia | Filtrado por tipología |
+| waitlist | `idx_waitlist_email` | email | Búsqueda por email |
+| admin_users | `idx_admin_users_email` | email | Búsqueda por email |
+| admin_users | `idx_admin_users_role` | role | Filtrado por rol |
+
+### Vistas de Base de Datos
+
+#### Vista `v_filters_available`
+Retorna las comunas y tipologías disponibles en el sistema:
+```sql
+SELECT DISTINCT b.comuna, u.tipologia
+FROM buildings b
+JOIN units u ON b.id = u.building_id
+WHERE u.disponible = true;
+```
+
+#### Vista `v_building_completeness`
+Calcula el porcentaje de completitud de datos de cada edificio (útil para QA).
+
+### Row Level Security (RLS)
+
+| Tabla | Política | Operación | Condición |
+|-------|----------|-----------|-----------|
+| buildings | Public read | SELECT | true (acceso público) |
+| buildings | Service role full | ALL | auth.role() = 'service_role' |
+| units | Public read | SELECT | true (acceso público) |
+| units | Service role full | ALL | auth.role() = 'service_role' |
+| waitlist | Insert | INSERT | true (cualquier usuario) |
+| admin_users | Self read | SELECT | auth.uid() = id |
+| admin_users | Service role full | ALL | auth.role() = 'service_role' |
+
+### Migraciones Aplicadas
+
+| Archivo | Fecha | Descripción |
+|---------|-------|-------------|
+| `schema.sql` | - | Schema principal (buildings, units, waitlist) |
+| `20250115_create_admin_users.sql` | 2025-01-15 | Tabla admin_users |
+| `20250120_add_unit_images.sql` | 2025-01-20 | Columnas de imágenes en units |
+
+### Archivos de Configuración
+
+- **Schema principal:** `config/supabase/schema.sql`
+- **Migraciones:** `config/supabase/migrations/`
+- **Variables de entorno ejemplo:** `config/env.example`
+- **Guía de setup:** `docs/SETUP_SUPABASE.md`
+
+---
+
+## 🔍 PLAN DE VERIFICACIÓN DE BASE DE DATOS
+
+### 1. Verificar Estructura de Tablas
+
+Ejecutar en SQL Editor de Supabase:
+
+```sql
+-- Verificar que las tablas existan
+SELECT table_name 
+FROM information_schema.tables 
+WHERE table_schema = 'public' 
+  AND table_name IN ('buildings', 'units', 'waitlist', 'admin_users');
+-- Resultado esperado: 4 filas
+```
+
+### 2. Verificar Foreign Keys
+
+```sql
+-- Verificar FK de units → buildings
+SELECT 
+    tc.constraint_name, 
+    tc.table_name, 
+    kcu.column_name,
+    ccu.table_name AS foreign_table_name,
+    ccu.column_name AS foreign_column_name
+FROM information_schema.table_constraints AS tc
+JOIN information_schema.key_column_usage AS kcu 
+    ON tc.constraint_name = kcu.constraint_name
+JOIN information_schema.constraint_column_usage AS ccu 
+    ON ccu.constraint_name = tc.constraint_name
+WHERE tc.constraint_type = 'FOREIGN KEY'
+    AND tc.table_schema = 'public';
+-- Resultado esperado: units.building_id → buildings.id, admin_users.id → auth.users.id
+```
+
+### 3. Verificar Índices
+
+```sql
+SELECT indexname, tablename, indexdef
+FROM pg_indexes
+WHERE schemaname = 'public'
+ORDER BY tablename, indexname;
+-- Resultado esperado: índices listados en la sección anterior
+```
+
+### 4. Verificar RLS Habilitado
+
+```sql
+SELECT tablename, rowsecurity 
+FROM pg_tables 
+WHERE schemaname = 'public' 
+  AND tablename IN ('buildings', 'units', 'waitlist', 'admin_users');
+-- Resultado esperado: todas con rowsecurity = true
+```
+
+### 5. Verificar Políticas RLS
+
+```sql
+SELECT schemaname, tablename, policyname, permissive, roles, cmd
+FROM pg_policies
+WHERE schemaname = 'public'
+ORDER BY tablename, policyname;
+-- Resultado esperado: políticas listadas en la sección de RLS
+```
+
+### 6. Verificar Integridad de Datos
+
+```sql
+-- Verificar que no hay units huérfanas (sin building)
+SELECT COUNT(*) as orphan_units
+FROM units u
+LEFT JOIN buildings b ON u.building_id = b.id
+WHERE b.id IS NULL;
+-- Resultado esperado: 0
+
+-- Verificar que todos los buildings tienen al menos 1 unit
+SELECT b.id, b.name, COUNT(u.id) as unit_count
+FROM buildings b
+LEFT JOIN units u ON b.id = u.building_id
+GROUP BY b.id, b.name
+HAVING COUNT(u.id) = 0;
+-- Resultado esperado: 0 filas (opcional, pero recomendado)
+```
+
+### 7. Verificar Conexión desde Aplicación
+
+```bash
+# Ejecutar script de verificación
+node scripts/verify-supabase-connection.mjs
+
+# O ejecutar la app y probar endpoint
+npm run dev
+curl http://localhost:3000/api/buildings
 ```
 
 ---

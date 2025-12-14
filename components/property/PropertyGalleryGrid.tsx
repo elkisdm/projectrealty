@@ -17,7 +17,19 @@ const DEFAULT_BLUR = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAY
 export function PropertyGalleryGrid({ unit, building, className = "" }: PropertyGalleryGridProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [activeSlide, setActiveSlide] = useState(0);
   const lightboxRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const handleScroll = () => {
+    if (scrollRef.current) {
+      const { scrollLeft, clientWidth } = scrollRef.current;
+      const newIndex = Math.round(scrollLeft / clientWidth);
+      if (newIndex !== activeSlide && newIndex >= 0 && newIndex < finalImages.length) {
+        setActiveSlide(newIndex);
+      }
+    }
+  };
 
   // Combinar imágenes según prioridad: unitImages > tipologiaImages > areasComunesImages > buildingImages
   const getAllImages = (): string[] => {
@@ -118,9 +130,9 @@ export function PropertyGalleryGrid({ unit, building, className = "" }: Property
         role="region"
         aria-label="Galería de imágenes de la propiedad"
       >
-        {/* Imagen principal grande (arriba en mobile, izquierda en desktop) */}
+        {/* Desktop Layout: Imagen principal grande (Grid 1+4) */}
         <div
-          className="relative aspect-[4/3] md:aspect-square cursor-pointer group overflow-hidden rounded-t-2xl md:rounded-tl-2xl md:rounded-tr-none"
+          className="hidden md:block relative aspect-square cursor-pointer group overflow-hidden rounded-tl-2xl rounded-tr-none"
           onClick={() => openLightbox(0)}
           role="button"
           tabIndex={0}
@@ -136,7 +148,7 @@ export function PropertyGalleryGrid({ unit, building, className = "" }: Property
             src={mainImage}
             alt="Imagen principal de la propiedad"
             fill
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            sizes="(max-width: 1024px) 50vw, 33vw"
             className="object-cover transition-transform duration-500 group-hover:scale-105"
             placeholder="blur"
             blurDataURL={DEFAULT_BLUR}
@@ -151,8 +163,42 @@ export function PropertyGalleryGrid({ unit, building, className = "" }: Property
           )}
         </div>
 
-        {/* Grid de 4 imágenes pequeñas (abajo en mobile, derecha en desktop) */}
-        <div className="grid grid-cols-2 gap-2 md:gap-4">
+        {/* Mobile Layout: Horizontal Slider (Swipeable) */}
+        <div className="md:hidden relative aspect-[4/3] w-full group rounded-t-2xl overflow-hidden">
+          <div
+            ref={scrollRef}
+            className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide h-full w-full"
+            onScroll={handleScroll}
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
+            {finalImages.map((image, index) => (
+              <div
+                key={`mobile-slide-${index}`}
+                className="flex-shrink-0 w-full h-full relative snap-center"
+                onClick={() => openLightbox(index)}
+              >
+                <Image
+                  src={image}
+                  alt={`Imagen ${index + 1} de la propiedad`}
+                  fill
+                  className="object-cover"
+                  priority={index === 0}
+                  loading={index === 0 ? "eager" : "lazy"}
+                  sizes="100vw"
+                />
+              </div>
+            ))}
+          </div>
+
+          {/* Mobile only photo count badge */}
+          <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 pointer-events-none z-10">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /></svg>
+            {activeSlide + 1} / {finalImages.length}
+          </div>
+        </div>
+
+        {/* Grid de 4 imágenes pequeñas (Oculto en mobile para reducir altura, derecha en desktop) */}
+        <div className="hidden md:grid grid-cols-2 gap-2 md:gap-4">
           {smallImages.map((image, index) => {
             const imageIndex = index + 1;
             const isLast = index === smallImages.length - 1 && remainingCount > 0;

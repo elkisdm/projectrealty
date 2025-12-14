@@ -82,12 +82,20 @@ export function PropertyAboveFoldMobile({
                 </h1>
 
                 <div className="mt-3">
-                    <p className="text-2xl font-bold text-white:text-white">
-                        ${precioTotalMes.toLocaleString('es-CL')}
-                        <span className="text-sm font-normal text-gray-400:text-slate-400 ml-2">
-                            / mes (arriendo + GGCC)
-                        </span>
-                    </p>
+                    <div className="flex flex-col">
+                        <p className="text-2xl font-bold text-white:text-white">
+                            ${arriendo.toLocaleString('es-CL')}
+                            <span className="text-sm font-normal text-gray-400:text-slate-400 ml-2">
+                                / mes (arriendo)
+                            </span>
+                        </p>
+                        <p className="text-lg font-medium text-gray-300:text-slate-300">
+                            + ${ggcc.toLocaleString('es-CL')}
+                            <span className="text-sm font-normal text-gray-400:text-slate-400 ml-2">
+                                (gastos comunes)
+                            </span>
+                        </p>
+                    </div>
                     <p className="text-xs text-gray-400:text-slate-500 mt-1">
                         Respaldado por Assetplan
                     </p>
@@ -95,10 +103,11 @@ export function PropertyAboveFoldMobile({
 
                 {/* 4. Badges clave (scroll mínimo) */}
                 <div className="mt-4 flex flex-wrap items-center gap-2">
-                    {/* Badge principal: 0% comisión */}
+                    {/* Badge principal: 0% comisión - DESHABILITADO TEMPORALMENTE
                     <span className="px-3 py-1.5 rounded-full text-sm font-medium bg-cyan-50 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-400 border border-cyan-200 dark:border-cyan-500/40 shadow-sm">
                         0% comisión
                     </span>
+                    */}
 
                     {/* Chips de características */}
                     <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-900:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-700:border-gray-600 shadow-sm">
@@ -120,12 +129,13 @@ export function PropertyAboveFoldMobile({
                 </div>
             </div>
 
-            {/* 5. Sticky CTA (aparece tras ~120px) */}
+            {/* TODO: Reintegrar Sticky CTA cuando esté pulido
             <StickyCtaBar
                 price={precioTotalMes}
                 onScheduleVisit={onScheduleVisit}
                 onWhatsApp={onWhatsApp}
             />
+            */}
         </section>
     );
 }

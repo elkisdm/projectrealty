@@ -45,7 +45,11 @@
     "icon:generate": "ts-node --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' -r tsconfig-paths/register _workspace/scripts/icon-gen/cli-final.ts",
     "icon:validate": "ts-node --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' -r tsconfig-paths/register _workspace/scripts/icon-gen/cli-final.ts --validate",
     "icon:help": "ts-node --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' -r tsconfig-paths/register _workspace/scripts/icon-gen/cli-final.ts --help",
-    "upload:images": "node _workspace/scripts/upload-images-to-supabase.mjs"
+    "icon:validate": "ts-node --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' -r tsconfig-paths/register _workspace/scripts/icon-gen/cli-final.ts --validate",
+    "icon:help": "ts-node --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' -r tsconfig-paths/register _workspace/scripts/icon-gen/cli-final.ts --help",
+    "upload:images": "node _workspace/scripts/upload-images-to-supabase.mjs",
+    "migrate:assetplan": "node scripts/apply-migration.mjs",
+    "ingest:assetplan:new": "node scripts/import-assetplan-csv.mjs export\\ \\(10\\).csv"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.9",

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Bed, Bath, Square, Building2, Eye, Home, Heart } from "lucide-react";
+import { Bed, Bath, Square, Building2, Eye, Home, PawPrint, Sun, Ruler } from "lucide-react";
 import type { Unit, Building } from "@schemas/models";
 
 interface PropertyDetailTabProps {
@@ -10,15 +10,55 @@ interface PropertyDetailTabProps {
 }
 
 export function PropertyDetailTab({ unit, building }: PropertyDetailTabProps) {
+  // Helpers para parsear datos
+  const parseTipologia = (tipo: string) => {
+    const match = tipo.match(/(\d+)D(\d+)B/);
+    if (match) {
+      return {
+        dorms: parseInt(match[1]),
+        banos: parseInt(match[2])
+      };
+    }
+    return { dorms: 0, banos: 0 };
+  };
+
+  const mapOrientacion = (ori: string) => {
+    const map: Record<string, string> = {
+      "N": "Norte",
+      "S": "Sur",
+      "O": "Oriente",
+      "P": "Poniente",
+      "NO": "Nor-Poniente",
+      "NE": "Nor-Oriente",
+      "SO": "Sur-Poniente",
+      "SE": "Sur-Oriente"
+    };
+    return map[ori] || ori;
+  };
+
   // Información de la unidad
   const codigoUnidad = unit.codigoUnidad || unit.id;
   const estado = unit.estado || (unit.disponible ? "Disponible" : "No disponible");
   const tipologia = unit.tipologia || "N/A";
-  const dormitorios = unit.dormitorios || unit.bedrooms || 0;
-  const banos = unit.banos || unit.bathrooms || 0;
+
+  // Lógica inteligente para dormitorios y baños
+  let dormitorios = unit.dormitorios || unit.bedrooms || 0;
+  let banos = unit.banos || unit.bathrooms || 0;
+
+  if (dormitorios === 0 && banos === 0 && tipologia !== "N/A") {
+    const parsed = parseTipologia(tipologia);
+    dormitorios = parsed.dorms;
+    banos = parsed.banos;
+  }
+
+  // Superficie: Usar m2 totales, si no hay terraza explícita se asume incluida o 0
   const superficie = unit.m2 || unit.area_interior_m2 || 0;
+  const superficieTerraza = unit.m2_terraza || 0;
+
   const piso = unit.piso;
-  const vista = unit.vista || unit.orientacion;
+  const vistaRaw = unit.vista || unit.orientacion || "";
+  const vista = mapOrientacion(vistaRaw);
+
   const amoblado = unit.amoblado;
   const politicaMascotas = typeof unit.politicaMascotas === "string"
     ? unit.politicaMascotas
@@ -83,23 +123,40 @@ export function PropertyDetailTab({ unit, building }: PropertyDetailTabProps) {
           {superficie > 0 && (
             <div className="flex items-center gap-3">
               <div className="p-2 bg-[#8B6CFF]/10 rounded-lg">
-                <Square className="w-5 h-5 text-[#8B6CFF]" />
+                <Ruler className="w-5 h-5 text-[#8B6CFF]" />
               </div>
               <div>
-                <div className="text-sm text-subtext">Superficie</div>
-                <div className="text-lg font-bold text-text">{superficie} m²</div>
+                <div className="text-sm text-subtext">Superficie Total</div>
+                <div className="text-lg font-bold text-text">
+                  {superficie} m²
+                </div>
               </div>
             </div>
           )}
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-[#8B6CFF]/10 rounded-lg">
-              <Building2 className="w-5 h-5 text-[#8B6CFF]" />
+          {superficieTerraza > 0 && (
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-[#8B6CFF]/10 rounded-lg">
+                <Sun className="w-5 h-5 text-[#8B6CFF]" />
+              </div>
+              <div>
+                <div className="text-sm text-subtext">Terraza</div>
+                <div className="text-lg font-bold text-text">
+                  {superficieTerraza} m²
+                </div>
+              </div>
             </div>
-            <div>
-              <div className="text-sm text-subtext">Tipo</div>
-              <div className="text-lg font-bold text-text">{tipologia}</div>
+          )}
+          {!(dormitorios > 0 || banos > 0) && (
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-[#8B6CFF]/10 rounded-lg">
+                <Building2 className="w-5 h-5 text-[#8B6CFF]" />
+              </div>
+              <div>
+                <div className="text-sm text-subtext">Tipo</div>
+                <div className="text-lg font-bold text-text">{tipologia}</div>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
@@ -152,7 +209,7 @@ export function PropertyDetailTab({ unit, building }: PropertyDetailTabProps) {
         <div className="bg-card border border-border rounded-xl p-4">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-[#8B6CFF]/10 rounded-lg">
-              <Heart className="w-5 h-5 text-[#8B6CFF]" />
+              <PawPrint className="w-5 h-5 text-[#8B6CFF]" />
             </div>
             <div>
               <div className="text-sm text-subtext">Política Mascotas</div>

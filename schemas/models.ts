@@ -76,49 +76,51 @@ export const UnitSchema = z.object({
   vista: z.string().optional(), // Opcional: "Norte", "Sur", etc.
   amoblado: z.boolean().optional(),
   politicaMascotas: z.string().optional(),
-  precioFijoMeses: z.number().int().positive().optional(), // Ej: 3 (precio fijo primeros 3 meses)
+  // New fields from Assetplan CSV
+  gc: z.number().int().nonnegative().optional(),
+  total_mensual: z.number().int().positive().optional(),
+  orientacion: z.string().optional(),
+  m2_terraza: z.number().positive().optional(),
+  descuento_porcentaje: z.number().nonnegative().optional(),
+  meses_descuento: z.number().int().nonnegative().optional(),
+  garantia_meses: z.number().int().nonnegative().optional(),
+  garantia_cuotas: z.number().int().nonnegative().optional(),
+  rentas_necesarias: z.number().positive().optional(),
+  pet_friendly: z.boolean().optional(),
+  reajuste_meses: z.number().int().positive().optional(),
+  link_listing: z.string().url().optional(),
+  
+  // Legacy fields (kept for backward compatibility)
+  precioFijoMeses: z.number().int().positive().optional(),
   garantiaEnCuotas: z.boolean().optional(),
-  cuotasGarantia: z.number().int().min(1).max(12, {
-    message: "Cuotas de garantía deben estar entre 1-12"
-  }).optional(),
-  reajuste: z.string().optional(), // Ej: "cada 3 meses según UF"
+  cuotasGarantia: z.number().int().min(1).max(12).optional(),
+  reajuste: z.string().optional(),
   estado: z.enum(["Disponible", "Reservado", "Arrendado"]).optional(),
   estacionamiento: z.boolean().optional(),
   bodega: z.boolean().optional(),
   imagesTipologia: z.array(z.string().min(1)).optional(),
   imagesAreasComunes: z.array(z.string().min(1)).optional(),
-  // Extended fields (backward compatibility)
   codigoInterno: z.string().min(1).optional(),
-  bedrooms: z.number().int().nonnegative().optional(), // Alias de dormitorios (0 válido para Studio)
+  bedrooms: z.number().int().nonnegative().optional(), // Alias de dormitorios
   bathrooms: z.number().int().positive().optional(), // Alias de banos
-  area_interior_m2: z.number().positive().max(200, {
-    message: "Área interior debe estar entre 20-200 m²"
-  }).optional(),
-  area_exterior_m2: z.number().nonnegative().max(50, {
-    message: "Área exterior debe estar entre 0-50 m²"
-  }).optional(),
-  orientacion: z.enum(['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO']).optional(),
-  petFriendly: z.boolean().optional(),
+  area_interior_m2: z.number().positive().max(200).optional(),
+  area_exterior_m2: z.number().nonnegative().max(100).optional(), // Updated max
+  orientacionLegacy: z.enum(['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO']).optional(), // Renamed legacy
+  petFriendly: z.boolean().optional(), // Alias de pet_friendly
   parkingOptions: z.array(z.string().min(1)).optional(),
   storageOptions: z.array(z.string().min(1)).optional(),
-  status: z.enum(["available", "reserved", "rented"]).optional(), // Legacy status
+  status: z.enum(["available", "reserved", "rented"]).optional(),
   promotions: z.array(PromotionBadgeSchema).optional(),
-  // New v2 fields (backward compatibility)
+  
+  // New v2 fields
   parking_ids: z.string().nullable().optional(),
   storage_ids: z.string().nullable().optional(),
   parking_opcional: z.boolean().optional(),
   storage_opcional: z.boolean().optional(),
-  guarantee_installments: z.number().int().min(1).max(12, {
-    message: "Cuotas de garantía deben estar entre 1-12"
-  }).optional(),
-  guarantee_months: z.number().int().min(0).max(2, {
-    message: "Meses de garantía deben ser 0, 1 o 2"
-  }).optional(),
-  rentas_necesarias: z.number().positive().optional(),
-  link_listing: z.string().url().optional(),
+  guarantee_installments: z.number().int().min(1).max(12).optional(),
+  guarantee_months: z.number().int().min(0).max(2).optional(),
   renta_minima: z.number().positive().optional(),
   gastosComunes: z.number().int().nonnegative().optional(), // Alias de gastoComun
-  // Nota: precioFijoMeses ya está validado con .int().positive(), no se requiere refine adicional
 });
 
 // Schemas para campos extendidos de Building
@@ -331,6 +333,16 @@ export interface UnitDetailResponse {
 
 // Extended types for v2 compatibility
 export type UnitV2 = Unit & {
+  // New fields from Assetplan
+  gc?: number;
+  total_mensual?: number;
+  orientacion?: string;
+  m2_terraza?: number;
+  descuento_porcentaje?: number;
+  meses_descuento?: number;
+  pet_friendly?: boolean;
+  
+  // Existing fields
   parking_ids?: string | null;
   storage_ids?: string | null;
   parking_opcional?: boolean;

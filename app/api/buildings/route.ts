@@ -5,7 +5,7 @@ import { logger } from '@lib/logger';
 import { SearchFiltersSchema, type BuildingsResponse } from '@/schemas/models';
 
 // Rate limiter: 20 requests per minute per IP
-const rateLimiter = createRateLimiter({ windowMs: 60_000, max: 20 });
+const rateLimiter = createRateLimiter({ windowMs: 60_000, max: 60 });
 
 /**
  * GET /api/buildings
