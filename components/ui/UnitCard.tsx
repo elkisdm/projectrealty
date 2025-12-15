@@ -15,29 +15,29 @@ interface UnitCardProps {
 
 // Helper function to get unit image
 function getUnitImage(unit: Unit, building?: Building): string {
-  // Prioridad 1: Imágenes de la unidad (interior)
-  if (unit.images && Array.isArray(unit.images) && unit.images.length > 0) {
-    return unit.images[0];
-  }
-
-  // Prioridad 2: Imágenes de tipología
+  // Prioridad 1: Imágenes de tipología
   if (unit.imagesTipologia && Array.isArray(unit.imagesTipologia) && unit.imagesTipologia.length > 0) {
     return unit.imagesTipologia[0];
   }
 
-  // Prioridad 3: Imágenes de áreas comunes
+  // Prioridad 2: Imágenes de áreas comunes del edificio
   if (unit.imagesAreasComunes && Array.isArray(unit.imagesAreasComunes) && unit.imagesAreasComunes.length > 0) {
     return unit.imagesAreasComunes[0];
   }
 
-  // Prioridad 4: Galería del edificio
+  // Prioridad 3: Galería del edificio
   if (building?.gallery && building.gallery.length > 0) {
     return building.gallery[0];
   }
 
-  // Prioridad 5: CoverImage del edificio
+  // Prioridad 4: CoverImage del edificio
   if (building?.coverImage) {
     return building.coverImage;
+  }
+
+  // Prioridad 5: Imágenes de la unidad (interior) - solo si no hay imágenes del edificio
+  if (unit.images && Array.isArray(unit.images) && unit.images.length > 0) {
+    return unit.images[0];
   }
 
   // Fallback a imagen por defecto
@@ -165,15 +165,19 @@ export function UnitCard({
       </div>
 
       {/* Content Section */}
-      <div className="p-5">
+      {/* Content Section */}
+      <div className="p-4">
         {/* Header with name and location */}
-        <div className="mb-2">
-          <h3 className="text-lg font-bold text-text leading-tight truncate">
-            {buildingName}
+        <div className="mb-1.5">
+          <h3 className="text-base font-bold text-text leading-snug truncate" title={`Departamento ${unit.codigoUnidad.replace(/\D/g, '') || unit.codigoUnidad} de ${buildingName}`}>
+            Dept {unit.codigoUnidad.replace(/\D/g, '') || unit.codigoUnidad} de {buildingName}
           </h3>
-          <p className="text-sm text-subtext flex items-center gap-1 mt-1 truncate">
+          <p className="text-sm font-medium text-text mt-0.5 truncate">
+            {unit.tipologia}
+          </p>
+          <p className="text-xs text-subtext flex items-center gap-1 mt-0.5 truncate">
             <MapPin className="w-3 h-3 flex-shrink-0" aria-hidden="true" />
-            {comuna} • {unit.tipologia}
+            {comuna} - {building?.address || ''}
           </p>
         </div>
 
@@ -181,22 +185,25 @@ export function UnitCard({
         <div className="my-3 h-px w-full bg-border" />
 
         {/* Price Section */}
+        {/* Price Section */}
         <div className="flex justify-between items-end">
-          <div>
-            <p className="text-2xl font-bold text-text tracking-tight tabular-nums">
-              {formatPrice(unit.price)}
-              <span className="text-sm font-normal text-subtext"> /mes</span>
-            </p>
-            {gastosComunes > 0 && (
-              <p className="text-sm font-medium text-text-muted mt-1">
-                + {formatPrice(gastosComunes)} GC
+          <div className="flex flex-col">
+            <div className="flex items-baseline gap-1 flex-wrap">
+              <p className="text-xl font-bold text-text tracking-tight tabular-nums">
+                {formatPrice(unit.price)}
+                <span className="text-xs font-normal text-subtext">/mes</span>
               </p>
-            )}
+              {gastosComunes > 0 && (
+                <p className="text-xs font-medium text-text-muted">
+                  + {formatPrice(gastosComunes)} GC
+                </p>
+              )}
+            </div>
           </div>
 
           {/* Call to Action (Hover Desktop) */}
           <div className="opacity-0 transform translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 hidden lg:block">
-            <span className="text-[#8B6CFF] font-semibold text-sm">
+            <span className="text-[#8B6CFF] font-semibold text-xs">
               Ver unidad →
             </span>
           </div>

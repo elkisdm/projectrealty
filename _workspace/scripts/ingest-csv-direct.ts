@@ -44,6 +44,24 @@ function toAreaM2(value: string | undefined): number | undefined {
   return n;
 }
 
+// Extraer dormitorios de la tipología si no viene en el CSV
+function extractBedroomsFromTipologia(tipologia: string | null): number | null {
+  if (!tipologia) return null;
+  const tipologiaLower = tipologia.toLowerCase();
+  if (tipologiaLower.includes('estudio') || tipologiaLower.includes('studio')) return 0;
+  const match = tipologia.match(/^(\d+)D/);
+  if (match) return parseInt(match[1], 10);
+  return null;
+}
+
+// Extraer baños de la tipología si no viene en el CSV
+function extractBathroomsFromTipologia(tipologia: string | null): number | null {
+  if (!tipologia) return null;
+  const match = tipologia.match(/(\d+)B$/);
+  if (match) return parseInt(match[1], 10);
+  return null;
+}
+
 function getEnvOrThrow(name: string): string {
   const value = process.env[name];
   if (!value) throw new Error(`Missing required environment variable: ${name}`);
@@ -95,6 +113,24 @@ async function ensureBuilding(
   return (data as { id: string }).id;
 }
 
+// Extraer dormitorios de la tipología si no viene en el CSV
+function extractBedroomsFromTipologia(tipologia: string | null): number | null {
+  if (!tipologia) return null;
+  const tipologiaLower = tipologia.toLowerCase();
+  if (tipologiaLower.includes('estudio') || tipologiaLower.includes('studio')) return 0;
+  const match = tipologia.match(/^(\d+)D/);
+  if (match) return parseInt(match[1], 10);
+  return null;
+}
+
+// Extraer baños de la tipología si no viene en el CSV
+function extractBathroomsFromTipologia(tipologia: string | null): number | null {
+  if (!tipologia) return null;
+  const match = tipologia.match(/(\d+)B$/);
+  if (match) return parseInt(match[1], 10);
+  return null;
+}
+
 async function upsertUnit(
   supabase: SupabaseClient,
   buildingId: string,
@@ -102,8 +138,11 @@ async function upsertUnit(
 ): Promise<boolean> {
   const unidad = (row["Unidad"] || row["Depto"] || row["Departamento"] || "").trim();
   const tipologia = (row["Tipologia"] || row["Tipología"] || "").trim() || null;
-  const bedrooms = toNumber(row["Dormitorios"] as string) ?? undefined;
-  const bathrooms = toNumber(row["Baños"] as string) ?? undefined;
+  const bedroomsFromCsv = toNumber(row["Dormitorios"] as string);
+  const bathroomsFromCsv = toNumber(row["Baños"] as string);
+  // Extraer de tipología si no viene en CSV
+  const bedrooms = bedroomsFromCsv ?? extractBedroomsFromTipologia(tipologia);
+  const bathrooms = bathroomsFromCsv ?? extractBathroomsFromTipologia(tipologia);
   const areaDepto = toAreaM2((row["m2 Depto"] || row["M2 Depto"]) as string);
   const areaTerraza = toAreaM2((row["m2 Terraza"] || row["M2 Terraza"]) as string);
   const orientacion = (row["Orientacion"] || row["Orientación"] || "").trim() || null;
@@ -120,8 +159,8 @@ async function upsertUnit(
     building_id: buildingId,
     unidad: unidad || "s/n",
     tipologia,
-    bedrooms: typeof bedrooms === "number" ? bedrooms : null,
-    bathrooms: typeof bathrooms === "number" ? bathrooms : null,
+    bedrooms: bedrooms !== null && bedrooms !== undefined ? bedrooms : null,
+    bathrooms: bathrooms !== null && bathrooms !== undefined ? bathrooms : null,
     area_m2: typeof areaDepto === "number" ? areaDepto : null,
     area_interior_m2: typeof areaDepto === "number" ? areaDepto : null,
     area_exterior_m2: typeof areaTerraza === "number" ? areaTerraza : null,

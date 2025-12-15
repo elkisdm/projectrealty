@@ -87,26 +87,36 @@ export function usePropertyUnit({ building, defaultUnitId }: UsePropertyUnitProp
   );
 
   // Detalles de la unidad seleccionada
-  const unitDetails: UnitDetails = useMemo(() => ({
-    dormitorios: selectedUnit?.bedrooms || 1,
-    banos: selectedUnit?.bathrooms || 1,
-    m2: selectedUnit?.m2 || 45,
-    area_interior: selectedUnit?.area_interior_m2,
-    area_exterior: selectedUnit?.area_exterior_m2,
-    tipologia: selectedUnit?.tipologia || "1D1B",
-    piso: String(selectedUnit?.piso || "N/A"),
-    orientacion: selectedUnit?.orientacion || "N/A",
-    estacionamiento: selectedUnit?.estacionamiento || false,
-    bodega: selectedUnit?.bodega || false,
-    amoblado: selectedUnit?.amoblado || false,
-    petFriendly: selectedUnit?.petFriendly || false,
-    parkingOptions: selectedUnit?.parkingOptions || [],
-    storageOptions: selectedUnit?.storageOptions || [],
-    codigoInterno: selectedUnit?.codigoInterno,
-    garantia_cuotas: selectedUnit?.guarantee_installments,
-    garantia_meses: selectedUnit?.guarantee_months,
-    renta_minima: selectedUnit?.renta_minima
-  }), [selectedUnit]);
+  // Regla especial: Estudios siempre tienen 1 ambiente + 1 baño
+  const unitDetails: UnitDetails = useMemo(() => {
+    const tipologia = selectedUnit?.tipologia || "1D1B";
+    const isEstudio = tipologia === "Studio" || tipologia === "Estudio";
+    
+    return {
+      dormitorios: isEstudio 
+        ? 1  // Estudios siempre tienen 1 ambiente
+        : (selectedUnit?.dormitorios || selectedUnit?.bedrooms || 1),
+      banos: isEstudio 
+        ? 1  // Estudios siempre tienen 1 baño
+        : (selectedUnit?.banos || selectedUnit?.bathrooms || 1),
+      m2: selectedUnit?.m2 || 45,
+      area_interior: selectedUnit?.area_interior_m2,
+      area_exterior: selectedUnit?.area_exterior_m2,
+      tipologia: selectedUnit?.tipologia || "1D1B",
+      piso: String(selectedUnit?.piso || "N/A"),
+      orientacion: selectedUnit?.orientacion || "N/A",
+      estacionamiento: selectedUnit?.estacionamiento || false,
+      bodega: selectedUnit?.bodega || false,
+      amoblado: selectedUnit?.amoblado || false,
+      petFriendly: selectedUnit?.petFriendly || false,
+      parkingOptions: selectedUnit?.parkingOptions || [],
+      storageOptions: selectedUnit?.storageOptions || [],
+      codigoInterno: selectedUnit?.codigoInterno,
+      garantia_cuotas: selectedUnit?.guarantee_installments,
+      garantia_meses: selectedUnit?.guarantee_months,
+      renta_minima: selectedUnit?.renta_minima
+    };
+  }, [selectedUnit]);
 
   // Función para calcular el primer pago optimizada
   const calculateFirstPayment = useCallback((startDate: Date): FirstPaymentCalculation => {

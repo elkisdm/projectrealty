@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, MessageCircle, DollarSign } from "lucide-react";
 import { track, ANALYTICS_EVENTS } from "@lib/analytics";
+import { useReducedMotion } from "@hooks/useReducedMotion";
 
 interface StickyCtaBarProps {
   priceMonthly: number;
@@ -22,13 +23,14 @@ export const StickyCtaBar: React.FC<StickyCtaBarProps> = ({
   propertyId,
   commune
 }) => {
-  const [, setIsScrolled] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const prefersReducedMotion = useReducedMotion();
 
-  // Intersection Observer para detectar scroll (QuintoAndar pattern: 100-150px)
+  // Intersection Observer para detectar scroll (QuintoAndar pattern: 100-150px, usando 120px)
   useEffect(() => {
     const handleScroll = () => {
       const scrollY = window.scrollY;
-      setIsScrolled(scrollY > 100); // Reducido de 120px a 100px para más urgencia
+      setIsScrolled(scrollY > 120);
     };
 
     // Throttle scroll events for performance
@@ -67,20 +69,22 @@ export const StickyCtaBar: React.FC<StickyCtaBarProps> = ({
     onWhatsApp();
   }, [onWhatsApp, propertyId, commune, priceMonthly]);
 
-  const shouldShow = true; // Temporal: mostrar siempre para testing
-
   return (
     <AnimatePresence>
-      {shouldShow && (
+      {isScrolled && (
         <motion.div
-          initial={{ y: 100, opacity: 0 }}
+          initial={{ y: prefersReducedMotion ? 0 : 100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 100, opacity: 0 }}
-          transition={{
-            type: "spring",
-            stiffness: 300,
-            damping: 30
-          }}
+          exit={{ y: prefersReducedMotion ? 0 : 100, opacity: 0 }}
+          transition={
+            prefersReducedMotion
+              ? { duration: 0.2 }
+              : {
+                  type: "spring",
+                  stiffness: 300,
+                  damping: 30
+                }
+          }
           className="fixed bottom-0 left-0 right-0 z-50 lg:hidden"
           role="navigation"
           aria-label="Acciones rápidas para agendar visita"
@@ -108,34 +112,38 @@ export const StickyCtaBar: React.FC<StickyCtaBarProps> = ({
                 <div className="flex gap-2 flex-1">
                   <motion.button
                     onClick={handleBookClick}
-                    className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-2 sm:py-3 px-3 sm:px-4 rounded-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-900 relative overflow-hidden group shadow-lg hover:shadow-xl"
+                    className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold min-h-[44px] py-3 px-3 sm:px-4 rounded-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-900 relative overflow-hidden group shadow-lg hover:shadow-xl"
                     aria-label="Agendar visita a la propiedad"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
+                    whileHover={prefersReducedMotion ? undefined : { scale: 1.02 }}
+                    whileTap={prefersReducedMotion ? undefined : { scale: 0.98 }}
                   >
-                    <motion.div
-                      className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0"
-                      initial={{ x: "-100%" }}
-                      whileHover={{ x: "100%" }}
-                      transition={{ duration: 0.6, ease: "easeInOut" }}
-                    />
+                    {!prefersReducedMotion && (
+                      <motion.div
+                        className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0"
+                        initial={{ x: "-100%" }}
+                        whileHover={{ x: "100%" }}
+                        transition={{ duration: 0.6, ease: "easeInOut" }}
+                      />
+                    )}
                     <Calendar className="w-4 h-4 relative z-10" aria-hidden="true" />
                     <span className="text-sm relative z-10">Agendar visita</span>
                   </motion.button>
 
                   <motion.button
                     onClick={handleWhatsAppClick}
-                    className="flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-semibold py-2 sm:py-3 px-3 sm:px-4 rounded-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-900 relative overflow-hidden group shadow-lg hover:shadow-xl"
+                    className="flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-semibold min-h-[44px] min-w-[44px] py-3 px-3 sm:px-4 rounded-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-900 relative overflow-hidden group shadow-lg hover:shadow-xl"
                     aria-label="Contactar por WhatsApp"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
+                    whileHover={prefersReducedMotion ? undefined : { scale: 1.02 }}
+                    whileTap={prefersReducedMotion ? undefined : { scale: 0.98 }}
                   >
-                    <motion.div
-                      className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0"
-                      initial={{ x: "-100%" }}
-                      whileHover={{ x: "100%" }}
-                      transition={{ duration: 0.6, ease: "easeInOut" }}
-                    />
+                    {!prefersReducedMotion && (
+                      <motion.div
+                        className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0"
+                        initial={{ x: "-100%" }}
+                        whileHover={{ x: "100%" }}
+                        transition={{ duration: 0.6, ease: "easeInOut" }}
+                      />
+                    )}
                     <MessageCircle className="w-4 h-4 relative z-10" aria-hidden="true" />
                     <span className="sr-only relative z-10">WhatsApp</span>
                   </motion.button>

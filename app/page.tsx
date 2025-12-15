@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import HeroV2 from "@/components/marketing/HeroV2";
-import { SearchSection } from "@/components/marketing/SearchSection";
 import { FeaturedUnitsSection } from "@/components/marketing/FeaturedUnitsSection";
 import { BenefitsSection } from "@/components/marketing/BenefitsSection";
+import { StickySearchWrapper } from "@/components/marketing/StickySearchWrapper";
+import { SearchFormProvider } from "@/components/marketing/SearchFormContext";
 import { generateBaseMetadata } from "@/lib/seo/metadata";
 import { HomePageTracker } from "./HomePageTracker";
 import { getAllBuildings } from "@/lib/data";
@@ -24,22 +25,31 @@ export default async function Home() {
     getAvailableUnitsCount(),
   ]);
 
+  // Calcular precio mínimo de todas las unidades disponibles
+  const allAvailableUnits = allBuildings.flatMap(building =>
+    building.units.filter(unit => unit.disponible && unit.price > 0)
+  );
+  const minPrice = allAvailableUnits.length > 0
+    ? Math.min(...allAvailableUnits.map(unit => unit.price))
+    : undefined;
+
   // Comunas fijas para el rotador (no dependen de la BD)
   const communes = ['Santiago', 'Ñuñoa', 'Las Condes', 'Providencia', 'La Florida', 'San Miguel', 'Macul'];
 
   return (
-    <main className="min-h-screen bg-bg text-text">
-      <HomePageTracker />
-      <HeroV2 communes={communes} availableCount={availableCount} />
+    <SearchFormProvider>
+      <main className="min-h-screen bg-bg text-text">
+        <HomePageTracker />
+        {/* Sticky Search Bar - aparece cuando el hero completo ha pasado */}
+        <StickySearchWrapper heroId="hero-section" />
+        <HeroV2 communes={communes} availableCount={availableCount} minPrice={minPrice} />
 
-      {/* Sección de búsqueda */}
-      <SearchSection />
+        {/* Departamentos destacados */}
+        <FeaturedUnitsSection />
 
-      {/* Departamentos destacados */}
-      <FeaturedUnitsSection />
-
-      {/* Beneficios */}
-      <BenefitsSection />
-    </main>
+        {/* Beneficios */}
+        <BenefitsSection />
+      </main>
+    </SearchFormProvider>
   );
 }

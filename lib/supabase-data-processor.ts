@@ -511,9 +511,8 @@ class SupabaseDataProcessor {
       query = query.lte('price', filters.precioMax);
     }
 
-    if (filters.dormitorios !== undefined) {
-      query = query.eq('bedrooms', filters.dormitorios);
-    }
+    // NO filtrar por bedrooms en Supabase porque muchas unidades tienen bedrooms: null
+    // Filtrar solo por tipología en memoria después de obtener los datos
 
     // Para filtros de búsqueda texto, necesitamos obtener datos primero y filtrar después
     // ya que los campos anidados no se pueden filtrar directamente en Supabase
@@ -548,6 +547,28 @@ class SupabaseDataProcessor {
     // Filtrar por comuna en memoria (si se especifica)
     if (filters.comuna) {
       filteredData = filteredData.filter(u => u.buildings?.comuna?.toLowerCase() === filters.comuna!.toLowerCase());
+    }
+
+    // Filtrar por dormitorios - filtrar SOLO por tipología porque bedrooms suele ser null
+    // Las unidades tienen tipologías como "Studio", "1D1B", "2D1B", "2D2B", "3D2B"
+    if (filters.dormitorios !== undefined) {
+      filteredData = filteredData.filter(u => {
+        // Filtrar por tipología según el número de dormitorios
+        if (filters.dormitorios === 0) {
+          // Estudio: tipología "Studio" o "Estudio"
+          return u.tipologia?.toLowerCase() === 'studio' || u.tipologia?.toLowerCase() === 'estudio';
+        } else if (filters.dormitorios === 1) {
+          // 1 dormitorio: tipología "1D1B"
+          return u.tipologia === '1D1B';
+        } else if (filters.dormitorios === 2) {
+          // 2 dormitorios: tipologías "2D1B" o "2D2B"
+          return u.tipologia === '2D1B' || u.tipologia === '2D2B';
+        } else if (filters.dormitorios === 3) {
+          // 3 dormitorios: tipología "3D2B"
+          return u.tipologia === '3D2B';
+        }
+        return false;
+      });
     }
 
     // Filtrar por búsqueda de texto (si se especifica)

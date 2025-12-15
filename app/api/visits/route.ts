@@ -56,7 +56,7 @@ class MockDatabase {
   }
   
   // Simular SELECT ... FOR UPDATE
-  async lockSlot(slotId: string): Promise<VisitSlot | null> {
+  async lockSlot(slotId: string, listingId?: string): Promise<VisitSlot | null> {
     const slot = mockSlots[slotId];
     
     // Si es un slot mock (creado en el frontend), aceptarlo siempre
@@ -64,18 +64,32 @@ class MockDatabase {
       // Simular delay de base de datos
       await new Promise(resolve => setTimeout(resolve, 50));
       
-      // Crear un slot mock válido
-      const mockSlot: VisitSlot = {
-        id: slotId,
-        listingId: slotId.split('-')[2], // Extraer listingId del slotId
-        startTime: slotId.split('-')[3] + 'T' + slotId.split('-')[4] + ':00-03:00',
-        endTime: slotId.split('-')[3] + 'T' + slotId.split('-')[4] + ':30:00-03:00',
-        status: 'open',
-        source: 'system',
-        createdAt: new Date().toISOString()
-      };
+      // Parsear mock-slot-{date}-{time}
+      // Ejemplo: mock-slot-2025-01-15-09:00
+      // El formato es: mock-slot-YYYY-MM-DD-HH:MM
+      const withoutPrefix = slotId.replace('mock-slot-', '');
+      // Buscar el patrón de tiempo (HH:MM) al final
+      const timeMatch = withoutPrefix.match(/-(\d{2}:\d{2})$/);
       
-      return mockSlot;
+      if (timeMatch) {
+        const time = timeMatch[1]; // HH:MM
+        const datePart = withoutPrefix.replace(`-${time}`, ''); // YYYY-MM-DD
+        
+        const mockSlot: VisitSlot = {
+          id: slotId,
+          listingId: listingId || 'unknown',
+          startTime: `${datePart}T${time}:00-03:00`,
+          endTime: `${datePart}T${time}:30:00-03:00`,
+          status: 'open',
+          source: 'system',
+          createdAt: new Date().toISOString()
+        };
+        
+        // Guardar en mockSlots para referencia futura
+        mockSlots[slotId] = mockSlot;
+        
+        return mockSlot;
+      }
     }
     
     if (!slot) return null;
@@ -92,21 +106,38 @@ class MockDatabase {
   }
   
   // Simular transacción
-  async createVisitTransaction(visitData: CreateVisitRequest): Promise<Visit> {
-    // 1. Bloquear el slot
-    let slot = await this.lockSlot(visitData.slotId);
+  async createVisitTransaction(visitData: CreateVisitRequest): Promise<{ visit: Visit; slot: VisitSlot }> {
+    // 1. Bloquear el slot (pasar listingId para mock slots)
+    let slot = await this.lockSlot(visitData.slotId, visitData.listingId);
     
     // Si es un slot mock y no se encontró, crearlo automáticamente
     if (!slot && visitData.slotId.startsWith('mock-slot-')) {
-      slot = {
-        id: visitData.slotId,
-        listingId: visitData.listingId,
-        startTime: visitData.slotId.split('-')[3] + 'T' + visitData.slotId.split('-')[4] + ':00-03:00',
-        endTime: visitData.slotId.split('-')[3] + 'T' + visitData.slotId.split('-')[4] + ':30:00-03:00',
-        status: 'open',
-        source: 'system',
-        createdAt: new Date().toISOString()
-      };
+      // Parsear mock-slot-{date}-{time}
+      // Ejemplo: mock-slot-2025-01-15-09:00
+      const withoutPrefix = visitData.slotId.replace('mock-slot-', '');
+      const timeMatch = withoutPrefix.match(/-(\d{2}:\d{2})$/);
+      
+      if (timeMatch) {
+        const time = timeMatch[1]; // HH:MM
+        const datePart = withoutPrefix.replace(`-${time}`, ''); // YYYY-MM-DD
+        
+        slot = {
+          id: visitData.slotId,
+          listingId: visitData.listingId,
+          startTime: `${datePart}T${time}:00-03:00`,
+          endTime: `${datePart}T${time}:30:00-03:00`,
+          status: 'open',
+          source: 'system',
+          createdAt: new Date().toISOString()
+        };
+        
+        // Guardar en mockSlots
+        mockSlots[visitData.slotId] = slot;
+      } else {
+        // Si no se puede parsear el mock slot, lanzar error descriptivo
+        logger.error('❌ Error parseando mock slot:', { slotId: visitData.slotId });
+        throw new Error('Slot no disponible: formato inválido');
+      }
     }
     
     if (!slot) {
@@ -151,7 +182,7 @@ class MockDatabase {
     // Limpiar cache expirado
     this.cleanExpiredIdempotency();
     
-    return visit;
+    return { visit, slot };
   }
   
   private cleanExpiredIdempotency() {
@@ -274,18 +305,12 @@ export async function POST(request: NextRequest) {
     db.initializeMockData();
     
     // Crear visita en transacción
-    const visit = await db.createVisitTransaction(visitData);
+    const { visit, slot } = await db.createVisitTransaction(visitData);
     
     // Obtener agente
     const agent = mockAgents[visit.agentId];
     if (!agent) {
       throw new Error('Agente no encontrado');
-    }
-    
-    // Obtener slot
-    const slot = mockSlots[visit.slotId];
-    if (!slot) {
-      throw new Error('Slot no encontrado');
     }
     
     // Preparar respuesta

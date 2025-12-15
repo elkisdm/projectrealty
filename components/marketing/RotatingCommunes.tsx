@@ -29,18 +29,43 @@ export function RotatingCommunes({
     return Array.from(new Set(communes.filter((c) => c && c.trim())));
   }, [communes]);
 
+  // Memoizar la longitud para evitar re-renders innecesarios
+  const validCommunesLength = validCommunes.length;
+
   // Rotación automática
   useEffect(() => {
-    if (prefersReducedMotion || isPaused || validCommunes.length <= 1) {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/bf5372fb-b70d-4713-b992-51094d7d9401',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'RotatingCommunes.tsx:35',message:'useEffect ENTRY',data:{prefersReducedMotion,isPaused,validCommunesLength,interval},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'F'})}).catch(()=>{});
+    // #endregion
+    if (prefersReducedMotion || isPaused || validCommunesLength <= 1) {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/bf5372fb-b70d-4713-b992-51094d7d9401',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'RotatingCommunes.tsx:37',message:'useEffect EARLY RETURN',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'F'})}).catch(()=>{});
+      // #endregion
       return;
     }
 
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/bf5372fb-b70d-4713-b992-51094d7d9401',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'RotatingCommunes.tsx:42',message:'setInterval BEFORE',data:{validCommunesLength},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'F'})}).catch(()=>{});
+    // #endregion
     const timer = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % validCommunes.length);
+      setCurrentIndex((prev) => {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/bf5372fb-b70d-4713-b992-51094d7d9401',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'RotatingCommunes.tsx:47',message:'setCurrentIndex CALL',data:{prev,validCommunesLength},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'F'})}).catch(()=>{});
+        // #endregion
+        return (prev + 1) % validCommunesLength;
+      });
     }, interval);
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/bf5372fb-b70d-4713-b992-51094d7d9401',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'RotatingCommunes.tsx:52',message:'setInterval AFTER',data:{timerId:typeof timer},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'F'})}).catch(()=>{});
+    // #endregion
 
-    return () => clearInterval(timer);
-  }, [interval, validCommunes.length, prefersReducedMotion, isPaused]);
+    return () => {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/bf5372fb-b70d-4713-b992-51094d7d9401',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'RotatingCommunes.tsx:55',message:'CLEANUP clearInterval',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'F'})}).catch(()=>{});
+      // #endregion
+      clearInterval(timer);
+    };
+  }, [interval, validCommunesLength, prefersReducedMotion, isPaused]);
 
   // Variantes de animación "Slot Machine" Pro
   const variants = {

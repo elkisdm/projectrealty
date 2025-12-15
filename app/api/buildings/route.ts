@@ -58,12 +58,27 @@ export async function GET(request: NextRequest) {
 
     // Obtener y validar query params con Zod
     const { searchParams } = new URL(request.url);
+    
+    // Convertir dormitorios: "Estudio" -> 0, números -> número
+    const dormitoriosParam = searchParams.get('dormitorios');
+    let dormitorios: number | undefined = undefined;
+    if (dormitoriosParam) {
+      if (dormitoriosParam.toLowerCase() === 'estudio') {
+        dormitorios = 0;
+      } else {
+        const parsed = parseInt(dormitoriosParam, 10);
+        if (!isNaN(parsed)) {
+          dormitorios = parsed;
+        }
+      }
+    }
+    
     const queryParams = {
       q: searchParams.get('q') || undefined,
       comuna: searchParams.get('comuna') || undefined,
       precioMin: searchParams.get('precioMin') ? parseInt(searchParams.get('precioMin') || '0', 10) : undefined,
       precioMax: searchParams.get('precioMax') ? parseInt(searchParams.get('precioMax') || '0', 10) : undefined,
-      dormitorios: searchParams.get('dormitorios') ? parseInt(searchParams.get('dormitorios') || '0', 10) : undefined,
+      dormitorios,
       page: searchParams.get('page') ? parseInt(searchParams.get('page') || '1', 10) : undefined,
       limit: searchParams.get('limit') ? parseInt(searchParams.get('limit') || '12', 10) : undefined,
     };

@@ -31,31 +31,36 @@ export function PropertyGalleryGrid({ unit, building, className = "" }: Property
     }
   };
 
-  // Combinar imágenes según prioridad: unitImages > tipologiaImages > areasComunesImages > buildingImages
+  // Combinar imágenes según prioridad: tipologiaImages > areasComunesImages > buildingImages > unitImages
   const getAllImages = (): string[] => {
     const images: string[] = [];
 
-    // Prioridad 1: Imágenes de la unidad (interior)
-    if (unit?.images && Array.isArray(unit.images) && unit.images.length > 0) {
-      images.push(...unit.images);
-    }
-
-    // Prioridad 2: Imágenes de tipología
+    // Prioridad 1: Imágenes de tipología
     if (unit?.imagesTipologia && Array.isArray(unit.imagesTipologia) && unit.imagesTipologia.length > 0) {
       images.push(...unit.imagesTipologia);
     }
 
-    // Prioridad 3: Imágenes de áreas comunes
+    // Prioridad 2: Imágenes de áreas comunes del edificio
     if (unit?.imagesAreasComunes && Array.isArray(unit.imagesAreasComunes) && unit.imagesAreasComunes.length > 0) {
       images.push(...unit.imagesAreasComunes);
     }
 
-    // Prioridad 4: Imágenes del edificio
+    // Prioridad 3: Imágenes del edificio (galería)
     if (building.gallery && Array.isArray(building.gallery) && building.gallery.length > 0) {
       images.push(...building.gallery);
     }
 
-    // Fallback: coverImage del edificio
+    // Prioridad 4: CoverImage del edificio
+    if (building.coverImage) {
+      images.push(building.coverImage);
+    }
+
+    // Prioridad 5: Imágenes de la unidad (interior) - solo si no hay imágenes del edificio
+    if (unit?.images && Array.isArray(unit.images) && unit.images.length > 0) {
+      images.push(...unit.images);
+    }
+
+    // Fallback: si no hay imágenes, usar coverImage del edificio
     if (images.length === 0 && building.coverImage) {
       images.push(building.coverImage);
     }

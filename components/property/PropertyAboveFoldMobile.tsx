@@ -1,8 +1,10 @@
 "use client";
-import React, { useState, useEffect } from "react";
-import { Share2, Heart, MessageCircle } from "lucide-react";
+import React, { useState } from "react";
+import Image from "next/image";
+import { Share2, Heart } from "lucide-react";
 import type { Building, Unit } from "@schemas/models";
 import { PropertyGalleryGrid } from "./PropertyGalleryGrid";
+import { StickyCtaBar } from "@components/ui/StickyCtaBar";
 
 interface PropertyAboveFoldMobileProps {
     building: Building;
@@ -81,24 +83,38 @@ export function PropertyAboveFoldMobile({
                     {tipologia} luminoso en {building.comuna}
                 </h1>
 
-                <div className="mt-3">
+                <div className="mt-3 flex items-end justify-between gap-4">
                     <div className="flex flex-col">
                         <p className="text-2xl font-bold text-white:text-white">
                             ${arriendo.toLocaleString('es-CL')}
                             <span className="text-sm font-normal text-gray-400:text-slate-400 ml-2">
-                                / mes (arriendo)
+                                / mes
                             </span>
                         </p>
                         <p className="text-lg font-medium text-gray-300:text-slate-300">
                             + ${ggcc.toLocaleString('es-CL')}
                             <span className="text-sm font-normal text-gray-400:text-slate-400 ml-2">
-                                (gastos comunes)
+                                (GGCC)
                             </span>
                         </p>
                     </div>
-                    <p className="text-xs text-gray-400:text-slate-500 mt-1">
-                        Respaldado por Assetplan
-                    </p>
+
+                    <div className="flex flex-col items-end shrink-0 pb-1">
+                        <span className="text-[10px] uppercase tracking-wider text-gray-500 font-medium mb-1">
+                            Operado por
+                        </span>
+                        <div className="flex items-center">
+                            <div className="relative w-24 h-6">
+                                <Image
+                                    src="/images/assetplan-logo.svg"
+                                    alt="AssetPlan"
+                                    fill
+                                    className="object-contain object-right"
+                                    priority
+                                />
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 {/* 4. Badges clave (scroll mínimo) */}
@@ -129,70 +145,14 @@ export function PropertyAboveFoldMobile({
                 </div>
             </div>
 
-            {/* TODO: Reintegrar Sticky CTA cuando esté pulido
+            {/* Sticky CTA Bar - aparece después de scroll > 120px */}
             <StickyCtaBar
-                price={precioTotalMes}
-                onScheduleVisit={onScheduleVisit}
-                onWhatsApp={onWhatsApp}
+                priceMonthly={precioTotalMes}
+                onBook={onScheduleVisit}
+                onWhatsApp={onWhatsApp || (() => {})}
+                propertyId={selectedUnit?.id}
+                commune={building.comuna}
             />
-            */}
         </section>
-    );
-}
-
-// Componente StickyCtaBar separado para mejor organización
-interface StickyCtaBarProps {
-    price: number;
-    onScheduleVisit: () => void;
-    onWhatsApp?: () => void;
-}
-
-function StickyCtaBar({ price, onScheduleVisit, onWhatsApp }: StickyCtaBarProps) {
-    const [isVisible, setIsVisible] = useState(false);
-
-    useEffect(() => {
-        const handleScroll = () => {
-            const scrollY = window.scrollY;
-            setIsVisible(scrollY > 120);
-        };
-
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
-
-    if (!isVisible) return null;
-
-    return (
-        <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-gray-900/95 backdrop-blur border-t border-gray-700:border-gray-700 shadow-lg px-4 py-3 safe-area-bottom">
-            <div className="flex items-center justify-between gap-4">
-                {/* Mini precio a la izquierda */}
-                <div className="flex-shrink-0">
-                    <p className="text-lg font-bold text-white:text-white">
-                        ${price.toLocaleString('es-CL')}
-                    </p>
-                    <p className="text-xs text-gray-400:text-slate-500">/ mes</p>
-                </div>
-
-                {/* CTAs */}
-                <div className="flex gap-3 flex-1">
-                    <button
-                        onClick={onScheduleVisit}
-                        className="flex-1 bg-cyan-600 hover:bg-cyan-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 shadow-lg hover:shadow-xl"
-                    >
-                        Agendar visita
-                    </button>
-
-                    {onWhatsApp && (
-                        <button
-                            onClick={onWhatsApp}
-                            className="w-12 h-12 bg-green-600 hover:bg-green-700 text-white rounded-xl flex items-center justify-center transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 shadow-lg hover:shadow-xl"
-                            aria-label="Contactar por WhatsApp"
-                        >
-                            <MessageCircle className="w-5 h-5" />
-                        </button>
-                    )}
-                </div>
-            </div>
-        </div>
     );
 }

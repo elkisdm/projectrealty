@@ -275,7 +275,7 @@ export const SearchFiltersSchema = z.object({
   comuna: z.string().optional(),
   precioMin: z.number().int().nonnegative().optional(),
   precioMax: z.number().int().nonnegative().optional(),
-  dormitorios: z.number().int().positive().optional(),
+  dormitorios: z.number().int().nonnegative().optional(), // 0 para Estudio, 1+ para otros
   // ⚠️ banos NO incluido - No se filtra por baños
   sort: z.enum(["precio", "ubicacion", "relevancia"]).optional(),
   page: z.number().int().positive().optional().default(1),

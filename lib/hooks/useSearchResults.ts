@@ -200,7 +200,17 @@ export function useSearchResults(params: SearchResultsParams) {
           totalPages,
         };
       } catch (err) {
-        logger.error("Error fetching search results", { error: err, params });
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        const errorDetails = err instanceof Error ? { 
+          message: err.message, 
+          stack: err.stack,
+          name: err.name 
+        } : { error: err };
+        logger.error("Error fetching search results", { 
+          error: errorDetails, 
+          params,
+          errorMessage 
+        });
         throw err;
       }
     },

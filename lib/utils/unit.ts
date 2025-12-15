@@ -58,13 +58,20 @@ export function createCompleteUnit(
   // Generar codigoUnidad si no está disponible
   const codigoUnidad = partial.codigoUnidad || partial.codigoInterno || id.substring(0, 8);
   
-  // Calcular dormitorios
-  const dormitorios = partial.dormitorios ?? 
-    partial.bedrooms ?? 
-    extractDormitoriosFromTipologia(tipologia);
+  // Calcular dormitorios y baños
+  // Regla especial: Estudios siempre tienen 1 ambiente + 1 baño
+  const isEstudio = tipologia === 'Studio' || tipologia === 'Estudio';
   
-  // Calcular baños
-  const banos = partial.banos ?? partial.bathrooms ?? 1;
+  const dormitorios = isEstudio 
+    ? 1  // Estudios muestran 1 ambiente
+    : (partial.dormitorios ?? 
+       partial.bedrooms ?? 
+       extractDormitoriosFromTipologia(tipologia));
+  
+  // Calcular baños - Estudios siempre tienen 1 baño
+  const banos = isEstudio 
+    ? 1 
+    : (partial.banos ?? partial.bathrooms ?? 1);
   
   // Calcular garantía (por defecto igual al precio, mínimo 1 para cumplir schema)
   const garantia = partial.garantia ?? (price > 0 ? price : 1);
@@ -79,8 +86,8 @@ export function createCompleteUnit(
     tipologia,
     price: Math.max(price, 0), // Asegurar que sea positivo
     disponible,
-    dormitorios: Math.max(dormitorios, 0), // 0 es válido para Studio/Estudio
-    banos: Math.max(banos, 1), // Asegurar que sea al menos 1
+    dormitorios: isEstudio ? 1 : Math.max(dormitorios, 0), // Estudios siempre tienen 1 ambiente
+    banos: isEstudio ? 1 : Math.max(banos, 1), // Estudios siempre tienen 1 baño, otros al menos 1
     garantia: Math.max(garantia, 0), // Asegurar que sea positivo
     
     // Campos opcionales (preservar los que vienen en partial)

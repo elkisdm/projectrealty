@@ -42,6 +42,9 @@ export function PropertyDetailTab({ unit, building }: PropertyDetailTabProps) {
   const tipologia = unit.tipologia || "N/A";
 
   // Lógica inteligente para dormitorios y baños
+  // Regla especial: Estudios siempre tienen 1 ambiente + 1 baño
+  const isEstudio = tipologia === "Studio" || tipologia === "Estudio";
+
   let dormitorios = unit.dormitorios || unit.bedrooms || 0;
   let banos = unit.banos || unit.bathrooms || 0;
 
@@ -49,6 +52,12 @@ export function PropertyDetailTab({ unit, building }: PropertyDetailTabProps) {
     const parsed = parseTipologia(tipologia);
     dormitorios = parsed.dorms;
     banos = parsed.banos;
+  }
+
+  // Aplicar regla de estudios: siempre 1 ambiente + 1 baño
+  if (isEstudio) {
+    dormitorios = 1;
+    banos = 1;
   }
 
   // Superficie: Usar m2 totales, si no hay terraza explícita se asume incluida o 0
