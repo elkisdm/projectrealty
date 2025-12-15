@@ -49,6 +49,7 @@ async function readFromSupabase(): Promise<Building[]> {
         cover_image,
         badges,
         service_level,
+        gc_mode,
         units!left (
           id,
           tipologia,
@@ -59,6 +60,7 @@ async function readFromSupabase(): Promise<Building[]> {
           bodega,
           bedrooms,
           bathrooms,
+          pet_friendly,
           images_tipologia,
           images_areas_comunes,
           images
@@ -96,6 +98,7 @@ async function readFromSupabase(): Promise<Building[]> {
         cover_image?: string;
         badges?: unknown[];
         service_level?: string;
+        gc_mode?: 'MF' | 'variable';
         units?: Array<{
           id: string;
           tipologia?: string;
@@ -144,7 +147,7 @@ async function readFromSupabase(): Promise<Building[]> {
         serviceLevel: (b.service_level === 'pro' || b.service_level === 'standard') ? b.service_level : undefined,
         precio_desde,
         precio_hasta,
-        gc_mode: undefined,
+        gc_mode: (b.gc_mode === 'MF' || b.gc_mode === 'variable') ? b.gc_mode : undefined,
         featured: false,
         units: (b.units || []).map((unit: unknown) => {
           const u = unit as {
@@ -157,8 +160,9 @@ async function readFromSupabase(): Promise<Building[]> {
             bodega?: boolean;
             bedrooms?: number;
             bathrooms?: number;
-            imagesTipologia?: string[];
-            imagesAreasComunes?: string[];
+            pet_friendly?: boolean;
+            images_tipologia?: string[]; // Campo desde Supabase (snake_case)
+            images_areas_comunes?: string[]; // Campo desde Supabase (snake_case)
             images?: string[];
           };
           
@@ -174,8 +178,9 @@ async function readFromSupabase(): Promise<Building[]> {
               bodega: u.bodega ?? false,
               bedrooms: u.bedrooms ?? (u.tipologia === 'Studio' ? 0 : 1), // Default según tipología
               bathrooms: u.bathrooms ?? 1, // Default a 1
-              imagesTipologia: u.imagesTipologia,
-              imagesAreasComunes: u.imagesAreasComunes,
+              pet_friendly: u.pet_friendly !== undefined ? u.pet_friendly : false, // Mapear pet_friendly desde Supabase
+              imagesTipologia: u.images_tipologia, // Mapear desde snake_case a camelCase
+              imagesAreasComunes: u.images_areas_comunes, // Mapear desde snake_case a camelCase
               images: u.images,
             },
             b.id,
@@ -432,7 +437,11 @@ export async function getBuildingBySlug(slug: string): Promise<(Building & { pre
               estacionamiento,
               bodega,
               bedrooms,
-              bathrooms
+              bathrooms,
+              pet_friendly,
+              images_tipologia,
+              images_areas_comunes,
+              images
             )
           `)
           .eq('slug', slug)
@@ -454,17 +463,27 @@ export async function getBuildingBySlug(slug: string): Promise<(Building & { pre
             coverImage: b.cover_image || (Array.isArray(b.gallery) && b.gallery.length > 0 ? b.gallery[0] : undefined),
             badges: Array.isArray(b.badges) ? b.badges : [],
             serviceLevel: b.service_level as 'pro' | 'standard' | undefined,
-            units: (b.units || []).map((u: any) => ({
-              id: u.id,
-              tipologia: u.tipologia || '',
-              m2: u.m2 || 0,
-              price: u.price || 0,
-              disponible: u.disponible || false,
-              estacionamiento: u.estacionamiento || false,
-              bodega: u.bodega || false,
-              bedrooms: u.bedrooms || undefined,
-              bathrooms: u.bathrooms || undefined,
-            })),
+            units: (b.units || []).map((u: any) => {
+              return normalizeUnit(
+                {
+                  id: u.id,
+                  tipologia: u.tipologia || 'Studio',
+                  m2: u.m2,
+                  price: u.price || 0,
+                  disponible: u.disponible ?? true,
+                  estacionamiento: u.estacionamiento ?? false,
+                  bodega: u.bodega ?? false,
+                  bedrooms: u.bedrooms,
+                  bathrooms: u.bathrooms,
+                  pet_friendly: u.pet_friendly !== undefined ? u.pet_friendly : false,
+                  imagesTipologia: u.images_tipologia,
+                  imagesAreasComunes: u.images_areas_comunes,
+                  images: u.images,
+                },
+                b.id,
+                b.slug || `edificio-${b.id}`
+              );
+            }),
           };
           
           return { ...building, precioDesde: calculatePrecioDesde(building.units) };

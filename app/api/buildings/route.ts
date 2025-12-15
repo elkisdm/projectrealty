@@ -59,26 +59,49 @@ export async function GET(request: NextRequest) {
     // Obtener y validar query params con Zod
     const { searchParams } = new URL(request.url);
     
-    // Convertir dormitorios: "Estudio" -> 0, números -> número
-    const dormitoriosParam = searchParams.get('dormitorios');
-    let dormitorios: number | undefined = undefined;
-    if (dormitoriosParam) {
-      if (dormitoriosParam.toLowerCase() === 'estudio') {
-        dormitorios = 0;
+    // Comuna: soporta múltiples valores (separados por coma o múltiples parámetros)
+    const comunaParam = searchParams.get('comuna');
+    let comuna: string | string[] | undefined = undefined;
+    if (comunaParam) {
+      // Si viene separado por comas, dividir en array
+      if (comunaParam.includes(',')) {
+        comuna = comunaParam.split(',').map(c => c.trim()).filter(c => c.length > 0);
       } else {
-        const parsed = parseInt(dormitoriosParam, 10);
-        if (!isNaN(parsed)) {
-          dormitorios = parsed;
-        }
+        comuna = comunaParam;
       }
     }
     
+    // Dormitorios: soporta múltiples valores (separados por coma)
+    const dormitoriosParam = searchParams.get('dormitorios');
+    let dormitorios: string | string[] | undefined = undefined;
+    if (dormitoriosParam) {
+      // Si viene separado por comas, dividir en array
+      if (dormitoriosParam.includes(',')) {
+        dormitorios = dormitoriosParam.split(',').map(d => d.trim()).filter(d => d.length > 0);
+      } else {
+        dormitorios = dormitoriosParam;
+      }
+    }
+    
+    // Convertir booleanos
+    const estacionamientoParam = searchParams.get('estacionamiento');
+    const estacionamiento = estacionamientoParam === 'true' ? true : estacionamientoParam === 'false' ? false : undefined;
+    
+    const bodegaParam = searchParams.get('bodega');
+    const bodega = bodegaParam === 'true' ? true : bodegaParam === 'false' ? false : undefined;
+    
+    const mascotasParam = searchParams.get('mascotas');
+    const mascotas = mascotasParam === 'true' ? true : mascotasParam === 'false' ? false : undefined;
+    
     const queryParams = {
       q: searchParams.get('q') || undefined,
-      comuna: searchParams.get('comuna') || undefined,
+      comuna,
       precioMin: searchParams.get('precioMin') ? parseInt(searchParams.get('precioMin') || '0', 10) : undefined,
       precioMax: searchParams.get('precioMax') ? parseInt(searchParams.get('precioMax') || '0', 10) : undefined,
       dormitorios,
+      estacionamiento,
+      bodega,
+      mascotas,
       page: searchParams.get('page') ? parseInt(searchParams.get('page') || '1', 10) : undefined,
       limit: searchParams.get('limit') ? parseInt(searchParams.get('limit') || '12', 10) : undefined,
     };

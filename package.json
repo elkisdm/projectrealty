@@ -45,8 +45,6 @@
     "icon:generate": "ts-node --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' -r tsconfig-paths/register _workspace/scripts/icon-gen/cli-final.ts",
     "icon:validate": "ts-node --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' -r tsconfig-paths/register _workspace/scripts/icon-gen/cli-final.ts --validate",
     "icon:help": "ts-node --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' -r tsconfig-paths/register _workspace/scripts/icon-gen/cli-final.ts --help",
-    "icon:validate": "ts-node --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' -r tsconfig-paths/register _workspace/scripts/icon-gen/cli-final.ts --validate",
-    "icon:help": "ts-node --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' -r tsconfig-paths/register _workspace/scripts/icon-gen/cli-final.ts --help",
     "upload:images": "node _workspace/scripts/upload-images-to-supabase.mjs",
     "migrate:assetplan": "node scripts/apply-migration.mjs",
     "ingest:assetplan:new": "node scripts/import-assetplan-csv.mjs export\\ \\(10\\).csv"
@@ -58,6 +56,7 @@
     "@react-pdf/renderer": "^4.3.1",
     "@supabase/supabase-js": "^2.87.1",
     "@tanstack/react-query": "^5.90.12",
+    "@use-gesture/react": "^10.3.1",
     "csv-parse": "^6.1.0",
     "dotenv": "^16.4.7",
     "framer-motion": "11.0.0",

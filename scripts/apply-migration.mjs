@@ -19,7 +19,7 @@ if (!supabaseUrl || !supabaseServiceKey) {
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 async function run() {
-    const migrationPath = path.resolve(__dirname, '../config/supabase/migrations/20250212_add_assetplan_fields.sql');
+    const migrationPath = path.resolve(__dirname, '../config/supabase/migrations/20250125_add_gc_mode_fields.sql');
     const sql = fs.readFileSync(migrationPath, 'utf-8');
     
     console.log('🚀 Aplicando migración:', migrationPath);

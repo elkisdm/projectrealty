@@ -2,6 +2,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { PromotionBadge } from "@components/ui/PromotionBadge";
 import { formatPrice } from "@lib/utils";
@@ -10,6 +11,8 @@ import type { Building, Unit, LegacyBuilding } from "@types";
 import type { BuildingSummary } from "../../hooks/useFetchBuildings";
 // import type { PromotionBadge as PromotionBadgeType } from "@schemas/models";
 import { PromotionType } from "@schemas/models";
+import { useLongPress } from "@hooks/useLongPress";
+import { ContextMenu, useContextMenuOptions } from "./ContextMenu";
 
 type BuildingCardV2Props = {
   building: Building | BuildingSummary | LegacyBuilding;
@@ -147,6 +150,9 @@ export function BuildingCardV2({
   className = ""
 }: BuildingCardV2Props) {
   const router = useRouter();
+  const [contextMenuOpen, setContextMenuOpen] = useState(false);
+  const [contextMenuPosition, setContextMenuPosition] = useState<{ x: number; y: number } | undefined>();
+  
   const cover = getCoverImage(building);
   // Usar slug si está disponible, sino usar id
   const href = 'slug' in building && building.slug
@@ -161,6 +167,52 @@ export function BuildingCardV2({
       property_name: building.name,
     });
   };
+
+  // Long press handler
+  const longPressHandlers = useLongPress({
+    onLongPress: (event) => {
+      const touchEvent = event as TouchEvent;
+      const clientX = touchEvent.touches?.[0]?.clientX || (event as MouseEvent).clientX;
+      const clientY = touchEvent.touches?.[0]?.clientY || (event as MouseEvent).clientY;
+      setContextMenuPosition({ x: clientX, y: clientY });
+      setContextMenuOpen(true);
+    },
+    delay: 500,
+    threshold: 10,
+    enableHapticFeedback: true,
+  });
+
+  // Context menu options
+  const buildingName = 'name' in building ? building.name : 'Edificio';
+  const comuna = 'comuna' in building ? building.comuna : '';
+  const contextMenuOptions = useContextMenuOptions(
+    () => {
+      // Compartir
+      if (typeof navigator !== 'undefined' && navigator.share) {
+        navigator.share({
+          title: buildingName,
+          text: `Mira este edificio en ${comuna}`,
+          url: typeof window !== 'undefined' ? `${window.location.origin}${href}` : href,
+        }).catch(() => {
+          // Fallback: copiar al portapapeles
+          if (typeof window !== 'undefined' && navigator.clipboard) {
+            navigator.clipboard.writeText(`${window.location.origin}${href}`);
+          }
+        });
+      } else if (typeof window !== 'undefined' && navigator.clipboard) {
+        navigator.clipboard.writeText(`${window.location.origin}${href}`);
+      }
+    },
+    () => {
+      // Agregar a favoritos
+      // TODO: Implementar lógica de favoritos
+      console.log('Agregar a favoritos:', building.id);
+    },
+    () => {
+      // Vista rápida - navegar a la propiedad
+      router.push(href);
+    }
+  );
 
   const promoInfo = getPromoInfo(building);
   const primaryBadge = promoInfo ? {
@@ -182,19 +234,21 @@ export function BuildingCardV2({
     : `Ver propiedad ${building.name} en ${building.comuna}, sin disponibilidad`;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className={className}
-    >
-      <Link
-        href={href}
-        onClick={handleClick}
-        aria-label={ariaLabel}
-        className="group block focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)] rounded-2xl"
+    <>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className={className}
       >
-        <article className="rounded-2xl bg-[var(--soft)]/90 ring-1 ring-white/10 overflow-hidden transition-all group-hover:ring-[var(--ring)]/60 group-hover:shadow-lg">
+        <Link
+          href={href}
+          onClick={handleClick}
+          aria-label={ariaLabel}
+          className={`group block focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)] rounded-2xl ${longPressHandlers.isPressing ? 'scale-[0.98] opacity-90' : ''}`}
+          {...longPressHandlers.handlers}
+        >
+          <article className="rounded-2xl bg-[var(--soft)]/90 ring-1 ring-white/10 overflow-hidden transition-all group-hover:ring-[var(--ring)]/60 group-hover:shadow-lg">
           <div className="relative aspect-[16/10]">
             <Image
               src={cover}
@@ -306,5 +360,12 @@ export function BuildingCardV2({
         </article>
       </Link>
     </motion.div>
+    <ContextMenu
+      isOpen={contextMenuOpen}
+      onClose={() => setContextMenuOpen(false)}
+      options={contextMenuOptions}
+      position={contextMenuPosition}
+    />
+    </>
   );
 }

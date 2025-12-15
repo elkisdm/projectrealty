@@ -92,11 +92,27 @@ export function Header() {
 
   // Check for prefers-reduced-motion and screen size
   useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const mobileQuery = window.matchMedia('(max-width: 1023px)');
+    if (typeof window === 'undefined') {
+      return;
+    }
 
-    setShouldReduceMotion(mediaQuery.matches);
-    setIsMobile(mobileQuery.matches);
+    let mediaQuery: MediaQueryList | null = null;
+    let mobileQuery: MediaQueryList | null = null;
+
+    try {
+      mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+      mobileQuery = window.matchMedia('(max-width: 1023px)');
+
+      setShouldReduceMotion(mediaQuery.matches);
+      setIsMobile(mobileQuery.matches);
+    } catch (error) {
+      // Fallback a valores por defecto
+      setShouldReduceMotion(false);
+      setIsMobile(false);
+      return;
+    }
+
+    if (!mediaQuery || !mobileQuery) return;
 
     const handleMotionChange = (e: MediaQueryListEvent) => {
       setShouldReduceMotion(e.matches);
@@ -110,8 +126,12 @@ export function Header() {
     mobileQuery.addEventListener('change', handleMobileChange);
 
     return () => {
-      mediaQuery.removeEventListener('change', handleMotionChange);
-      mobileQuery.removeEventListener('change', handleMobileChange);
+      if (mediaQuery) {
+        mediaQuery.removeEventListener('change', handleMotionChange);
+      }
+      if (mobileQuery) {
+        mobileQuery.removeEventListener('change', handleMobileChange);
+      }
     };
   }, []);
 

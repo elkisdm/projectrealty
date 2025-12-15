@@ -12,6 +12,12 @@ export const ANALYTICS_EVENTS = {
   // CTAs
   CTA_BOOK_CLICK: 'cta_book_click',
   CTA_WHATSAPP_CLICK: 'cta_whatsapp_click',
+  CTA_CLICK: 'cta_click', // Generic CTA click tracking
+  
+  // Pre-approval
+  PRE_APPROVAL_START: 'pre_approval_start',
+  PRE_APPROVAL_COMPLETE: 'pre_approval_complete',
+  PRE_APPROVAL_ABANDON: 'pre_approval_abandon',
   
   // Conversions
   VISIT_SCHEDULED: 'visit_scheduled',

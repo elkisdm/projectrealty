@@ -103,14 +103,17 @@ export function createCompleteUnit(
     ...(partial.gastoComun !== undefined && { gastoComun: partial.gastoComun }),
     ...(partial.gastosComunes !== undefined && { gastosComunes: partial.gastosComunes }),
     ...(partial.images !== undefined && { images: partial.images }),
+    // Preservar imagesTipologia incluso si es array vacío (para que se pueda usar building.gallery como fallback)
     ...(partial.imagesTipologia !== undefined && { imagesTipologia: partial.imagesTipologia }),
+    // Preservar imagesAreasComunes incluso si es array vacío
     ...(partial.imagesAreasComunes !== undefined && { imagesAreasComunes: partial.imagesAreasComunes }),
     ...(partial.codigoInterno !== undefined && { codigoInterno: partial.codigoInterno }),
     ...(partial.bedrooms !== undefined && { bedrooms: partial.bedrooms }),
     ...(partial.bathrooms !== undefined && { bathrooms: partial.bathrooms }),
     ...(partial.area_interior_m2 !== undefined && { area_interior_m2: partial.area_interior_m2 }),
     ...(partial.area_exterior_m2 !== undefined && { area_exterior_m2: partial.area_exterior_m2 }),
-    ...(partial.petFriendly !== undefined && { petFriendly: partial.petFriendly }),
+    ...(partial.petFriendly !== undefined && { pet_friendly: partial.petFriendly }),
+    ...(partial.pet_friendly !== undefined && { pet_friendly: partial.pet_friendly }),
     ...(partial.parkingOptions !== undefined && { parkingOptions: partial.parkingOptions }),
     ...(partial.storageOptions !== undefined && { storageOptions: partial.storageOptions }),
     ...(partial.status !== undefined && { status: partial.status }),

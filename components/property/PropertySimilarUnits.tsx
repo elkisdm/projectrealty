@@ -1,10 +1,11 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import type { Unit, Building } from "@schemas/models";
 import { UnitCard } from "@components/ui/UnitCard";
 import { UnitCardSkeleton } from "@components/ui/UnitCardSkeleton";
 import { readAll } from "@lib/data";
+import { deduplicateUnitsByTipology } from "@lib/utils/unit-deduplication";
 
 interface PropertySimilarUnitsProps {
   currentUnit: Unit;
@@ -74,8 +75,11 @@ function getSimilarUnits(
     return true;
   });
 
+  // Deduplicar: solo 1 unidad por tipología por edificio
+  const deduplicatedUnits = deduplicateUnitsByTipology(similarUnits);
+
   // Ordenar por precio (más cercano primero) y limitar
-  const sorted = similarUnits.sort((a, b) => {
+  const sorted = deduplicatedUnits.sort((a, b) => {
     const priceDiffA = Math.abs((a.unit.price || 0) - currentPrice);
     const priceDiffB = Math.abs((b.unit.price || 0) - currentPrice);
     return priceDiffA - priceDiffB;
@@ -90,14 +94,14 @@ export function PropertySimilarUnits({
   limit = 6,
   className = "",
 }: PropertySimilarUnitsProps) {
-  const [similarUnits, setSimilarUnits] = React.useState<UnitWithBuilding[]>([]);
-  const [isLoading, setIsLoading] = React.useState(true);
+  const [similarUnits, setSimilarUnits] = useState<UnitWithBuilding[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  React.useEffect(() => {
+  // Cargar unidades similares
+  useEffect(() => {
     async function loadSimilarUnits() {
       try {
         setIsLoading(true);
-        // Obtener todos los edificios (readAll funciona en cliente si Supabase está configurado)
         const allBuildings = await readAll();
         const similar = getSimilarUnits(currentUnit, building, allBuildings, limit);
         setSimilarUnits(similar);
@@ -112,6 +116,7 @@ export function PropertySimilarUnits({
     loadSimilarUnits();
   }, [currentUnit, building, limit]);
 
+
   // No mostrar nada si no hay unidades similares
   if (!isLoading && similarUnits.length === 0) {
     return null;
@@ -119,33 +124,28 @@ export function PropertySimilarUnits({
 
   return (
     <section className={`py-16 ${className}`}>
-      <div className="container mx-auto px-4">
-        <h2 className="text-2xl font-bold text-text mb-8">
-          Unidades similares
-        </h2>
+      <h2 className="text-2xl font-bold text-text mb-8">
+        Unidades similares
+      </h2>
 
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {Array.from({ length: limit }).map((_, i) => (
-              <UnitCardSkeleton key={i} />
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {similarUnits.map(({ unit, building: unitBuilding }) => (
-              <UnitCard
-                key={`${unitBuilding.id}-${unit.id}`}
-                unit={unit}
-                building={unitBuilding}
-                priority={false}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">
+          {Array.from({ length: limit }).map((_, i) => (
+            <UnitCardSkeleton key={i} />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">
+          {similarUnits.map(({ unit, building: unitBuilding }, index) => (
+            <UnitCard
+              key={`${unitBuilding.id}-${unit.id}`}
+              unit={unit}
+              building={unitBuilding}
+              priority={index < 4}
+            />
+          ))}
+        </div>
+      )}
     </section>
   );
 }
-
-
-

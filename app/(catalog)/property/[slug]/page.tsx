@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { Suspense } from "react";
 import { getBuildingBySlug, getRelatedBuildings } from "@lib/data";
 import { PropertyClient } from "./PropertyClient";
 import { safeJsonLd } from "@lib/seo/jsonld";
@@ -72,13 +73,39 @@ export default async function PropertyPage({ params, searchParams }: PropertyPag
     ? building.units.find(u => u.id === unitId)
     : building.units[0];
 
-  // Build breadcrumb items for JSON-LD
+  // Build breadcrumb items for JSON-LD (matching PropertyBreadcrumb structure)
   const breadcrumbItems = [
     { name: "Home", item: `${baseUrl}/` },
     { name: "Arriendo Departamentos", item: `${baseUrl}/buscar` },
-    { name: building.comuna || "Santiago", item: `${baseUrl}/buscar?comuna=${encodeURIComponent(building.comuna || "Santiago")}` },
-    { name: building.name, item: canonicalUrl },
   ];
+
+  // Add región if available
+  if (building.region) {
+    breadcrumbItems.push({
+      name: building.region,
+      item: `${baseUrl}/buscar?region=${encodeURIComponent(building.region)}`
+    });
+  }
+
+  // Add comuna
+  breadcrumbItems.push({
+    name: building.comuna || "Santiago",
+    item: `${baseUrl}/buscar?comuna=${encodeURIComponent(building.comuna || "Santiago")}`
+  });
+
+  // Add dirección if available
+  if (building.address) {
+    breadcrumbItems.push({
+      name: building.address,
+      item: `${baseUrl}/buscar?direccion=${encodeURIComponent(building.address)}`
+    });
+  }
+
+  // Add edificio
+  breadcrumbItems.push({
+    name: building.name,
+    item: canonicalUrl
+  });
 
   // Add tipología if unit is available
   if (selectedUnit?.tipologia) {
@@ -86,6 +113,14 @@ export default async function PropertyPage({ params, searchParams }: PropertyPag
       ? "Estudio"
       : selectedUnit.tipologia;
     breadcrumbItems.push({ name: tipologiaLabel, item: canonicalUrl });
+    
+    // Optionally add código de unidad if available
+    if (selectedUnit.codigoUnidad) {
+      breadcrumbItems.push({
+        name: selectedUnit.codigoUnidad,
+        item: canonicalUrl
+      });
+    }
   } else {
     breadcrumbItems.push({ name: "Departamento", item: canonicalUrl });
   }
@@ -119,6 +154,31 @@ export default async function PropertyPage({ params, searchParams }: PropertyPag
     })),
   } as const;
 
+  // Loading skeleton para Suspense fallback
+  const PropertySkeleton = () => (
+    <div className="min-h-screen bg-bg">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 lg:py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-6">
+            <div className="h-8 bg-white/10 rounded-xl animate-pulse"></div>
+            <div className="h-64 bg-white/10 rounded-2xl animate-pulse"></div>
+            <div className="space-y-4">
+              <div className="h-6 bg-white/10 rounded animate-pulse"></div>
+              <div className="h-6 bg-white/10 rounded animate-pulse w-3/4"></div>
+            </div>
+          </div>
+          <div className="lg:col-span-1">
+            <div className="bg-white/5 rounded-2xl p-6 space-y-4">
+              <div className="h-8 bg-white/10 rounded animate-pulse"></div>
+              <div className="h-12 bg-white/10 rounded-xl animate-pulse"></div>
+              <div className="h-12 bg-white/10 rounded-xl animate-pulse"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <>
       <script type="application/ld+json">
@@ -127,13 +187,15 @@ export default async function PropertyPage({ params, searchParams }: PropertyPag
       <script type="application/ld+json">
         {safeJsonLd(breadcrumbJsonLd)}
       </script>
-      <PropertyClient
-        building={building}
-        relatedBuildings={relatedBuildings}
-        defaultUnitId={resolvedSearchParams?.unit}
-        tipologiaFilter={resolvedSearchParams?.tipologia}
-        showAllUnits={resolvedSearchParams?.ver === "unidades"}
-      />
+      <Suspense fallback={<PropertySkeleton />}>
+        <PropertyClient
+          building={building}
+          relatedBuildings={relatedBuildings}
+          defaultUnitId={resolvedSearchParams?.unit}
+          tipologiaFilter={resolvedSearchParams?.tipologia}
+          showAllUnits={resolvedSearchParams?.ver === "unidades"}
+        />
+      </Suspense>
     </>
   );
 }

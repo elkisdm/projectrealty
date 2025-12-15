@@ -433,10 +433,10 @@ class SupabaseDataProcessor {
    * Retorna unidades individuales (no agrupadas por edificio) según especificación MVP
    */
   async getUnits(filters: {
-    comuna?: string;
+    comuna?: string | string[];
     precioMin?: number;
     precioMax?: number;
-    dormitorios?: number;
+    dormitorios?: number | string | string[];
     q?: string; // Búsqueda por texto
   }, page: number = 1, limit: number = 12): Promise<{
     units: Array<{
@@ -544,31 +544,57 @@ class SupabaseDataProcessor {
 
     let filteredData = (allData || []) as Array<UnitRowWithFields & { buildings: { id: string; name: string; slug?: string; comuna: string; address: string; gallery?: string[]; cover_image?: string } | null }>;
 
-    // Filtrar por comuna en memoria (si se especifica)
+    // Filtrar por comuna en memoria (soporta multiselección con OR)
     if (filters.comuna) {
-      filteredData = filteredData.filter(u => u.buildings?.comuna?.toLowerCase() === filters.comuna!.toLowerCase());
+      const comunasArray = Array.isArray(filters.comuna) 
+        ? filters.comuna 
+        : [filters.comuna];
+      
+      if (comunasArray.length > 0) {
+        filteredData = filteredData.filter(u => 
+          comunasArray.some(c => 
+            u.buildings?.comuna?.toLowerCase() === c.toLowerCase()
+          )
+        );
+      }
     }
 
     // Filtrar por dormitorios - filtrar SOLO por tipología porque bedrooms suele ser null
     // Las unidades tienen tipologías como "Studio", "1D1B", "2D1B", "2D2B", "3D2B"
+    // Soporta multiselección con OR (array de strings o números)
     if (filters.dormitorios !== undefined) {
-      filteredData = filteredData.filter(u => {
-        // Filtrar por tipología según el número de dormitorios
-        if (filters.dormitorios === 0) {
-          // Estudio: tipología "Studio" o "Estudio"
-          return u.tipologia?.toLowerCase() === 'studio' || u.tipologia?.toLowerCase() === 'estudio';
-        } else if (filters.dormitorios === 1) {
-          // 1 dormitorio: tipología "1D1B"
-          return u.tipologia === '1D1B';
-        } else if (filters.dormitorios === 2) {
-          // 2 dormitorios: tipologías "2D1B" o "2D2B"
-          return u.tipologia === '2D1B' || u.tipologia === '2D2B';
-        } else if (filters.dormitorios === 3) {
-          // 3 dormitorios: tipología "3D2B"
-          return u.tipologia === '3D2B';
-        }
-        return false;
-      });
+      // Normalizar a array de strings
+      let dormitoriosArray: string[] = [];
+      
+      if (Array.isArray(filters.dormitorios)) {
+        dormitoriosArray = filters.dormitorios.map(d => String(d));
+      } else if (typeof filters.dormitorios === 'string') {
+        dormitoriosArray = [filters.dormitorios];
+      } else {
+        // Es número (legacy)
+        dormitoriosArray = [String(filters.dormitorios)];
+      }
+      
+      if (dormitoriosArray.length > 0) {
+        // Convertir strings a tipologías
+        const allTipologias: string[] = [];
+        dormitoriosArray.forEach(d => {
+          if (d === 'Estudio' || d === '0') {
+            allTipologias.push('studio', 'estudio');
+          } else if (d === '1') {
+            allTipologias.push('1D1B');
+          } else if (d === '2') {
+            allTipologias.push('2D1B', '2D2B');
+          } else if (d === '3') {
+            allTipologias.push('3D2B');
+          }
+        });
+        
+        filteredData = filteredData.filter(u => {
+          const tipologiaLower = u.tipologia?.toLowerCase();
+          return allTipologias.some(t => tipologiaLower === t.toLowerCase());
+        });
+      }
     }
 
     // Filtrar por búsqueda de texto (si se especifica)
@@ -620,10 +646,9 @@ class SupabaseDataProcessor {
         throw new Error(`Unidad ${unitRow.id} no tiene building asociado`);
       }
 
-      // Generar slug de unidad: building-slug-unidad-id (o usar unidad si está disponible)
-      const unidadCode = (unitRow as UnitRowWithFields).unidad || unitRow.id.substring(0, 8);
+      // Generar slug de unidad: building-slug-id (sin código de unidad)
       const unitSlug = building.slug 
-        ? `${building.slug}-${this.generateSlug(unidadCode)}-${unitRow.id.substring(0, 8)}`
+        ? `${building.slug}-${unitRow.id.substring(0, 8)}`
         : `${building.id}-${unitRow.id.substring(0, 8)}`;
 
       // Calcular garantía (por defecto 1 mes de arriendo)
@@ -643,10 +668,13 @@ class SupabaseDataProcessor {
 
       const rowWithFields = unitRow as UnitRowWithFields;
       
+      // Generar codigoUnidad: usar campo 'unidad' si existe, sino usar ID truncado
+      const codigoUnidad = rowWithFields.unidad || unitRow.id.substring(0, 8);
+      
       return {
         id: unitRow.id,
         slug: unitSlug,
-        codigoUnidad: unidadCode,
+        codigoUnidad,
         buildingId: building.id,
         tipologia: unitRow.tipologia || 'Studio',
         dormitorios: unitRow.bedrooms || 0,
@@ -874,9 +902,8 @@ class SupabaseDataProcessor {
       if (!building) continue;
 
       // Generar slug de unidad de la misma forma que en getUnits
-      const unidadCode = unitRow.unidad || unitRow.id.substring(0, 8);
       const generatedSlug = building.slug 
-        ? `${building.slug}-${this.generateSlug(unidadCode)}-${unitRow.id.substring(0, 8)}`
+        ? `${building.slug}-${unitRow.id.substring(0, 8)}`
         : `${building.id}-${unitRow.id.substring(0, 8)}`;
 
       if (generatedSlug === unitSlug) {
@@ -901,9 +928,8 @@ class SupabaseDataProcessor {
     }
 
     // Mapear unidad encontrada
-    const unidadCode = foundUnit.unidad || foundUnit.id.substring(0, 8);
     const unitSlugGenerated = building.slug 
-      ? `${building.slug}-${this.generateSlug(unidadCode)}-${foundUnit.id.substring(0, 8)}`
+      ? `${building.slug}-${foundUnit.id.substring(0, 8)}`
       : `${building.id}-${foundUnit.id.substring(0, 8)}`;
 
     const garantia = foundUnit.price ? foundUnit.price : 0;
@@ -913,10 +939,14 @@ class SupabaseDataProcessor {
       ? building.gallery.slice(0, 5)
       : (building.cover_image ? [building.cover_image] : ['/images/default-unit.jpg']);
 
+    // Generar codigoUnidad: usar campo 'unidad' si existe, sino usar ID truncado
+    const foundUnitWithFields = foundUnit as UnitRowWithFields;
+    const codigoUnidad = foundUnitWithFields.unidad || foundUnit.id.substring(0, 8);
+
     const unit = {
       id: foundUnit.id,
       slug: unitSlugGenerated,
-      codigoUnidad: unidadCode,
+      codigoUnidad,
       buildingId: building.id,
       tipologia: foundUnit.tipologia || 'Studio',
       dormitorios: foundUnit.bedrooms || 0,
@@ -977,19 +1007,22 @@ class SupabaseDataProcessor {
       .slice(0, 6)
       .map(u => {
         const uBuilding = u.buildings!;
-        const uCode = u.unidad || u.id.substring(0, 8);
         const uSlug = uBuilding.slug 
-          ? `${uBuilding.slug}-${this.generateSlug(uCode)}-${u.id.substring(0, 8)}`
+          ? `${uBuilding.slug}-${u.id.substring(0, 8)}`
           : `${uBuilding.id}-${u.id.substring(0, 8)}`;
 
         const uImages = uBuilding.gallery && uBuilding.gallery.length > 0 
           ? uBuilding.gallery.slice(0, 1)
           : (uBuilding.cover_image ? [uBuilding.cover_image] : ['/images/default-unit.jpg']);
 
+        // Generar codigoUnidad: usar campo 'unidad' si existe, sino usar ID truncado
+        const uWithFields = u as UnitRowWithFields;
+        const uCodigoUnidad = uWithFields.unidad || u.id.substring(0, 8);
+
         return {
           id: u.id,
           slug: uSlug,
-          codigoUnidad: uCode,
+          codigoUnidad: uCodigoUnidad,
           buildingId: uBuilding.id,
           tipologia: u.tipologia || 'Studio',
           dormitorios: u.bedrooms || 0,

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { LazyBuildingsGrid } from "./LazyBuildingsGrid";
+import { BuildingCardSkeleton } from "@components/ui/BuildingCardSkeleton";
 import { LANDING_BUILDINGS_MOCK } from "@/lib/arrienda-sin-comision-mocks";
 import { logger } from "@lib/logger";
 import type { BuildingSummary } from "@/hooks/useFetchBuildings";
@@ -56,13 +57,8 @@ export default function ArriendaSinComisionGrid({ initialBuildings }: ArriendaSi
             </motion.h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-gray-800:bg-gray-800 rounded-2xl p-6 animate-pulse">
-                <div className="h-48 bg-gray-200 dark:bg-gray-700 rounded-xl mb-4"></div>
-                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
-                <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded mb-4"></div>
-                <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded"></div>
-              </div>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <BuildingCardSkeleton key={i} />
             ))}
           </div>
         </div>

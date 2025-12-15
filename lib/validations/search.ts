@@ -16,9 +16,12 @@ export const searchFormInputSchema = z.object({
   dormitorios: z.enum(["Estudio", "1", "2", "3"], {
     errorMap: () => ({ message: "Selecciona una opción válida" }),
   }).optional(),
+  estacionamiento: z.enum(["true", "false"]).optional(),
+  bodega: z.enum(["true", "false"]).optional(),
+  mascotas: z.enum(["true", "false"]).optional(),
 });
 
-// Schema de validación (transforma strings a numbers)
+// Schema de validación (transforma strings a numbers y booleans)
 export const searchFormSchema = searchFormInputSchema
   .transform((data) => ({
     q: data.q?.trim() || undefined,
@@ -36,6 +39,9 @@ export const searchFormSchema = searchFormInputSchema
         })()
       : undefined,
     dormitorios: data.dormitorios,
+    estacionamiento: data.estacionamiento === "true" ? true : data.estacionamiento === "false" ? false : undefined,
+    bodega: data.bodega === "true" ? true : data.bodega === "false" ? false : undefined,
+    mascotas: data.mascotas === "true" ? true : data.mascotas === "false" ? false : undefined,
   }))
   .pipe(
     z.object({
@@ -44,6 +50,9 @@ export const searchFormSchema = searchFormInputSchema
       precioMin: z.number().min(0, "El precio mínimo debe ser mayor o igual a 0").optional(),
       precioMax: z.number().min(0, "El precio máximo debe ser mayor o igual a 0").optional(),
       dormitorios: z.enum(["Estudio", "1", "2", "3"]).optional(),
+      estacionamiento: z.boolean().optional(),
+      bodega: z.boolean().optional(),
+      mascotas: z.boolean().optional(),
     })
   )
   .refine(

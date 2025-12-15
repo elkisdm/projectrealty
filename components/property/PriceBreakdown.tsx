@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { DollarSign, ChevronDown, ChevronUp, Info, Bed, Bath, Square } from "lucide-react";
 import type { Unit, Building } from "@schemas/models";
+import { Tooltip } from "@components/ui/Tooltip";
 
 interface PriceBreakdownProps {
   building: Building;
@@ -35,6 +36,22 @@ export function PriceBreakdown({
 
   // Si hay descuento, el ahorro es sobre el arriendo base
   const ahorroPrimerMes = originalPrice - discountPrice;
+
+  // Lógica de garantía desde BD
+  const garantiaMeses = selectedUnit.guarantee_months ?? 1;
+  const garantiaCuotas = selectedUnit.guarantee_installments ?? selectedUnit.garantia_cuotas ?? selectedUnit.cuotasGarantia;
+  const garantiaDirecta = selectedUnit.garantia;
+  const garantiaTotal = garantiaDirecta || Math.round(discountPrice * garantiaMeses);
+  const tieneCuotasGarantia = garantiaCuotas && garantiaCuotas > 1;
+  const cuotaGarantia = tieneCuotasGarantia ? Math.round(garantiaTotal / garantiaCuotas) : null;
+
+  // Cálculo de comisión de corretaje (50% arriendo + IVA 19% sobre la comisión)
+  const hasFreeCommission = (selectedUnit.promotions ?? []).some((b: any) => b.type === "free_commission") ||
+                            (building.badges ?? []).some((b: any) => b.type === "free_commission");
+  const IVA = 0.19;
+  const comisionBase = Math.round(discountPrice * 0.5);
+  const comisionIVA = Math.round(comisionBase * IVA);
+  const comisionTotal = hasFreeCommission ? 0 : comisionBase + comisionIVA;
 
   // Badge principal de 0% comisión
   const getMainBadge = () => {
@@ -109,27 +126,63 @@ export function PriceBreakdown({
             Desglose de costos
           </h3>
 
-          <dl className="space-y-2">
+          <dl className="space-y-2 relative">
+            {/* Arriendo */}
             <div className="flex items-center justify-between">
-              <dt className="text-sm text-gray-300:text-gray-400">Arriendo original</dt>
-              <dd className="text-sm line-through text-gray-500">${originalPrice.toLocaleString('es-CL')}</dd>
+              <dt className="text-sm text-gray-300:text-gray-400 flex items-center gap-1">
+                Arriendo
+                <Tooltip content="Precio base del arriendo mensual" />
+              </dt>
+              <dd className="text-sm font-medium text-white:text-white">${discountPrice.toLocaleString('es-CL')}</dd>
             </div>
 
+            {/* Gastos comunes */}
             <div className="flex items-center justify-between">
-              <dt className="text-sm font-semibold text-green-600">50% OFF primer mes</dt>
-              <dd className="text-lg font-bold text-white:text-white">${discountPrice.toLocaleString('es-CL')}</dd>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <dt className="text-sm text-gray-300:text-gray-400">Gastos comunes</dt>
+              <dt className="text-sm text-gray-300:text-gray-400 flex items-center gap-1">
+                Gastos comunes
+                <Tooltip content="Incluye mantención, administración y servicios comunes del edificio" />
+              </dt>
               <dd className="text-sm font-medium text-white:text-white">${gastosComunes.toLocaleString('es-CL')}</dd>
             </div>
 
+            {/* Garantía */}
             <div className="flex items-center justify-between">
-              <dt className="text-sm text-gray-300:text-gray-400">Ahorro primer mes</dt>
-              <dd className="text-sm font-semibold text-green-600">${ahorroPrimerMes.toLocaleString('es-CL')}</dd>
+              <dt className="text-sm text-gray-300:text-gray-400 flex items-center gap-1">
+                Garantía
+                <Tooltip
+                  content={
+                    tieneCuotasGarantia && cuotaGarantia
+                      ? `Garantía total de $${garantiaTotal.toLocaleString('es-CL')}. Disponible pagar en ${garantiaCuotas} cuotas de $${cuotaGarantia.toLocaleString('es-CL')}. Se devuelve al término del contrato si no hay daños.`
+                      : `Garantía de $${garantiaTotal.toLocaleString('es-CL')}. Se devuelve al término del contrato si no hay daños.`
+                  }
+                />
+              </dt>
+              <dd className="text-sm font-medium text-white:text-white">
+                ${garantiaTotal.toLocaleString('es-CL')}
+                {tieneCuotasGarantia && cuotaGarantia && (
+                  <span className="text-xs text-gray-400 ml-1">
+                    (en {garantiaCuotas} cuotas de ${cuotaGarantia.toLocaleString('es-CL')})
+                  </span>
+                )}
+              </dd>
             </div>
 
+            {/* Comisión de corretaje */}
+            <div className="flex items-center justify-between">
+              <dt className="text-sm text-gray-300:text-gray-400 flex items-center gap-1">
+                Comisión de corretaje
+                <Tooltip content="Comisión de corretaje equivalente al 50% del arriendo, más IVA (19%) aplicado sobre esa comisión. Se paga una sola vez al inicio del contrato." />
+              </dt>
+              <dd className="text-sm font-medium text-white:text-white">
+                {hasFreeCommission ? (
+                  <span className="text-green-600">$0 (Gratis)</span>
+                ) : (
+                  `$${comisionTotal.toLocaleString('es-CL')}`
+                )}
+              </dd>
+            </div>
+
+            {/* Total destacado */}
             <div className="flex items-center justify-between pt-2 border-t border-gray-700:border-gray-600">
               <dt className="text-sm font-semibold text-white:text-white">Total mensual</dt>
               <dd className="text-lg font-bold text-white:text-white">${precioTotalMensual.toLocaleString('es-CL')}</dd>
@@ -276,13 +329,14 @@ export function PriceBreakdown({
           >
             Solicitar visita
           </button>
-          <button
+          {/* Botón deshabilitado temporalmente */}
+          {/* <button
             onClick={onSendQuotation}
             className="w-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-white:text-white text-white font-semibold py-2.5 px-4 rounded-lg transition-colors duration-100 text-sm"
             aria-label="Postular"
           >
             Postular
-          </button>
+          </button> */}
         </div>
       </div>
     </section>

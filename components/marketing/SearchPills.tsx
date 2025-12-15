@@ -5,8 +5,8 @@ import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 interface SearchPillsProps {
   options: string[];
-  selected: string | undefined;
-  onSelect: (value: string | undefined) => void;
+  selected: string | string[] | undefined;
+  onSelect: (value: string | string[] | undefined) => void;
   label?: string;
   className?: string;
   multiple?: boolean;
@@ -28,9 +28,19 @@ export function SearchPills({
 
   const handleClick = (value: string) => {
     if (multiple) {
-      // Para múltiple, toggle la selección
-      // Por ahora implementamos single select según especificación
-      onSelect(selected === value ? undefined : value);
+      // Multiselección: toggle en array
+      const currentSelected = Array.isArray(selected) ? selected : selected ? [selected] : [];
+      const isSelected = currentSelected.includes(value);
+      
+      if (isSelected) {
+        // Remover del array
+        const newSelected = currentSelected.filter(v => v !== value);
+        onSelect(newSelected.length > 0 ? newSelected : undefined);
+      } else {
+        // Agregar al array
+        const newSelected = [...currentSelected, value];
+        onSelect(newSelected);
+      }
     } else {
       // Single select: toggle
       onSelect(selected === value ? undefined : value);
@@ -38,15 +48,17 @@ export function SearchPills({
   };
 
   return (
-    <div className={`space-y-2 ${className}`}>
+    <div className={`flex items-center gap-3 flex-wrap ${className}`}>
       {label && (
-        <label className="block text-sm font-medium text-text mb-2">
-          {label}
+        <label className="text-sm font-semibold text-text whitespace-nowrap">
+          {label}:
         </label>
       )}
       <div className="flex flex-wrap gap-2">
         {options.map((option) => {
-          const isSelected = selected === option;
+          const isSelected = multiple 
+            ? Array.isArray(selected) && selected.includes(option)
+            : selected === option;
           return (
             <motion.button
               key={option}

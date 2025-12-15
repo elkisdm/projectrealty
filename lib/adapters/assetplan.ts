@@ -41,6 +41,7 @@ export type AssetPlanRawUnit = {
   price?: number;
   disponible?: boolean;
   status?: string; // provider-specific status label
+  estado?: string; // Estado raw desde AssetPlan (ej: "RE - Acondicionamiento", "Lista para arrendar")
   promotions?: AssetPlanRawBadge[] | string[]; // can be strings or objects with label
 };
 
@@ -141,6 +142,23 @@ export function mapUnit(raw: AssetPlanRawUnit): Unit {
   const buildingId = unitIdStr.includes('-') ? unitIdStr.split('-')[0] : unitIdStr.substring(0, 8);
   const buildingSlug = buildingId; // Use buildingId as slug fallback
 
+  // Mapear estado raw desde AssetPlan
+  const estadoRaw = normalizeString(raw.estado);
+  let estado: "Disponible" | "Reservado" | "Arrendado" | "RE - Acondicionamiento" | undefined;
+  
+  if (estadoRaw) {
+    const estadoLower = estadoRaw.toLowerCase();
+    if (estadoLower.includes("lista para arrendar") || estadoLower.includes("disponible")) {
+      estado = "Disponible";
+    } else if (estadoLower.includes("reservado") || estadoLower.includes("reserved")) {
+      estado = "Reservado";
+    } else if (estadoLower.includes("arrendado") || estadoLower.includes("rented") || estadoLower.includes("ocupado")) {
+      estado = "Arrendado";
+    } else if (estadoLower.includes("re - acondicionamiento") || estadoLower.includes("reacondicionamiento")) {
+      estado = "RE - Acondicionamiento";
+    }
+  }
+
   // Use helper to create complete Unit with all required fields
   const completeUnit = normalizeUnit(
     {
@@ -163,6 +181,8 @@ export function mapUnit(raw: AssetPlanRawUnit): Unit {
       parkingOptions: Array.isArray(raw.parkingOptions) ? raw.parkingOptions.map((s) => s.trim()).filter(Boolean) : undefined,
       storageOptions: Array.isArray(raw.storageOptions) ? raw.storageOptions.map((s) => s.trim()).filter(Boolean) : undefined,
       status: mapStatus(raw.status),
+      estado: estado,
+      estadoRaw: estadoRaw, // Preservar estado raw original
       promotions: toPromotionBadges(raw.promotions as (AssetPlanRawBadge | string)[] | undefined),
     },
     buildingId,

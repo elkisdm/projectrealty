@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, MessageCircle, DollarSign } from "lucide-react";
 import { track, ANALYTICS_EVENTS } from "@lib/analytics";
+import type { Unit } from "@schemas/models";
 import { useReducedMotion } from "@hooks/useReducedMotion";
 
 interface StickyCtaBarProps {
@@ -13,6 +14,8 @@ interface StickyCtaBarProps {
   isVisible?: boolean;
   propertyId?: string;
   commune?: string;
+  unit?: Unit;
+  buildingId?: string;
 }
 
 export const StickyCtaBar: React.FC<StickyCtaBarProps> = ({
@@ -21,7 +24,9 @@ export const StickyCtaBar: React.FC<StickyCtaBarProps> = ({
   onWhatsApp,
   isVisible: _isVisible = false,
   propertyId,
-  commune
+  commune,
+  unit,
+  buildingId
 }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const prefersReducedMotion = useReducedMotion();
@@ -50,24 +55,26 @@ export const StickyCtaBar: React.FC<StickyCtaBarProps> = ({
   }, []);
 
   const handleBookClick = useCallback(() => {
-    track(ANALYTICS_EVENTS.CTA_BOOK_CLICK, {
-      context: "sticky_bar",
-      propertyId,
-      commune,
-      price: priceMonthly
+    track(ANALYTICS_EVENTS.CTA_CLICK, {
+      cta_type: "schedule_visit",
+      location: "sticky_bar",
+      property_id: buildingId || propertyId || "",
+      unit_id: unit?.id || "",
+      variant: "primary",
     });
     onBook();
-  }, [onBook, propertyId, commune, priceMonthly]);
+  }, [onBook, buildingId, propertyId, unit]);
 
   const handleWhatsAppClick = useCallback(() => {
-    track(ANALYTICS_EVENTS.CTA_WHATSAPP_CLICK, {
-      context: "sticky_bar",
-      propertyId,
-      commune,
-      price: priceMonthly
+    track(ANALYTICS_EVENTS.CTA_CLICK, {
+      cta_type: "whatsapp",
+      location: "sticky_bar",
+      property_id: buildingId || propertyId || "",
+      unit_id: unit?.id || "",
+      variant: "secondary",
     });
     onWhatsApp();
-  }, [onWhatsApp, propertyId, commune, priceMonthly]);
+  }, [onWhatsApp, buildingId, propertyId, unit]);
 
   return (
     <AnimatePresence>
@@ -163,27 +170,31 @@ export const StickyCtaSidebar: React.FC<StickyCtaBarProps> = ({
   onBook,
   onWhatsApp,
   propertyId,
-  commune
+  commune,
+  unit,
+  buildingId
 }) => {
   const handleBookClick = useCallback(() => {
-    track(ANALYTICS_EVENTS.CTA_BOOK_CLICK, {
-      context: "sticky_sidebar",
-      propertyId,
-      commune,
-      price: priceMonthly
+    track(ANALYTICS_EVENTS.CTA_CLICK, {
+      cta_type: "schedule_visit",
+      location: "sticky_sidebar",
+      property_id: buildingId || propertyId || "",
+      unit_id: unit?.id || "",
+      variant: "primary",
     });
     onBook();
-  }, [onBook, propertyId, commune, priceMonthly]);
+  }, [onBook, buildingId, propertyId, unit]);
 
   const handleWhatsAppClick = useCallback(() => {
-    track(ANALYTICS_EVENTS.CTA_WHATSAPP_CLICK, {
-      context: "sticky_sidebar",
-      propertyId,
-      commune,
-      price: priceMonthly
+    track(ANALYTICS_EVENTS.CTA_CLICK, {
+      cta_type: "whatsapp",
+      location: "sticky_sidebar",
+      property_id: buildingId || propertyId || "",
+      unit_id: unit?.id || "",
+      variant: "secondary",
     });
     onWhatsApp();
-  }, [onWhatsApp, propertyId, commune, priceMonthly]);
+  }, [onWhatsApp, buildingId, propertyId, unit]);
 
   return (
     <div className="hidden lg:block sticky top-6">

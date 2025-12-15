@@ -5,6 +5,7 @@ import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import type { Unit, Building } from "@schemas/models";
+import { SwipeableGallery } from "./SwipeableGallery";
 
 interface PropertyGalleryGridProps {
   unit?: Unit;
@@ -17,47 +18,71 @@ const DEFAULT_BLUR = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAY
 export function PropertyGalleryGrid({ unit, building, className = "" }: PropertyGalleryGridProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
-  const [activeSlide, setActiveSlide] = useState(0);
+  const [mobileGalleryIndex, setMobileGalleryIndex] = useState(0);
   const lightboxRef = useRef<HTMLDivElement>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  const handleScroll = () => {
-    if (scrollRef.current) {
-      const { scrollLeft, clientWidth } = scrollRef.current;
-      const newIndex = Math.round(scrollLeft / clientWidth);
-      if (newIndex !== activeSlide && newIndex >= 0 && newIndex < finalImages.length) {
-        setActiveSlide(newIndex);
-      }
-    }
-  };
 
   // Combinar imágenes según prioridad: tipologiaImages > areasComunesImages > buildingImages > unitImages
+  // Eliminar duplicados para evitar mostrar la misma imagen múltiples veces
   const getAllImages = (): string[] => {
     const images: string[] = [];
+    const seen = new Set<string>(); // Para detectar duplicados
+
+    // Helper para agregar imágenes sin duplicados
+    const addImages = (imageArray: string[]) => {
+      imageArray.forEach(img => {
+        if (img && !seen.has(img)) {
+          seen.add(img);
+          images.push(img);
+        }
+      });
+    };
+
+    // Debug en desarrollo - siempre mostrar para diagnosticar
+    if (typeof window !== 'undefined') {
+      console.log('[PropertyGalleryGrid] Debug imágenes:', {
+        tipologia: unit?.tipologia,
+        unitId: unit?.id,
+        hasUnit: !!unit,
+        imagesTipologia: unit?.imagesTipologia,
+        imagesTipologiaType: typeof unit?.imagesTipologia,
+        imagesTipologiaIsArray: Array.isArray(unit?.imagesTipologia),
+        imagesTipologiaLength: unit?.imagesTipologia?.length,
+        imagesAreasComunes: unit?.imagesAreasComunes,
+        imagesAreasComunesType: typeof unit?.imagesAreasComunes,
+        imagesAreasComunesIsArray: Array.isArray(unit?.imagesAreasComunes),
+        imagesAreasComunesLength: unit?.imagesAreasComunes?.length,
+        buildingGalleryLength: building?.gallery?.length,
+        buildingCoverImage: building?.coverImage,
+      });
+    }
 
     // Prioridad 1: Imágenes de tipología
     if (unit?.imagesTipologia && Array.isArray(unit.imagesTipologia) && unit.imagesTipologia.length > 0) {
-      images.push(...unit.imagesTipologia);
+      addImages(unit.imagesTipologia);
     }
 
     // Prioridad 2: Imágenes de áreas comunes del edificio
     if (unit?.imagesAreasComunes && Array.isArray(unit.imagesAreasComunes) && unit.imagesAreasComunes.length > 0) {
-      images.push(...unit.imagesAreasComunes);
+      addImages(unit.imagesAreasComunes);
     }
 
-    // Prioridad 3: Imágenes del edificio (galería)
-    if (building.gallery && Array.isArray(building.gallery) && building.gallery.length > 0) {
-      images.push(...building.gallery);
+    // Prioridad 3: Imágenes del edificio (galería) - solo si NO hay imagesAreasComunes
+    // (porque imagesAreasComunes ya contiene las imágenes del edificio)
+    if (!unit?.imagesAreasComunes || unit.imagesAreasComunes.length === 0) {
+      if (building.gallery && Array.isArray(building.gallery) && building.gallery.length > 0) {
+        addImages(building.gallery);
+      }
     }
 
-    // Prioridad 4: CoverImage del edificio
-    if (building.coverImage) {
+    // Prioridad 4: CoverImage del edificio (solo si no está ya incluida)
+    if (building.coverImage && !seen.has(building.coverImage)) {
       images.push(building.coverImage);
+      seen.add(building.coverImage);
     }
 
     // Prioridad 5: Imágenes de la unidad (interior) - solo si no hay imágenes del edificio
     if (unit?.images && Array.isArray(unit.images) && unit.images.length > 0) {
-      images.push(...unit.images);
+      addImages(unit.images);
     }
 
     // Fallback: si no hay imágenes, usar coverImage del edificio
@@ -168,38 +193,22 @@ export function PropertyGalleryGrid({ unit, building, className = "" }: Property
           )}
         </div>
 
-        {/* Mobile Layout: Horizontal Slider (Swipeable) */}
-        <div className="md:hidden relative aspect-[4/3] w-full group rounded-t-2xl overflow-hidden">
-          <div
-            ref={scrollRef}
-            className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide h-full w-full"
-            onScroll={handleScroll}
-            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-          >
-            {finalImages.map((image, index) => (
-              <div
-                key={`mobile-slide-${index}`}
-                className="flex-shrink-0 w-full h-full relative snap-center"
-                onClick={() => openLightbox(index)}
-              >
-                <Image
-                  src={image}
-                  alt={`Imagen ${index + 1} de la propiedad`}
-                  fill
-                  className="object-cover"
-                  priority={index === 0}
-                  loading={index === 0 ? "eager" : "lazy"}
-                  sizes="100vw"
-                />
-              </div>
-            ))}
-          </div>
-
-          {/* Mobile only photo count badge */}
-          <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 pointer-events-none z-10">
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /></svg>
-            {activeSlide + 1} / {finalImages.length}
-          </div>
+        {/* Mobile Layout: Swipeable Gallery con gestos mejorados */}
+        <div className="md:hidden">
+          <SwipeableGallery
+            images={finalImages}
+            initialIndex={mobileGalleryIndex}
+            onImageChange={(index) => {
+              setMobileGalleryIndex(index);
+            }}
+            onImageClick={(index) => {
+              setLightboxIndex(index);
+              setLightboxOpen(true);
+            }}
+            showIndicators={true}
+            showNavigation={false}
+            className="rounded-t-2xl"
+          />
         </div>
 
         {/* Grid de 4 imágenes pequeñas (Oculto en mobile para reducir altura, derecha en desktop) */}

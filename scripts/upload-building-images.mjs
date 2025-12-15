@@ -95,12 +95,75 @@ function getContentType(fileName) {
 }
 
 /**
- * Sube una imagen a Supabase Storage
+ * Verifica si un archivo ya existe en Supabase Storage
+ * Usa una petición HEAD a la URL pública para verificar existencia
  */
-async function uploadImage(bucketName, storagePath, filePath) {
+async function fileExists(bucketName, storagePath) {
   try {
-    const fileBuffer = readFileSync(filePath);
+    const { data: { publicUrl } } = supabase.storage
+      .from(bucketName)
+      .getPublicUrl(storagePath);
+    
+    // Crear un AbortController para timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    
+    try {
+      // Hacer una petición HEAD para verificar si el archivo existe
+      // Esto es más eficiente que descargar el archivo completo
+      const response = await fetch(publicUrl, { 
+        method: 'HEAD',
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      return response.ok;
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      // Si es un abort (timeout), asumir que no existe
+      if (fetchError.name === 'AbortError') {
+        return false;
+      }
+      throw fetchError;
+    }
+  } catch (error) {
+    // Si hay error (red, etc.), asumir que no existe para evitar bloquear el proceso
+    return false;
+  }
+}
+
+/**
+ * Obtiene la URL pública de un archivo existente en Supabase Storage
+ */
+async function getExistingFileUrl(bucketName, storagePath) {
+  try {
+    const { data: { publicUrl } } = supabase.storage
+      .from(bucketName)
+      .getPublicUrl(storagePath);
+    return publicUrl;
+  } catch (error) {
+    return null;
+  }
+}
+
+/**
+ * Sube una imagen a Supabase Storage (solo si no existe)
+ */
+async function uploadImage(bucketName, storagePath, filePath, skipIfExists = true) {
+  try {
     const fileName = basename(filePath);
+    
+    // Verificar si el archivo ya existe
+    if (skipIfExists) {
+      const exists = await fileExists(bucketName, storagePath);
+      if (exists) {
+        const existingUrl = await getExistingFileUrl(bucketName, storagePath);
+        console.log(`⏭️  Ya existe: ${fileName} → ${existingUrl}`);
+        return existingUrl;
+      }
+    }
+    
+    const fileBuffer = readFileSync(filePath);
     const contentType = getContentType(fileName);
     
     console.log(`📤 Subiendo: ${fileName} → ${bucketName}/${storagePath}`);
@@ -247,6 +310,49 @@ async function updateTipologiaImages(buildingSlug, tipologia, imageUrls) {
 }
 
 /**
+ * Actualiza images_areas_comunes para todas las unidades de un edificio
+ * Esto asigna las imágenes de espacios comunes (carpeta Edificio) a todas las unidades
+ */
+async function updateAreasComunesImages(buildingSlug, imageUrls) {
+  if (imageUrls.length === 0) return false;
+  
+  try {
+    // Primero obtener el building_id desde el slug
+    const { data: building, error: buildingError } = await supabase
+      .from('buildings')
+      .select('id')
+      .eq('slug', buildingSlug)
+      .single();
+    
+    if (buildingError || !building) {
+      console.error(`❌ Edificio no encontrado: ${buildingSlug}`);
+      return false;
+    }
+    
+    console.log(`\n🔄 Actualizando imágenes de áreas comunes para todas las unidades del edificio...`);
+    
+    // Actualizar todas las unidades de este edificio con las imágenes de áreas comunes
+    const { data, error } = await supabase
+      .from('units')
+      .update({ images_areas_comunes: imageUrls })
+      .eq('building_id', building.id)
+      .select();
+    
+    if (error) {
+      console.error(`❌ Error actualizando unidades:`, error.message);
+      return false;
+    }
+    
+    console.log(`✅ ${data?.length || 0} unidad(es) actualizada(s) con imágenes de áreas comunes`);
+    return true;
+    
+  } catch (error) {
+    console.error(`❌ Error:`, error.message);
+    return false;
+  }
+}
+
+/**
  * Crea el bucket si no existe
  */
 async function ensureBucketExists(bucketName) {
@@ -284,13 +390,13 @@ async function ensureBucketExists(bucketName) {
 async function processFolder(buildingSlug, folderName, folderPath, bucketName = 'edificios') {
   if (!existsSync(folderPath)) {
     console.warn(`⚠️  Carpeta no existe: ${folderPath}`);
-    return [];
+    return { urls: [], stats: { total: 0, uploaded: 0, skipped: 0 } };
   }
   
   const stats = statSync(folderPath);
   if (!stats.isDirectory()) {
     console.warn(`⚠️  No es un directorio: ${folderPath}`);
-    return [];
+    return { urls: [], stats: { total: 0, uploaded: 0, skipped: 0 } };
   }
   
   const imageFiles = readdirSync(folderPath)
@@ -299,22 +405,41 @@ async function processFolder(buildingSlug, folderName, folderPath, bucketName = 
   
   if (imageFiles.length === 0) {
     console.warn(`⚠️  No se encontraron imágenes en: ${folderPath}`);
-    return [];
+    return { urls: [], stats: { total: 0, uploaded: 0, skipped: 0 } };
   }
   
   console.log(`\n📁 Procesando carpeta: ${folderName} (${imageFiles.length} imagen(es))`);
   
   const uploadedUrls = [];
+  let uploadedCount = 0;
+  let skippedCount = 0;
+  
   for (const filePath of imageFiles) {
     const fileName = basename(filePath);
     const storagePath = `${buildingSlug}/${folderName.toLowerCase()}/${fileName}`;
-    const url = await uploadImage(bucketName, storagePath, filePath);
+    
+    // Verificar si existe antes de intentar subir
+    const exists = await fileExists(bucketName, storagePath);
+    const url = await uploadImage(bucketName, storagePath, filePath, true);
+    
     if (url) {
       uploadedUrls.push(url);
+      if (exists) {
+        skippedCount++;
+      } else {
+        uploadedCount++;
+      }
     }
   }
   
-  return uploadedUrls;
+  return { 
+    urls: uploadedUrls, 
+    stats: { 
+      total: imageFiles.length, 
+      uploaded: uploadedCount, 
+      skipped: skippedCount 
+    } 
+  };
 }
 
 /**
@@ -394,13 +519,15 @@ Estructura esperada:
   // Procesar cada carpeta
   const folders = ['Edificio', 'Estudio', '1D', '2D', '3D'];
   const results = {};
+  const stats = {};
   
   for (const folderName of folders) {
     const folderPath = join(buildingFolderPath, folderName);
-    const imageUrls = await processFolder(finalBuildingSlug, folderName, folderPath);
+    const folderResult = await processFolder(finalBuildingSlug, folderName, folderPath);
     
-    if (imageUrls.length > 0) {
-      results[folderName] = imageUrls;
+    if (folderResult.urls && folderResult.urls.length > 0) {
+      results[folderName] = folderResult.urls;
+      stats[folderName] = folderResult.stats;
     }
   }
   
@@ -408,9 +535,11 @@ Estructura esperada:
   console.log(`\n${'='.repeat(60)}`);
   console.log(`🔄 Actualizando Base de Datos\n`);
   
-  // Actualizar galería del edificio
+  // Actualizar galería del edificio y áreas comunes de todas las unidades
   if (results['Edificio']) {
     await updateBuildingGallery(finalBuildingSlug, results['Edificio']);
+    // También actualizar images_areas_comunes de todas las unidades con estas imágenes
+    await updateAreasComunesImages(finalBuildingSlug, results['Edificio']);
   }
   
   // Actualizar imágenes de tipologías
@@ -433,11 +562,18 @@ Estructura esperada:
   console.log(`\n${'='.repeat(60)}`);
   console.log(`✨ Proceso completado\n`);
   console.log(`📊 Resumen:`);
-  console.log(`   - Edificio: ${results['Edificio']?.length || 0} imagen(es)`);
-  console.log(`   - Estudio: ${results['Estudio']?.length || 0} imagen(es)`);
-  console.log(`   - 1D: ${results['1D']?.length || 0} imagen(es)`);
-  console.log(`   - 2D: ${results['2D']?.length || 0} imagen(es)`);
-  console.log(`   - 3D: ${results['3D']?.length || 0} imagen(es)`);
+  
+  for (const folderName of folders) {
+    const folderStats = stats[folderName];
+    if (folderStats) {
+      const total = folderStats.total || 0;
+      const uploaded = folderStats.uploaded || 0;
+      const skipped = folderStats.skipped || 0;
+      console.log(`   - ${folderName}: ${total} total (${uploaded} subidas, ${skipped} ya existían)`);
+    } else {
+      console.log(`   - ${folderName}: 0 imagen(es)`);
+    }
+  }
 }
 
 main().catch(console.error);

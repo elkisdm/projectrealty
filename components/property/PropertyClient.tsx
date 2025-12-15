@@ -1,6 +1,6 @@
 "use client";
-import React, { useState, useEffect, Suspense } from "react";
-import { AlertCircle } from "lucide-react";
+import React, { useState, useEffect, Suspense, useCallback, startTransition, useRef, useMemo } from "react";
+import { AlertCircle, HelpCircle } from "lucide-react";
 
 import { track, ANALYTICS_EVENTS } from "@lib/analytics";
 import { logger } from "@lib/logger";
@@ -18,12 +18,16 @@ import { PropertySidebar } from "./PropertySidebar";
 import { PropertyBookingCard } from "./PropertyBookingCard";
 import { PropertyTabs } from "./PropertyTabs";
 import { PropertySimilarUnits } from "./PropertySimilarUnits";
-import { CommuneLifeSection } from "./CommuneLifeSection";
+import { PropertyAccordionSections } from "./PropertyAccordionSections";
 import { PropertyFAQ } from "./PropertyFAQ";
+import { PropertyFAQModal } from "./PropertyFAQModal";
+import { PropertyPriceBreakdown } from "./PropertyPriceBreakdown";
+import { UnitSelectorModal } from "./UnitSelectorModal";
 
 // Import directo para evitar problemas de lazy loading
 import { RelatedList } from "@components/lists/RelatedList";
 import { UnitsList } from "./UnitsList";
+import { PullToRefresh } from "@components/ui/PullToRefresh";
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component<
@@ -115,9 +119,51 @@ export function PropertyClient({
     showAllUnits,
     variant = "catalog"
 }: PropertyClientProps) {
-    const [isLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    // Función para refresh de la página
+    const handleRefresh = async () => {
+        setIsLoading(true);
+        try {
+            // Recargar la página para obtener datos actualizados
+            window.location.reload();
+        } catch (err) {
+            console.error("Error al refrescar:", err);
+            setIsLoading(false);
+        }
+    };
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isUnitSelectorOpen, setIsUnitSelectorOpen] = useState(false);
+    const [isFAQModalOpen, setIsFAQModalOpen] = useState(false);
+
+    // Callback memoizado para abrir el selector de unidades
+    const handleOpenUnitSelector = useCallback(() => {
+        // Usar startTransition para que el cambio de estado no bloquee el hilo principal
+        startTransition(() => {
+            setIsUnitSelectorOpen(true);
+        });
+    }, []);
+
+    // Callback memoizado para cerrar el selector de unidades
+    const handleCloseUnitSelector = useCallback(() => {
+        setIsUnitSelectorOpen(false);
+    }, []);
+
+    // Memoizar fallback unit para evitar crear objetos nuevos en cada render
+    const fallbackUnit = useMemo(() => {
+        const firstAvailable = building.units.find(u => u.disponible);
+        if (firstAvailable) return firstAvailable;
+        return {
+            id: 'default',
+            tipologia: '2D1B',
+            m2: 50,
+            price: building.precio_desde || 290000,
+            estacionamiento: false,
+            bodega: false,
+            disponible: false
+        };
+    }, [building.units, building.precio_desde]);
 
     // Usar el hook para manejar la l?gica de la unidad
     const {
@@ -135,8 +181,11 @@ export function PropertyClient({
     } = usePropertyUnit({ building, defaultUnitId });
 
     // Analytics tracking on mount - property view con datos de unidad
+    // Usar ref para evitar re-ejecuciones innecesarias
+    const trackedUnitIdRef = useRef<string | undefined>(undefined);
     useEffect(() => {
-        if (selectedUnit) {
+        if (selectedUnit && selectedUnit.id !== trackedUnitIdRef.current) {
+            trackedUnitIdRef.current = selectedUnit.id;
             track(ANALYTICS_EVENTS.PROPERTY_VIEW, {
                 property_id: building.id,
                 property_slug: building.slug,
@@ -150,7 +199,7 @@ export function PropertyClient({
                 variant,
             });
         }
-    }, [building.id, building.slug, building.name, building.comuna, selectedUnit, variant]);
+    }, [building.id, building.slug, building.name, building.comuna, selectedUnit?.id, variant]);
 
     // Listen for custom event to open modal
     useEffect(() => {
@@ -164,16 +213,22 @@ export function PropertyClient({
         };
     }, []);
 
+
+    // Memoizar unidades disponibles para evitar filtrar en cada render
+    const availableUnitsCount = useMemo(() => {
+        return building.units.filter(unit => unit.disponible).length;
+    }, [building.units]);
+
     // Handle errors gracefully
     useEffect(() => {
         if (!building) {
             setError("No se pudo cargar la informaci?n de la propiedad");
-        } else if (building && building.units.filter(unit => unit.disponible).length === 0) {
+        } else if (availableUnitsCount === 0) {
             setError("No hay unidades disponibles en esta propiedad");
         } else {
             setError(null); // Clear any previous errors
         }
-    }, [building]);
+    }, [building, availableUnitsCount]);
 
     // Funci?n para enviar cotizaci?n
     const handleSendQuotation = () => {
@@ -265,14 +320,17 @@ export function PropertyClient({
     }
 
     // Si se solicita ver todas las unidades o hay filtro de tipolog?a, mostrar lista de unidades
-    const availableUnits = building.units.filter((unit) => unit.disponible);
+    const availableUnits = useMemo(() => 
+        building.units.filter((unit) => unit.disponible),
+        [building.units]
+    );
 
     if (showAllUnits || tipologiaFilter) {
         return (
             <ErrorBoundary>
                 <div className="min-h-screen bg-bg">
                     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 lg:py-8">
-                        <PropertyBreadcrumb building={building} unit={selectedUnit || building.units[0] || undefined} variant={variant} />
+                        <PropertyBreadcrumb building={building} unit={selectedUnit || undefined} variant={variant} />
                         <div className="mt-6">
                             <a
                                 href={`/property/${building.slug}`}
@@ -294,30 +352,24 @@ export function PropertyClient({
 
     return (
         <ErrorBoundary>
-            <div className="min-h-screen bg-bg">
-                <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 lg:py-8">
-                    {/* Breadcrumb accesible */}
-                    <PropertyBreadcrumb building={building} unit={selectedUnit || undefined} variant={variant} />
+            <PullToRefresh onRefresh={handleRefresh} disabled={isLoading}>
+                <div className="min-h-screen bg-bg">
+                    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 lg:py-8">
+                        {/* Breadcrumb accesible */}
+                        <PropertyBreadcrumb building={building} unit={selectedUnit || undefined} variant={variant} />
 
-                    {/* Layout principal: 3 columnas */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
+                        {/* Layout principal: 3 columnas */}
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
                         {/* Columna principal (2/3) */}
                         <div className="lg:col-span-2 space-y-6 lg:space-y-8">
                             {/* Above the fold m?vil optimizado para conversi?n + Galer?a integrada */}
                             <PropertyAboveFoldMobile
                                 building={building}
-                                selectedUnit={selectedUnit || building.units[0] || {
-                                    id: 'default',
-                                    tipologia: '2D1B',
-                                    m2: 50,
-                                    price: building.precio_desde || 290000,
-                                    estacionamiento: false,
-                                    bodega: false,
-                                    disponible: false
-                                }}
+                                selectedUnit={selectedUnit || fallbackUnit}
                                 variant={variant}
                                 onScheduleVisit={() => setIsModalOpen(true)}
                                 onWhatsApp={handleWhatsAppClick}
+                                onSelectOtherUnit={handleOpenUnitSelector}
                                 onSave={() => {
                                     // TODO: Implementar guardar en favoritos
                                     logger.log("Save clicked");
@@ -327,6 +379,20 @@ export function PropertyClient({
                                     logger.log("Share clicked");
                                 }}
                             />
+
+                            {/* Breakdown de precios (solo móvil) */}
+                            {selectedUnit && (
+                                <PropertyPriceBreakdown
+                                    building={building}
+                                    selectedUnit={selectedUnit}
+                                    originalPrice={originalPrice}
+                                    discountPrice={discountPrice}
+                                    onScheduleVisit={() => setIsModalOpen(true)}
+                                    onWhatsApp={handleWhatsAppClick}
+                                    onSendQuotation={handleSendQuotation}
+                                    onSelectOtherUnit={handleOpenUnitSelector}
+                                />
+                            )}
 
                             {/* Tabs de contenido según especificación Assetplan */}
                             {selectedUnit && (
@@ -345,8 +411,8 @@ export function PropertyClient({
                                 />
                             )}
 
-                            {/* C?mo es vivir en la comuna */}
-                            <CommuneLifeSection building={building} variant={variant} />
+                            {/* Secciones expandibles (reemplazo de CommuneLifeSection) */}
+                            <PropertyAccordionSections building={building} selectedUnit={selectedUnit} />
 
                             {/* TODO: Reintegrar Calculadora del primer pago cuando esté pulida
                             <FirstPaymentDetails
@@ -382,8 +448,25 @@ export function PropertyClient({
                                 </Suspense>
                             </section>
 
-                            {/* Preguntas frecuentes */}
-                            <PropertyFAQ building={building} variant={variant} />
+                            {/* Preguntas frecuentes - Botón para abrir modal */}
+                            <section aria-labelledby="faq-section-heading" className="mt-12 lg:mt-16">
+                                <div className="text-center">
+                                    <h2 id="faq-section-heading" className="text-xl lg:text-2xl font-bold text-text mb-4 lg:mb-6">
+                                        Preguntas frecuentes
+                                    </h2>
+                                    <p className="text-sm lg:text-base text-text-muted mb-6 max-w-2xl mx-auto">
+                                        Resolvemos las dudas más comunes sobre esta propiedad
+                                    </p>
+                                    <button
+                                        onClick={() => setIsFAQModalOpen(true)}
+                                        className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-xl transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-800 shadow-lg hover:shadow-xl min-h-[48px]"
+                                        aria-label="Ver preguntas frecuentes"
+                                    >
+                                        <HelpCircle className="w-5 h-5" />
+                                        <span>Ver preguntas frecuentes</span>
+                                    </button>
+                                </div>
+                            </section>
 
                             {/* Sticky Mobile CTA ya est? integrado en PropertyAboveFoldMobile */}
                         </div>
@@ -395,6 +478,7 @@ export function PropertyClient({
                                 building={building}
                                 onScheduleVisit={() => setIsModalOpen(true)}
                                 onWhatsApp={handleWhatsAppClick}
+                                onSelectOtherUnit={handleOpenUnitSelector}
                             />
                         )}
                     </div>
@@ -408,8 +492,10 @@ export function PropertyClient({
                     propertyName={building.name}
                     propertyAddress={building.address}
                     propertyImage={building.coverImage}
+                    unit={selectedUnit}
+                    building={building}
                     onSuccess={(visitData) => {
-                        logger.log('? Visita creada exitosamente:', visitData);
+                        logger.log('✅ Visita creada exitosamente:', visitData);
                         track(ANALYTICS_EVENTS.VISIT_SCHEDULED, {
                             property_id: building.id,
                             property_slug: building.slug,
@@ -421,7 +507,24 @@ export function PropertyClient({
                         setIsModalOpen(false);
                     }}
                 />
-            </div>
+
+                {/* Modal de Selección de Unidades */}
+                <UnitSelectorModal
+                    isOpen={isUnitSelectorOpen}
+                    onClose={handleCloseUnitSelector}
+                    building={building}
+                    currentUnitId={selectedUnit?.id}
+                />
+
+                {/* Modal de Preguntas Frecuentes */}
+                <PropertyFAQModal
+                    isOpen={isFAQModalOpen}
+                    onClose={() => setIsFAQModalOpen(false)}
+                    building={building}
+                    variant={variant}
+                />
+                </div>
+            </PullToRefresh>
         </ErrorBoundary>
     );
 }

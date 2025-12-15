@@ -39,6 +39,9 @@ export function HeroSearchForm({ className = "", variant = "compact" }: HeroSear
   // Observar valores para sincronizar pills
   const comuna = watch("comuna");
   const dormitorios = watch("dormitorios");
+  const estacionamiento = watch("estacionamiento");
+  const bodega = watch("bodega");
+  const mascotas = watch("mascotas");
   const q = watch("q");
   const precioMin = watch("precioMin");
   const precioMax = watch("precioMax");
@@ -198,6 +201,15 @@ export function HeroSearchForm({ className = "", variant = "compact" }: HeroSear
     if (validatedData.dormitorios) {
       params.set("dormitorios", validatedData.dormitorios);
     }
+    if (validatedData.estacionamiento !== undefined) {
+      params.set("estacionamiento", validatedData.estacionamiento.toString());
+    }
+    if (validatedData.bodega !== undefined) {
+      params.set("bodega", validatedData.bodega.toString());
+    }
+    if (validatedData.mascotas !== undefined) {
+      params.set("mascotas", validatedData.mascotas.toString());
+    }
 
     // Redirigir a página de resultados
     const queryString = params.toString();
@@ -255,15 +267,18 @@ export function HeroSearchForm({ className = "", variant = "compact" }: HeroSear
         <div className="space-y-3">
           {/* Pills de Comuna */}
           <SearchPills
-              options={comunasPrincipales}
-              selected={comuna}
-              onSelect={(value) => setValue("comuna", value || undefined, { shouldValidate: true })}
-              label=""
-              className="justify-center"
-            />
+            options={comunasPrincipales}
+            selected={comuna}
+            onSelect={(value) => {
+              const stringValue = Array.isArray(value) ? value[0] : value;
+              setValue("comuna", stringValue || undefined, { shouldValidate: true });
+            }}
+            label="Comuna"
+          />
 
-            {/* Pills de Dormitorios */}
-          <SearchPills
+          {/* Fila de filtros: Dormitorios, Estacionamiento, Bodega, Mascotas */}
+          <div className="flex flex-wrap items-center gap-4 lg:gap-6">
+            <SearchPills
               options={dormitoriosOptions}
               selected={dormitorios}
               onSelect={(value) =>
@@ -271,9 +286,39 @@ export function HeroSearchForm({ className = "", variant = "compact" }: HeroSear
                   shouldValidate: true,
                 })
               }
-              label=""
-              className="justify-center"
-          />
+              label="Dormitorios"
+            />
+
+            <SearchPills
+              options={["Sí", "No"]}
+              selected={estacionamiento === "true" ? "Sí" : estacionamiento === "false" ? "No" : undefined}
+              onSelect={(value) => {
+                const boolValue = value === "Sí" ? "true" : value === "No" ? "false" : undefined;
+                setValue("estacionamiento", boolValue as "true" | "false" | undefined, { shouldValidate: true });
+              }}
+              label="Estacionamiento"
+            />
+
+            <SearchPills
+              options={["Sí", "No"]}
+              selected={bodega === "true" ? "Sí" : bodega === "false" ? "No" : undefined}
+              onSelect={(value) => {
+                const boolValue = value === "Sí" ? "true" : value === "No" ? "false" : undefined;
+                setValue("bodega", boolValue as "true" | "false" | undefined, { shouldValidate: true });
+              }}
+              label="Bodega"
+            />
+
+            <SearchPills
+              options={["Sí", "No"]}
+              selected={mascotas === "true" ? "Sí" : mascotas === "false" ? "No" : undefined}
+              onSelect={(value) => {
+                const boolValue = value === "Sí" ? "true" : value === "No" ? "false" : undefined;
+                setValue("mascotas", boolValue as "true" | "false" | undefined, { shouldValidate: true });
+              }}
+              label="Mascotas"
+            />
+          </div>
         </div>
       </div>
     </form>

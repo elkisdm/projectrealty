@@ -2,6 +2,7 @@
 import React from "react";
 import { Bed, Bath, Square, Calendar, Phone } from "lucide-react";
 import { FirstPaymentSummary } from "./FirstPaymentSummary";
+import { AvailabilityStatus } from "./AvailabilityStatus";
 import { useScrollVisibility } from "@hooks/useScrollVisibility";
 import { logger } from "@lib/logger";
 import type { Unit, Building } from "@schemas/models";
@@ -156,6 +157,11 @@ export function PropertySidebar({
               Sin comisión de arriendo
             </div>
           </div>
+
+          {/* Estado de disponibilidad */}
+          {selectedUnit && (
+            <AvailabilityStatus unit={selectedUnit} buildingName={building.name} />
+          )}
 
           {/* Información rápida de la unidad */}
           <div className="bg-surface rounded-lg lg:rounded-xl p-3 lg:p-4 space-y-2 lg:space-y-3">

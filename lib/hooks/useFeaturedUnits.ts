@@ -1,6 +1,7 @@
 import { getAllBuildings } from '@lib/data';
 import type { Unit, Building } from '@types';
 import { logger } from '@lib/logger';
+import { deduplicateUnitsByTipology } from '@lib/utils/unit-deduplication';
 
 /**
  * Tipo para unidad con su edificio asociado
@@ -134,10 +135,13 @@ export async function getFeaturedUnits(
         break;
     }
 
-    // Limitar resultados
-    const limitedUnits = filteredUnits.slice(0, limit);
+    // Deduplicar: solo 1 unidad por tipología por edificio
+    const deduplicatedUnits = deduplicateUnitsByTipology(filteredUnits);
 
-    logger.log(`📊 Featured units: ${limitedUnits.length} unidades encontradas con filtro ${filter.type}=${filter.value}`);
+    // Limitar resultados después de deduplicar
+    const limitedUnits = deduplicatedUnits.slice(0, limit);
+
+    logger.log(`📊 Featured units: ${limitedUnits.length} unidades encontradas (después de deduplicación) con filtro ${filter.type}=${filter.value}`);
 
     return limitedUnits;
   } catch (error) {

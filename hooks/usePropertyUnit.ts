@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import type { Unit, Building } from "@schemas/models";
 
 interface UsePropertyUnitProps {
@@ -44,12 +44,24 @@ interface FirstPaymentCalculation {
 }
 
 export function usePropertyUnit({ building, defaultUnitId }: UsePropertyUnitProps) {
+  // Memoizar unidades disponibles
   const availableUnits = useMemo(() => 
     building.units.filter(unit => unit.disponible), 
     [building.units]
   );
 
-  const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
+  // Estado inicial - calcular directamente sin efectos
+  const getInitialUnit = (): Unit | null => {
+    const units = building.units.filter(unit => unit.disponible);
+    if (defaultUnitId) {
+      const unit = units.find(u => u.id === defaultUnitId);
+      if (unit) return unit;
+    }
+    return units[0] || null;
+  };
+
+  const [selectedUnit, setSelectedUnit] = useState<Unit | null>(getInitialUnit);
+
   const [moveInDate, setMoveInDate] = useState<Date>(() => {
     const today = new Date();
     const firstDayNextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
@@ -58,22 +70,40 @@ export function usePropertyUnit({ building, defaultUnitId }: UsePropertyUnitProp
   const [includeParking, setIncludeParking] = useState(false);
   const [includeStorage, setIncludeStorage] = useState(false);
 
-  // Seleccionar unidad por defecto basada en defaultUnitId o la primera disponible
-  const getDefaultUnit = useCallback(() => {
-    if (defaultUnitId) {
-      const unit = availableUnits.find(u => u.id === defaultUnitId);
-      if (unit) return unit;
-    }
-    return availableUnits[0] || null;
-  }, [defaultUnitId, availableUnits]);
+  // Ref para rastrear el último defaultUnitId que procesamos
+  const lastProcessedUnitId = useRef(defaultUnitId);
 
-  // Inicializar unidad seleccionada
+  // Solo actualizar cuando defaultUnitId cambia explícitamente
   useEffect(() => {
-    const defaultUnit = getDefaultUnit();
-    if (defaultUnit) {
-      setSelectedUnit(defaultUnit);
+    // Si no cambió, no hacer nada
+    if (defaultUnitId === lastProcessedUnitId.current) {
+      return;
     }
-  }, [getDefaultUnit]);
+
+    // Actualizar el ref
+    lastProcessedUnitId.current = defaultUnitId;
+
+    // Buscar la nueva unidad
+    let newUnit: Unit | null = null;
+    
+    if (defaultUnitId) {
+      newUnit = availableUnits.find(u => u.id === defaultUnitId) || null;
+    }
+    
+    if (!newUnit && availableUnits.length > 0) {
+      newUnit = availableUnits[0];
+    }
+
+    // Actualizar solo si es diferente
+    if (newUnit) {
+      setSelectedUnit(prev => {
+        if (prev?.id === newUnit!.id) return prev;
+        return newUnit;
+      });
+    }
+  // Solo depender de defaultUnitId - disponibleUnits se lee pero no causa re-ejecución
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaultUnitId]);
 
   // Datos estratégicos basados en AssetPlan
   const originalPrice = useMemo(() => 
@@ -243,9 +273,6 @@ export function usePropertyUnit({ building, defaultUnitId }: UsePropertyUnitProp
     formatDate,
     formatDateForSummary,
     getSummaryText,
-    getSummaryPrice,
-    
-    // Utilidades
-    getDefaultUnit
+    getSummaryPrice
   };
 }

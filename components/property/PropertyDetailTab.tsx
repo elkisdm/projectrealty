@@ -37,7 +37,6 @@ export function PropertyDetailTab({ unit, building }: PropertyDetailTabProps) {
   };
 
   // Información de la unidad
-  const codigoUnidad = unit.codigoUnidad || unit.id;
   const estado = unit.estado || (unit.disponible ? "Disponible" : "No disponible");
   const tipologia = unit.tipologia || "N/A";
 
@@ -91,12 +90,9 @@ export function PropertyDetailTab({ unit, building }: PropertyDetailTabProps) {
 
   return (
     <div className="space-y-6">
-      {/* Header con código y estado */}
+      {/* Header con estado */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h3 className="text-lg font-semibold text-text mb-1">
-            Código de unidad: {codigoUnidad}
-          </h3>
           <div className="flex items-center gap-2 mt-2">
             <span
               className={`px-3 py-1 rounded-full text-xs font-medium border ${getEstadoColor(estado)}`}

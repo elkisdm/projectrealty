@@ -61,7 +61,7 @@ export function normalizeChileanPhone(phone: string): string {
  * Valida si un teléfono tiene formato chileno válido
  * Acepta múltiples formatos antes de normalización
  */
-function isValidChileanPhone(phone: string): boolean {
+export function isValidChileanPhone(phone: string): boolean {
   // Remover espacios y caracteres especiales para validar
   const cleaned = phone.replace(/[\s\-\(\)\.]/g, '');
   

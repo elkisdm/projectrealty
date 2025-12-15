@@ -16,6 +16,7 @@ import { useVisitScheduler } from '../../hooks/useVisitScheduler';
 import { DaySlot, TimeSlot, ContactData, CreateVisitResponse } from '../../types/visit';
 import { logger } from '@lib/logger';
 import { visitFormSchema, type VisitFormData } from '@/lib/validations/visit';
+import type { Unit, Building } from '@schemas/models';
 
 interface QuintoAndarVisitSchedulerProps {
     isOpen: boolean;
@@ -24,6 +25,9 @@ interface QuintoAndarVisitSchedulerProps {
     propertyName: string;
     propertyAddress: string;
     propertyImage?: string;
+    // Nuevos props para datos reales de la base de datos
+    unit?: Unit;
+    building?: Building;
     onSuccess?: (visitData: CreateVisitResponse) => void;
 }
 
@@ -40,8 +44,21 @@ export function QuintoAndarVisitScheduler({
     propertyName,
     propertyAddress,
     propertyImage,
+    unit,
+    building,
     onSuccess
 }: QuintoAndarVisitSchedulerProps) {
+    // Usar datos reales de la base de datos si están disponibles
+    const finalPropertyImage = unit?.images?.[0] 
+        || building?.gallery?.[0] 
+        || building?.coverImage 
+        || propertyImage;
+    
+    const arriendo = unit?.price || 0;
+    const gastoComun = unit?.gastoComun || unit?.gc || unit?.gastosComunes || 0;
+    const area = unit?.m2 || unit?.area_interior_m2;
+    const dormitorios = unit?.dormitorios || unit?.bedrooms || 0;
+    const estacionamiento = unit?.estacionamiento || unit?.parking_opcional ? 1 : 0;
     const [step, setStep] = useState<'selection' | 'contact' | 'premium' | 'success'>('selection');
     type ContactFormData = {
         name: string;
@@ -449,25 +466,33 @@ export function QuintoAndarVisitScheduler({
 
                         {/* Card de propiedad */}
                         <div className="flex gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
-                            {propertyImage && (
+                            {finalPropertyImage && (
                                 <img
-                                    src={propertyImage}
+                                    src={finalPropertyImage}
                                     alt={propertyName}
                                     className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
                                 />
                             )}
                             <div className="flex-1 min-w-0">
-                                <div className="text-lg font-bold text-gray-900 dark:text-white">
-                                    $450.000 arriendo
+                                {arriendo > 0 && (
+                                    <div className="text-lg font-bold text-gray-900 dark:text-white">
+                                        ${arriendo.toLocaleString('es-CL')} arriendo
+                                    </div>
+                                )}
+                                {gastoComun > 0 && (
+                                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                                        ${gastoComun.toLocaleString('es-CL')} gastos comunes
+                                    </div>
+                                )}
+                                <div className="text-sm text-gray-600 dark:text-gray-400">
+                                    {building?.address || propertyAddress}
                                 </div>
                                 <div className="text-sm text-gray-600 dark:text-gray-400">
-                                    $50.000 gastos comunes
-                                </div>
-                                <div className="text-sm text-gray-600 dark:text-gray-400">
-                                    {propertyAddress}
-                                </div>
-                                <div className="text-sm text-gray-600 dark:text-gray-400">
-                                    150 m² · 3 dormitorios · 1 estacionamiento
+                                    {[
+                                        area && `${area} m²`,
+                                        dormitorios > 0 && `${dormitorios} dormitorio${dormitorios > 1 ? 's' : ''}`,
+                                        estacionamiento > 0 && `${estacionamiento} estacionamiento`
+                                    ].filter(Boolean).join(' · ')}
                                 </div>
                             </div>
                         </div>

@@ -1,10 +1,65 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import Image from "next/image";
-import { Share2, Heart } from "lucide-react";
+import { Share2, Heart, ArrowLeft, MapPin } from "lucide-react";
+import { useRouter } from "next/navigation";
 import type { Building, Unit } from "@schemas/models";
-import { PropertyGalleryGrid } from "./PropertyGalleryGrid";
 import { StickyCtaBar } from "@components/ui/StickyCtaBar";
+
+const DEFAULT_BLUR = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q==";
+
+// Función helper para obtener todas las imágenes según prioridad (extraída de PropertyGalleryGrid)
+// Elimina duplicados para evitar mostrar la misma imagen múltiples veces
+function getAllImages(unit?: Unit, building?: Building): string[] {
+    const images: string[] = [];
+    const seen = new Set<string>(); // Para detectar duplicados
+
+    // Helper para agregar imágenes sin duplicados
+    const addImages = (imageArray: string[]) => {
+        imageArray.forEach(img => {
+            if (img && !seen.has(img)) {
+                seen.add(img);
+                images.push(img);
+            }
+        });
+    };
+
+    // Prioridad 1: Imágenes de tipología
+    if (unit?.imagesTipologia && Array.isArray(unit.imagesTipologia) && unit.imagesTipologia.length > 0) {
+        addImages(unit.imagesTipologia);
+    }
+
+    // Prioridad 2: Imágenes de áreas comunes del edificio
+    if (unit?.imagesAreasComunes && Array.isArray(unit.imagesAreasComunes) && unit.imagesAreasComunes.length > 0) {
+        addImages(unit.imagesAreasComunes);
+    }
+
+    // Prioridad 3: Imágenes del edificio (galería) - solo si NO hay imagesAreasComunes
+    // (porque imagesAreasComunes ya contiene las imágenes del edificio)
+    if (!unit?.imagesAreasComunes || unit.imagesAreasComunes.length === 0) {
+        if (building?.gallery && Array.isArray(building.gallery) && building.gallery.length > 0) {
+            addImages(building.gallery);
+        }
+    }
+
+    // Prioridad 4: CoverImage del edificio (solo si no está ya incluida)
+    if (building?.coverImage && !seen.has(building.coverImage)) {
+        images.push(building.coverImage);
+        seen.add(building.coverImage);
+    }
+
+    // Prioridad 5: Imágenes de la unidad (interior) - solo si no hay imágenes del edificio
+    if (unit?.images && Array.isArray(unit.images) && unit.images.length > 0) {
+        addImages(unit.images);
+    }
+
+    // Fallback: si no hay imágenes, usar coverImage del edificio
+    if (images.length === 0 && building?.coverImage) {
+        images.push(building.coverImage);
+    }
+
+    return images;
+}
 
 interface PropertyAboveFoldMobileProps {
     building: Building;
@@ -14,6 +69,7 @@ interface PropertyAboveFoldMobileProps {
     onWhatsApp?: () => void;
     onSave?: () => void;
     onShare?: () => void;
+    onSelectOtherUnit?: () => void;
 }
 
 export function PropertyAboveFoldMobile({
@@ -23,84 +79,239 @@ export function PropertyAboveFoldMobile({
     onScheduleVisit,
     onWhatsApp,
     onSave,
-    onShare
+    onShare,
+    onSelectOtherUnit
 }: PropertyAboveFoldMobileProps) {
     const [isSaved, setIsSaved] = useState(false);
+    const [activeImageIndex, setActiveImageIndex] = useState(0);
+    const scrollRef = useRef<HTMLDivElement>(null);
+    const router = useRouter();
+
+    // Obtener todas las imágenes
+    const allImages = getAllImages(selectedUnit, building);
+    
+    // Debug en desarrollo
+    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+        console.log('[PropertyAboveFoldMobile] Debug imágenes:', {
+            tipologia: selectedUnit?.tipologia,
+            hasImagesTipologia: !!selectedUnit?.imagesTipologia,
+            imagesTipologiaLength: selectedUnit?.imagesTipologia?.length,
+            hasImagesAreasComunes: !!selectedUnit?.imagesAreasComunes,
+            imagesAreasComunesLength: selectedUnit?.imagesAreasComunes?.length,
+            buildingGalleryLength: building?.gallery?.length,
+            allImagesLength: allImages.length,
+        });
+    }
+    
+    const finalImages = allImages.length > 0
+        ? allImages
+        : building.coverImage
+            ? [building.coverImage]
+            : ['/images/lascondes-cover.jpg'];
+
+    const totalImages = finalImages.length;
+
+    // Manejar scroll del slider
+    const handleScroll = () => {
+        if (scrollRef.current) {
+            const { scrollLeft, clientWidth } = scrollRef.current;
+            const newIndex = Math.round(scrollLeft / clientWidth);
+            if (newIndex !== activeImageIndex && newIndex >= 0 && newIndex < finalImages.length) {
+                setActiveImageIndex(newIndex);
+            }
+        }
+    };
 
     // Calcular precio total por mes (arriendo + GGCC)
     const arriendo = selectedUnit?.price || building.precio_desde || 290000;
-    const ggcc = selectedUnit?.gastoComun || 45000; // Usar gasto común de la unidad si está disponible
+    const ggcc = selectedUnit?.gastoComun || 45000;
     const precioTotalMes = arriendo + ggcc;
 
-    // Datos para chips y badges
+    // Datos para overlay informativo
     const tipologia = selectedUnit?.tipologia || "2D";
     const m2 = selectedUnit?.area_interior_m2 || selectedUnit?.m2 || 48;
-    const petFriendly = selectedUnit?.petFriendly ?? true; // Default pet friendly
-    const minutosMetro = 6; // Default metro time
+    const dormitorios = selectedUnit?.dormitorios || selectedUnit?.bedrooms || 0;
+    const estacionamiento = selectedUnit?.estacionamiento ? 1 : (selectedUnit?.parkingOptions?.length || 0);
+    const petFriendly = selectedUnit?.petFriendly ?? true;
+    const minutosMetro = 6;
     const stock = building.units?.filter(u => u.disponible).length || 7;
+
+    // Formatear texto informativo
+    const getInfoText = () => {
+        const parts: string[] = [];
+        parts.push(`${m2}m²`);
+        if (dormitorios > 0) {
+            parts.push(`${dormitorios} ${dormitorios === 1 ? 'dormitorio' : 'dormitorios'}`);
+        }
+        if (estacionamiento > 0) {
+            parts.push(`${estacionamiento} ${estacionamiento === 1 ? 'estacionamiento' : 'estacionamientos'}`);
+        }
+        return `Apartamento para arrendar con ${parts.join(', ')}`;
+    };
+
+    // Navegar a mapa (scroll a tabs)
+    const handleMapClick = () => {
+        const tabsSection = document.querySelector('[role="tablist"]');
+        if (tabsSection) {
+            tabsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            // Activar tab de características que contiene ubicación
+            const caracteristicasTab = document.querySelector('[data-tab-id="caracteristicas"]') as HTMLElement;
+            caracteristicasTab?.click();
+        }
+    };
 
     return (
         <section aria-labelledby="af-title" className="relative">
-            {/* 1. Barra superior mínima (sticky, 56px) */}
-            <div className="sticky top-0 z-30 h-14 backdrop-blur bg-white/80 dark:bg-black/30 border-b border-gray-200/50 dark:border-gray-700/50 flex items-center justify-between px-4">
-                <nav aria-label="breadcrumb" className="text-xs text-gray-800 dark:text-slate-300">
+            {/* Hero Image con Overlay (60-70vh) */}
+            <div className="relative min-h-[60vh] max-h-[70vh] h-[65vh] w-full overflow-hidden">
+                {/* Slider de imágenes */}
+                <div
+                    ref={scrollRef}
+                    className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide h-full w-full"
+                    onScroll={handleScroll}
+                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                >
+                    {finalImages.map((image, index) => (
+                        <div
+                            key={`hero-slide-${index}`}
+                            className="flex-shrink-0 w-full h-full relative snap-center"
+                        >
+                            <Image
+                                src={image}
+                                alt={`Imagen ${index + 1} de ${totalImages} de la propiedad`}
+                                fill
+                                className="object-cover"
+                                priority={index === 0}
+                                loading={index === 0 ? "eager" : "lazy"}
+                                sizes="100vw"
+                                placeholder="blur"
+                                blurDataURL={DEFAULT_BLUR}
+                            />
+                        </div>
+                    ))}
+                </div>
+
+                {/* Overlay superior: Acciones rápidas */}
+                <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between p-4">
+                    {/* Botón back */}
+                    <button
+                        onClick={() => router.back()}
+                        className="w-10 h-10 flex items-center justify-center bg-black/40 backdrop-blur-sm hover:bg-black/60 text-white rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white/50"
+                        aria-label="Volver"
+                    >
+                        <ArrowLeft className="w-5 h-5" />
+                    </button>
+
+                    {/* Acciones derecha: Share y Favorito */}
+                    <div className="flex gap-2">
+                        <button
+                            onClick={onShare}
+                            className="w-10 h-10 flex items-center justify-center bg-black/40 backdrop-blur-sm hover:bg-black/60 text-white rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white/50"
+                            aria-label="Compartir propiedad"
+                        >
+                            <Share2 className="w-5 h-5" />
+                        </button>
+                        <button
+                            onClick={() => {
+                                setIsSaved(!isSaved);
+                                onSave?.();
+                            }}
+                            className={`w-10 h-10 flex items-center justify-center backdrop-blur-sm rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white/50 ${
+                                isSaved
+                                    ? "bg-red-500/80 hover:bg-red-500/90 text-white"
+                                    : "bg-black/40 hover:bg-black/60 text-white"
+                            }`}
+                            aria-label={isSaved ? "Quitar de favoritos" : "Guardar en favoritos"}
+                        >
+                            <Heart className={`w-5 h-5 ${isSaved ? "fill-current" : ""}`} />
+                        </button>
+                    </div>
+                </div>
+
+                {/* Overlay inferior: Información clave + Pills navegación */}
+                <div className="absolute bottom-0 left-0 right-0 z-20 p-4 pb-6 bg-gradient-to-t from-black/90 via-black/75 to-black/40">
+                    {/* Pills de navegación */}
+                    <div className="flex gap-2 mb-4">
+                        <button
+                            onClick={() => {
+                                // Scroll a galería completa o abrir lightbox
+                                const gallerySection = document.querySelector('[role="region"][aria-label*="galería"]');
+                                if (gallerySection) {
+                                    gallerySection.scrollIntoView({ behavior: 'smooth' });
+                                }
+                            }}
+                            className="px-3 sm:px-4 py-1.5 sm:py-2 bg-white/25 backdrop-blur-md hover:bg-white/35 text-white text-xs sm:text-sm font-semibold rounded-full border border-white/40 shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white/70"
+                            aria-label={`Ver ${totalImages} fotos`}
+                        >
+                            {totalImages} {totalImages === 1 ? 'Foto' : 'Fotos'}
+                        </button>
+                        <button
+                            onClick={handleMapClick}
+                            className="px-3 sm:px-4 py-1.5 sm:py-2 bg-white/25 backdrop-blur-md hover:bg-white/35 text-white text-xs sm:text-sm font-semibold rounded-full border border-white/40 shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white/70 flex items-center gap-1.5"
+                            aria-label="Ver mapa"
+                        >
+                            <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                            <span>Mapa</span>
+                        </button>
+                    </div>
+
+                    {/* Texto informativo con mejor contraste */}
+                    <p className="text-white text-base sm:text-lg font-bold leading-tight [text-shadow:_0_2px_8px_rgb(0_0_0_/_80%)]">
+                        {getInfoText()}
+                    </p>
+                </div>
+
+                {/* Indicador de imagen activa (si hay más de una) */}
+                {finalImages.length > 1 && (
+                    <div className="absolute top-20 right-4 z-20 bg-black/50 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-xs font-medium">
+                        {activeImageIndex + 1} / {totalImages}
+                    </div>
+                )}
+            </div>
+
+            {/* Breadcrumb y título (debajo del hero) */}
+            <div className="px-4 pt-4 pb-2">
+                <nav aria-label="breadcrumb" className="text-xs text-gray-600 dark:text-slate-400 mb-2">
                     <span className="font-medium">{building.comuna}</span>
-                    <span className="mx-2 text-gray-300:text-slate-400">·</span>
+                    <span className="mx-2 text-gray-300 dark:text-slate-500">·</span>
                     <span className="text-gray-700 dark:text-slate-300">{building.name}</span>
                 </nav>
-                <div className="flex gap-3">
-                    <button
-                        onClick={onShare}
-                        className="w-8 h-8 flex items-center justify-center text-gray-800 dark:text-white hover:bg-gray-800:hover:bg-white/10 rounded-full transition-colors"
-                        aria-label="Compartir propiedad"
-                    >
-                        <Share2 className="w-4 h-4" />
-                    </button>
-                    <button
-                        onClick={() => {
-                            setIsSaved(!isSaved);
-                            onSave?.();
-                        }}
-                        className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors ${isSaved
-                            ? "text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-400/20"
-                            : "text-gray-800 dark:text-white hover:bg-gray-800:hover:bg-white/10"
-                            }`}
-                        aria-label={isSaved ? "Quitar de favoritos" : "Guardar en favoritos"}
-                    >
-                        <Heart className={`w-4 h-4 ${isSaved ? "fill-current" : ""}`} />
-                    </button>
+                <div className="flex items-start justify-between gap-4">
+                    <h1 id="af-title" className="text-xl font-semibold leading-tight text-gray-900 dark:text-white flex-1">
+                        {tipologia} luminoso en {building.comuna}
+                    </h1>
+                    {onSelectOtherUnit && (
+                        <button
+                            onClick={onSelectOtherUnit}
+                            className="shrink-0 px-3 py-1.5 text-xs font-medium text-[#8B6CFF] hover:text-[#7a5ce6] border border-[#8B6CFF]/30 hover:border-[#8B6CFF]/50 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B6CFF] focus-visible:ring-offset-2"
+                            aria-label="Seleccionar otra unidad"
+                        >
+                            Cambiar
+                        </button>
+                    )}
                 </div>
             </div>
 
-            {/* 2. Galería con grid 1+4 estilo Airbnb */}
-            <div className="px-4 py-4">
-                <PropertyGalleryGrid unit={selectedUnit} building={building} />
-            </div>
-
-            {/* 3. Headline + Precio total/mes */}
-            <div className="px-4 py-6 bg-gray-800:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
-                <h1 id="af-title" className="text-xl font-semibold leading-tight text-white:text-white">
-                    {tipologia} luminoso en {building.comuna}
-                </h1>
-
-                <div className="mt-3 flex items-end justify-between gap-4">
+            {/* Precio total/mes */}
+            <div className="px-4 py-4 bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
+                <div className="flex items-end justify-between gap-4">
                     <div className="flex flex-col">
-                        <p className="text-2xl font-bold text-white:text-white">
+                        <p className="text-2xl font-bold text-gray-900 dark:text-white">
                             ${arriendo.toLocaleString('es-CL')}
-                            <span className="text-sm font-normal text-gray-400:text-slate-400 ml-2">
+                            <span className="text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">
                                 / mes
                             </span>
                         </p>
-                        <p className="text-lg font-medium text-gray-300:text-slate-300">
+                        <p className="text-lg font-medium text-gray-700 dark:text-gray-300">
                             + ${ggcc.toLocaleString('es-CL')}
-                            <span className="text-sm font-normal text-gray-400:text-slate-400 ml-2">
+                            <span className="text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">
                                 (GGCC)
                             </span>
                         </p>
                     </div>
 
                     <div className="flex flex-col items-end shrink-0 pb-1">
-                        <span className="text-[10px] uppercase tracking-wider text-gray-500 font-medium mb-1">
+                        <span className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400 font-medium mb-1">
                             Operado por
                         </span>
                         <div className="flex items-center">
@@ -109,7 +320,7 @@ export function PropertyAboveFoldMobile({
                                     src="/images/assetplan-logo.svg"
                                     alt="AssetPlan"
                                     fill
-                                    className="object-contain object-right"
+                                    className="object-contain object-right dark:invert"
                                     priority
                                 />
                             </div>
@@ -117,22 +328,15 @@ export function PropertyAboveFoldMobile({
                     </div>
                 </div>
 
-                {/* 4. Badges clave (scroll mínimo) */}
+                {/* Badges clave */}
                 <div className="mt-4 flex flex-wrap items-center gap-2">
-                    {/* Badge principal: 0% comisión - DESHABILITADO TEMPORALMENTE
-                    <span className="px-3 py-1.5 rounded-full text-sm font-medium bg-cyan-50 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-400 border border-cyan-200 dark:border-cyan-500/40 shadow-sm">
-                        0% comisión
-                    </span>
-                    */}
-
-                    {/* Chips de características */}
-                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-900:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-700:border-gray-600 shadow-sm">
+                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 shadow-sm">
                         {m2} m²
                     </span>
-                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-900:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-700:border-gray-600 shadow-sm">
+                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 shadow-sm">
                         {petFriendly ? 'Pet-friendly' : 'No mascotas'}
                     </span>
-                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-900:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-700:border-gray-600 shadow-sm">
+                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 shadow-sm">
                         Metro {minutosMetro}'
                     </span>
 
@@ -152,6 +356,8 @@ export function PropertyAboveFoldMobile({
                 onWhatsApp={onWhatsApp || (() => {})}
                 propertyId={selectedUnit?.id}
                 commune={building.comuna}
+                unit={selectedUnit}
+                buildingId={building.id}
             />
         </section>
     );

@@ -1,13 +1,16 @@
 "use client";
 
-import React, { useState, useCallback, useRef, useEffect } from "react";
+import React, { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { X, ChevronLeft, ChevronRight, Play, Pause } from "lucide-react";
 import { clx } from "@lib/utils";
+import type { Building, Unit } from "@schemas/models";
 
 interface PropertyGalleryProps {
-    images: string[];
+    images?: string[]; // Opcional si se proporcionan unit y building
+    unit?: Unit;
+    building?: Building;
     initialIndex?: number;
     autoPlay?: boolean;
     autoPlayInterval?: number;
@@ -16,13 +19,86 @@ interface PropertyGalleryProps {
 
 const DEFAULT_BLUR = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q==";
 
+/**
+ * Función helper para obtener todas las imágenes según prioridad
+ * Prioridad: tipologia > areas comunes > edificio > coverImage > unit images
+ * Elimina duplicados para evitar mostrar la misma imagen múltiples veces
+ */
+function getAllImages(unit?: Unit, building?: Building, images?: string[]): string[] {
+    // Si se proporcionan imágenes explícitas, usarlas primero
+    if (images && images.length > 0) {
+        return images;
+    }
+
+    const result: string[] = [];
+    const seen = new Set<string>(); // Para detectar duplicados
+
+    // Helper para agregar imágenes sin duplicados
+    const addImages = (imageArray: string[]) => {
+        imageArray.forEach(img => {
+            if (img && !seen.has(img)) {
+                seen.add(img);
+                result.push(img);
+            }
+        });
+    };
+
+    // Prioridad 1: Imágenes de tipología
+    if (unit?.imagesTipologia && Array.isArray(unit.imagesTipologia) && unit.imagesTipologia.length > 0) {
+        addImages(unit.imagesTipologia);
+    }
+
+    // Prioridad 2: Imágenes de áreas comunes del edificio
+    if (unit?.imagesAreasComunes && Array.isArray(unit.imagesAreasComunes) && unit.imagesAreasComunes.length > 0) {
+        addImages(unit.imagesAreasComunes);
+    }
+
+    // Prioridad 3: Imágenes del edificio (galería) - solo si NO hay imagesAreasComunes
+    // (porque imagesAreasComunes ya contiene las imágenes del edificio)
+    if (!unit?.imagesAreasComunes || unit.imagesAreasComunes.length === 0) {
+        if (building?.gallery && Array.isArray(building.gallery) && building.gallery.length > 0) {
+            addImages(building.gallery);
+        }
+    }
+
+    // Prioridad 4: CoverImage del edificio (solo si no está ya incluida)
+    if (building?.coverImage && !seen.has(building.coverImage)) {
+        result.push(building.coverImage);
+        seen.add(building.coverImage);
+    }
+
+    // Prioridad 5: Imágenes de la unidad (interior) - solo si no hay imágenes del edificio
+    if (unit?.images && Array.isArray(unit.images) && unit.images.length > 0) {
+        addImages(unit.images);
+    }
+
+    // Fallback: si no hay imágenes, usar coverImage del edificio
+    if (result.length === 0 && building?.coverImage) {
+        result.push(building.coverImage);
+    }
+
+    return result;
+}
+
 export function PropertyGallery({
     images,
+    unit,
+    building,
     initialIndex = 0,
     autoPlay = false,
     autoPlayInterval = 5000,
     compact = false
 }: PropertyGalleryProps) {
+    // Calcular imágenes con prioridad: tipologia > areas comunes > edificio
+    const finalImages = useMemo(() => {
+        const allImages = getAllImages(unit, building, images);
+        return allImages.length > 0
+            ? allImages
+            : building?.coverImage
+                ? [building.coverImage]
+                : ['/images/lascondes-cover.jpg'];
+    }, [images, unit, building]);
+
     const [active, setActive] = useState(initialIndex);
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [isPlaying, setIsPlaying] = useState(autoPlay);
@@ -57,7 +133,7 @@ export function PropertyGallery({
         }
 
         autoPlayRef.current = setInterval(() => {
-            setActive((prev) => (prev + 1) % images.length);
+            setActive((prev) => (prev + 1) % finalImages.length);
         }, autoPlayInterval);
 
         return () => {
@@ -65,15 +141,15 @@ export function PropertyGallery({
                 clearInterval(autoPlayRef.current);
             }
         };
-    }, [autoPlay, isPlaying, autoPlayInterval, images.length, prefersReducedMotion]);
+    }, [autoPlay, isPlaying, autoPlayInterval, finalImages.length, prefersReducedMotion]);
 
     const nextImage = useCallback(() => {
-        setActive((prev) => (prev + 1) % images.length);
-    }, [images.length]);
+        setActive((prev) => (prev + 1) % finalImages.length);
+    }, [finalImages.length]);
 
     const prevImage = useCallback(() => {
-        setActive((prev) => (prev - 1 + images.length) % images.length);
-    }, [images.length]);
+        setActive((prev) => (prev - 1 + finalImages.length) % finalImages.length);
+    }, [finalImages.length]);
 
     const handleKeyDown = (event: React.KeyboardEvent) => {
         switch (event.key) {
@@ -108,7 +184,7 @@ export function PropertyGallery({
         setIsPlaying(!isPlaying);
     };
 
-    if (!images || images.length === 0) {
+    if (!finalImages || finalImages.length === 0) {
         return null;
     }
 
@@ -140,8 +216,8 @@ export function PropertyGallery({
 
                     {/* Main Image */}
                     <Image
-                        src={images[active]}
-                        alt={`Imagen ${active + 1} de ${images.length} de la galería`}
+                        src={finalImages[active]}
+                        alt={`Imagen ${active + 1} de ${finalImages.length} de la galería`}
                         fill
                         sizes={compact
                             ? "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
@@ -160,7 +236,7 @@ export function PropertyGallery({
                     />
 
                     {/* Navigation Controls */}
-                    {images.length > 1 && (
+                    {finalImages.length > 1 && (
                         <>
                             {/* Previous Button */}
                             <button
@@ -188,7 +264,7 @@ export function PropertyGallery({
 
                             {/* Image Counter */}
                             <div className="absolute top-4 right-4 bg-black/50 text-white px-3 py-1 rounded-full text-sm font-medium">
-                                {active + 1} / {images.length}
+                                {active + 1} / {finalImages.length}
                             </div>
 
                             {/* Auto-play Controls */}
@@ -223,9 +299,9 @@ export function PropertyGallery({
                 </div>
 
                 {/* Thumbnails */}
-                {images.length > 1 && (
+                {finalImages.length > 1 && (
                     <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                        {images.map((image, i) => (
+                        {finalImages.map((image, i) => (
                             <button
                                 key={i}
                                 onClick={() => setActive(i)}
@@ -278,8 +354,8 @@ export function PropertyGallery({
                         {/* Fullscreen Image */}
                         <div className="relative w-full h-full flex items-center justify-center p-4">
                             <Image
-                                src={images[active]}
-                                alt={`Imagen ${active + 1} de ${images.length} en pantalla completa`}
+                                src={finalImages[active]}
+                                alt={`Imagen ${active + 1} de ${finalImages.length} en pantalla completa`}
                                 fill
                                 className="object-contain"
                                 sizes="100vw"
@@ -287,7 +363,7 @@ export function PropertyGallery({
                             />
 
                             {/* Fullscreen Navigation */}
-                            {images.length > 1 && (
+                            {finalImages.length > 1 && (
                                 <>
                                     <button
                                         onClick={prevImage}
@@ -307,7 +383,7 @@ export function PropertyGallery({
 
                                     {/* Fullscreen Counter */}
                                     <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/50 text-white px-4 py-2 rounded-full text-lg font-medium">
-                                        {active + 1} / {images.length}
+                                        {active + 1} / {finalImages.length}
                                     </div>
                                 </>
                             )}

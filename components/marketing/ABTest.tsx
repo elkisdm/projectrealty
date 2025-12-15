@@ -20,16 +20,25 @@ export function ABTest({
     const [variant, setVariant] = useState<'A' | 'B'>(defaultVariant);
 
     useEffect(() => {
-        // Get stored variant or assign random
-        const storedVariant = localStorage.getItem(`ab_test_${testId}`);
+        if (typeof window === 'undefined') {
+            return;
+        }
 
-        if (storedVariant && (storedVariant === 'A' || storedVariant === 'B')) {
-            setVariant(storedVariant);
-        } else {
-            // Random assignment (50/50)
-            const randomVariant = Math.random() < 0.5 ? 'A' : 'B';
-            localStorage.setItem(`ab_test_${testId}`, randomVariant);
-            setVariant(randomVariant);
+        try {
+            // Get stored variant or assign random
+            const storedVariant = localStorage.getItem(`ab_test_${testId}`);
+
+            if (storedVariant && (storedVariant === 'A' || storedVariant === 'B')) {
+                setVariant(storedVariant);
+            } else {
+                // Random assignment (50/50)
+                const randomVariant = Math.random() < 0.5 ? 'A' : 'B';
+                localStorage.setItem(`ab_test_${testId}`, randomVariant);
+                setVariant(randomVariant);
+            }
+        } catch (error) {
+            // Fallback a default variant si hay error
+            setVariant(defaultVariant);
         }
 
         // Track test assignment
@@ -45,7 +54,7 @@ export function ABTest({
         if (onVariantChange) {
             onVariantChange(variant);
         }
-    }, [testId, onVariantChange, variant]);
+    }, [testId, onVariantChange, variant, defaultVariant]);
 
     // Track conversion when component is interacted with
     const trackConversion = () => {

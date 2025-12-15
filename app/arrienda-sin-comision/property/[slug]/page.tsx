@@ -38,6 +38,30 @@ export default async function MarketingPropertyPage({ params, searchParams }: Pr
     PROPERTY_PAGE_CONSTANTS.DEFAULT_IMAGE;
   const toAbsoluteUrl = (url: string) => (url.startsWith("http") ? url : `${baseUrl}${url}`);
 
+  // Get first unit for breadcrumb (or use unit from searchParams if available)
+  const unitId = resolvedSearchParams?.unit;
+  const selectedUnit = unitId
+    ? building.units.find(u => u.id === unitId)
+    : building.units[0];
+
+  // Build breadcrumb items for JSON-LD (marketing variant - simpler structure)
+  const breadcrumbItems = [
+    { name: "Home", item: `${baseUrl}/` },
+    { name: "Arrienda sin comisión", item: `${baseUrl}/arrienda-sin-comision` },
+    { name: building.name, item: canonicalUrl },
+  ];
+
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: breadcrumbItems.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
+      item: item.item,
+    })),
+  };
+
   const jsonLd = {
     "@context": PROPERTY_PAGE_CONSTANTS.JSON_LD_CONTEXT,
     "@type": PROPERTY_PAGE_CONSTANTS.JSON_LD_TYPE,
@@ -60,6 +84,9 @@ export default async function MarketingPropertyPage({ params, searchParams }: Pr
     <>
       <script type="application/ld+json">
         {safeJsonLd(jsonLd)}
+      </script>
+      <script type="application/ld+json">
+        {safeJsonLd(breadcrumbJsonLd)}
       </script>
       <PropertyClient
         building={building}

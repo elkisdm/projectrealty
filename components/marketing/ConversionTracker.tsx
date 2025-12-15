@@ -47,12 +47,21 @@ export function trackConversionEvent(
 ): void {
     if (typeof window === "undefined") return;
 
-    const utmData = getUTMParams();
-    const sessionId = sessionStorage.getItem("flash_videos_session_id") || generateSessionId();
+    let utmData: UTMData;
+    let sessionId: string;
+    
+    try {
+        utmData = getUTMParams();
+        sessionId = sessionStorage.getItem("flash_videos_session_id") || generateSessionId();
 
-    // Guardar session ID si no existe
-    if (!sessionStorage.getItem("flash_videos_session_id")) {
-        sessionStorage.setItem("flash_videos_session_id", sessionId);
+        // Guardar session ID si no existe
+        if (!sessionStorage.getItem("flash_videos_session_id")) {
+            sessionStorage.setItem("flash_videos_session_id", sessionId);
+        }
+    } catch (error) {
+        // Continuar sin sessionStorage si hay error
+        utmData = getUTMParams();
+        sessionId = generateSessionId();
     }
 
     const event: ConversionEvent = {

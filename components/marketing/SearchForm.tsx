@@ -37,12 +37,18 @@ export function SearchForm({ className = "" }: SearchFormProps) {
       precioMin: searchParams.get("precioMin") || undefined,
       precioMax: searchParams.get("precioMax") || undefined,
       dormitorios: (searchParams.get("dormitorios") as "Estudio" | "1" | "2" | "3" | null) || undefined,
+      estacionamiento: searchParams.get("estacionamiento") || undefined,
+      bodega: searchParams.get("bodega") || undefined,
+      mascotas: searchParams.get("mascotas") || undefined,
     },
   });
 
   // Observar valores para sincronizar pills
   const comuna = watch("comuna");
   const dormitorios = watch("dormitorios");
+  const estacionamiento = watch("estacionamiento");
+  const bodega = watch("bodega");
+  const mascotas = watch("mascotas");
 
   // Sincronizar con URL params al montar
   useEffect(() => {
@@ -97,6 +103,15 @@ export function SearchForm({ className = "" }: SearchFormProps) {
     if (validatedData.dormitorios) {
       params.set("dormitorios", validatedData.dormitorios);
     }
+    if (validatedData.estacionamiento !== undefined) {
+      params.set("estacionamiento", validatedData.estacionamiento.toString());
+    }
+    if (validatedData.bodega !== undefined) {
+      params.set("bodega", validatedData.bodega.toString());
+    }
+    if (validatedData.mascotas !== undefined) {
+      params.set("mascotas", validatedData.mascotas.toString());
+    }
 
     // Redirigir a página de resultados
     const queryString = params.toString();
@@ -106,6 +121,7 @@ export function SearchForm({ className = "" }: SearchFormProps) {
   // Opciones para pills
   const comunasPrincipales = ["Las Condes", "Ñuñoa", "Providencia", "Santiago", "Macul", "La Florida"];
   const dormitoriosOptions = ["Estudio", "1", "2", "3"];
+  const booleanOptions = ["true", "false"];
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className={`space-y-6 ${className}`}>
@@ -135,17 +151,49 @@ export function SearchForm({ className = "" }: SearchFormProps) {
         label="Comuna"
       />
 
-      {/* Pills de Dormitorios */}
-      <SearchPills
-        options={dormitoriosOptions}
-        selected={dormitorios}
-        onSelect={(value) =>
-          setValue("dormitorios", (value as "Estudio" | "1" | "2" | "3") || undefined, {
-            shouldValidate: true,
-          })
-        }
-        label="Dormitorios"
-      />
+      {/* Fila de filtros: Dormitorios, Estacionamiento, Bodega, Mascotas */}
+      <div className="flex flex-wrap items-center gap-4 lg:gap-6">
+        <SearchPills
+          options={dormitoriosOptions}
+          selected={dormitorios}
+          onSelect={(value) =>
+            setValue("dormitorios", (value as "Estudio" | "1" | "2" | "3") || undefined, {
+              shouldValidate: true,
+            })
+          }
+          label="Dormitorios"
+        />
+
+        <SearchPills
+          options={["Sí", "No"]}
+          selected={estacionamiento === "true" ? "Sí" : estacionamiento === "false" ? "No" : undefined}
+          onSelect={(value) => {
+            const boolValue = value === "Sí" ? "true" : value === "No" ? "false" : undefined;
+            setValue("estacionamiento", boolValue as "true" | "false" | undefined, { shouldValidate: true });
+          }}
+          label="Estacionamiento"
+        />
+
+        <SearchPills
+          options={["Sí", "No"]}
+          selected={bodega === "true" ? "Sí" : bodega === "false" ? "No" : undefined}
+          onSelect={(value) => {
+            const boolValue = value === "Sí" ? "true" : value === "No" ? "false" : undefined;
+            setValue("bodega", boolValue as "true" | "false" | undefined, { shouldValidate: true });
+          }}
+          label="Bodega"
+        />
+
+        <SearchPills
+          options={["Sí", "No"]}
+          selected={mascotas === "true" ? "Sí" : mascotas === "false" ? "No" : undefined}
+          onSelect={(value) => {
+            const boolValue = value === "Sí" ? "true" : value === "No" ? "false" : undefined;
+            setValue("mascotas", boolValue as "true" | "false" | undefined, { shouldValidate: true });
+          }}
+          label="Mascotas"
+        />
+      </div>
 
       {/* Inputs de Precio */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

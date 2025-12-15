@@ -147,6 +147,8 @@ export function UnitsList({ building, units, tipologiaFilter }: UnitsListProps) 
           propertyName={building.name}
           propertyAddress={building.address || `${building.comuna}, Chile`}
           propertyImage={building.coverImage || building.gallery?.[0] || ""}
+          unit={selectedUnit}
+          building={building}
           onSuccess={() => {
             setIsModalOpen(false);
             setSelectedUnit(null);

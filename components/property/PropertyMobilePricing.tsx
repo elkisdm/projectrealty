@@ -204,13 +204,14 @@ export function PropertyMobilePricing({
                     >
                         Solicitar visita
                     </button>
-                    <button
+                    {/* Botón deshabilitado temporalmente */}
+                    {/* <button
                         onClick={onSendQuotation}
                         className="w-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-white:text-white text-white font-semibold py-2.5 px-4 rounded-lg transition-colors duration-100 text-sm"
                         aria-label="Postular"
                     >
                         Postular
-                    </button>
+                    </button> */}
                 </div>
             </div>
         </section>

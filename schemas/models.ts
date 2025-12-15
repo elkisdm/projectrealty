@@ -95,7 +95,8 @@ export const UnitSchema = z.object({
   garantiaEnCuotas: z.boolean().optional(),
   cuotasGarantia: z.number().int().min(1).max(12).optional(),
   reajuste: z.string().optional(),
-  estado: z.enum(["Disponible", "Reservado", "Arrendado"]).optional(),
+  estado: z.enum(["Disponible", "Reservado", "Arrendado", "RE - Acondicionamiento"]).optional(),
+  estadoRaw: z.string().optional(), // Campo raw desde AssetPlan para preservar estado original
   estacionamiento: z.boolean().optional(),
   bodega: z.boolean().optional(),
   imagesTipologia: z.array(z.string().min(1)).optional(),
@@ -266,17 +267,27 @@ export const WaitlistRequestSchema = z.object({
   source: z.string().max(50).optional(),
 });
 
+export const AvailabilityNotificationRequestSchema = z.object({
+  email: z.string().email(),
+  phone: z.string().max(32).optional(),
+  name: z.string().min(1).max(100).optional(),
+  unitId: z.string().min(1).optional(), // ID de la unidad para notificaciones específicas
+});
+
 /**
  * Schema para filtros de búsqueda de unidades
  * ⚠️ IMPORTANTE: NO incluye filtro por baños según especificación MVP
  */
 export const SearchFiltersSchema = z.object({
   q: z.string().optional(), // Búsqueda por texto
-  comuna: z.string().optional(),
+  comuna: z.union([z.string(), z.array(z.string())]).optional(), // Soporta string o array para multiselección
   precioMin: z.number().int().nonnegative().optional(),
   precioMax: z.number().int().nonnegative().optional(),
-  dormitorios: z.number().int().nonnegative().optional(), // 0 para Estudio, 1+ para otros
+  dormitorios: z.union([z.number().int().nonnegative(), z.string(), z.array(z.string())]).optional(), // Soporta número, string o array para multiselección
   // ⚠️ banos NO incluido - No se filtra por baños
+  estacionamiento: z.boolean().optional(),
+  bodega: z.boolean().optional(),
+  mascotas: z.boolean().optional(),
   sort: z.enum(["precio", "ubicacion", "relevancia"]).optional(),
   page: z.number().int().positive().optional().default(1),
   limit: z.number().int().positive().max(100).optional().default(12),

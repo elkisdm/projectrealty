@@ -37,6 +37,9 @@ export function StickySearchBar({ className = "" }: StickySearchBarProps) {
     precioMin: contextFormState.precioMin,
     precioMax: contextFormState.precioMax,
   });
+  // Ref para evitar sincronización bidireccional simultánea
+  const isSyncingFromContext = useRef(false);
+  const isSyncingFromForm = useRef(false);
 
   const {
     handleSubmit,
@@ -49,11 +52,6 @@ export function StickySearchBar({ className = "" }: StickySearchBarProps) {
     resolver: zodResolver(searchFormInputSchema),
     defaultValues: contextFormState,
   });
-  // #region agent log
-  useEffect(() => {
-    fetch('http://127.0.0.1:7242/ingest/bf5372fb-b70d-4713-b992-51094d7d9401', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'StickySearchBar.tsx:43', message: 'watch function reference check', data: { watchType: typeof watch, watchStringified: String(watch).substring(0, 50) }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'A' }) }).catch(() => { });
-  }, [watch]);
-  // #endregion
 
   // Observar valores para sincronizar pills
   const comuna = watch("comuna");
@@ -71,11 +69,12 @@ export function StickySearchBar({ className = "" }: StickySearchBarProps) {
 
   // Sincronizar valores del contexto al formulario cuando cambian
   useEffect(() => {
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/bf5372fb-b70d-4713-b992-51094d7d9401', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'StickySearchBar.tsx:70', message: 'useEffect sync context->form ENTRY', data: { q, comuna, dormitorios, precioMin, precioMax, contextQ, contextComuna, contextDormitorios, contextPrecioMin, contextPrecioMax, lastSynced: lastSyncedContext.current }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'post-fix', hypothesisId: 'A' }) }).catch(() => { });
-    // #endregion
+    // Evitar sincronización si estamos sincronizando desde el formulario
+    if (isSyncingFromForm.current) {
+      return;
+    }
 
-    // Verificar si el contexto cambió desde la última sincronización (no desde nuestro propio updateFormState)
+    // Verificar si el contexto cambió desde la última sincronización
     const contextChanged =
       lastSyncedContext.current.q !== contextQ ||
       lastSyncedContext.current.comuna !== contextComuna ||
@@ -84,9 +83,6 @@ export function StickySearchBar({ className = "" }: StickySearchBarProps) {
       lastSyncedContext.current.precioMax !== contextPrecioMax;
 
     if (!contextChanged) {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/bf5372fb-b70d-4713-b992-51094d7d9401', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'StickySearchBar.tsx:79', message: 'useEffect sync context->form NO CONTEXT CHANGES', data: {}, timestamp: Date.now(), sessionId: 'debug-session', runId: 'post-fix', hypothesisId: 'C' }) }).catch(() => { });
-      // #endregion
       return;
     }
 
@@ -107,11 +103,11 @@ export function StickySearchBar({ className = "" }: StickySearchBarProps) {
         precioMin: contextPrecioMin,
         precioMax: contextPrecioMax,
       };
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/bf5372fb-b70d-4713-b992-51094d7d9401', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'StickySearchBar.tsx:95', message: 'useEffect sync context->form NO FORM CHANGES', data: {}, timestamp: Date.now(), sessionId: 'debug-session', runId: 'post-fix', hypothesisId: 'C' }) }).catch(() => { });
-      // #endregion
       return;
     }
+
+    // Marcar que estamos sincronizando desde el contexto
+    isSyncingFromContext.current = true;
 
     // Sincronizar valores del contexto al formulario
     if (contextQ !== undefined && contextQ !== q) {
@@ -138,18 +134,21 @@ export function StickySearchBar({ className = "" }: StickySearchBarProps) {
       precioMin: contextPrecioMin,
       precioMax: contextPrecioMax,
     };
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/bf5372fb-b70d-4713-b992-51094d7d9401', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'StickySearchBar.tsx:115', message: 'useEffect sync context->form EXIT', data: {}, timestamp: Date.now(), sessionId: 'debug-session', runId: 'post-fix', hypothesisId: 'A' }) }).catch(() => { });
-    // #endregion
+
+    // Resetear el flag después de un pequeño delay para permitir que React procese los cambios
+    setTimeout(() => {
+      isSyncingFromContext.current = false;
+    }, 0);
   }, [setValue, q, comuna, dormitorios, precioMin, precioMax, contextQ, contextComuna, contextDormitorios, contextPrecioMin, contextPrecioMax]);
 
   // Sincronizar cambios del formulario con el contexto
   useEffect(() => {
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/bf5372fb-b70d-4713-b992-51094d7d9401', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'StickySearchBar.tsx:147', message: 'useEffect sync form->context ENTRY', data: { q, comuna, dormitorios, precioMin, precioMax, contextQ, contextComuna, contextDormitorios, contextPrecioMin, contextPrecioMax, lastSynced: lastSyncedContext.current }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'post-fix', hypothesisId: 'C' }) }).catch(() => { });
-    // #endregion
+    // Evitar sincronización si estamos sincronizando desde el contexto
+    if (isSyncingFromContext.current) {
+      return;
+    }
 
-    // Evitar ciclo infinito: no sincronizar si el contexto ya tiene estos valores (viene de nuestra sincronización)
+    // Evitar ciclo infinito: no sincronizar si el contexto ya tiene estos valores
     const contextMatchesForm =
       lastSyncedContext.current.q === q &&
       lastSyncedContext.current.comuna === comuna &&
@@ -158,9 +157,6 @@ export function StickySearchBar({ className = "" }: StickySearchBarProps) {
       lastSyncedContext.current.precioMax === precioMax;
 
     if (contextMatchesForm) {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/bf5372fb-b70d-4713-b992-51094d7d9401', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'StickySearchBar.tsx:157', message: 'useEffect sync form->context SKIP (context matches form)', data: {}, timestamp: Date.now(), sessionId: 'debug-session', runId: 'post-fix', hypothesisId: 'C' }) }).catch(() => { });
-      // #endregion
       return;
     }
 
@@ -172,13 +168,10 @@ export function StickySearchBar({ className = "" }: StickySearchBarProps) {
       contextPrecioMin !== precioMin ||
       contextPrecioMax !== precioMax;
 
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/bf5372fb-b70d-4713-b992-51094d7d9401', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'StickySearchBar.tsx:130', message: 'hasChanges check', data: { hasChanges, precioMin, precioMax, contextPrecioMin: contextPrecioMin, contextPrecioMax: contextPrecioMax }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'post-fix', hypothesisId: 'C' }) }).catch(() => { });
-    // #endregion
     if (hasChanges) {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/bf5372fb-b70d-4713-b992-51094d7d9401', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'StickySearchBar.tsx:178', message: 'updateFormState BEFORE', data: { q, comuna, dormitorios, precioMin, precioMax }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'post-fix', hypothesisId: 'C' }) }).catch(() => { });
-      // #endregion
+      // Marcar que estamos sincronizando desde el formulario
+      isSyncingFromForm.current = true;
+
       updateFormState({
         q,
         comuna,
@@ -186,6 +179,7 @@ export function StickySearchBar({ className = "" }: StickySearchBarProps) {
         precioMin,
         precioMax,
       });
+
       // Actualizar la referencia después de actualizar el contexto
       lastSyncedContext.current = {
         q,
@@ -194,13 +188,12 @@ export function StickySearchBar({ className = "" }: StickySearchBarProps) {
         precioMin,
         precioMax,
       };
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/bf5372fb-b70d-4713-b992-51094d7d9401', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'StickySearchBar.tsx:191', message: 'updateFormState AFTER', data: {}, timestamp: Date.now(), sessionId: 'debug-session', runId: 'post-fix', hypothesisId: 'C' }) }).catch(() => { });
-      // #endregion
+
+      // Resetear el flag después de un pequeño delay
+      setTimeout(() => {
+        isSyncingFromForm.current = false;
+      }, 0);
     }
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/bf5372fb-b70d-4713-b992-51094d7d9401', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'StickySearchBar.tsx:147', message: 'useEffect sync form->context EXIT', data: {}, timestamp: Date.now(), sessionId: 'debug-session', runId: 'post-fix', hypothesisId: 'C' }) }).catch(() => { });
-    // #endregion
   }, [q, comuna, dormitorios, precioMin, precioMax, updateFormState, contextQ, contextComuna, contextDormitorios, contextPrecioMin, contextPrecioMax]);
 
   // Opciones para pills
@@ -358,7 +351,10 @@ export function StickySearchBar({ className = "" }: StickySearchBarProps) {
                       <SearchPills
                         options={comunasPrincipales}
                         selected={comuna}
-                        onSelect={(value) => setValue("comuna", value || undefined, { shouldValidate: true })}
+                        onSelect={(value) => {
+                          const stringValue = Array.isArray(value) ? value[0] : value;
+                          setValue("comuna", stringValue || undefined, { shouldValidate: true });
+                        }}
                         label=""
                         className="justify-start"
                       />
@@ -377,46 +373,47 @@ export function StickySearchBar({ className = "" }: StickySearchBarProps) {
                       />
 
                       {/* Inputs de Precio */}
-                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                        {/* Precio Mínimo */}
-                        <div>
-                          <label htmlFor="precioMin" className="block text-xs font-medium text-text mb-1.5 sm:text-sm">
-                            Precio Mínimo
-                          </label>
-                          <input
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <label htmlFor="precioMin" className="text-sm font-semibold text-text whitespace-nowrap">
+                          Precio:
+                        </label>
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <motion.input
                             type="number"
                             id="precioMin"
                             {...register("precioMin")}
-                            placeholder="Ej: 500000"
+                            placeholder="Mín $"
                             min="0"
-                            className="w-full rounded-lg border border-gray-300/60 dark:border-gray-600/60 bg-white/80 dark:bg-gray-800/80 px-3 py-2 text-sm text-text ring-1 ring-gray-900/5 focus:outline-none focus:ring-2 focus:ring-[#8B6CFF] focus:border-transparent transition-colors"
+                            className="ui-input w-full min-w-[100px]"
+                            whileFocus={prefersReducedMotion ? {} : { scale: 1.02 }}
+                            transition={{ duration: 0.2 }}
                           />
-                          {errors.precioMin && (
-                            <p className="mt-1 text-xs text-red-500" role="alert">
-                              {errors.precioMin.message}
-                            </p>
-                          )}
-                        </div>
-
-                        {/* Precio Máximo */}
-                        <div>
-                          <label htmlFor="precioMax" className="block text-xs font-medium text-text mb-1.5 sm:text-sm">
-                            Precio Máximo
-                          </label>
-                          <input
+                          <span className="text-subtext font-medium flex-shrink-0">-</span>
+                          <motion.input
                             type="number"
                             id="precioMax"
                             {...register("precioMax")}
-                            placeholder="Ej: 2000000"
+                            placeholder="Máx $"
                             min="0"
-                            className="w-full rounded-lg border border-gray-300/60 dark:border-gray-600/60 bg-white/80 dark:bg-gray-800/80 px-3 py-2 text-sm text-text ring-1 ring-gray-900/5 focus:outline-none focus:ring-2 focus:ring-[#8B6CFF] focus:border-transparent transition-colors"
+                            className="ui-input w-full min-w-[100px]"
+                            whileFocus={prefersReducedMotion ? {} : { scale: 1.02 }}
+                            transition={{ duration: 0.2 }}
                           />
-                          {errors.precioMax && (
-                            <p className="mt-1 text-xs text-red-500" role="alert">
-                              {errors.precioMax.message}
-                            </p>
-                          )}
                         </div>
+                        {(errors.precioMin || errors.precioMax) && (
+                          <div className="w-full">
+                            {errors.precioMin && (
+                              <p className="text-xs text-red-500" role="alert">
+                                {errors.precioMin.message}
+                              </p>
+                            )}
+                            {errors.precioMax && (
+                              <p className="text-xs text-red-500" role="alert">
+                                {errors.precioMax.message}
+                              </p>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </motion.div>

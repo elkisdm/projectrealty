@@ -14,7 +14,8 @@ import {
   Calendar,
   MessageCircle,
   MapPin,
-  Square
+  Square,
+  AlertCircle
 } from "lucide-react";
 import type { Building } from "@schemas/models";
 
@@ -316,6 +317,26 @@ export function PropertySections({
           )}
         </div>
       </CollapsibleSection>
+
+      {/* Disclaimer sobre servicios adicionales */}
+      {(building.gc_mode === 'MF' || unitDetails.estacionamiento || unitDetails.bodega) && (
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-2xl p-4 lg:p-5">
+          <div className="flex items-start gap-3">
+            <div className="p-2 bg-amber-100 dark:bg-amber-800 rounded-lg flex-shrink-0">
+              <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+            </div>
+            <div className="flex-1">
+              <h4 className="font-semibold text-amber-900 dark:text-amber-100 mb-2 text-sm lg:text-base">
+                Servicios Adicionales
+              </h4>
+              <p className="text-sm text-amber-800 dark:text-amber-200 leading-relaxed">
+                Los servicios de estacionamiento y bodega son adicionales y están sujetos a disponibilidad. 
+                Por favor, consulta con el corredor sobre la disponibilidad y el costo de estos servicios antes de realizar tu reserva.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Amenidades mejoradas */}
       <CollapsibleSection title="Amenidades del edificio" icon={Star}>

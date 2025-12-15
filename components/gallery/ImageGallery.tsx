@@ -28,6 +28,7 @@ export function ImageGallery({
   const [isPlaying, setIsPlaying] = useState(autoPlay);
   const [isLoading, setIsLoading] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const isInitialRenderRef = useRef(true);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const autoPlayRef = useRef<NodeJS.Timeout | null>(null);
@@ -91,15 +92,31 @@ export function ImageGallery({
 
   const nextImage = useCallback(() => {
     if (!imageList || imageList.length === 0) return;
-    setActive((prev) => (prev + 1) % imageList.length);
+    if (!prefersReducedMotion) {
+      setIsTransitioning(true);
+      setTimeout(() => {
+        setActive((prev) => (prev + 1) % imageList.length);
+        setTimeout(() => setIsTransitioning(false), 50);
+      }, 150);
+    } else {
+      setActive((prev) => (prev + 1) % imageList.length);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- Only depends on length for modular arithmetic
-  }, [imageList.length]);
+  }, [imageList.length, prefersReducedMotion]);
 
   const prevImage = useCallback(() => {
     if (!imageList || imageList.length === 0) return;
-    setActive((prev) => (prev - 1 + imageList.length) % imageList.length);
+    if (!prefersReducedMotion) {
+      setIsTransitioning(true);
+      setTimeout(() => {
+        setActive((prev) => (prev - 1 + imageList.length) % imageList.length);
+        setTimeout(() => setIsTransitioning(false), 50);
+      }, 150);
+    } else {
+      setActive((prev) => (prev - 1 + imageList.length) % imageList.length);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- Only depends on length for modular arithmetic
-  }, [imageList.length]);
+  }, [imageList.length, prefersReducedMotion]);
 
   // Toggle fullscreen
   const toggleFullscreen = useCallback(() => {
@@ -132,13 +149,26 @@ export function ImageGallery({
     return null;
   }
 
+  const handleImageChange = useCallback((index: number) => {
+    if (index === active) return;
+    if (!prefersReducedMotion) {
+      setIsTransitioning(true);
+      setTimeout(() => {
+        setActive(index);
+        setTimeout(() => setIsTransitioning(false), 50);
+      }, 150);
+    } else {
+      setActive(index);
+    }
+  }, [active, prefersReducedMotion]);
+
   const handleKeyDown = (event: React.KeyboardEvent, index?: number) => {
     switch (event.key) {
       case 'Enter':
       case ' ':
         if (index !== undefined) {
           event.preventDefault();
-          setActive(index);
+          handleImageChange(index);
         }
         break;
       case 'ArrowRight':
@@ -151,11 +181,11 @@ export function ImageGallery({
         break;
       case 'Home':
         event.preventDefault();
-        setActive(0);
+        handleImageChange(0);
         break;
       case 'End':
         event.preventDefault();
-        setActive(imageList.length - 1);
+        handleImageChange(imageList.length - 1);
         break;
       case 'Escape':
         if (autoPlay) {
@@ -185,7 +215,7 @@ export function ImageGallery({
     >
       {/* Main Image Container */}
       <div className={clx(
-        "relative overflow-hidden rounded-2xl ring-1 ring-white/10 group",
+        "relative overflow-hidden rounded-3xl ring-1 ring-white/10 group",
         aspectRatioClass
       )}>
         {/* Loading State */}
@@ -206,8 +236,8 @@ export function ImageGallery({
           }
           className={clx(
             "object-cover transition-all duration-700 ease-out",
-            isLoading ? "opacity-0" : "opacity-100",
-            !prefersReducedMotion && "group-hover:scale-105 transition-transform duration-700 ease-out"
+            isLoading || isTransitioning ? "opacity-0" : "opacity-100",
+            !prefersReducedMotion && "group-hover:scale-105 transition-transform duration-700 ease-in-out"
           )}
           placeholder="blur"
           blurDataURL={DEFAULT_BLUR}
@@ -223,7 +253,8 @@ export function ImageGallery({
               onClick={prevImage}
               onKeyDown={handleKeyDown}
               className={clx(
-                "absolute top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center transition-all duration-200 opacity-0 group-hover:opacity-100 focus:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-white",
+                "absolute top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 bg-black/50 hover:bg-black/70 backdrop-blur-sm text-white rounded-full flex items-center justify-center transition-all duration-300 ease-out opacity-0 group-hover:opacity-100 focus:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-white",
+                !prefersReducedMotion && "group-hover:scale-110",
                 compact ? "left-2" : "left-4"
               )}
               aria-label="Imagen anterior"
@@ -237,7 +268,8 @@ export function ImageGallery({
               onClick={nextImage}
               onKeyDown={handleKeyDown}
               className={clx(
-                "absolute top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center transition-all duration-200 opacity-0 group-hover:opacity-100 focus:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-white",
+                "absolute top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 bg-black/50 hover:bg-black/70 backdrop-blur-sm text-white rounded-full flex items-center justify-center transition-all duration-300 ease-out opacity-0 group-hover:opacity-100 focus:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-white",
+                !prefersReducedMotion && "group-hover:scale-110",
                 compact ? "right-2" : "right-4"
               )}
               aria-label="Imagen siguiente"
@@ -247,7 +279,7 @@ export function ImageGallery({
             </button>
 
             {/* Contador de imágenes */}
-            <div className="absolute top-4 right-4 bg-black/50 text-white text-sm font-medium px-3 py-1.5 rounded-full">
+            <div className="absolute top-4 right-4 bg-black/50 backdrop-blur-sm text-white text-sm font-medium px-3 py-1.5 rounded-full">
               {active + 1} / {imageList.length}
             </div>
 
@@ -256,7 +288,8 @@ export function ImageGallery({
               <button
                 onClick={() => setIsPlaying(!isPlaying)}
                 className={clx(
-                  "absolute w-8 h-8 md:w-10 md:h-10 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center transition-all duration-200 opacity-0 group-hover:opacity-100 focus:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-white",
+                  "absolute w-8 h-8 md:w-10 md:h-10 bg-black/50 hover:bg-black/70 backdrop-blur-sm text-white rounded-full flex items-center justify-center transition-all duration-300 ease-out opacity-0 group-hover:opacity-100 focus:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-white",
+                  !prefersReducedMotion && "group-hover:scale-110",
                   compact ? "top-2 right-2" : "top-4 right-4"
                 )}
                 aria-label={isPlaying ? "Pausar presentación" : "Reproducir presentación"}
@@ -268,7 +301,7 @@ export function ImageGallery({
 
             {/* Image Counter */}
             <div className={clx(
-              "absolute bg-black/50 text-white px-2 py-1 md:px-3 md:py-1 rounded-full text-xs md:text-sm font-medium",
+              "absolute bg-black/50 backdrop-blur-sm text-white px-2 py-1 md:px-3 md:py-1.5 rounded-full text-xs md:text-sm font-medium",
               compact ? "bottom-2 left-2" : "bottom-4 left-4"
             )}>
               {active + 1} / {imageList.length}
@@ -283,17 +316,17 @@ export function ImageGallery({
           {imageList.map((src, i) => (
             <button
               key={src}
-              onClick={() => setActive(i)}
+              onClick={() => handleImageChange(i)}
               onKeyDown={(e) => handleKeyDown(e, i)}
               className={clx(
-                "shrink-0 aspect-video rounded-lg md:rounded-xl overflow-hidden ring-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)] transition-all duration-300 ease-out",
-                !prefersReducedMotion && "motion-reduce:transition-none",
+                "shrink-0 aspect-video rounded-xl md:rounded-2xl overflow-hidden ring-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)]",
+                !prefersReducedMotion && "transition-all duration-300 ease-out",
                 compact
                   ? "w-16 md:w-20"
                   : "w-20 md:w-24 lg:w-28",
                 i === active
                   ? "ring-[var(--ring)] scale-105"
-                  : "ring-white/10 hover:ring-white/20 hover:scale-102"
+                  : "ring-white/10 hover:ring-white/30 hover:scale-105"
               )}
               aria-label={`Ver imagen ${i + 1} de ${imageList.length}`}
               aria-pressed={i === active}
@@ -304,7 +337,7 @@ export function ImageGallery({
                 alt={`Miniatura ${i + 1}`}
                 width={compact ? 80 : 112}
                 height={compact ? 60 : 84}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover transition-transform duration-300 ease-out"
                 placeholder="blur"
                 blurDataURL={DEFAULT_BLUR}
               />
@@ -315,16 +348,17 @@ export function ImageGallery({
 
       {/* Paginador visual (dots) */}
       {imageList.length > 1 && (
-        <div className="flex justify-center gap-2 mt-4">
+        <div className="flex justify-center gap-2.5 mt-4">
           {imageList.map((_, i) => (
             <button
               key={i}
-              onClick={() => setActive(i)}
+              onClick={() => handleImageChange(i)}
               className={clx(
-                "w-2 h-2 rounded-full transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2",
+                "rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2",
+                !prefersReducedMotion && "transition-all duration-300 ease-out",
                 i === active
-                  ? "bg-blue-600 w-4"
-                  : "bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500"
+                  ? "bg-blue-600 w-5 h-2.5"
+                  : "bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500 w-2.5 h-2.5"
               )}
               aria-label={`Ir a imagen ${i + 1}`}
               aria-current={i === active ? "true" : "false"}
