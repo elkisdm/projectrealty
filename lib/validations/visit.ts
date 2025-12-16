@@ -20,7 +20,7 @@ import { z } from "zod";
  */
 export function normalizeChileanPhone(phone: string): string {
   // Remover todos los espacios, guiones, paréntesis y puntos
-  let cleaned = phone.replace(/[\s\-().]/g, '');
+  let cleaned = phone.replace(/[\s\-\(\)\.]/g, '');
   
   // Si empieza con +56, mantenerlo
   if (cleaned.startsWith('+56')) {
@@ -61,9 +61,9 @@ export function normalizeChileanPhone(phone: string): string {
  * Valida si un teléfono tiene formato chileno válido
  * Acepta múltiples formatos antes de normalización
  */
-export function isValidChileanPhone(phone: string): boolean {
+function isValidChileanPhone(phone: string): boolean {
   // Remover espacios y caracteres especiales para validar
-  const cleaned = phone.replace(/[\s\-().]/g, '');
+  const cleaned = phone.replace(/[\s\-\(\)\.]/g, '');
   
   // Formato: +569XXXXXXXX (11 dígitos con +569)
   if (cleaned.match(/^\+569\d{8}$/)) return true;
@@ -80,26 +80,13 @@ export function isValidChileanPhone(phone: string): boolean {
   return false;
 }
 
-// Función para normalizar nombre (trim y capitalización inicial)
-function normalizeName(name: string): string {
-  const trimmed = name.trim();
-  if (!trimmed) return trimmed;
-  
-  // Capitalizar primera letra de cada palabra
-  return trimmed
-    .split(/\s+/)
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(' ');
-}
-
 // Schema de validación para el formulario de visitas
 export const visitFormSchema = z.object({
   name: z
     .string()
     .min(1, "El nombre es requerido")
     .min(2, "El nombre debe tener al menos 2 caracteres")
-    .trim()
-    .transform((val) => normalizeName(val)), // Normalizar nombre
+    .trim(),
   
   email: z
     .string()

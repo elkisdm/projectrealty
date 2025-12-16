@@ -1,0 +1,497 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - link "Saltar al contenido principal" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e6]:
+        - generic [ref=e7]:
+          - link "Ir al inicio" [ref=e8] [cursor=pointer]:
+            - /url: /
+            - generic [ref=e11] [cursor=pointer]: E
+            - generic [ref=e13] [cursor=pointer]:
+              - generic [ref=e14] [cursor=pointer]: Elkis Realtor
+              - generic [ref=e15] [cursor=pointer]: Propiedades Premium
+          - navigation [ref=e16]:
+            - link "Propiedades" [ref=e17] [cursor=pointer]:
+              - /url: /property
+              - text: Propiedades
+            - link "Sin Comisión" [ref=e19] [cursor=pointer]:
+              - /url: /arrienda-sin-comision
+              - text: Sin Comisión
+            - link "Cotizador" [ref=e20] [cursor=pointer]:
+              - /url: /cotizador
+              - text: Cotizador
+            - link "Sobre Mí" [ref=e21] [cursor=pointer]:
+              - /url: /mi-bio
+              - text: Sobre Mí
+        - generic [ref=e22]:
+          - button "Buscar propiedades" [ref=e23] [cursor=pointer]:
+            - img [ref=e24] [cursor=pointer]
+          - button "Ver favoritos (3 propiedades guardadas)" [ref=e27] [cursor=pointer]:
+            - img [ref=e28] [cursor=pointer]
+            - generic [ref=e30] [cursor=pointer]: "3"
+          - button "Cambiar a tema oscuro" [ref=e32] [cursor=pointer]:
+            - img [ref=e34] [cursor=pointer]
+          - button "Opciones de contacto" [ref=e43] [cursor=pointer]:
+            - img [ref=e44] [cursor=pointer]
+            - text: Contacto
+            - img [ref=e47] [cursor=pointer]
+    - main [ref=e49]:
+      - main [ref=e51]:
+        - navigation "Navegación de migas de pan" [ref=e52]:
+          - list [ref=e53]:
+            - listitem [ref=e54]:
+              - link "Ir al inicio" [ref=e55] [cursor=pointer]:
+                - /url: /
+                - text: Inicio
+            - img [ref=e56]
+            - listitem [ref=e58]:
+              - link "Ver catálogo de propiedades" [ref=e59] [cursor=pointer]:
+                - /url: /catalog
+                - text: Propiedades
+            - img [ref=e60]
+            - listitem [ref=e62]: Home Inclusive Ecuador
+        - generic [ref=e63]:
+          - generic [ref=e64]:
+            - region "1D1B luminoso en Estación Central" [ref=e65]:
+              - generic [ref=e66]:
+                - navigation "breadcrumb" [ref=e67]:
+                  - generic [ref=e68]: Estación Central
+                  - generic [ref=e69]: ·
+                  - generic [ref=e70]: Home Inclusive Ecuador
+                - generic [ref=e71]:
+                  - button "Compartir propiedad" [ref=e72] [cursor=pointer]:
+                    - img [ref=e73] [cursor=pointer]
+                  - button "Guardar en favoritos" [ref=e79] [cursor=pointer]:
+                    - img [ref=e80] [cursor=pointer]
+              - generic [ref=e82]:
+                - img "Home Inclusive Ecuador - 1D1B en Estación Central" [ref=e83]
+                - generic [ref=e85]: 1 / 10
+                - button "Imagen anterior" [ref=e88] [cursor=pointer]:
+                  - img [ref=e89] [cursor=pointer]
+                - button "Imagen siguiente" [ref=e91] [cursor=pointer]:
+                  - img [ref=e92] [cursor=pointer]
+                - button "Ver fotos" [ref=e94] [cursor=pointer]
+                - generic [ref=e95]: ← Desliza →
+              - generic [ref=e96]:
+                - button "Ir a imagen 1" [ref=e97] [cursor=pointer]
+                - button "Ir a imagen 2" [ref=e98] [cursor=pointer]
+                - button "Ir a imagen 3" [ref=e99] [cursor=pointer]
+                - button "Ir a imagen 4" [ref=e100] [cursor=pointer]
+                - button "Ir a imagen 5" [ref=e101] [cursor=pointer]
+                - button "Ir a imagen 6" [ref=e102] [cursor=pointer]
+                - button "Ir a imagen 7" [ref=e103] [cursor=pointer]
+                - button "Ir a imagen 8" [ref=e104] [cursor=pointer]
+                - button "Ir a imagen 9" [ref=e105] [cursor=pointer]
+                - button "Ir a imagen 10" [ref=e106] [cursor=pointer]
+              - generic [ref=e107]:
+                - heading "1D1B luminoso en Estación Central" [level=1] [ref=e108]
+                - generic [ref=e109]:
+                  - paragraph [ref=e110]:
+                    - text: $335.000
+                    - generic [ref=e111]: / mes (arriendo + GGCC)
+                  - paragraph [ref=e112]: Respaldado por Assetplan
+                - generic [ref=e113]:
+                  - generic [ref=e114]: 0% comisión
+                  - generic [ref=e115]: 45 m²
+                  - generic [ref=e116]: Pet-friendly
+                  - generic [ref=e117]: Metro 6'
+              - generic [ref=e119]:
+                - generic [ref=e120]:
+                  - paragraph [ref=e121]: $335.000
+                  - paragraph [ref=e122]: / mes
+                - generic [ref=e123]:
+                  - button "Agendar visita" [ref=e124] [cursor=pointer]
+                  - button "Contactar por WhatsApp" [ref=e125] [cursor=pointer]:
+                    - img [ref=e126] [cursor=pointer]
+            - generic [ref=e128]:
+              - generic [ref=e129]:
+                - button "Ver información completa Abre siguiente sección" [ref=e130] [cursor=pointer]:
+                  - text: Ver información completa
+                  - generic: Abre siguiente sección
+                - button "Ver menos Solo características" [ref=e131] [cursor=pointer]:
+                  - text: Ver menos
+                  - generic: Solo características
+              - paragraph [ref=e133]: "Viendo: Características"
+              - generic [ref=e134]:
+                - button "Características 1D1B · 45 m² · S · 1D1B" [expanded] [ref=e135] [cursor=pointer]:
+                  - generic [ref=e136] [cursor=pointer]:
+                    - img [ref=e138] [cursor=pointer]
+                    - generic [ref=e141] [cursor=pointer]:
+                      - heading "Características" [level=3] [ref=e142] [cursor=pointer]
+                      - paragraph [ref=e143] [cursor=pointer]: 1D1B · 45 m² · S · 1D1B
+                  - img [ref=e145] [cursor=pointer]
+                - generic [ref=e149]:
+                  - generic [ref=e150]:
+                    - generic [ref=e151]:
+                      - img [ref=e152]
+                      - generic [ref=e155]: "Tipología: 1D1B"
+                    - generic [ref=e156]:
+                      - img [ref=e157]
+                      - generic [ref=e160]: "Superficie: 45 m²"
+                    - generic [ref=e161]:
+                      - img [ref=e162]
+                      - generic [ref=e165]: "Orientación: S"
+                    - generic [ref=e166]:
+                      - img [ref=e167]
+                      - generic [ref=e170]: "Calefacción: Eléctrica"
+                  - generic [ref=e171]:
+                    - generic [ref=e172]:
+                      - img [ref=e173]
+                      - generic [ref=e176]: Pet-friendly
+                    - generic [ref=e177]:
+                      - img [ref=e178]
+                      - generic [ref=e181]: Con estacionamiento
+              - button "Requisitos para arrendar Ingreso ≥ $0.7M · Sin morosidad · 5 docs" [ref=e183] [cursor=pointer]:
+                - generic [ref=e184] [cursor=pointer]:
+                  - img [ref=e186] [cursor=pointer]
+                  - generic [ref=e188] [cursor=pointer]:
+                    - heading "Requisitos para arrendar" [level=3] [ref=e189] [cursor=pointer]
+                    - paragraph [ref=e190] [cursor=pointer]: Ingreso ≥ $0.7M · Sin morosidad · 5 docs
+                - img [ref=e192] [cursor=pointer]
+              - button "Información del edificio 15 amenidades · Metro a 6′ · Assetplan" [ref=e195] [cursor=pointer]:
+                - generic [ref=e196] [cursor=pointer]:
+                  - img [ref=e198] [cursor=pointer]
+                  - generic [ref=e202] [cursor=pointer]:
+                    - heading "Información del edificio" [level=3] [ref=e203] [cursor=pointer]
+                    - paragraph [ref=e204] [cursor=pointer]: 15 amenidades · Metro a 6′ · Assetplan
+                - img [ref=e206] [cursor=pointer]
+            - generic [ref=e208]:
+              - generic [ref=e209]:
+                - heading "Cómo es vivir en Estación Central" [level=2] [ref=e210]
+                - paragraph [ref=e211]: Una comuna vibrante y moderna que combina la tranquilidad residencial con la conveniencia urbana. Conectada por múltiples líneas de metro y rodeada de parques, ofrece una calidad de vida excepcional para familias y profesionales.
+              - generic [ref=e212]:
+                - generic [ref=e213]:
+                  - img [ref=e215]
+                  - generic [ref=e219]:
+                    - heading "3 líneas de metro" [level=3] [ref=e220]
+                    - paragraph [ref=e221]: Estación Central, Universidad de Chile, Los Héroes
+                - generic [ref=e222]:
+                  - img [ref=e224]
+                  - generic [ref=e227]:
+                    - heading "Parques cercanos" [level=3] [ref=e228]
+                    - paragraph [ref=e229]: Parque O'Higgins, Parque Forestal, Cerro Santa Lucía
+                - generic [ref=e230]:
+                  - img [ref=e232]
+                  - generic [ref=e235]:
+                    - heading "Centros comerciales" [level=3] [ref=e236]
+                    - paragraph [ref=e237]: Costanera Center, Parque Arauco, Alto Las Condes
+                - generic [ref=e238]:
+                  - img [ref=e240]
+                  - generic [ref=e242]:
+                    - heading "Cafés y restaurantes" [level=3] [ref=e243]
+                    - paragraph [ref=e244]: Más de 200 opciones gastronómicas
+              - generic [ref=e245]:
+                - generic [ref=e246]:
+                  - heading "Amenidades de la comuna" [level=3] [ref=e247]
+                  - generic [ref=e248]:
+                    - generic [ref=e249]:
+                      - img [ref=e251]
+                      - generic [ref=e253]:
+                        - generic [ref=e254]: "Seguridad:"
+                        - generic [ref=e255]: Policía local 24/7, vigilancia privada
+                    - generic [ref=e256]:
+                      - img [ref=e258]
+                      - generic [ref=e263]:
+                        - generic [ref=e264]: "Comunidad:"
+                        - generic [ref=e265]: Actividades culturales, eventos deportivos
+                    - generic [ref=e266]:
+                      - img [ref=e268]
+                      - generic [ref=e272]:
+                        - generic [ref=e273]: "Transporte:"
+                        - generic [ref=e274]: Metro, buses, ciclovías, estacionamientos
+                - generic [ref=e275]:
+                  - heading "Ubicación estratégica" [level=3] [ref=e276]
+                  - generic [ref=e277]:
+                    - img [ref=e279]
+                    - generic [ref=e287]:
+                      - generic [ref=e290]: Metro
+                      - generic [ref=e293]: Parques
+                      - generic [ref=e296]: Servicios
+              - button "Ver más departamentos en Estación Central" [ref=e298] [cursor=pointer]:
+                - img [ref=e299] [cursor=pointer]
+                - text: Ver más departamentos en Estación Central
+            - region "Propiedades relacionadas" [ref=e302]:
+              - heading "Propiedades relacionadas" [level=2] [ref=e303]
+              - generic [ref=e304]:
+                - generic [ref=e305]:
+                  - heading "Propiedades similares" [level=2] [ref=e306]
+                  - paragraph [ref=e307]: Descubre otras opciones que podrían interesarte en la misma zona
+                - generic [ref=e308]:
+                  - link "Ver propiedad Residencial Las Condes Premium en Las Condes, 1 tipologías disponibles" [ref=e310] [cursor=pointer]:
+                    - /url: /property/edificio-mock-1
+                    - article [ref=e311] [cursor=pointer]:
+                      - generic [ref=e312] [cursor=pointer]:
+                        - img "Portada Residencial Las Condes Premium" [ref=e313] [cursor=pointer]
+                        - generic [ref=e314] [cursor=pointer]:
+                          - generic [ref=e315] [cursor=pointer]:
+                            - img [ref=e316] [cursor=pointer]
+                            - generic [ref=e319] [cursor=pointer]: Comisión gratis
+                            - generic [ref=e320] [cursor=pointer]: Exclusivo
+                          - generic [ref=e321] [cursor=pointer]:
+                            - img [ref=e322] [cursor=pointer]
+                            - generic [ref=e325] [cursor=pointer]: Pro
+                            - generic [ref=e326] [cursor=pointer]: Servicio
+                      - generic [ref=e327] [cursor=pointer]:
+                        - generic [ref=e328] [cursor=pointer]:
+                          - generic [ref=e329] [cursor=pointer]:
+                            - heading "Residencial Las Condes Premium" [level=3] [ref=e330] [cursor=pointer]
+                            - paragraph [ref=e331] [cursor=pointer]: Las Condes
+                          - generic [ref=e332] [cursor=pointer]:
+                            - generic [ref=e333] [cursor=pointer]: $305.247
+                            - generic [ref=e334] [cursor=pointer]: Desde
+                        - generic "1 Dormitorio 1 Baño" [ref=e336] [cursor=pointer]: 1 Dormitorio 1 Baño — 1 disp
+                  - link "Ver propiedad Torre Providencia Central en Providencia, 1 tipologías disponibles" [ref=e338] [cursor=pointer]:
+                    - /url: /property/edificio-mock-2
+                    - article [ref=e339] [cursor=pointer]:
+                      - generic [ref=e340] [cursor=pointer]:
+                        - img "Portada Torre Providencia Central" [ref=e341] [cursor=pointer]
+                        - generic [ref=e343] [cursor=pointer]:
+                          - img [ref=e344] [cursor=pointer]
+                          - generic [ref=e347] [cursor=pointer]: 50% OFF
+                          - generic [ref=e348] [cursor=pointer]: Primer mes
+                      - generic [ref=e349] [cursor=pointer]:
+                        - generic [ref=e350] [cursor=pointer]:
+                          - generic [ref=e351] [cursor=pointer]:
+                            - heading "Torre Providencia Central" [level=3] [ref=e352] [cursor=pointer]
+                            - paragraph [ref=e353] [cursor=pointer]: Providencia
+                          - generic [ref=e354] [cursor=pointer]:
+                            - generic [ref=e355] [cursor=pointer]: $256.079
+                            - generic [ref=e356] [cursor=pointer]: Desde
+                        - generic "2 Dormitorios 1 Baño" [ref=e358] [cursor=pointer]: 2 Dormitorios 1 Baño — 1 disp
+                  - link "Ver propiedad Complejo Ñuñoa Residencial en Ñuñoa, 1 tipologías disponibles" [ref=e360] [cursor=pointer]:
+                    - /url: /property/edificio-mock-3
+                    - article [ref=e361] [cursor=pointer]:
+                      - generic [ref=e362] [cursor=pointer]:
+                        - img "Portada Complejo Ñuñoa Residencial" [ref=e363] [cursor=pointer]
+                        - generic [ref=e364] [cursor=pointer]:
+                          - generic [ref=e365] [cursor=pointer]:
+                            - img [ref=e366] [cursor=pointer]
+                            - generic [ref=e369] [cursor=pointer]: Comisión gratis
+                            - generic [ref=e370] [cursor=pointer]: Exclusivo
+                          - generic [ref=e371] [cursor=pointer]:
+                            - img [ref=e372] [cursor=pointer]
+                            - generic [ref=e375] [cursor=pointer]: Pro
+                            - generic [ref=e376] [cursor=pointer]: Servicio
+                      - generic [ref=e377] [cursor=pointer]:
+                        - generic [ref=e378] [cursor=pointer]:
+                          - generic [ref=e379] [cursor=pointer]:
+                            - heading "Complejo Ñuñoa Residencial" [level=3] [ref=e380] [cursor=pointer]
+                            - paragraph [ref=e381] [cursor=pointer]: Ñuñoa
+                          - generic [ref=e382] [cursor=pointer]:
+                            - generic [ref=e383] [cursor=pointer]: $304.852
+                            - generic [ref=e384] [cursor=pointer]: Desde
+                        - generic "3 Dormitorios 2 Baños" [ref=e386] [cursor=pointer]: 3 Dormitorios 2 Baños — 1 disp
+                - generic [ref=e388] [cursor=pointer]:
+                  - generic [ref=e389] [cursor=pointer]: Ver todas las propiedades
+                  - img [ref=e390] [cursor=pointer]
+            - generic [ref=e392]:
+              - generic [ref=e393]:
+                - heading "Preguntas frecuentes" [level=2] [ref=e394]
+                - paragraph [ref=e395]: Resolvemos las dudas más comunes sobre esta propiedad
+              - generic [ref=e396]:
+                - generic [ref=e397]:
+                  - heading "Proceso" [level=3] [ref=e398]
+                  - generic [ref=e400]:
+                    - button "¿Cuál es el proceso para arrendar esta propiedad?" [expanded] [ref=e401] [cursor=pointer]:
+                      - generic [ref=e402] [cursor=pointer]:
+                        - img [ref=e404] [cursor=pointer]
+                        - generic [ref=e406] [cursor=pointer]: ¿Cuál es el proceso para arrendar esta propiedad?
+                      - img [ref=e407] [cursor=pointer]
+                    - paragraph [ref=e411]: "El proceso es simple: 1) Agenda una visita, 2) Completa la documentación (RUT, comprobantes de ingresos, aval), 3) Firma el contrato, 4) Paga el primer mes + garantía. Todo se puede hacer en línea o en persona."
+                - generic [ref=e412]:
+                  - heading "Precios" [level=3] [ref=e413]
+                  - button "¿Qué incluye el precio del arriendo?" [ref=e416] [cursor=pointer]:
+                    - generic [ref=e417] [cursor=pointer]:
+                      - img [ref=e419] [cursor=pointer]
+                      - generic [ref=e421] [cursor=pointer]: ¿Qué incluye el precio del arriendo?
+                    - img [ref=e422] [cursor=pointer]
+                - generic [ref=e424]:
+                  - heading "Políticas" [level=3] [ref=e425]
+                  - button "¿Puedo tener mascotas en esta propiedad?" [ref=e428] [cursor=pointer]:
+                    - generic [ref=e429] [cursor=pointer]:
+                      - img [ref=e431] [cursor=pointer]
+                      - generic [ref=e436] [cursor=pointer]: ¿Puedo tener mascotas en esta propiedad?
+                    - img [ref=e437] [cursor=pointer]
+                - generic [ref=e439]:
+                  - heading "Seguridad" [level=3] [ref=e440]
+                  - button "¿Qué tan segura es la zona?" [ref=e443] [cursor=pointer]:
+                    - generic [ref=e444] [cursor=pointer]:
+                      - img [ref=e446] [cursor=pointer]
+                      - generic [ref=e448] [cursor=pointer]: ¿Qué tan segura es la zona?
+                    - img [ref=e449] [cursor=pointer]
+                - generic [ref=e451]:
+                  - heading "Visitas" [level=3] [ref=e452]
+                  - button "¿Cuáles son los horarios para visitar la propiedad?" [ref=e455] [cursor=pointer]:
+                    - generic [ref=e456] [cursor=pointer]:
+                      - img [ref=e458] [cursor=pointer]
+                      - generic [ref=e460] [cursor=pointer]: ¿Cuáles son los horarios para visitar la propiedad?
+                    - img [ref=e461] [cursor=pointer]
+                - generic [ref=e463]:
+                  - heading "Documentación" [level=3] [ref=e464]
+                  - button "¿Qué documentos necesito para arrendar?" [ref=e467] [cursor=pointer]:
+                    - generic [ref=e468] [cursor=pointer]:
+                      - img [ref=e470] [cursor=pointer]
+                      - generic [ref=e473] [cursor=pointer]: ¿Qué documentos necesito para arrendar?
+                    - img [ref=e474] [cursor=pointer]
+              - generic [ref=e477]:
+                - heading "¿Tienes más preguntas?" [level=3] [ref=e478]
+                - paragraph [ref=e479]: Nuestro equipo está disponible para ayudarte con cualquier consulta
+                - generic [ref=e480]:
+                  - button "Llamar ahora" [ref=e481] [cursor=pointer]:
+                    - img [ref=e482] [cursor=pointer]
+                    - text: Llamar ahora
+                  - button "Agendar visita" [active] [ref=e484] [cursor=pointer]:
+                    - img [ref=e485] [cursor=pointer]
+                    - text: Agendar visita
+          - complementary [ref=e487]:
+            - generic [ref=e489]:
+              - generic [ref=e490]:
+                - heading "Departamento 207" [level=2] [ref=e491]
+                - paragraph [ref=e492]: 1D1B • Piso 2
+              - generic [ref=e493]:
+                - generic [ref=e494]: $290.000
+                - generic [ref=e495]: 50% OFF primer mes
+                - generic [ref=e496]: $145.000 primer mes
+                - generic [ref=e497]: Sin comisión de arriendo
+              - generic [ref=e498]:
+                - heading "Características principales" [level=3] [ref=e499]
+                - generic [ref=e500]:
+                  - generic [ref=e501]:
+                    - img [ref=e502]
+                    - generic [ref=e504]: "1"
+                    - generic [ref=e505]: Dorm.
+                  - generic [ref=e506]:
+                    - img [ref=e507]
+                    - generic [ref=e510]: "1"
+                    - generic [ref=e511]: Baños
+                  - generic [ref=e512]:
+                    - img [ref=e513]
+                    - generic [ref=e515]: "45"
+                    - generic [ref=e516]: m²
+              - generic [ref=e517]:
+                - generic [ref=e518]:
+                  - img [ref=e520]
+                  - heading "Cálculo del primer pago" [level=3] [ref=e522]
+                - generic [ref=e523]:
+                  - generic [ref=e524]:
+                    - generic [ref=e525]: Te mudas con
+                    - generic [ref=e526]: $435.000
+                  - generic [ref=e527]: el 8 sept
+                - button "Ver más detalles" [ref=e528] [cursor=pointer]:
+                  - img [ref=e529] [cursor=pointer]
+                  - text: Ver más detalles
+              - generic [ref=e531]:
+                - button "Agendar visita" [ref=e532] [cursor=pointer]:
+                  - generic [ref=e533] [cursor=pointer]:
+                    - img [ref=e534] [cursor=pointer]
+                    - generic [ref=e536] [cursor=pointer]: Agendar visita
+                - button "WhatsApp" [ref=e537] [cursor=pointer]:
+                  - generic [ref=e538] [cursor=pointer]:
+                    - img [ref=e539] [cursor=pointer]
+                    - generic [ref=e541] [cursor=pointer]: WhatsApp
+    - contentinfo "Pie de página" [ref=e542]:
+      - generic [ref=e543]:
+        - generic [ref=e544]:
+          - generic [ref=e545]:
+            - generic [ref=e546]:
+              - generic [ref=e548]: E
+              - generic [ref=e549]: Elkis Realtor
+            - paragraph [ref=e550]: Arrienda departamentos con 0% de comisión. Encuentra tu hogar ideal en Santiago de manera fácil y transparente.
+            - generic [ref=e551]:
+              - img [ref=e552]
+              - generic [ref=e554]: Transparencia total
+          - generic [ref=e555]:
+            - heading "Enlaces rápidos" [level=3] [ref=e556]
+            - navigation "Enlaces rápidos" [ref=e557]:
+              - list [ref=e558]:
+                - listitem [ref=e559]:
+                  - link "Inicio" [ref=e560] [cursor=pointer]:
+                    - /url: /
+                - listitem [ref=e561]:
+                  - link "Arriendo sin comisión" [ref=e562] [cursor=pointer]:
+                    - /url: /arrienda-sin-comision
+                - listitem [ref=e563]:
+                  - link "Cotizador" [ref=e564] [cursor=pointer]:
+                    - /url: /cotizador
+                - listitem [ref=e565]:
+                  - link "Mi Bio" [ref=e566] [cursor=pointer]:
+                    - /url: /mi-bio
+          - generic [ref=e567]:
+            - heading "Servicios" [level=3] [ref=e568]
+            - navigation "Servicios" [ref=e569]:
+              - list [ref=e570]:
+                - listitem [ref=e571]:
+                  - link "Buscar propiedades" [ref=e572] [cursor=pointer]:
+                    - /url: /property
+                    - generic [ref=e573] [cursor=pointer]: Buscar propiedades
+                - listitem [ref=e574]:
+                  - link "Agendar visita" [ref=e575] [cursor=pointer]:
+                    - /url: /booking
+                    - generic [ref=e576] [cursor=pointer]: Agendar visita
+                - listitem [ref=e577]:
+                  - link "Solicitar cotización" [ref=e578] [cursor=pointer]:
+                    - /url: /quotation
+                    - generic [ref=e579] [cursor=pointer]: Solicitar cotización
+                - listitem [ref=e580]:
+                  - link "Lista de espera" [ref=e581] [cursor=pointer]:
+                    - /url: /waitlist
+                    - generic [ref=e582] [cursor=pointer]: Lista de espera
+          - generic [ref=e583]:
+            - heading "Contacto" [level=3] [ref=e584]
+            - generic [ref=e585]:
+              - generic [ref=e586]:
+                - img [ref=e587]
+                - link "Llamar al +56 9 1234 5678" [ref=e589] [cursor=pointer]:
+                  - /url: tel:+56912345678
+                  - text: +56 9 1234 5678
+              - generic [ref=e590]:
+                - img [ref=e591]
+                - link "Enviar email a contacto@elkisrealtor.cl" [ref=e594] [cursor=pointer]:
+                  - /url: mailto:contacto@elkisrealtor.cl
+                  - text: contacto@elkisrealtor.cl
+              - generic [ref=e595]:
+                - img [ref=e596]
+                - generic [ref=e599]: Santiago, Chile
+            - generic [ref=e600]:
+              - heading "Síguenos" [level=4] [ref=e601]
+              - generic [ref=e602]:
+                - link "Contactar por WhatsApp" [ref=e603] [cursor=pointer]:
+                  - /url: https://wa.me/56912345678
+                  - img [ref=e604] [cursor=pointer]
+                - link "Seguir en Instagram" [ref=e606] [cursor=pointer]:
+                  - /url: https://instagram.com/elkisrealtor
+                  - img [ref=e607] [cursor=pointer]
+                - link "Seguir en Facebook" [ref=e610] [cursor=pointer]:
+                  - /url: https://facebook.com/elkisrealtor
+                  - img [ref=e611] [cursor=pointer]
+                - link "Seguir en LinkedIn" [ref=e613] [cursor=pointer]:
+                  - /url: https://linkedin.com/in/elkisrealtor
+                  - img [ref=e614] [cursor=pointer]
+        - generic [ref=e618]:
+          - generic [ref=e619]:
+            - generic [ref=e621]: © 2025 Elkis Realtor. Todos los derechos reservados.
+            - generic [ref=e622]:
+              - link "Privacidad" [ref=e623] [cursor=pointer]:
+                - /url: /privacy
+              - link "Términos" [ref=e624] [cursor=pointer]:
+                - /url: /terms
+              - link "Cookies" [ref=e625] [cursor=pointer]:
+                - /url: /cookies
+          - generic [ref=e626]:
+            - generic [ref=e627]:
+              - img [ref=e628]
+              - generic [ref=e631]: Certificado SII
+            - generic [ref=e632]:
+              - img [ref=e633]
+              - generic [ref=e638]: +500 clientes satisfechos
+            - generic [ref=e639]:
+              - img [ref=e640]
+              - generic [ref=e642]: Transparencia garantizada
+  - button "Open Next.js Dev Tools" [ref=e648] [cursor=pointer]:
+    - img [ref=e649] [cursor=pointer]
+  - alert [ref=e652]
+```

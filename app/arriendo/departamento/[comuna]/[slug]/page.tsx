@@ -98,13 +98,7 @@ export async function generateMetadata({ params }: UnitPageProps): Promise<Metad
   }
 
   const { unit, building } = unitData;
-  // Prioridad: tipología > áreas comunes > galería edificio > portada edificio > imágenes unidad
-  const primaryImage =
-    unit.imagesTipologia?.[0] ||
-    unit.imagesAreasComunes?.[0] ||
-    building.gallery?.[0] ||
-    (building as { coverImage?: string }).coverImage ||
-    unit.images?.[0];
+  const primaryImage = unit.images?.[0] || building.gallery?.[0];
 
   return generateUnitMetadata({
     tipologia: unit.tipologia,

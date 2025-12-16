@@ -3,7 +3,7 @@
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import { FilterBar } from "@/components/filters/FilterBar";
-import { FilterDescription } from "@/components/filters/FilterDescription";
+import { FilterChips } from "@/components/filters/FilterChips";
 import { ResultsBreadcrumb } from "@/components/search/ResultsBreadcrumb";
 import { EmptyResults } from "@/components/search/EmptyResults";
 import { ResultsError } from "@/components/search/ResultsError";
@@ -25,23 +25,17 @@ export function SearchResultsClient() {
   const precioMinParam = searchParams.get("precioMin");
   const precioMaxParam = searchParams.get("precioMax");
   const dormitoriosParam = searchParams.get("dormitorios") || undefined;
-  const estacionamientoParam = searchParams.get("estacionamiento");
-  const bodegaParam = searchParams.get("bodega");
-  const mascotasParam = searchParams.get("mascotas");
   const sortParam = searchParams.get("sort") || "default";
   const pageParam = searchParams.get("page");
   const page = pageParam ? parseInt(pageParam, 10) : 1;
 
   // Estado de filtros
   const [filters, setFilters] = useState<FilterValues>({
-    comuna: comunaParam ? (comunaParam.includes(',') ? comunaParam.split(',') : comunaParam) : "Todas",
+    comuna: comunaParam,
     tipologia: "Todas", // Mantener para compatibilidad pero no usar
-    dormitorios: dormitoriosParam ? (dormitoriosParam.includes(',') ? dormitoriosParam.split(',') : dormitoriosParam) : undefined,
+    dormitorios: dormitoriosParam,
     minPrice: precioMinParam ? Number(precioMinParam) : null,
     maxPrice: precioMaxParam ? Number(precioMaxParam) : null,
-    estacionamiento: estacionamientoParam === "true" ? true : estacionamientoParam === "false" ? false : undefined,
-    bodega: bodegaParam === "true" ? true : bodegaParam === "false" ? false : undefined,
-    mascotas: mascotasParam === "true" ? true : mascotasParam === "false" ? false : undefined,
   });
 
   const [sort, setSort] = useState(sortParam);
@@ -57,15 +51,10 @@ export function SearchResultsClient() {
     error,
   } = useSearchResults({
     q,
-    comuna: Array.isArray(filters.comuna) 
-      ? filters.comuna.length > 0 ? filters.comuna : undefined
-      : filters.comuna !== "Todas" ? filters.comuna : undefined,
+    comuna: filters.comuna !== "Todas" ? filters.comuna : undefined,
     precioMin: filters.minPrice ?? undefined,
     precioMax: filters.maxPrice ?? undefined,
     dormitorios: filters.dormitorios,
-    estacionamiento: filters.estacionamiento ?? undefined,
-    bodega: filters.bodega ?? undefined,
-    mascotas: filters.mascotas ?? undefined,
     sort: sort !== "default" ? sort : undefined,
     page,
     limit: 12,
@@ -74,17 +63,14 @@ export function SearchResultsClient() {
   // Actualizar filtros cuando cambian los query params
   useEffect(() => {
     setFilters({
-      comuna: comunaParam ? (comunaParam.includes(',') ? comunaParam.split(',') : comunaParam) : "Todas",
+      comuna: comunaParam,
       tipologia: "Todas",
-      dormitorios: dormitoriosParam ? (dormitoriosParam.includes(',') ? dormitoriosParam.split(',') : dormitoriosParam) : undefined,
+      dormitorios: dormitoriosParam,
       minPrice: precioMinParam ? Number(precioMinParam) : null,
       maxPrice: precioMaxParam ? Number(precioMaxParam) : null,
-      estacionamiento: estacionamientoParam === "true" ? true : estacionamientoParam === "false" ? false : undefined,
-      bodega: bodegaParam === "true" ? true : bodegaParam === "false" ? false : undefined,
-      mascotas: mascotasParam === "true" ? true : mascotasParam === "false" ? false : undefined,
     });
     setSort(sortParam);
-  }, [comunaParam, precioMinParam, precioMaxParam, dormitoriosParam, estacionamientoParam, bodegaParam, mascotasParam, sortParam]);
+  }, [comunaParam, precioMinParam, precioMaxParam, dormitoriosParam, sortParam]);
 
   // Actualizar URL cuando cambian los filtros
   const updateURL = useCallback(
@@ -92,43 +78,18 @@ export function SearchResultsClient() {
       const params = new URLSearchParams();
 
       if (q) params.set("q", q);
-      
-      // Comuna (soporta array)
-      if (newFilters.comuna) {
-        if (Array.isArray(newFilters.comuna) && newFilters.comuna.length > 0) {
-          params.set("comuna", newFilters.comuna.join(','));
-        } else if (typeof newFilters.comuna === 'string' && newFilters.comuna !== "Todas") {
-          params.set("comuna", newFilters.comuna);
-        }
+      if (newFilters.comuna && newFilters.comuna !== "Todas") {
+        params.set("comuna", newFilters.comuna);
       }
-      
       if (newFilters.minPrice) {
         params.set("precioMin", newFilters.minPrice.toString());
       }
       if (newFilters.maxPrice) {
         params.set("precioMax", newFilters.maxPrice.toString());
       }
-      
-      // Dormitorios (soporta array)
       if (newFilters.dormitorios) {
-        if (Array.isArray(newFilters.dormitorios) && newFilters.dormitorios.length > 0) {
-          params.set("dormitorios", newFilters.dormitorios.join(','));
-        } else if (typeof newFilters.dormitorios === 'string') {
-          params.set("dormitorios", newFilters.dormitorios);
-        }
+        params.set("dormitorios", newFilters.dormitorios);
       }
-      
-      // Nuevos filtros
-      if (newFilters.estacionamiento !== undefined && newFilters.estacionamiento !== null) {
-        params.set("estacionamiento", newFilters.estacionamiento.toString());
-      }
-      if (newFilters.bodega !== undefined && newFilters.bodega !== null) {
-        params.set("bodega", newFilters.bodega.toString());
-      }
-      if (newFilters.mascotas !== undefined && newFilters.mascotas !== null) {
-        params.set("mascotas", newFilters.mascotas.toString());
-      }
-      
       if (newSort && newSort !== "default") {
         params.set("sort", newSort);
       }
@@ -167,9 +128,6 @@ export function SearchResultsClient() {
       dormitorios: undefined,
       minPrice: null,
       maxPrice: null,
-      estacionamiento: undefined,
-      bodega: undefined,
-      mascotas: undefined,
     };
     setFilters(emptyFilters);
     setSort("default");
@@ -199,15 +157,10 @@ export function SearchResultsClient() {
 
   // Filtros activos para FilterChips
   const activeFilters = {
-    comuna: Array.isArray(filters.comuna) 
-      ? filters.comuna.length > 0 ? filters.comuna : undefined
-      : filters.comuna !== "Todas" ? filters.comuna : undefined,
+    comuna: filters.comuna !== "Todas" ? filters.comuna : undefined,
     precioMin: filters.minPrice ?? undefined,
     precioMax: filters.maxPrice ?? undefined,
     dormitorios: filters.dormitorios,
-    estacionamiento: filters.estacionamiento ?? undefined,
-    bodega: filters.bodega ?? undefined,
-    mascotas: filters.mascotas ?? undefined,
   };
 
   const handleRemoveFilter = useCallback(
@@ -221,12 +174,6 @@ export function SearchResultsClient() {
         newFilters.maxPrice = null;
       } else if (key === "dormitorios") {
         newFilters.dormitorios = undefined;
-      } else if (key === "estacionamiento") {
-        newFilters.estacionamiento = undefined;
-      } else if (key === "bodega") {
-        newFilters.bodega = undefined;
-      } else if (key === "mascotas") {
-        newFilters.mascotas = undefined;
       }
       handleFiltersChange(newFilters);
     },
@@ -235,14 +182,10 @@ export function SearchResultsClient() {
 
   // Construir texto de búsqueda actual
   const hasActiveFilters =
-    (Array.isArray(filters.comuna) && filters.comuna.length > 0) ||
-    (typeof filters.comuna === 'string' && filters.comuna !== "Todas") ||
+    filters.comuna !== "Todas" ||
     filters.minPrice !== null ||
     filters.maxPrice !== null ||
-    filters.dormitorios !== undefined ||
-    filters.estacionamiento !== undefined ||
-    filters.bodega !== undefined ||
-    filters.mascotas !== undefined;
+    filters.dormitorios !== undefined;
 
   // Handler para reintentar en caso de error
   const handleRetry = useCallback(() => {
@@ -294,12 +237,12 @@ export function SearchResultsClient() {
           )}
         </div>
 
-        {/* FilterDescription - Descripción dinámica de filtros activos */}
+        {/* FilterChips - Filtros activos */}
         {hasActiveFilters && (
           <div className="mb-4">
-            <FilterDescription
+            <FilterChips
               filters={activeFilters}
-              onClear={handleClearFilters}
+              onRemoveFilter={handleRemoveFilter}
             />
           </div>
         )}

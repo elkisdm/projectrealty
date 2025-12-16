@@ -146,7 +146,7 @@ describe('Flujo completo de agendamiento de visitas', () => {
             render(<QuintoAndarVisitScheduler {...defaultProps} />);
 
             // Verificar que el componente se renderiza correctamente
-            expect(screen.getByText('¿Cuándo quieres visitar esta propiedad?')).toBeInTheDocument();
+            expect(screen.getByText('Selecciona fecha y hora')).toBeInTheDocument();
         });
 
         it('debería mantener el estado al navegar entre pasos', async () => {
@@ -168,7 +168,7 @@ describe('Flujo completo de agendamiento de visitas', () => {
             render(<QuintoAndarVisitScheduler {...defaultProps} />);
 
             // Verificar que el estado se mantiene
-            expect(screen.getByText('¿Cuándo quieres visitar esta propiedad?')).toBeInTheDocument();
+            expect(screen.getByText('Selecciona fecha y hora')).toBeInTheDocument();
         });
     });
 

@@ -92,27 +92,11 @@ export function Header() {
 
   // Check for prefers-reduced-motion and screen size
   useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const mobileQuery = window.matchMedia('(max-width: 1023px)');
 
-    let mediaQuery: MediaQueryList | null = null;
-    let mobileQuery: MediaQueryList | null = null;
-
-    try {
-      mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-      mobileQuery = window.matchMedia('(max-width: 1023px)');
-
-      setShouldReduceMotion(mediaQuery.matches);
-      setIsMobile(mobileQuery.matches);
-    } catch (error) {
-      // Fallback a valores por defecto
-      setShouldReduceMotion(false);
-      setIsMobile(false);
-      return;
-    }
-
-    if (!mediaQuery || !mobileQuery) return;
+    setShouldReduceMotion(mediaQuery.matches);
+    setIsMobile(mobileQuery.matches);
 
     const handleMotionChange = (e: MediaQueryListEvent) => {
       setShouldReduceMotion(e.matches);
@@ -126,12 +110,8 @@ export function Header() {
     mobileQuery.addEventListener('change', handleMobileChange);
 
     return () => {
-      if (mediaQuery) {
-        mediaQuery.removeEventListener('change', handleMotionChange);
-      }
-      if (mobileQuery) {
-        mobileQuery.removeEventListener('change', handleMobileChange);
-      }
+      mediaQuery.removeEventListener('change', handleMotionChange);
+      mobileQuery.removeEventListener('change', handleMobileChange);
     };
   }, []);
 
@@ -526,7 +506,9 @@ export function Header() {
                 className="w-full"
               >
                 <StickySearchBar
+                  placeholder="Buscar por comuna, dirección, nombre de edificio..."
                   className="max-w-2xl mx-auto"
+                  integrated={true}
                 />
               </motion.div>
             </motion.div>

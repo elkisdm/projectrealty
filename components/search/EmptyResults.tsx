@@ -25,7 +25,7 @@ export function EmptyResults({
   // Determinar mensaje según contexto
   let title = "No se encontraron propiedades";
   let message = "Intenta ajustar tus filtros de búsqueda";
-  const suggestion = "Prueba con otros filtros o busca en otra comuna";
+  let suggestion = "Prueba con otros filtros o busca en otra comuna";
 
   if (searchTerm) {
     title = `No encontramos propiedades para "${searchTerm}"`;

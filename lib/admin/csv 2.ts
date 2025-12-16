@@ -265,6 +265,7 @@ export function csvToUnits(
           break;
         case "gastoscomunes":
         case "gastos_comunes":
+        case "gastoscomunes":
           unit.gastosComunes = value ? parseInt(value, 10) : undefined;
           break;
         case "status":

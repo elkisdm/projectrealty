@@ -1,0 +1,33 @@
+# Global owners - todos los archivos requieren aprobación de elkisdm
+* @elkisdm
+
+# Archivos críticos del sistema
+/.github/ @elkisdm
+/package.json @elkisdm
+/next.config.mjs @elkisdm
+/tsconfig.json @elkisdm
+/tailwind.config.ts @elkisdm
+
+# API routes - cambios críticos
+/app/api/ @elkisdm
+
+# Componentes core del sistema
+/components/property/ @elkisdm
+/components/marketing/ @elkisdm
+/components/flow/ @elkisdm
+
+# Lógica de negocio
+/lib/ @elkisdm
+/hooks/ @elkisdm
+/schemas/ @elkisdm
+
+# Configuración de datos
+/data/ @elkisdm
+/config/ @elkisdm
+
+# Tests críticos
+/tests/ @elkisdm
+
+# Documentación importante
+/docs/ @elkisdm
+README.md @elkisdm

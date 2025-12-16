@@ -37,18 +37,12 @@ export function SearchForm({ className = "" }: SearchFormProps) {
       precioMin: searchParams.get("precioMin") || undefined,
       precioMax: searchParams.get("precioMax") || undefined,
       dormitorios: (searchParams.get("dormitorios") as "Estudio" | "1" | "2" | "3" | null) || undefined,
-      estacionamiento: searchParams.get("estacionamiento") === "true" ? "true" : searchParams.get("estacionamiento") === "false" ? "false" : undefined,
-      bodega: searchParams.get("bodega") === "true" ? "true" : searchParams.get("bodega") === "false" ? "false" : undefined,
-      mascotas: searchParams.get("mascotas") === "true" ? "true" : searchParams.get("mascotas") === "false" ? "false" : undefined,
     },
   });
 
   // Observar valores para sincronizar pills
   const comuna = watch("comuna");
   const dormitorios = watch("dormitorios");
-  const estacionamiento = watch("estacionamiento");
-  const bodega = watch("bodega");
-  const mascotas = watch("mascotas");
 
   // Sincronizar con URL params al montar
   useEffect(() => {
@@ -103,15 +97,6 @@ export function SearchForm({ className = "" }: SearchFormProps) {
     if (validatedData.dormitorios) {
       params.set("dormitorios", validatedData.dormitorios);
     }
-    if (validatedData.estacionamiento !== undefined) {
-      params.set("estacionamiento", validatedData.estacionamiento.toString());
-    }
-    if (validatedData.bodega !== undefined) {
-      params.set("bodega", validatedData.bodega.toString());
-    }
-    if (validatedData.mascotas !== undefined) {
-      params.set("mascotas", validatedData.mascotas.toString());
-    }
 
     // Redirigir a página de resultados
     const queryString = params.toString();
@@ -121,7 +106,6 @@ export function SearchForm({ className = "" }: SearchFormProps) {
   // Opciones para pills
   const comunasPrincipales = ["Las Condes", "Ñuñoa", "Providencia", "Santiago", "Macul", "La Florida"];
   const dormitoriosOptions = ["Estudio", "1", "2", "3"];
-  const booleanOptions = ["true", "false"];
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className={`space-y-6 ${className}`}>
@@ -146,57 +130,22 @@ export function SearchForm({ className = "" }: SearchFormProps) {
       {/* Pills de Comuna */}
       <SearchPills
         options={comunasPrincipales}
-        selected={Array.isArray(comuna) ? (comuna[0] || undefined) : (comuna || undefined)}
-        onSelect={(value) => {
-          const normalizedValue = Array.isArray(value) ? value[0] : value;
-          setValue("comuna", normalizedValue || undefined, { shouldValidate: true });
-        }}
+        selected={comuna}
+        onSelect={(value) => setValue("comuna", value || undefined, { shouldValidate: true })}
         label="Comuna"
       />
 
-      {/* Fila de filtros: Dormitorios, Estacionamiento, Bodega, Mascotas */}
-      <div className="flex flex-wrap items-center gap-4 lg:gap-6">
-        <SearchPills
-          options={dormitoriosOptions}
-          selected={dormitorios}
-          onSelect={(value) =>
-            setValue("dormitorios", (value as "Estudio" | "1" | "2" | "3") || undefined, {
-              shouldValidate: true,
-            })
-          }
-          label="Dormitorios"
-        />
-
-        <SearchPills
-          options={["Sí", "No"]}
-          selected={estacionamiento === "true" ? "Sí" : estacionamiento === "false" ? "No" : undefined}
-          onSelect={(value) => {
-            const boolValue = value === "Sí" ? "true" : value === "No" ? "false" : undefined;
-            setValue("estacionamiento", boolValue as "true" | "false" | undefined, { shouldValidate: true });
-          }}
-          label="Estacionamiento"
-        />
-
-        <SearchPills
-          options={["Sí", "No"]}
-          selected={bodega === "true" ? "Sí" : bodega === "false" ? "No" : undefined}
-          onSelect={(value) => {
-            const boolValue = value === "Sí" ? "true" : value === "No" ? "false" : undefined;
-            setValue("bodega", boolValue as "true" | "false" | undefined, { shouldValidate: true });
-          }}
-          label="Bodega"
-        />
-
-        <SearchPills
-          options={["Sí", "No"]}
-          selected={mascotas === "true" ? "Sí" : mascotas === "false" ? "No" : undefined}
-          onSelect={(value) => {
-            const boolValue = value === "Sí" ? "true" : value === "No" ? "false" : undefined;
-            setValue("mascotas", boolValue as "true" | "false" | undefined, { shouldValidate: true });
-          }}
-          label="Mascotas"
-        />
-      </div>
+      {/* Pills de Dormitorios */}
+      <SearchPills
+        options={dormitoriosOptions}
+        selected={dormitorios}
+        onSelect={(value) =>
+          setValue("dormitorios", (value as "Estudio" | "1" | "2" | "3") || undefined, {
+            shouldValidate: true,
+          })
+        }
+        label="Dormitorios"
+      />
 
       {/* Inputs de Precio */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

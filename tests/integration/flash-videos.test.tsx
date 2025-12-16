@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from "@testing-library/react";
-import { FlashVideosClient } from "@/components/marketing/FlashVideosClient";
+import FlashVideosPage from "@/app/(marketing)/flash-videos/page";
 
 // Mock de fetch para simular la API
 global.fetch = jest.fn(() =>
@@ -85,7 +85,7 @@ jest.mock("@/components/marketing/FlashVideosClient", () => {
 
 describe("Flash Videos Page", () => {
     it("renderiza la página completa sin errores", async () => {
-        render(<FlashVideosClient />);
+        render(<FlashVideosPage />);
 
         // Verificar elementos principales
         expect(screen.getByText("2 videos que venden tu arriendo en 72 horas")).toBeInTheDocument();
@@ -96,18 +96,18 @@ describe("Flash Videos Page", () => {
     });
 
     it("muestra el contador de cupos", () => {
-        render(<FlashVideosClient />);
+        render(<FlashVideosPage />);
         expect(screen.getByTestId("cupos-counter")).toBeInTheDocument();
     });
 
     it("incluye CTAs de WhatsApp", () => {
-        render(<FlashVideosClient />);
+        render(<FlashVideosPage />);
         const ctas = screen.getAllByTestId("whatsapp-cta");
         expect(ctas.length).toBeGreaterThan(0);
     });
 
     it("muestra los tres planes de precios", () => {
-        render(<FlashVideosClient />);
+        render(<FlashVideosPage />);
 
         expect(screen.getByText("$50")).toBeInTheDocument();
         expect(screen.getByText("$100")).toBeInTheDocument();
@@ -119,12 +119,12 @@ describe("Flash Videos Page", () => {
     });
 
     it("incluye el badge 'MÁS POPULAR' en el plan Meta Ads", () => {
-        render(<FlashVideosClient />);
+        render(<FlashVideosPage />);
         expect(screen.getByText("MÁS POPULAR")).toBeInTheDocument();
     });
 
     it("muestra el proceso en 3 pasos", () => {
-        render(<FlashVideosClient />);
+        render(<FlashVideosPage />);
 
         expect(screen.getByText("Reserva tu cupo")).toBeInTheDocument();
         expect(screen.getByText("Entrevista rápida")).toBeInTheDocument();
@@ -132,7 +132,7 @@ describe("Flash Videos Page", () => {
     });
 
     it("incluye FAQ con preguntas comunes", () => {
-        render(<FlashVideosClient />);
+        render(<FlashVideosPage />);
 
         expect(screen.getByText("¿Qué pasa si no me gustan los videos?")).toBeInTheDocument();
         expect(screen.getByText("¿Puedo usar los videos en otras redes sociales?")).toBeInTheDocument();
@@ -141,14 +141,14 @@ describe("Flash Videos Page", () => {
     });
 
     it("incluye elementos SEO", () => {
-        render(<FlashVideosClient />);
+        render(<FlashVideosPage />);
 
         expect(screen.getByTestId("json-ld")).toBeInTheDocument();
         expect(screen.getByTestId("optimized-images")).toBeInTheDocument();
     });
 
     it("muestra la sección de urgencia en el footer", () => {
-        render(<FlashVideosClient />);
+        render(<FlashVideosPage />);
 
         expect(screen.getByText("⚠️ Oferta por tiempo limitado")).toBeInTheDocument();
         expect(screen.getByText("¿Listo para arrendar más rápido?")).toBeInTheDocument();

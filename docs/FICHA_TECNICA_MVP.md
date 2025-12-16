@@ -1566,3 +1566,4 @@ Ver `config/env.example` para template completo.
 **📋 Versión del documento:** 1.0.0  
 **✅ Estado:** Completo y actualizado
 
+

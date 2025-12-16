@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { X, Calendar, Clock, MapPin, User, Bed, Bath, Car, Square, Check, Star, ChevronRight } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { X, Calendar, Clock, MapPin, User, ChevronLeft, ChevronRight, Bed, Bath, Car, Square, Check, Star } from 'lucide-react';
 import {
     PriceLiquidCapsule,
     FeatureLiquidCapsule,
+    BadgeLiquidCapsule
 } from '@components/ui/LiquidCapsule';
-import type { Unit, Building } from '@schemas/models';
 
 interface VisitSchedulerModalProps {
     isOpen: boolean;
@@ -22,11 +22,7 @@ interface VisitSchedulerModalProps {
         parking?: boolean;
         area?: number;
         price?: number;
-        gastoComun?: number;
     };
-    // Nuevos props para datos reales de la base de datos
-    unit?: Unit;
-    building?: Building;
     onConfirm: (date: string, time: string, leadData: { name: string; email: string; phone: string; rut?: string }) => void;
 }
 
@@ -55,50 +51,75 @@ interface ContactData {
     email?: string;
 }
 
-interface QualificationAnswers {
-    needsToMoveIn30Days: boolean | null;
-    hasGuarantor: boolean | null;
-    hasSufficientIncome: boolean | null;
-}
+const DESIGN_TOKENS = {
+    colors: {
+        primary: {
+            50: '#eff6ff',
+            500: '#3b82f6',
+            600: '#2563eb',
+            700: '#1d4ed8'
+        },
+        success: {
+            50: '#f0fdf4',
+            500: '#22c55e',
+            600: '#16a34a',
+            700: '#15803d'
+        },
+        premium: {
+            50: '#faf5ff',
+            500: '#a855f7',
+            600: '#9333ea',
+            700: '#7c3aed'
+        },
+        gray: {
+            50: '#f9fafb',
+            100: '#f3f4f6',
+            200: '#e5e7eb',
+            300: '#d1d5db',
+            400: '#9ca3af',
+            500: '#6b7280',
+            600: '#4b5563',
+            700: '#374151',
+            800: '#1f2937',
+            900: '#111827'
+        }
+    },
+    animations: {
+        slideUp: { duration: 0.3, ease: [0.4, 0, 0.2, 1] },
+        fadeIn: { duration: 0.2, ease: [0.4, 0, 0.2, 1] },
+        scale: { duration: 0.15, ease: [0.4, 0, 0.2, 1] },
+        stagger: { delay: 0.05, duration: 0.4, ease: [0.4, 0, 0.2, 1] }
+    }
+} as const;
 
-type Step = 'date' | 'time' | 'qualification' | 'contact' | 'confirm';
-
-// Generar próximos 6-7 días disponibles (sin domingos)
-const generateAvailableDays = (): DaySlot[] => {
+// Generar calendario inteligente (próximos 30 días)
+const generateSmartCalendar = (): DaySlot[] => {
     const days: DaySlot[] = [];
     const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-    let count = 0;
-    let dayOffset = 1;
 
-    while (count < 7 && dayOffset <= 14) {
+    for (let i = 1; i <= 30; i++) {
         const date = new Date();
-        date.setDate(date.getDate() + dayOffset);
-        
-        // Excluir domingos
-        if (date.getDay() !== 0) {
-            const isPremium = Math.random() > 0.7;
-            const available = Math.random() > 0.15; // 85% disponibilidad
-            
-            if (available) {
+        date.setDate(date.getDate() + i);
+
+        // Lógica de disponibilidad inteligente
+        const isPremium = Math.random() > 0.7; // 30% días premium
+        const available = Math.random() > 0.2; // 80% disponibilidad
+
         days.push({
-                    id: `day-${dayOffset}`,
+            id: `day-${i}`,
             date: date.toISOString().split('T')[0],
             day: dayNames[date.getDay()],
             number: date.getDate().toString(),
-                    available: true,
-                    premium: isPremium,
+            available,
+            premium: isPremium && available,
             price: isPremium ? Math.floor(Math.random() * 50000) + 50000 : undefined
         });
-                count++;
-            }
-        }
-        dayOffset++;
     }
 
     return days;
 };
 
-// Generar horarios agrupados por bloques (solo disponibles)
+// Generar horarios agrupados por bloques
 const generateTimeBlocks = (): { [key: string]: TimeSlot[] } => {
     const blocks = {
         morning: [] as TimeSlot[],
@@ -106,15 +127,15 @@ const generateTimeBlocks = (): { [key: string]: TimeSlot[] } => {
         evening: [] as TimeSlot[]
     };
 
-    // Mañana: 9:00 - 12:00 (solo cada hora)
-    for (let hour = 9; hour <= 12; hour++) {
-        const timeString = `${hour.toString().padStart(2, '0')}:00`;
+    // Mañana: 8:00 - 12:00
+    for (let hour = 8; hour <= 12; hour++) {
+        for (let minute = 0; minute < 60; minute += 30) {
+            const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
             const isPremium = Math.random() > 0.8;
-        if (Math.random() > 0.3) { // Solo disponibles
             blocks.morning.push({
-                id: `time-morning-${hour}`,
+                id: `time-morning-${hour}-${minute}`,
                 time: timeString,
-                available: true,
+                available: Math.random() > 0.3,
                 premium: isPremium,
                 instantBooking: isPremium
             });
@@ -123,28 +144,28 @@ const generateTimeBlocks = (): { [key: string]: TimeSlot[] } => {
 
     // Tarde: 13:00 - 17:00
     for (let hour = 13; hour <= 17; hour++) {
-        const timeString = `${hour.toString().padStart(2, '0')}:00`;
+        for (let minute = 0; minute < 60; minute += 30) {
+            const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
             const isPremium = Math.random() > 0.8;
-        if (Math.random() > 0.2) {
             blocks.afternoon.push({
-                id: `time-afternoon-${hour}`,
+                id: `time-afternoon-${hour}-${minute}`,
                 time: timeString,
-                available: true,
+                available: Math.random() > 0.2,
                 premium: isPremium,
                 instantBooking: isPremium
             });
         }
     }
 
-    // Noche: 18:00 - 19:00
-    for (let hour = 18; hour <= 19; hour++) {
-        const timeString = `${hour.toString().padStart(2, '0')}:00`;
-        const isPremium = Math.random() > 0.9;
-        if (Math.random() > 0.4) {
+    // Noche: 17:30 - 19:00
+    for (let hour = 17; hour <= 19; hour++) {
+        for (let minute = hour === 17 ? 30 : 0; minute < 60; minute += 30) {
+            const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+            const isPremium = Math.random() > 0.9; // Menos premium en la noche
             blocks.evening.push({
-                id: `time-evening-${hour}`,
+                id: `time-evening-${hour}-${minute}`,
                 time: timeString,
-                available: true,
+                available: Math.random() > 0.4,
                 premium: isPremium,
                 instantBooking: isPremium
             });
@@ -154,73 +175,25 @@ const generateTimeBlocks = (): { [key: string]: TimeSlot[] } => {
     return blocks;
 };
 
-const qualificationQuestions = [
-    {
-        key: 'needsToMoveIn30Days' as const,
-        title: '¿Necesitas mudarte en los próximos 30 días?',
-    },
-    {
-        key: 'hasGuarantor' as const,
-        title: '¿Tienes aval o garantía?',
-    },
-    {
-        key: 'hasSufficientIncome' as const,
-        title: '¿Tienes ingresos suficientes para el arriendo?',
-    },
-];
-
 export function VisitSchedulerModal({
     isOpen,
     onClose,
     propertyId: _propertyId,
     propertyName,
     propertyAddress,
-    propertyImage,
-    propertyDetails,
-    unit,
-    building,
-    onConfirm
-}: VisitSchedulerModalProps) {
-    // Usar datos reales de la base de datos si están disponibles, sino usar props legacy
-    const finalPropertyName = unit && building 
-        ? building.name
-        : propertyName;
-    
-    const finalPropertyAddress = building?.address || propertyAddress;
-    
-    const finalPropertyImage = unit?.images?.[0] 
-        || building?.gallery?.[0] 
-        || building?.coverImage 
-        || propertyImage 
-        || "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80";
-    
-    // Extraer detalles de la unidad si está disponible
-    const finalPropertyDetails = unit ? {
-        bedrooms: unit.dormitorios || unit.bedrooms || 0,
-        bathrooms: unit.banos || unit.bathrooms || 1,
-        parking: unit.estacionamiento || unit.parking_opcional || false,
-        area: unit.m2 || unit.area_interior_m2 || undefined,
-        price: unit.price,
-        gastoComun: unit.gastoComun || unit.gc || unit.gastosComunes || 0,
-    } : propertyDetails || {
+    propertyImage = "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
+    propertyDetails = {
         bedrooms: 2,
         bathrooms: 2,
-        parking: false,
-        area: undefined,
-        price: undefined,
-        gastoComun: 0,
-    };
-    const shouldReduceMotion = useReducedMotion();
-    
-    const [step, setStep] = useState<Step>('date');
+        parking: true,
+        area: 65,
+        price: 850000
+    },
+    onConfirm
+}: VisitSchedulerModalProps) {
+    const [step, setStep] = useState<'schedule' | 'confirm'>('schedule');
     const [selectedDay, setSelectedDay] = useState<DaySlot | null>(null);
     const [selectedTime, setSelectedTime] = useState<TimeSlot | null>(null);
-    const [qualificationAnswers, setQualificationAnswers] = useState<QualificationAnswers>({
-        needsToMoveIn30Days: null,
-        hasGuarantor: null,
-        hasSufficientIncome: null,
-    });
-    const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [contactData, setContactData] = useState<ContactData>({
         name: '',
         rut: '',
@@ -228,12 +201,9 @@ export function VisitSchedulerModal({
         email: ''
     });
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
-    const [isValidating, setIsValidating] = useState(false);
+    const [currentMonth, setCurrentMonth] = useState(new Date());
 
-    const modalRef = useRef<HTMLDivElement>(null);
-    const firstInputRef = useRef<HTMLInputElement>(null);
-
-    const availableDays = useMemo(() => generateAvailableDays(), []);
+    const calendarDays = useMemo(() => generateSmartCalendar(), []);
     const timeBlocks = useMemo(() => generateTimeBlocks(), []);
 
     // Auto-save en localStorage
@@ -251,44 +221,8 @@ export function VisitSchedulerModal({
         }
     }, [isOpen]);
 
-    // Cleanup timeouts on unmount
-    useEffect(() => {
-        return () => {
-            Object.values(timeoutRefs.current).forEach(timeout => clearTimeout(timeout));
-        };
-    }, []);
-
-    // Focus trap y manejo de teclado
-    useEffect(() => {
-        if (!isOpen) return;
-
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') {
-                onClose();
-            }
-            if (e.key === 'Tab' && modalRef.current) {
-                const focusableElements = modalRef.current.querySelectorAll(
-                    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-                );
-                const firstElement = focusableElements[0] as HTMLElement;
-                const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
-
-                if (e.shiftKey && document.activeElement === firstElement) {
-                    e.preventDefault();
-                    lastElement?.focus();
-                } else if (!e.shiftKey && document.activeElement === lastElement) {
-                    e.preventDefault();
-                    firstElement?.focus();
-                }
-            }
-        };
-
-        document.addEventListener('keydown', handleKeyDown);
-        return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [isOpen, onClose]);
-
     // Validar RUT chileno
-    const validateRut = useCallback((rut: string): boolean => {
+    const validateRut = (rut: string): boolean => {
         if (!/^[0-9]{7,8}-[0-9kK]{1}$/.test(rut)) return false;
 
         const rutClean = rut.replace(/[.-]/g, '');
@@ -307,66 +241,20 @@ export function VisitSchedulerModal({
         const calculatedDv = expectedDv === 11 ? '0' : expectedDv === 10 ? 'K' : expectedDv.toString();
 
         return dv.toUpperCase() === calculatedDv;
-    }, []);
+    };
 
     // Validar teléfono chileno
-    const validatePhone = useCallback((phone: string): boolean => {
+    const validatePhone = (phone: string): boolean => {
         const cleanPhone = phone.replace(/\s/g, '');
         return /^(\+56|56)?[9][0-9]{8}$/.test(cleanPhone);
-    }, []);
+    };
 
     // Validar email
-    const validateEmail = useCallback((email: string): boolean => {
+    const validateEmail = (email: string): boolean => {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    }, []);
+    };
 
-    // Validación en tiempo real con debounce
-    const validateField = useCallback((field: keyof ContactData, value: string) => {
-        setIsValidating(true);
-        const newErrors: { [key: string]: string } = { ...errors };
-
-        switch (field) {
-            case 'name':
-                if (!value.trim()) {
-                    newErrors.name = 'El nombre es obligatorio';
-                } else if (value.trim().length < 2) {
-                    newErrors.name = 'El nombre debe tener al menos 2 caracteres';
-                } else {
-                    delete newErrors.name;
-                }
-                break;
-            case 'rut':
-                if (!value.trim()) {
-                    newErrors.rut = 'El RUT es obligatorio';
-                } else if (!validateRut(value)) {
-                    newErrors.rut = 'El RUT no es válido';
-                } else {
-                    delete newErrors.rut;
-                }
-                break;
-            case 'phone':
-                if (!value.trim()) {
-                    newErrors.phone = 'El teléfono es obligatorio';
-                } else if (!validatePhone(value)) {
-                    newErrors.phone = 'El teléfono no es válido';
-                } else {
-                    delete newErrors.phone;
-                }
-                break;
-            case 'email':
-                if (value && !validateEmail(value)) {
-                    newErrors.email = 'El email no es válido';
-                } else {
-                    delete newErrors.email;
-                }
-                break;
-        }
-
-        setErrors(newErrors);
-        setIsValidating(false);
-    }, [errors, validateRut, validatePhone, validateEmail]);
-
-    const validateContactData = useCallback((): boolean => {
+    const validateContactData = (): boolean => {
         const newErrors: { [key: string]: string } = {};
 
         if (!contactData.name.trim()) {
@@ -393,83 +281,18 @@ export function VisitSchedulerModal({
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
-    }, [contactData, validateRut, validatePhone, validateEmail]);
-
-    const handleDateSelect = (day: DaySlot) => {
-        setSelectedDay(day);
-        setSelectedTime(null);
-        setStep('time');
-    };
-
-    const handleTimeSelect = (time: TimeSlot) => {
-        setSelectedTime(time);
-        setStep('qualification');
-    };
-
-    const handleQualificationAnswer = (answer: boolean) => {
-        const currentQuestion = qualificationQuestions[currentQuestionIndex];
-        setQualificationAnswers(prev => ({
-            ...prev,
-            [currentQuestion.key]: answer
-        }));
-
-        if (currentQuestionIndex < qualificationQuestions.length - 1) {
-            setCurrentQuestionIndex(prev => prev + 1);
-        } else {
-            setStep('contact');
-            // Focus en primer input después de animación
-            setTimeout(() => firstInputRef.current?.focus(), 300);
-        }
-    };
-
-    const timeoutRefs = useRef<{ [key: string]: NodeJS.Timeout }>({});
-
-    const handleContactFieldChange = (field: keyof ContactData, value: string) => {
-        setContactData(prev => ({ ...prev, [field]: value }));
-        // Validación en tiempo real con debounce
-        if (timeoutRefs.current[field]) {
-            clearTimeout(timeoutRefs.current[field]);
-        }
-        timeoutRefs.current[field] = setTimeout(() => {
-            validateField(field, value);
-        }, 500);
     };
 
     const handleNext = () => {
-        if (validateContactData()) {
+        if (selectedDay && selectedTime && validateContactData()) {
+            // Auto-save
             localStorage.setItem('visitSchedulerData', JSON.stringify(contactData));
             setStep('confirm');
         }
     };
 
     const handleBack = () => {
-        if (step === 'time') {
-            setStep('date');
-            setSelectedTime(null);
-        } else if (step === 'qualification') {
-            if (currentQuestionIndex > 0) {
-                const prevIndex = currentQuestionIndex - 1;
-                const prevQuestion = qualificationQuestions[prevIndex];
-                setCurrentQuestionIndex(prevIndex);
-                setQualificationAnswers(prev => ({
-                    ...prev,
-                    [prevQuestion.key]: null
-                }));
-            } else {
-                setStep('time');
-                setCurrentQuestionIndex(0);
-                setQualificationAnswers({
-                    needsToMoveIn30Days: null,
-                    hasGuarantor: null,
-                    hasSufficientIncome: null,
-                });
-            }
-        } else if (step === 'contact') {
-            setStep('qualification');
-            setCurrentQuestionIndex(qualificationQuestions.length - 1);
-        } else if (step === 'confirm') {
-            setStep('contact');
-        }
+        setStep('schedule');
     };
 
     const handleConfirm = () => {
@@ -482,15 +305,9 @@ export function VisitSchedulerModal({
             });
             onClose();
             // Reset form
-            setStep('date');
+            setStep('schedule');
             setSelectedDay(null);
             setSelectedTime(null);
-            setCurrentQuestionIndex(0);
-            setQualificationAnswers({
-                needsToMoveIn30Days: null,
-                hasGuarantor: null,
-                hasSufficientIncome: null,
-            });
             setContactData({ name: '', rut: '', phone: '', email: '' });
             setErrors({});
             localStorage.removeItem('visitSchedulerData');
@@ -499,192 +316,191 @@ export function VisitSchedulerModal({
 
     const formatDate = (dateString: string): string => {
         const date = new Date(dateString);
-        return date.toLocaleDateString('es-CL', {
+        const options: Intl.DateTimeFormatOptions = {
             weekday: 'long',
             year: 'numeric',
             month: 'long',
             day: 'numeric'
+        };
+        return date.toLocaleDateString('es-CL', options);
+    };
+
+    const getCurrentMonthDays = () => {
+        const year = currentMonth.getFullYear();
+        const month = currentMonth.getMonth();
+        return calendarDays.filter(day => {
+            const dayDate = new Date(day.date);
+            return dayDate.getFullYear() === year && dayDate.getMonth() === month;
         });
     };
 
-    const getStepNumber = (): number => {
-        const stepOrder: Step[] = ['date', 'time', 'qualification', 'contact', 'confirm'];
-        return stepOrder.indexOf(step) + 1;
+    const nextMonth = () => {
+        setCurrentMonth(prev => {
+            const next = new Date(prev);
+            next.setMonth(next.getMonth() + 1);
+            return next;
+        });
     };
 
-    const getTotalSteps = (): number => {
-        return 5;
-    };
-
-    const canProceed = (): boolean => {
-        if (step === 'date') return selectedDay !== null;
-        if (step === 'time') return selectedTime !== null;
-        if (step === 'qualification') return currentQuestionIndex === qualificationQuestions.length - 1 && qualificationAnswers.hasSufficientIncome !== null;
-        if (step === 'contact') return validateContactData();
-        return true;
+    const prevMonth = () => {
+        setCurrentMonth(prev => {
+            const next = new Date(prev);
+            next.setMonth(next.getMonth() - 1);
+            return next;
+        });
     };
 
     if (!isOpen) return null;
 
-    const animationProps = shouldReduceMotion
-        ? { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } }
-        : {
-            initial: { opacity: 0, scale: 0.95, y: 10 },
-            animate: { opacity: 1, scale: 1, y: 0 },
-            exit: { opacity: 0, scale: 0.95, y: 10 },
-            transition: { duration: 0.2, ease: [0.4, 0, 0.2, 1] }
-        };
-
     return (
         <AnimatePresence>
             <motion.div
-                className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-0 md:p-4 z-50"
+                className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                transition={shouldReduceMotion ? { duration: 0.1 } : { duration: 0.2 }}
-                onClick={(e) => e.target === e.currentTarget && onClose()}
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="modal-title"
+                transition={DESIGN_TOKENS.animations.fadeIn}
             >
                 <motion.div
-                    ref={modalRef}
-                    className="bg-white rounded-none md:rounded-3xl w-full h-full md:h-auto md:max-w-2xl md:max-h-[85vh] overflow-hidden shadow-2xl border-0 md:border border-gray-100 flex flex-col"
-                    {...animationProps}
+                    className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl border border-gray-100"
+                    initial={{ scale: 0.95, y: 10 }}
+                    animate={{ scale: 1, y: 0 }}
+                    exit={{ scale: 0.95, y: 10 }}
+                    transition={DESIGN_TOKENS.animations.slideUp}
                 >
-                    {/* Header compacto con información de propiedad */}
-                    <div className="relative h-32 overflow-hidden flex-shrink-0">
+                    {/* Header con imagen */}
+                    <div className="relative h-48 overflow-hidden">
                         <div
                             className="absolute inset-0 bg-cover bg-center"
-                            style={{ backgroundImage: `url(${finalPropertyImage})` }}
-                            aria-hidden="true"
+                            style={{ backgroundImage: `url(${propertyImage})` }}
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/10" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
 
                         <button
                             onClick={onClose}
-                            className="absolute top-3 right-3 md:top-4 md:right-4 p-2 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-white/50"
-                            aria-label="Cerrar modal"
+                            className="absolute top-4 right-4 p-2 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all duration-150"
                         >
                             <X className="w-5 h-5 text-white" />
                         </button>
 
-                        <div className="absolute bottom-0 left-0 right-0 p-3 md:p-4">
-                            <div className="flex items-start justify-between gap-2 mb-2">
-                                <div className="flex-1 min-w-0">
-                                    <h3 id="modal-title" className="font-bold text-white text-lg md:text-xl mb-1 truncate">{finalPropertyName}</h3>
-                                    <p className="text-white/90 text-xs md:text-sm truncate">{finalPropertyAddress}</p>
-                        </div>
-                                {finalPropertyDetails.price && (
-                                    <div className="flex-shrink-0">
-                                        <PriceLiquidCapsule price={finalPropertyDetails.price} />
-                    </div>
-                                )}
-                            </div>
-                            {/* Información de precio y gastos comunes */}
-                            {finalPropertyDetails.price && (
-                                <div className="mb-2">
-                                    <div className="flex items-center gap-2 text-white/90 text-xs">
-                                        <span className="font-semibold">${finalPropertyDetails.price.toLocaleString('es-CL')} arriendo</span>
-                                        {finalPropertyDetails.gastoComun && finalPropertyDetails.gastoComun > 0 && (
-                                            <>
-                                                <span>·</span>
-                                                <span>${finalPropertyDetails.gastoComun.toLocaleString('es-CL')} gastos comunes</span>
-                                            </>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                                {finalPropertyDetails.bedrooms !== undefined && (
-                                    <FeatureLiquidCapsule feature={`${finalPropertyDetails.bedrooms}D`} icon={Bed} size="xs" />
-                                )}
-                                {finalPropertyDetails.bathrooms !== undefined && (
-                                    <FeatureLiquidCapsule feature={`${finalPropertyDetails.bathrooms}B`} icon={Bath} size="xs" />
-                                )}
-                                {finalPropertyDetails.area && (
-                                    <FeatureLiquidCapsule feature={`${finalPropertyDetails.area} m²`} icon={Square} size="xs" />
-                                )}
-                                {finalPropertyDetails.parking && (
-                                    <FeatureLiquidCapsule feature="1V" icon={Car} size="xs" />
-                                )}
-                            </div>
+                        <div className="absolute bottom-4 left-4 right-4">
+                            <h3 className="font-bold text-white text-xl mb-1">{propertyName}</h3>
+                            <p className="text-white/90 text-sm">{propertyAddress}</p>
                         </div>
                     </div>
 
-                    {/* Barra de progreso */}
-                    <div className="px-4 md:px-5 py-3 border-b border-gray-100 flex-shrink-0">
-                        <div className="flex items-center justify-between mb-2">
+                    {/* Información de la propiedad */}
+                    <div className="px-6 py-4 border-b border-gray-100">
+                        <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                                {step !== 'date' && (
+                                <FeatureLiquidCapsule feature={`${propertyDetails.bedrooms}D`} icon={Bed} />
+                                <FeatureLiquidCapsule feature={`${propertyDetails.bathrooms}B`} icon={Bath} />
+                                <FeatureLiquidCapsule feature={`${propertyDetails.area}m²`} icon={Square} />
+                                {propertyDetails.parking && (
+                                    <FeatureLiquidCapsule feature="1V" icon={Car} />
+                                )}
+                            </div>
+
+                            {propertyDetails.price && (
+                                <PriceLiquidCapsule price={propertyDetails.price} />
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Progreso visual sutil */}
+                    <div className="px-6 py-3 border-b border-gray-100">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                {step !== 'schedule' && (
                                     <button
                                         onClick={handleBack}
-                                        className="p-1.5 rounded-full bg-gray-100 hover:bg-gray-200 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                                        aria-label="Volver al paso anterior"
+                                        className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-all duration-150"
                                     >
-                                        <ChevronRight className="w-4 h-4 rotate-180" />
+                                        <ChevronLeft className="w-4 h-4" />
                                     </button>
                                 )}
                                 <div>
-                                    <h2 className="text-base md:text-lg font-bold text-gray-900">
-                                        {step === 'date' && 'Elige un día'}
-                                        {step === 'time' && 'Elige un horario'}
-                                        {step === 'qualification' && 'Preguntas rápidas'}
-                                        {step === 'contact' && 'Tus datos'}
-                                        {step === 'confirm' && 'Confirma tu visita'}
+                                    <h2 className="text-lg font-bold text-gray-900">
+                                        {step === 'schedule' ? 'Agenda tu visita' : 'Confirma tu visita'}
                                     </h2>
-                                    <p className="text-gray-600 text-xs md:text-sm">
-                                        Paso {getStepNumber()} de {getTotalSteps()}
+                                    <p className="text-gray-600 text-sm">
+                                        {step === 'schedule' ? 'Selecciona fecha, horario y completa tus datos' : 'Revisa los detalles antes de confirmar'}
                                     </p>
                                 </div>
                             </div>
-                        </div>
+
+                            {/* Dots de progreso */}
                             <div className="flex gap-1">
-                            {[1, 2, 3, 4, 5].map((num) => (
-                                <div
-                                    key={num}
-                                    className={`h-1 flex-1 rounded-full transition-all duration-300 ${
-                                        num <= getStepNumber() ? 'bg-blue-500' : 'bg-gray-200'
-                                    }`}
-                                    aria-hidden="true"
-                                />
-                            ))}
+                                <div className={`w-2 h-2 rounded-full transition-all duration-300 ${step === 'schedule' ? 'bg-blue-500' : 'bg-gray-300'
+                                    }`} />
+                                <div className={`w-2 h-2 rounded-full transition-all duration-300 ${step === 'confirm' ? 'bg-blue-500' : 'bg-gray-300'
+                                    }`} />
+                            </div>
                         </div>
                     </div>
 
-                    {/* Contenido scrollable */}
-                    <div className="flex-1 overflow-y-auto px-4 md:px-5 py-4 md:py-5">
+                    {/* Content */}
+                    <div className="p-6 overflow-y-auto max-h-[50vh]">
                         <AnimatePresence mode="wait">
-                            {step === 'date' && (
+                            {step === 'schedule' && (
                                 <motion.div
-                                    key="date"
-                                    initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, x: 10 }}
-                                    animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, x: 0 }}
-                                    exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, x: -10 }}
-                                    transition={shouldReduceMotion ? { duration: 0.1 } : { duration: 0.2 }}
+                                    key="schedule"
+                                    initial={{ opacity: 0, x: 10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -10 }}
+                                    transition={DESIGN_TOKENS.animations.slideUp}
                                 >
-                                    <div className="flex items-center gap-2 text-gray-700 mb-3">
+                                    <div className="space-y-6">
+                                        {/* Calendario inteligente */}
+                                        <div>
+                                            <div className="flex items-center justify-between mb-4">
+                                                <div className="flex items-center gap-2 text-gray-700">
                                                     <Calendar className="w-4 h-4" />
-                                        <span className="font-medium text-sm md:text-base">Próximos días disponibles</span>
+                                                    <span className="font-medium">Selecciona una fecha</span>
                                                 </div>
-                                    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide snap-x snap-mandatory" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                                        {availableDays.map((day) => (
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={prevMonth}
+                                                        className="p-1 rounded-full hover:bg-gray-100 transition-all duration-150"
+                                                    >
+                                                        <ChevronLeft className="w-4 h-4" />
+                                                    </button>
+                                                    <span className="text-sm font-medium text-gray-600">
+                                                        {currentMonth.toLocaleDateString('es-CL', { month: 'long', year: 'numeric' })}
+                                                    </span>
+                                                    <button
+                                                        onClick={nextMonth}
+                                                        className="p-1 rounded-full hover:bg-gray-100 transition-all duration-150"
+                                                    >
+                                                        <ChevronRight className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {/* Grid de días */}
+                                            <div className="grid grid-cols-7 gap-2 mb-4">
+                                                {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(day => (
+                                                    <div key={day} className="text-center text-xs font-medium text-gray-500 py-2">
+                                                        {day}
+                                                    </div>
+                                                ))}
+                                                {getCurrentMonthDays().map((day) => (
                                                     <button
                                                         key={day.id}
-                                                onClick={() => handleDateSelect(day)}
-                                                className={`flex-shrink-0 w-20 md:w-24 p-3 rounded-xl border-2 transition-all duration-200 snap-start focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${
-                                                    selectedDay?.id === day.id
+                                                        className={`relative p-3 rounded-2xl border-2 transition-all duration-200 ${selectedDay?.id === day.id
                                                             ? 'border-blue-500 bg-blue-50 text-blue-700'
-                                                        : 'border-gray-200 hover:border-blue-300 text-gray-700 bg-white'
-                                                } ${day.premium ? 'ring-2 ring-purple-200' : ''}`}
-                                                aria-pressed={selectedDay?.id === day.id}
+                                                            : day.available
+                                                                ? 'border-gray-200 hover:border-blue-300 text-gray-700'
+                                                                : 'border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed'
+                                                            } ${day.premium && day.available ? 'ring-2 ring-purple-200' : ''}`}
+                                                        onClick={() => day.available && setSelectedDay(day)}
+                                                        disabled={!day.available}
                                                     >
                                                         <div className="text-center">
                                                             <div className="text-xs font-medium">{day.day}</div>
-                                                    <div className="text-xl md:text-2xl font-bold mt-1">{day.number}</div>
+                                                            <div className="text-lg font-bold">{day.number}</div>
                                                             {day.premium && (
-                                                        <div className="flex justify-center mt-1">
+                                                                <div className="absolute -top-1 -right-1">
                                                                     <Star className="w-3 h-3 text-purple-500 fill-current" />
                                                                 </div>
                                                             )}
@@ -692,205 +508,151 @@ export function VisitSchedulerModal({
                                                     </button>
                                                 ))}
                                             </div>
-                                </motion.div>
-                            )}
 
-                            {step === 'time' && selectedDay && (
+                                            {/* Leyenda */}
+                                            <div className="flex items-center gap-4 text-xs text-gray-500">
+                                                <div className="flex items-center gap-1">
+                                                    <div className="w-3 h-3 rounded-full bg-gray-200" />
+                                                    <span>Disponible</span>
+                                                </div>
+                                                <div className="flex items-center gap-1">
+                                                    <div className="w-3 h-3 rounded-full bg-purple-200 ring-2 ring-purple-200" />
+                                                    <span>Premium</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Horarios agrupados */}
+                                        {selectedDay && (
                                             <motion.div
-                                    key="time"
-                                    initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, x: 10 }}
-                                    animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, x: 0 }}
-                                    exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, x: -10 }}
-                                    transition={shouldReduceMotion ? { duration: 0.1 } : { duration: 0.2 }}
+                                                initial={{ opacity: 0, y: 10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                transition={{ delay: 0.1 }}
                                             >
                                                 <div className="flex items-center gap-2 text-gray-700 mb-3">
                                                     <Clock className="w-4 h-4" />
-                                        <span className="font-medium text-sm md:text-base">Horarios disponibles</span>
+                                                    <span className="font-medium">Selecciona un horario</span>
                                                 </div>
-                                    <div className="space-y-3">
+
+                                                <div className="space-y-4">
                                                     {Object.entries(timeBlocks).map(([blockName, times]) => (
-                                            times.length > 0 && (
                                                         <div key={blockName}>
-                                                    <h4 className="text-xs md:text-sm font-medium text-gray-600 mb-2 capitalize">
+                                                            <h4 className="text-sm font-medium text-gray-600 mb-2 capitalize">
                                                                 {blockName === 'morning' ? 'Mañana' :
                                                                     blockName === 'afternoon' ? 'Tarde' : 'Noche'}
                                                             </h4>
-                                                    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide snap-x snap-mandatory" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                                                            <div className="flex flex-wrap gap-2">
                                                                 {times.map((time) => (
                                                                     <button
                                                                         key={time.id}
-                                                                onClick={() => handleTimeSelect(time)}
-                                                                className={`flex-shrink-0 px-4 py-2.5 rounded-xl border-2 text-sm font-medium transition-all duration-200 snap-start focus:outline-none focus:ring-2 focus:ring-blue-500/20 min-h-[44px] ${
-                                                                    selectedTime?.id === time.id
+                                                                        className={`px-4 py-2 rounded-xl border-2 text-sm font-medium transition-all duration-200 ${selectedTime?.id === time.id
                                                                             ? 'border-blue-500 bg-blue-50 text-blue-700'
-                                                                        : 'border-gray-200 hover:border-blue-300 text-gray-700 bg-white'
-                                                                } ${time.premium ? 'ring-2 ring-purple-200' : ''}`}
-                                                                aria-pressed={selectedTime?.id === time.id}
-                                                            >
-                                                                <div className="flex items-center gap-1.5">
+                                                                            : time.available
+                                                                                ? 'border-gray-200 hover:border-blue-300 text-gray-700'
+                                                                                : 'border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed'
+                                                                            } ${time.premium && time.available ? 'ring-2 ring-purple-200' : ''}`}
+                                                                        onClick={() => time.available && setSelectedTime(time)}
+                                                                        disabled={!time.available}
+                                                                    >
+                                                                        <div className="flex items-center gap-1">
                                                                             <span>{time.time}</span>
                                                                             {time.premium && (
                                                                                 <Star className="w-3 h-3 text-purple-500 fill-current" />
+                                                                            )}
+                                                                            {time.instantBooking && (
+                                                                                <BadgeLiquidCapsule badge="Instant" size="xs" />
                                                                             )}
                                                                         </div>
                                                                     </button>
                                                                 ))}
                                                             </div>
                                                         </div>
-                                            )
                                                     ))}
                                                 </div>
                                             </motion.div>
                                         )}
 
-                            {step === 'qualification' && (
+                                        {/* Formulario de contacto */}
                                         <motion.div
-                                    key="qualification"
-                                    initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, x: 10 }}
-                                    animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, x: 0 }}
-                                    exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, x: -10 }}
-                                    transition={shouldReduceMotion ? { duration: 0.1 } : { duration: 0.2 }}
-                                >
-                                    <div className="text-center mb-6">
-                                        <p className="text-xs text-gray-500 mb-4">
-                                            Pregunta {currentQuestionIndex + 1} de {qualificationQuestions.length}
-                                        </p>
-                                        <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-8">
-                                            {qualificationQuestions[currentQuestionIndex].title}
-                                        </h3>
-                                        <div className="flex gap-3 justify-center">
-                                            <button
-                                                onClick={() => handleQualificationAnswer(true)}
-                                                className={`px-8 py-4 rounded-2xl font-semibold text-base transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 min-h-[52px] min-w-[120px] ${
-                                                    qualificationAnswers[qualificationQuestions[currentQuestionIndex].key] === true
-                                                        ? 'bg-blue-600 text-white shadow-lg'
-                                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                                }`}
-                                                aria-pressed={qualificationAnswers[qualificationQuestions[currentQuestionIndex].key] === true}
-                                            >
-                                                Sí
-                                            </button>
-                                            <button
-                                                onClick={() => handleQualificationAnswer(false)}
-                                                className={`px-8 py-4 rounded-2xl font-semibold text-base transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 min-h-[52px] min-w-[120px] ${
-                                                    qualificationAnswers[qualificationQuestions[currentQuestionIndex].key] === false
-                                                        ? 'bg-blue-600 text-white shadow-lg'
-                                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                                }`}
-                                                aria-pressed={qualificationAnswers[qualificationQuestions[currentQuestionIndex].key] === false}
-                                            >
-                                                No
-                                            </button>
-                                        </div>
-                                    </div>
-                                </motion.div>
-                            )}
-
-                            {step === 'contact' && (
-                                <motion.div
-                                    key="contact"
-                                    initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, x: 10 }}
-                                    animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, x: 0 }}
-                                    exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, x: -10 }}
-                                    transition={shouldReduceMotion ? { duration: 0.1 } : { duration: 0.2 }}
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: 0.2 }}
                                         >
                                             <div className="flex items-center gap-2 text-gray-700 mb-4">
                                                 <User className="w-4 h-4" />
-                                        <span className="font-medium text-sm md:text-base">Completa tus datos</span>
+                                                <span className="font-medium">Tus datos de contacto</span>
                                             </div>
-                                    <div className="space-y-4">
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                 <div>
-                                            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1.5">
+                                                    <label className="block text-sm font-medium text-gray-700 mb-2">
                                                         Nombre completo *
                                                     </label>
                                                     <input
-                                                ref={firstInputRef}
-                                                id="name"
                                                         type="text"
                                                         value={contactData.name}
-                                                onChange={(e) => handleContactFieldChange('name', e.target.value)}
-                                                className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-base min-h-[44px] ${
-                                                    errors.name ? 'border-red-300 bg-red-50' : 'border-gray-200 focus:border-blue-500 bg-white'
+                                                        onChange={(e) => setContactData({ ...contactData, name: e.target.value })}
+                                                        className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${errors.name ? 'border-red-300 bg-red-50' : 'border-gray-200 focus:border-blue-500 bg-white'
                                                             }`}
                                                         placeholder="Tu nombre completo"
-                                                aria-invalid={!!errors.name}
-                                                aria-describedby={errors.name ? 'name-error' : undefined}
                                                     />
                                                     {errors.name && (
-                                                <p id="name-error" className="text-red-500 text-sm mt-1" role="alert">
-                                                    {errors.name}
-                                                </p>
+                                                        <p className="text-red-500 text-sm mt-1">{errors.name}</p>
                                                     )}
                                                 </div>
 
                                                 <div>
-                                            <label htmlFor="rut" className="block text-sm font-medium text-gray-700 mb-1.5">
+                                                    <label className="block text-sm font-medium text-gray-700 mb-2">
                                                         RUT *
                                                     </label>
                                                     <input
-                                                id="rut"
                                                         type="text"
                                                         value={contactData.rut}
-                                                onChange={(e) => handleContactFieldChange('rut', e.target.value)}
-                                                className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-base min-h-[44px] ${
-                                                    errors.rut ? 'border-red-300 bg-red-50' : 'border-gray-200 focus:border-blue-500 bg-white'
+                                                        onChange={(e) => setContactData({ ...contactData, rut: e.target.value })}
+                                                        className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${errors.rut ? 'border-red-300 bg-red-50' : 'border-gray-200 focus:border-blue-500 bg-white'
                                                             }`}
                                                         placeholder="12.345.678-9"
-                                                aria-invalid={!!errors.rut}
-                                                aria-describedby={errors.rut ? 'rut-error' : undefined}
                                                     />
                                                     {errors.rut && (
-                                                <p id="rut-error" className="text-red-500 text-sm mt-1" role="alert">
-                                                    {errors.rut}
-                                                </p>
+                                                        <p className="text-red-500 text-sm mt-1">{errors.rut}</p>
                                                     )}
                                                 </div>
 
                                                 <div>
-                                            <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1.5">
+                                                    <label className="block text-sm font-medium text-gray-700 mb-2">
                                                         Teléfono *
                                                     </label>
                                                     <input
-                                                id="phone"
                                                         type="tel"
                                                         value={contactData.phone}
-                                                onChange={(e) => handleContactFieldChange('phone', e.target.value)}
-                                                className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-base min-h-[44px] ${
-                                                    errors.phone ? 'border-red-300 bg-red-50' : 'border-gray-200 focus:border-blue-500 bg-white'
+                                                        onChange={(e) => setContactData({ ...contactData, phone: e.target.value })}
+                                                        className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${errors.phone ? 'border-red-300 bg-red-50' : 'border-gray-200 focus:border-blue-500 bg-white'
                                                             }`}
                                                         placeholder="+56 9 1234 5678"
-                                                aria-invalid={!!errors.phone}
-                                                aria-describedby={errors.phone ? 'phone-error' : undefined}
                                                     />
                                                     {errors.phone && (
-                                                <p id="phone-error" className="text-red-500 text-sm mt-1" role="alert">
-                                                    {errors.phone}
-                                                </p>
+                                                        <p className="text-red-500 text-sm mt-1">{errors.phone}</p>
                                                     )}
                                                 </div>
 
                                                 <div>
-                                            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5">
+                                                    <label className="block text-sm font-medium text-gray-700 mb-2">
                                                         Email (opcional)
                                                     </label>
                                                     <input
-                                                id="email"
                                                         type="email"
                                                         value={contactData.email}
-                                                onChange={(e) => handleContactFieldChange('email', e.target.value)}
-                                                className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-base min-h-[44px] ${
-                                                    errors.email ? 'border-red-300 bg-red-50' : 'border-gray-200 focus:border-blue-500 bg-white'
+                                                        onChange={(e) => setContactData({ ...contactData, email: e.target.value })}
+                                                        className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${errors.email ? 'border-red-300 bg-red-50' : 'border-gray-200 focus:border-blue-500 bg-white'
                                                             }`}
                                                         placeholder="tu@email.com"
-                                                aria-invalid={!!errors.email}
-                                                aria-describedby={errors.email ? 'email-error' : undefined}
                                                     />
                                                     {errors.email && (
-                                                <p id="email-error" className="text-red-500 text-sm mt-1" role="alert">
-                                                    {errors.email}
-                                                </p>
+                                                        <p className="text-red-500 text-sm mt-1">{errors.email}</p>
                                                     )}
                                                 </div>
+                                            </div>
+                                        </motion.div>
                                     </div>
                                 </motion.div>
                             )}
@@ -898,93 +660,117 @@ export function VisitSchedulerModal({
                             {step === 'confirm' && (
                                 <motion.div
                                     key="confirm"
-                                    initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, x: 10 }}
-                                    animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, x: 0 }}
-                                    exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, x: -10 }}
-                                    transition={shouldReduceMotion ? { duration: 0.1 } : { duration: 0.2 }}
+                                    initial={{ opacity: 0, x: 10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -10 }}
+                                    transition={DESIGN_TOKENS.animations.slideUp}
                                 >
-                                    <div className="space-y-4">
-                                        <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-4 md:p-6 border border-blue-200">
+                                    <div className="space-y-6">
+                                        {/* Resumen de la visita */}
+                                        <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-6 border border-blue-200">
                                             <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
                                                 <Check className="w-5 h-5 text-green-500" />
                                                 Resumen de tu visita
                                             </h3>
-                                            <div className="space-y-3">
-                                                <div className="flex items-start gap-3">
-                                                    <Calendar className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+
+                                            <div className="space-y-4">
+                                                <div className="flex items-center gap-3">
+                                                    <Calendar className="w-5 h-5 text-blue-500" />
                                                     <div>
-                                                        <p className="text-xs text-gray-600">Fecha y horario</p>
-                                                        <p className="font-semibold text-gray-900 text-sm md:text-base">
+                                                        <p className="text-sm text-gray-600">Fecha y horario</p>
+                                                        <p className="font-semibold text-gray-900">
                                                             {selectedDay && formatDate(selectedDay.date)} a las {selectedTime?.time}
                                                         </p>
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-start gap-3">
-                                                    <MapPin className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
-                                                    <div>
-                                                        <p className="text-xs text-gray-600">Propiedad</p>
-                                                        <p className="font-semibold text-gray-900 text-sm md:text-base">{finalPropertyName}</p>
-                                                        <p className="text-xs text-gray-600">{finalPropertyAddress}</p>
-                                                        {finalPropertyDetails.price && (
-                                                            <div className="mt-1">
-                                                                <p className="text-xs text-gray-600">
-                                                                    ${finalPropertyDetails.price.toLocaleString('es-CL')} arriendo
-                                                                    {finalPropertyDetails.gastoComun && finalPropertyDetails.gastoComun > 0 && (
-                                                                        <> · ${finalPropertyDetails.gastoComun.toLocaleString('es-CL')} gastos comunes</>
-                                                                    )}
-                                                                </p>
-                                                            </div>
+                                                        {selectedTime?.premium && (
+                                                            <BadgeLiquidCapsule badge="Horario Premium" variant="premium" size="sm" />
                                                         )}
                                                     </div>
                                                 </div>
-                                                <div className="flex items-start gap-3">
-                                                    <User className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+
+                                                <div className="flex items-center gap-3">
+                                                    <MapPin className="w-5 h-5 text-blue-500" />
                                                     <div>
-                                                        <p className="text-xs text-gray-600">Contacto</p>
-                                                        <p className="font-semibold text-gray-900 text-sm md:text-base">{contactData.name}</p>
-                                                        <p className="text-xs text-gray-600">{contactData.phone}</p>
+                                                        <p className="text-sm text-gray-600">Propiedad</p>
+                                                        <p className="font-semibold text-gray-900">{propertyName}</p>
+                                                        <p className="text-sm text-gray-600">{propertyAddress}</p>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex items-center gap-3">
+                                                    <User className="w-5 h-5 text-blue-500" />
+                                                    <div>
+                                                        <p className="text-sm text-gray-600">Contacto</p>
+                                                        <p className="font-semibold text-gray-900">{contactData.name}</p>
+                                                        <p className="text-sm text-gray-600">{contactData.phone}</p>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
-                                        <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+
+                                        {/* Información adicional */}
+                                        <div className="bg-gray-50 rounded-2xl p-4 border border-gray-200">
                                             <div className="flex items-start gap-3">
                                                 <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
                                                     <User className="w-4 h-4 text-blue-600" />
                                                 </div>
                                                 <div>
-                                                    <h4 className="font-medium text-gray-900 mb-1 text-sm md:text-base">¿Qué esperar?</h4>
-                                                    <p className="text-xs md:text-sm text-gray-600">
+                                                    <h4 className="font-medium text-gray-900 mb-1">¿Qué esperar?</h4>
+                                                    <p className="text-sm text-gray-600">
                                                         Un corredor asociado Hommie organizará la visita y puede resolver todas tus dudas sobre la propiedad.
                                                     </p>
                                                 </div>
                                             </div>
                                         </div>
+
+                                        {selectedTime?.instantBooking && (
+                                            <div className="bg-green-50 rounded-2xl p-4 border border-green-200">
+                                                <div className="flex items-start gap-3">
+                                                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                                        <Check className="w-4 h-4 text-green-600" />
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="font-medium text-gray-900 mb-1">Reserva Instantánea</h4>
+                                                        <p className="text-sm text-gray-600">
+                                                            Este horario está disponible para reserva inmediata. Recibirás confirmación al instante.
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </motion.div>
                             )}
                         </AnimatePresence>
                     </div>
 
-                    {/* Footer compacto */}
-                    <div className="px-4 md:px-5 py-4 border-t border-gray-100 flex-shrink-0">
+                    {/* Footer */}
+                    <div className="p-6 border-t border-gray-100/50">
                         <motion.button
                             onClick={step === 'confirm' ? handleConfirm : handleNext}
-                            disabled={!canProceed() || isValidating}
-                            className={`w-full py-3 md:py-4 px-6 rounded-2xl font-semibold transition-all duration-150 text-base min-h-[52px] focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${
-                                !canProceed() || isValidating
+                            disabled={
+                                (step === 'schedule' && (!selectedDay || !selectedTime)) ||
+                                (step === 'schedule' && Object.keys(errors).length > 0)
+                            }
+                            className={`w-full py-4 px-6 rounded-2xl font-semibold transition-all duration-150 ${(step === 'schedule' && (!selectedDay || !selectedTime)) ||
+                                (step === 'schedule' && Object.keys(errors).length > 0)
                                 ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
                                 : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl'
                                 }`}
-                            whileHover={!shouldReduceMotion && !canProceed() ? {} : { scale: canProceed() ? 1.02 : 1 }}
-                            whileTap={!shouldReduceMotion && !canProceed() ? {} : { scale: canProceed() ? 0.98 : 1 }}
-                            aria-disabled={!canProceed() || isValidating}
+                            whileHover={{
+                                scale: ((step === 'schedule' && (!selectedDay || !selectedTime)) ||
+                                    (step === 'schedule' && Object.keys(errors).length > 0)) ? 1 : 1.02
+                            }}
+                            whileTap={{
+                                scale: ((step === 'schedule' && (!selectedDay || !selectedTime)) ||
+                                    (step === 'schedule' && Object.keys(errors).length > 0)) ? 1 : 0.98
+                            }}
                         >
-                            {step === 'confirm' ? 'Confirmar visita' : 'Continuar →'}
+                            {step === 'confirm' ? 'Confirmar visita' : 'Continuar'}
                         </motion.button>
-                        {step === 'contact' && (
-                            <p className="text-center text-xs text-gray-500 mt-2">
-                                Tus datos se guardan automáticamente
+
+                        {step === 'schedule' && (
+                            <p className="text-center text-xs text-gray-500 mt-3">
+                                Tus datos se guardan automáticamente para futuras visitas
                             </p>
                         )}
                     </div>
@@ -993,3 +779,4 @@ export function VisitSchedulerModal({
         </AnimatePresence>
     );
 }
+
