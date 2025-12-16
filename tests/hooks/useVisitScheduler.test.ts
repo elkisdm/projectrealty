@@ -53,8 +53,8 @@ describe('useVisitScheduler', () => {
                 useVisitScheduler({ listingId: mockListingId })
             );
 
-            // El hook genera 5 días por defecto
-            expect(result.current.availableDays).toHaveLength(5);
+            // El hook genera 6 días por defecto (lunes a sábado, excluyendo domingos)
+            expect(result.current.availableDays).toHaveLength(6);
             expect(result.current.availableDays[0]).toBeDefined();
             expect(result.current.availableDays[4]).toBeDefined();
         });
@@ -69,9 +69,9 @@ describe('useVisitScheduler', () => {
                 day.day === 'Sáb' || day.day === 'Dom'
             );
 
-            // El hook genera solo días laborales, no fines de semana
-            expect(hasWeekend).toBe(false);
-            expect(days.length).toBe(5);
+            // El hook genera días laborales (lunes a sábado), excluyendo solo domingos
+            expect(hasWeekend).toBe(true); // Incluye sábados ahora
+            expect(days.length).toBe(6); // 6 días (lunes a sábado)
         });
 
         it('debería tener estructura correcta en los días', () => {

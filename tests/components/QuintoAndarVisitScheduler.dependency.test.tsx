@@ -47,7 +47,7 @@ describe('QuintoAndarVisitScheduler Dependencies', () => {
             listingId: 'test-listing',
             propertyName: 'Test Property',
             propertyAddress: 'Test Address',
-            propertyImage: 'test-image.jpg',
+            propertyImage: '/test-image.jpg', // next/image requiere URLs absolutas o que empiecen con /
             onSuccess: jest.fn()
         };
 

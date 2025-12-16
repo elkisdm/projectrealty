@@ -42,6 +42,20 @@ jest.mock('next/navigation', () => ({
     },
 }));
 
+// Mock de next/image
+jest.mock('next/image', () => ({
+    __esModule: true,
+    default: function MockImage({ src, alt, fill, ...props }: any) {
+        // Usar React.createElement porque no podemos usar JSX en jest.mock
+        return React.createElement('img', {
+            src,
+            alt,
+            ...props,
+            style: { ...props.style, objectFit: props.style?.objectFit || 'cover' }
+        });
+    },
+}));
+
 // Mock de framer-motion
 jest.mock('framer-motion', () => ({
     motion: {
@@ -136,63 +150,68 @@ jest.mock('framer-motion', () => ({
     }),
 }));
 
-// Mock de Notification API
-Object.defineProperty(window, 'Notification', {
-    value: {
-        requestPermission: jest.fn().mockResolvedValue('granted'),
-        permission: 'granted',
-    },
-    writable: true,
-});
+// Mock de APIs del navegador (solo si window está disponible)
+if (typeof window !== 'undefined') {
+    // Mock de Notification API
+    Object.defineProperty(window, 'Notification', {
+        value: {
+            requestPermission: jest.fn().mockResolvedValue('granted'),
+            permission: 'granted',
+        },
+        writable: true,
+    });
 
-// Mock de window.open
-Object.defineProperty(window, 'open', {
-    value: jest.fn(),
-    writable: true,
-});
+    // Mock de window.open
+    Object.defineProperty(window, 'open', {
+        value: jest.fn(),
+        writable: true,
+    });
 
-// Mock de navigator.vibrate
-Object.defineProperty(navigator, 'vibrate', {
-    value: jest.fn(),
-    writable: true,
-});
+    // Mock de matchMedia
+    Object.defineProperty(window, 'matchMedia', {
+        writable: true,
+        value: jest.fn().mockImplementation(query => ({
+            matches: false,
+            media: query,
+            onchange: null,
+            addListener: jest.fn(), // deprecated
+            removeListener: jest.fn(), // deprecated
+            addEventListener: jest.fn(),
+            removeEventListener: jest.fn(),
+            dispatchEvent: jest.fn(),
+        })),
+    });
 
-// Mock de matchMedia
-Object.defineProperty(window, 'matchMedia', {
-    writable: true,
-    value: jest.fn().mockImplementation(query => ({
-        matches: false,
-        media: query,
-        onchange: null,
-        addListener: jest.fn(), // deprecated
-        removeListener: jest.fn(), // deprecated
-        addEventListener: jest.fn(),
-        removeEventListener: jest.fn(),
-        dispatchEvent: jest.fn(),
-    })),
-});
+    // Mock de localStorage
+    const localStorageMock = {
+        getItem: jest.fn(),
+        setItem: jest.fn(),
+        removeItem: jest.fn(),
+        clear: jest.fn(),
+    };
+    Object.defineProperty(window, 'localStorage', {
+        value: localStorageMock,
+    });
 
-// Mock de localStorage
-const localStorageMock = {
-    getItem: jest.fn(),
-    setItem: jest.fn(),
-    removeItem: jest.fn(),
-    clear: jest.fn(),
-};
-Object.defineProperty(window, 'localStorage', {
-    value: localStorageMock,
-});
+    // Mock de sessionStorage
+    const sessionStorageMock = {
+        getItem: jest.fn(),
+        setItem: jest.fn(),
+        removeItem: jest.fn(),
+        clear: jest.fn(),
+    };
+    Object.defineProperty(window, 'sessionStorage', {
+        value: sessionStorageMock,
+    });
+}
 
-// Mock de sessionStorage
-const sessionStorageMock = {
-    getItem: jest.fn(),
-    setItem: jest.fn(),
-    removeItem: jest.fn(),
-    clear: jest.fn(),
-};
-Object.defineProperty(window, 'sessionStorage', {
-    value: sessionStorageMock,
-});
+// Mock de navigator.vibrate (solo si navigator está disponible)
+if (typeof navigator !== 'undefined') {
+    Object.defineProperty(navigator, 'vibrate', {
+        value: jest.fn(),
+        writable: true,
+    });
+}
 
 // MSW handles fetch mocking - no need for global override
 
@@ -213,6 +232,10 @@ afterAll(() => {
 // Cleanup después de cada test
 afterEach(() => {
     jest.clearAllMocks();
-    localStorageMock.clear();
-    sessionStorageMock.clear();
+    if (typeof window !== 'undefined' && window.localStorage) {
+        (window.localStorage as any).clear();
+    }
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+        (window.sessionStorage as any).clear();
+    }
 });

@@ -44,7 +44,7 @@ export function validateAdminRedirect(
 
   // Validar que sea una ruta válida (solo caracteres seguros)
   // Permitir: letras, números, guiones, guiones bajos, barras, query params
-  if (!/^\/admin(\/[a-zA-Z0-9\-_/?=&]*)?$/.test(cleaned)) {
+  if (!/^\/admin(\/[a-zA-Z0-9\-_/?:=&]*)?$/.test(cleaned)) {
     return defaultPath;
   }
 

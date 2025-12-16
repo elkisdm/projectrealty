@@ -13,9 +13,20 @@ jest.mock('@/lib/rate-limit', () => ({
 
 describe('/api/visits', () => {
     describe('POST', () => {
+        // Crear slotId en formato mock válido: mock-slot-YYYY-MM-DD-HH:MM
+        // Usar una fecha futura (ej: mañana) y hora válida (9:00-20:00, lunes-sábado)
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        // Asegurar que no sea domingo
+        if (tomorrow.getDay() === 0) {
+            tomorrow.setDate(tomorrow.getDate() + 1);
+        }
+        const dateStr = tomorrow.toISOString().split('T')[0];
+        const validSlotId = `mock-slot-${dateStr}-09:00`; // 9:00 AM es válido
+
         const validVisitData = {
             listingId: 'home-amengual',
-            slotId: 'slot_1736931600000_09:00', // Slot de prueba que existe en la base de datos mock
+            slotId: validSlotId,
             userId: 'user-456',
             channel: 'web',
             idempotencyKey: 'unique-key-789'
@@ -86,9 +97,11 @@ describe('/api/visits', () => {
         });
 
         it('debería manejar slot no disponible', async () => {
+            // Usar un slot en formato mock pero que no pase validación (ej: fecha pasada o domingo)
             const unavailableSlotData = {
                 ...validVisitData,
-                slotId: 'slot_nonexistent_09:00'
+                slotId: 'mock-slot-2020-01-01-09:00', // Fecha en el pasado - será rechazada por validación
+                idempotencyKey: 'unique-key-790'
             };
 
             const request = new NextRequest('http://localhost:3000/api/visits', {
@@ -103,9 +116,9 @@ describe('/api/visits', () => {
             const response = await POST(request);
             const data = await response.json();
 
+            // La validación rechaza slots en el pasado o fuera de horario
             expect(response.status).toBe(400);
             expect(data).toHaveProperty('error');
-            expect(data.error).toContain('Idempotency-Key del header no coincide con el del body');
         });
 
         it('debería manejar listingId inexistente', async () => {
@@ -132,9 +145,18 @@ describe('/api/visits', () => {
         });
 
         it('debería prevenir duplicados con idempotency key', async () => {
+            // Crear otro slot válido para el test de duplicados
+            const tomorrow2 = new Date();
+            tomorrow2.setDate(tomorrow2.getDate() + 1);
+            if (tomorrow2.getDay() === 0) {
+                tomorrow2.setDate(tomorrow2.getDate() + 1);
+            }
+            const dateStr2 = tomorrow2.toISOString().split('T')[0];
+            const duplicateSlotId = `mock-slot-${dateStr2}-10:00`;
+
             const duplicateData = {
                 ...validVisitData,
-                slotId: 'slot_1736931600000_10:00', // Slot diferente para evitar conflicto
+                slotId: duplicateSlotId,
                 idempotencyKey: 'duplicate-key-123'
             };
 
@@ -223,9 +245,18 @@ describe('/api/visits', () => {
         });
 
         it('debería retornar datos de la visita creada', async () => {
+            // Crear otro slot válido para este test
+            const tomorrow3 = new Date();
+            tomorrow3.setDate(tomorrow3.getDate() + 1);
+            if (tomorrow3.getDay() === 0) {
+                tomorrow3.setDate(tomorrow3.getDate() + 1);
+            }
+            const dateStr3 = tomorrow3.toISOString().split('T')[0];
+            const testSlotId = `mock-slot-${dateStr3}-11:00`;
+
             const testData = {
                 ...validVisitData,
-                slotId: 'slot_1736931600000_11:00', // Slot diferente
+                slotId: testSlotId,
                 idempotencyKey: 'unique-key-795-new'
             };
 

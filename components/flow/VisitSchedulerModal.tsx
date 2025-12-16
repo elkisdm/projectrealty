@@ -587,7 +587,7 @@ export function VisitSchedulerModal({
                                 <div className="mb-2">
                                     <div className="flex items-center gap-2 text-white/90 text-xs">
                                         <span className="font-semibold">${finalPropertyDetails.price.toLocaleString('es-CL')} arriendo</span>
-                                        {finalPropertyDetails.gastoComun > 0 && (
+                                        {finalPropertyDetails.gastoComun && finalPropertyDetails.gastoComun > 0 && (
                                             <>
                                                 <span>·</span>
                                                 <span>${finalPropertyDetails.gastoComun.toLocaleString('es-CL')} gastos comunes</span>
@@ -929,7 +929,7 @@ export function VisitSchedulerModal({
                                                             <div className="mt-1">
                                                                 <p className="text-xs text-gray-600">
                                                                     ${finalPropertyDetails.price.toLocaleString('es-CL')} arriendo
-                                                                    {finalPropertyDetails.gastoComun > 0 && (
+                                                                    {finalPropertyDetails.gastoComun && finalPropertyDetails.gastoComun > 0 && (
                                                                         <> · ${finalPropertyDetails.gastoComun.toLocaleString('es-CL')} gastos comunes</>
                                                                     )}
                                                                 </p>

@@ -69,7 +69,7 @@ export function useHeroScrollTransition({
       const normalizedProgress = (startThreshold - currentPosition) / range;
 
       // Clamp entre 0 y 1 (asegura que funcione correctamente al hacer scroll arriba)
-      let clampedProgress = Math.min(1, Math.max(0, normalizedProgress));
+      const clampedProgress = Math.min(1, Math.max(0, normalizedProgress));
       
       // Aplicar easing muy suave tipo "ease-in-out-quart" para transición ultra fluida
       // Esto crea una curva de animación muy suave y natural en ambas direcciones
@@ -106,4 +106,5 @@ export function useHeroScrollTransition({
 
   return progress;
 }
+
 

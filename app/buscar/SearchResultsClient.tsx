@@ -63,9 +63,9 @@ export function SearchResultsClient() {
     precioMin: filters.minPrice ?? undefined,
     precioMax: filters.maxPrice ?? undefined,
     dormitorios: filters.dormitorios,
-    estacionamiento: filters.estacionamiento,
-    bodega: filters.bodega,
-    mascotas: filters.mascotas,
+    estacionamiento: filters.estacionamiento ?? undefined,
+    bodega: filters.bodega ?? undefined,
+    mascotas: filters.mascotas ?? undefined,
     sort: sort !== "default" ? sort : undefined,
     page,
     limit: 12,
@@ -119,13 +119,13 @@ export function SearchResultsClient() {
       }
       
       // Nuevos filtros
-      if (newFilters.estacionamiento !== undefined) {
+      if (newFilters.estacionamiento !== undefined && newFilters.estacionamiento !== null) {
         params.set("estacionamiento", newFilters.estacionamiento.toString());
       }
-      if (newFilters.bodega !== undefined) {
+      if (newFilters.bodega !== undefined && newFilters.bodega !== null) {
         params.set("bodega", newFilters.bodega.toString());
       }
-      if (newFilters.mascotas !== undefined) {
+      if (newFilters.mascotas !== undefined && newFilters.mascotas !== null) {
         params.set("mascotas", newFilters.mascotas.toString());
       }
       
@@ -205,9 +205,9 @@ export function SearchResultsClient() {
     precioMin: filters.minPrice ?? undefined,
     precioMax: filters.maxPrice ?? undefined,
     dormitorios: filters.dormitorios,
-    estacionamiento: filters.estacionamiento,
-    bodega: filters.bodega,
-    mascotas: filters.mascotas,
+    estacionamiento: filters.estacionamiento ?? undefined,
+    bodega: filters.bodega ?? undefined,
+    mascotas: filters.mascotas ?? undefined,
   };
 
   const handleRemoveFilter = useCallback(

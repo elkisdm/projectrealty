@@ -32,6 +32,7 @@ interface UseVisitSchedulerReturn {
   // Acciones
   fetchAvailability: (startDate: Date, endDate: Date) => Promise<void>;
   selectDateTime: (date: string, time: string) => void;
+  verifySlotAvailability: (slotId: string) => Promise<boolean>;
   createVisit: (userData: { name: string; phone: string; email?: string }) => Promise<CreateVisitResponse | null>;
   clearSelection: () => void;
   clearError: () => void;
@@ -137,7 +138,20 @@ export function useVisitScheduler({
       
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Error al obtener disponibilidad');
+        
+        // Mensajes de error específicos para disponibilidad
+        let errorMessage = 'Error al obtener disponibilidad';
+        if (response.status === 429) {
+          errorMessage = 'Has realizado muchas solicitudes. Por favor, espera un momento e intenta nuevamente.';
+        } else if (response.status === 400) {
+          errorMessage = errorData.error || 'Parámetros inválidos. Por favor, intenta nuevamente.';
+        } else if (response.status >= 500) {
+          errorMessage = 'Error del servidor. Por favor, intenta más tarde.';
+        } else {
+          errorMessage = errorData.error || errorMessage;
+        }
+        
+        throw new Error(errorMessage);
       }
       
       const data: AvailabilityResponse = await response.json();
@@ -200,8 +214,44 @@ export function useVisitScheduler({
     setError(null);
   }, [availabilityData, listingId]);
 
+  // Verificar disponibilidad del slot en tiempo real
+  const verifySlotAvailability = useCallback(async (slotId: string): Promise<boolean> => {
+    if (!selectedDate || !selectedTime) return false;
+    
+    try {
+      // Obtener disponibilidad para el rango del slot seleccionado
+      const slotDate = new Date(`${selectedDate}T${selectedTime}:00-03:00`);
+      const startDate = new Date(slotDate);
+      startDate.setHours(0, 0, 0, 0);
+      const endDate = new Date(slotDate);
+      endDate.setHours(23, 59, 59, 999);
+      
+      const startRFC3339 = formatRFC3339(startDate, timezone);
+      const endRFC3339 = formatRFC3339(endDate, timezone);
+      
+      const response = await fetch(
+        `/api/availability?listingId=${listingId}&start=${startRFC3339}&end=${endRFC3339}`
+      );
+      
+      if (!response.ok) {
+        logger.error('Error verificando disponibilidad:', await response.text());
+        return false;
+      }
+      
+      const data: AvailabilityResponse = await response.json();
+      
+      // Buscar el slot específico
+      const slot = data.slots.find(s => s.id === slotId);
+      return slot?.status === 'open' || false;
+      
+    } catch (err) {
+      logger.error('Error verificando disponibilidad:', err);
+      return false;
+    }
+  }, [listingId, selectedDate, selectedTime, timezone]);
+
   // Crear visita con optimistic UI
-  const createVisit = useCallback(async (_userData: { name: string; phone: string; email?: string }) => {
+  const createVisit = useCallback(async (userData: { name: string; phone: string; email?: string }) => {
     if (!selectedSlot || !selectedDate || !selectedTime) {
       setError('Debes seleccionar una fecha y hora');
       return null;
@@ -211,13 +261,25 @@ export function useVisitScheduler({
       setIsLoading(true);
       setError(null);
       
+      // Verificar disponibilidad en tiempo real antes de crear
+      const isAvailable = await verifySlotAvailability(selectedSlot.id);
+      if (!isAvailable) {
+        setError('El horario seleccionado ya no está disponible. Por favor, selecciona otro horario.');
+        return null;
+      }
+      
       const idempotencyKey = generateIdempotencyKey();
       const visitData: CreateVisitRequest = {
         listingId,
         slotId: selectedSlot.id,
         userId: `user_${Date.now()}`, // Mock user ID
         channel: 'web',
-        idempotencyKey
+        idempotencyKey,
+        contactData: {
+          name: userData.name,
+          phone: userData.phone,
+          email: userData.email
+        }
       };
       
       // Optimistic update: marcar slot como no disponible localmente
@@ -260,7 +322,41 @@ export function useVisitScheduler({
           });
         }
         
-        throw new Error(errorData.message || 'Error al crear la visita');
+        // Mensajes de error específicos según el código de error
+        let errorMessage = 'Error al crear la visita';
+        if (errorData.code) {
+          switch (errorData.code) {
+            case 'SLOT_UNAVAILABLE':
+              errorMessage = 'El horario seleccionado ya no está disponible. Por favor, selecciona otro horario.';
+              break;
+            case 'INVALID_DAY':
+              errorMessage = 'No se pueden agendar visitas los domingos. Por favor, selecciona otro día.';
+              break;
+            case 'INVALID_TIME':
+              errorMessage = `Los horarios disponibles son de ${errorData.message?.includes('9:00') ? '9:00' : '9:00'} a 20:00 hrs. Por favor, selecciona un horario válido.`;
+              break;
+            case 'PAST_TIME':
+              errorMessage = 'No se pueden agendar visitas en el pasado. Por favor, selecciona una fecha y hora futura.';
+              break;
+            case 'RATE_LIMIT':
+              errorMessage = 'Has realizado muchas solicitudes. Por favor, espera un momento e intenta nuevamente.';
+              break;
+            default:
+              errorMessage = errorData.message || errorMessage;
+          }
+        } else if (errorData.error) {
+          if (errorData.error.includes('Rate limit')) {
+            errorMessage = 'Has realizado muchas solicitudes. Por favor, espera un momento e intenta nuevamente.';
+          } else if (errorData.error.includes('Slot no disponible')) {
+            errorMessage = 'El horario seleccionado ya no está disponible. Por favor, selecciona otro horario.';
+          } else {
+            errorMessage = errorData.message || errorData.error || errorMessage;
+          }
+        } else {
+          errorMessage = errorData.message || errorMessage;
+        }
+        
+        throw new Error(errorMessage);
       }
       
       const result: CreateVisitResponse = await response.json();
@@ -279,7 +375,7 @@ export function useVisitScheduler({
       setIsLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- clearSelection is stable
-  }, [listingId, selectedSlot, selectedDate, selectedTime, availabilityData]);
+  }, [listingId, selectedSlot, selectedDate, selectedTime, availabilityData, verifySlotAvailability]);
 
   // Limpiar selección
   const clearSelection = useCallback(() => {
@@ -308,6 +404,7 @@ export function useVisitScheduler({
     // Acciones
     fetchAvailability,
     selectDateTime,
+    verifySlotAvailability,
     createVisit,
     clearSelection,
     clearError

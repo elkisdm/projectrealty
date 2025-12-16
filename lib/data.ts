@@ -2,6 +2,7 @@ import { BuildingSchema } from "@schemas/models";
 import type { Building, Unit, TypologySummary, PromotionBadge } from "@schemas/models";
 import { logger } from "./logger";
 import { normalizeUnit } from "./utils/unit";
+import { MOCK_BUILDINGS } from "@data/buildings.mock";
 
 type ListFilters = {
   comuna?: string;
@@ -259,9 +260,6 @@ function normalizeTipologia(tipologia: string): string {
 // Función para leer desde mocks
 async function readFromMock(): Promise<Building[]> {
   try {
-    const { MOCK_BUILDINGS } = await import("@data/buildings.mock");
-    const { BuildingSchema } = await import("@schemas/models");
-    
     // Convertir LegacyBuilding a Building y validar
     const validatedBuildings: Building[] = [];
     

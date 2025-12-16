@@ -145,10 +145,6 @@ export function ImageGallery({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isFullscreen, prevImage, nextImage]);
 
-  if (!imageList || imageList.length === 0) {
-    return null;
-  }
-
   const handleImageChange = useCallback((index: number) => {
     if (index === active) return;
     if (!prefersReducedMotion) {
@@ -161,6 +157,10 @@ export function ImageGallery({
       setActive(index);
     }
   }, [active, prefersReducedMotion]);
+
+  if (!imageList || imageList.length === 0) {
+    return null;
+  }
 
   const handleKeyDown = (event: React.KeyboardEvent, index?: number) => {
     switch (event.key) {

@@ -52,7 +52,8 @@ const createQueryKey = (filters: FilterValues, sort?: string, search?: string, p
   
   // Only add non-default filter values to the key
   if (filters.comuna && filters.comuna !== "Todas") {
-    key.push("comuna", filters.comuna);
+    const comunaValue = Array.isArray(filters.comuna) ? filters.comuna.join(',') : filters.comuna;
+    key.push("comuna", comunaValue);
   }
   if (filters.tipologia && filters.tipologia !== "Todas") {
     key.push("tipologia", filters.tipologia);
@@ -84,7 +85,8 @@ const fetchBuildings = async ({ filters, sort, search, page = 1, limit = 12 }: F
   
   // Only add non-default filter values to the URL
   if (filters.comuna && filters.comuna !== "Todas") {
-    params.append("comuna", filters.comuna);
+    const comunaValue = Array.isArray(filters.comuna) ? filters.comuna.join(',') : filters.comuna;
+    params.append("comuna", comunaValue);
   }
   if (filters.tipologia && filters.tipologia !== "Todas") {
     params.append("tipologia", filters.tipologia);

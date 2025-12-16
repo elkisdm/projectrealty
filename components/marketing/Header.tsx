@@ -526,9 +526,7 @@ export function Header() {
                 className="w-full"
               >
                 <StickySearchBar
-                  placeholder="Buscar por comuna, dirección, nombre de edificio..."
                   className="max-w-2xl mx-auto"
-                  integrated={true}
                 />
               </motion.div>
             </motion.div>

@@ -37,9 +37,9 @@ export function SearchForm({ className = "" }: SearchFormProps) {
       precioMin: searchParams.get("precioMin") || undefined,
       precioMax: searchParams.get("precioMax") || undefined,
       dormitorios: (searchParams.get("dormitorios") as "Estudio" | "1" | "2" | "3" | null) || undefined,
-      estacionamiento: searchParams.get("estacionamiento") || undefined,
-      bodega: searchParams.get("bodega") || undefined,
-      mascotas: searchParams.get("mascotas") || undefined,
+      estacionamiento: searchParams.get("estacionamiento") === "true" ? "true" : searchParams.get("estacionamiento") === "false" ? "false" : undefined,
+      bodega: searchParams.get("bodega") === "true" ? "true" : searchParams.get("bodega") === "false" ? "false" : undefined,
+      mascotas: searchParams.get("mascotas") === "true" ? "true" : searchParams.get("mascotas") === "false" ? "false" : undefined,
     },
   });
 
@@ -146,8 +146,11 @@ export function SearchForm({ className = "" }: SearchFormProps) {
       {/* Pills de Comuna */}
       <SearchPills
         options={comunasPrincipales}
-        selected={comuna}
-        onSelect={(value) => setValue("comuna", value || undefined, { shouldValidate: true })}
+        selected={Array.isArray(comuna) ? (comuna[0] || undefined) : (comuna || undefined)}
+        onSelect={(value) => {
+          const normalizedValue = Array.isArray(value) ? value[0] : value;
+          setValue("comuna", normalizedValue || undefined, { shouldValidate: true });
+        }}
         label="Comuna"
       />
 

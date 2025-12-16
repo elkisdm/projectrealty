@@ -26,21 +26,21 @@ export function HeroCarousel({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
 
-  // Si no hay imágenes, no renderizar
-  if (!images || images.length === 0) {
-    return null;
-  }
-
   // Autoplay
   useEffect(() => {
-    if (isPaused || images.length <= 1) return;
+    if (!images || images.length === 0 || isPaused || images.length <= 1) return;
 
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % images.length);
     }, autoplayInterval);
 
     return () => clearInterval(interval);
-  }, [isPaused, images.length, autoplayInterval]);
+  }, [isPaused, images, autoplayInterval]);
+
+  // Si no hay imágenes, no renderizar
+  if (!images || images.length === 0) {
+    return null;
+  }
 
   const goToSlide = (index: number) => {
     setCurrentIndex(index);
@@ -156,4 +156,5 @@ export function HeroCarousel({
     </div>
   );
 }
+
 

@@ -31,6 +31,8 @@ interface UnitDetails {
   codigoInterno?: string;
   garantia_cuotas?: number;
   renta_minima?: number;
+  estacionamiento?: boolean;
+  bodega?: boolean;
 }
 
 interface PropertySectionsProps {

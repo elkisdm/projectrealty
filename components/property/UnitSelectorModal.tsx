@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import React, { useEffect, useRef, useState, useMemo, useCallback, Suspense } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronDown, ChevronUp } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { Building, Unit } from "@schemas/models";
 import { formatPrice } from "@lib/utils";
 import { track } from "@lib/analytics";
@@ -23,16 +24,19 @@ function calculateTotalM2(unit: Unit): number | null {
   return total > 0 ? total : null;
 }
 
-export function UnitSelectorModal({
+function UnitSelectorModalContent({
   isOpen,
   onClose,
   building,
   currentUnitId,
 }: UnitSelectorModalProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const modalRef = useRef<HTMLDivElement>(null);
   const selectedUnitRef = useRef<HTMLButtonElement>(null);
   const [expandedTipologia, setExpandedTipologia] = useState<string | null>(null);
   const [shouldReduceMotion, setShouldReduceMotion] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
 
   // Detectar prefers-reduced-motion
   useEffect(() => {
@@ -78,7 +82,6 @@ export function UnitSelectorModal({
   useEffect(() => {
     if (!isOpen || !currentUnitId) return;
 
-    // Usar building.units directamente para evitar dependencia de availableUnits
     const currentUnit = building.units?.find((u) => u.id === currentUnitId && u.disponible !== false);
     if (currentUnit?.tipologia) {
       setExpandedTipologia(currentUnit.tipologia);
@@ -95,10 +98,7 @@ export function UnitSelectorModal({
     }
   }, [isOpen, currentUnitId, building.units, shouldReduceMotion]);
 
-  // Estado para prevenir múltiples clics
-  const [isNavigating, setIsNavigating] = useState(false);
-
-  // Manejar selección de unidad - solución simple y directa
+  // Manejar selección de unidad
   const handleUnitSelect = useCallback((unit: Unit) => {
     // Si es la misma unidad, solo cerrar el modal
     if (unit.id === currentUnitId) {
@@ -122,27 +122,23 @@ export function UnitSelectorModal({
       previous_unit_id: currentUnitId,
     });
 
-    // Construir nueva URL con el parámetro unit
+    // Construir nueva URL preservando otros searchParams
     try {
-      const url = new URL(window.location.href);
-      url.searchParams.set("unit", unit.id);
-      const newUrl = url.pathname + url.search;
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("unit", unit.id);
+      const newUrl = `/property/${building.slug}?${params.toString()}`;
       
       // Cerrar modal primero
       onClose();
       
-      // Usar un pequeño delay para asegurar que el modal se cierre antes de navegar
-      setTimeout(() => {
-        // Navegar usando window.location para forzar recarga completa
-        // Esto garantiza que el servidor component se ejecute con los nuevos searchParams
-        window.location.href = newUrl;
-      }, 100);
+      // Navegar usando router.push con scroll: false
+      router.push(newUrl, { scroll: false });
     } catch (error) {
       console.error("Error al navegar a la unidad:", error);
       setIsNavigating(false);
       onClose();
     }
-  }, [currentUnitId, building, onClose, isNavigating]);
+  }, [currentUnitId, building, searchParams, router, onClose, isNavigating]);
 
   // Manejar cierre con Escape
   useEffect(() => {
@@ -510,5 +506,13 @@ export function UnitSelectorModal({
           document.body
         )}
     </AnimatePresence>
+  );
+}
+
+export function UnitSelectorModal(props: UnitSelectorModalProps) {
+  return (
+    <Suspense fallback={null}>
+      <UnitSelectorModalContent {...props} />
+    </Suspense>
   );
 }

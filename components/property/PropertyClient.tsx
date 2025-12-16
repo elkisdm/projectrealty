@@ -1,11 +1,11 @@
 "use client";
-import React, { useState, useEffect, Suspense, useCallback, startTransition, useRef, useMemo } from "react";
+import React, { useState, useEffect, Suspense, useRef, useMemo, useCallback, startTransition } from "react";
 import { AlertCircle, HelpCircle } from "lucide-react";
 
 import { track, ANALYTICS_EVENTS } from "@lib/analytics";
 import { logger } from "@lib/logger";
 import { buildPropertyWhatsAppUrl } from "@lib/whatsapp";
-import type { Building } from "@schemas/models";
+import type { Building, Unit } from "@schemas/models";
 import { QuintoAndarVisitScheduler } from "@components/flow/QuintoAndarVisitScheduler";
 import { usePropertyUnit } from "@hooks/usePropertyUnit";
 // TODO: Reintegrar cuando esté pulido
@@ -157,13 +157,19 @@ export function PropertyClient({
         return {
             id: 'default',
             tipologia: '2D1B',
+            slug: 'default-unit',
+            codigoUnidad: 'default',
+            buildingId: building.id,
             m2: 50,
             price: building.precio_desde || 290000,
+            disponible: false,
+            dormitorios: 2,
+            banos: 1,
+            garantia: building.precio_desde || 290000,
             estacionamiento: false,
-            bodega: false,
-            disponible: false
-        };
-    }, [building.units, building.precio_desde]);
+            bodega: false
+        } as Unit;
+    }, [building.units, building.precio_desde, building.id]);
 
     // Usar el hook para manejar la l?gica de la unidad
     const {
@@ -179,6 +185,12 @@ export function PropertyClient({
         setIncludeParking,
         setIncludeStorage
     } = usePropertyUnit({ building, defaultUnitId });
+
+    // Si se solicita ver todas las unidades o hay filtro de tipología, mostrar lista de unidades
+    const availableUnits = useMemo(() => 
+        building.units.filter((unit) => unit.disponible),
+        [building.units]
+    );
 
     // Analytics tracking on mount - property view con datos de unidad
     // Usar ref para evitar re-ejecuciones innecesarias
@@ -319,12 +331,6 @@ export function PropertyClient({
         );
     }
 
-    // Si se solicita ver todas las unidades o hay filtro de tipolog?a, mostrar lista de unidades
-    const availableUnits = useMemo(() => 
-        building.units.filter((unit) => unit.disponible),
-        [building.units]
-    );
-
     if (showAllUnits || tipologiaFilter) {
         return (
             <ErrorBoundary>
@@ -365,7 +371,7 @@ export function PropertyClient({
                             {/* Above the fold m?vil optimizado para conversi?n + Galer?a integrada */}
                             <PropertyAboveFoldMobile
                                 building={building}
-                                selectedUnit={selectedUnit || fallbackUnit}
+                                selectedUnit={selectedUnit ?? fallbackUnit}
                                 variant={variant}
                                 onScheduleVisit={() => setIsModalOpen(true)}
                                 onWhatsApp={handleWhatsAppClick}
@@ -491,8 +497,8 @@ export function PropertyClient({
                     listingId={building.id}
                     propertyName={building.name}
                     propertyAddress={building.address}
-                    propertyImage={building.coverImage}
-                    unit={selectedUnit}
+                    propertyImage={(building as { coverImage?: string }).coverImage}
+                    unit={selectedUnit ?? undefined}
                     building={building}
                     onSuccess={(visitData) => {
                         logger.log('✅ Visita creada exitosamente:', visitData);

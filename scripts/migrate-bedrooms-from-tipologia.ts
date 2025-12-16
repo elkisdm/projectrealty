@@ -5,7 +5,7 @@
  * extrayendo estos valores de la tipología (ej: "1D1B" -> bedrooms: 1, bathrooms: 1)
  */
 
-import { createSupabaseClient } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase';
 
 function extractBedroomsFromTipologia(tipologia: string | null): number | null {
   if (!tipologia) return null;
@@ -27,7 +27,7 @@ function extractBathroomsFromTipologia(tipologia: string | null): number | null 
 }
 
 async function migrateBedroomsFromTipologia() {
-  const supabase = createSupabaseClient();
+  const supabase = supabaseAdmin;
   
   console.log('🔍 Buscando unidades con bedrooms o bathrooms null...');
   

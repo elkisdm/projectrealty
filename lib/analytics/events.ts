@@ -24,6 +24,17 @@ export const ANALYTICS_EVENTS = {
   VISIT_SCHEDULED_WHATSAPP_CLICK: 'visit_scheduled_whatsapp_click',
   FORM_SUBMITTED: 'form_submitted',
   
+  // Visit Scheduler
+  VISIT_SCHEDULER_OPENED: 'visit_scheduler_opened',
+  VISIT_SCHEDULER_DATE_SELECTED: 'visit_scheduler_date_selected',
+  VISIT_SCHEDULER_TIME_SELECTED: 'visit_scheduler_time_selected',
+  VISIT_SCHEDULER_QUALIFICATION_ANSWERED: 'visit_scheduler_qualification_answered',
+  VISIT_SCHEDULER_FIELD_STARTED: 'visit_scheduler_field_started',
+  VISIT_SCHEDULER_FIELD_COMPLETED: 'visit_scheduler_field_completed',
+  VISIT_SCHEDULER_ABANDONED: 'visit_scheduler_abandoned',
+  VISIT_SCHEDULER_COMPLETED: 'visit_scheduler_completed',
+  VISIT_SCHEDULER_ERROR: 'visit_scheduler_error',
+  
   // Engagement
   FILTER_APPLIED: 'filter_applied',
   IMAGE_CLICKED: 'image_clicked',

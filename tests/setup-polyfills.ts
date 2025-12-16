@@ -38,3 +38,17 @@ if (typeof global.Request === 'undefined') {
   }
   // Si no están disponibles, los tests de API fallarán con mensaje claro
 }
+
+// Polyfill para TransformStream (necesario para Playwright en Node.js)
+if (typeof global.TransformStream === 'undefined') {
+  if (typeof globalThis.TransformStream !== 'undefined') {
+    global.TransformStream = globalThis.TransformStream;
+  } else {
+    // Fallback básico si no está disponible
+    global.TransformStream = class TransformStream {
+      constructor() {
+        // Implementación mínima para tests
+      }
+    } as any;
+  }
+}

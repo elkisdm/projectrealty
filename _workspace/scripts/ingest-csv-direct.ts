@@ -113,24 +113,6 @@ async function ensureBuilding(
   return (data as { id: string }).id;
 }
 
-// Extraer dormitorios de la tipología si no viene en el CSV
-function extractBedroomsFromTipologia(tipologia: string | null): number | null {
-  if (!tipologia) return null;
-  const tipologiaLower = tipologia.toLowerCase();
-  if (tipologiaLower.includes('estudio') || tipologiaLower.includes('studio')) return 0;
-  const match = tipologia.match(/^(\d+)D/);
-  if (match) return parseInt(match[1], 10);
-  return null;
-}
-
-// Extraer baños de la tipología si no viene en el CSV
-function extractBathroomsFromTipologia(tipologia: string | null): number | null {
-  if (!tipologia) return null;
-  const match = tipologia.match(/(\d+)B$/);
-  if (match) return parseInt(match[1], 10);
-  return null;
-}
-
 async function upsertUnit(
   supabase: SupabaseClient,
   buildingId: string,

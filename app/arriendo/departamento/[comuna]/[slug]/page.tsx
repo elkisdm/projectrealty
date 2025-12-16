@@ -103,7 +103,7 @@ export async function generateMetadata({ params }: UnitPageProps): Promise<Metad
     unit.imagesTipologia?.[0] ||
     unit.imagesAreasComunes?.[0] ||
     building.gallery?.[0] ||
-    building.coverImage ||
+    (building as { coverImage?: string }).coverImage ||
     unit.images?.[0];
 
   return generateUnitMetadata({

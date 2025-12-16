@@ -54,22 +54,23 @@ describe('QuintoAndarVisitScheduler', () => {
         it('debería renderizar el modal cuando está abierto', () => {
             render(<QuintoAndarVisitScheduler {...defaultProps} />);
 
-            expect(screen.getByText('Test Property')).toBeInTheDocument();
+            // El nombre de la propiedad está en sr-only para accesibilidad
+            expect(screen.getByText(/Test Property/i)).toBeInTheDocument();
             expect(screen.getByText('Test Address 123')).toBeInTheDocument();
-            expect(screen.getByText('Selecciona fecha y hora')).toBeInTheDocument();
+            expect(screen.getByText('¿Cuándo quieres visitar esta propiedad?')).toBeInTheDocument();
         });
 
         it('no debería renderizar el modal cuando está cerrado', () => {
             render(<QuintoAndarVisitScheduler {...defaultProps} isOpen={false} />);
 
-            expect(screen.queryByText('Test Property')).not.toBeInTheDocument();
+            expect(screen.queryByText(/Test Property/i)).not.toBeInTheDocument();
         });
 
         it('debería mostrar el paso inicial de selección de fecha', () => {
             render(<QuintoAndarVisitScheduler {...defaultProps} />);
 
-            expect(screen.getByText('Selecciona fecha y hora')).toBeInTheDocument();
-            expect(screen.getByText('Fecha')).toBeInTheDocument();
+            expect(screen.getByText('¿Cuándo quieres visitar esta propiedad?')).toBeInTheDocument();
+            expect(screen.getByText('Elige un día')).toBeInTheDocument();
         });
     });
 
@@ -77,16 +78,18 @@ describe('QuintoAndarVisitScheduler', () => {
         it('debería mostrar botón de continuar en el paso inicial', () => {
             render(<QuintoAndarVisitScheduler {...defaultProps} />);
 
-            expect(screen.getByText('Continuar →')).toBeInTheDocument();
+            // El botón muestra "Completa todas las opciones" cuando no hay selección
+            const button = screen.getByRole('button', { name: /completa todas las opciones|continuar/i });
+            expect(button).toBeInTheDocument();
         });
 
         it('debería mostrar el componente correctamente en el paso inicial', () => {
             render(<QuintoAndarVisitScheduler {...defaultProps} />);
 
             // Verificar que el componente se renderiza correctamente
-            expect(screen.getByText('Test Property')).toBeInTheDocument();
-            expect(screen.getByText('Selecciona fecha y hora')).toBeInTheDocument();
-            expect(screen.getByText('Fecha')).toBeInTheDocument();
+            expect(screen.getByText(/Test Property/i)).toBeInTheDocument();
+            expect(screen.getByText('¿Cuándo quieres visitar esta propiedad?')).toBeInTheDocument();
+            expect(screen.getByText('Elige un día')).toBeInTheDocument();
         });
     });
 
@@ -102,8 +105,9 @@ describe('QuintoAndarVisitScheduler', () => {
             render(<QuintoAndarVisitScheduler {...defaultProps} />);
 
             // Verificar elementos estructurales
-            expect(screen.getByText('Elige el mejor momento para tu visita')).toBeInTheDocument();
-            expect(screen.getByText('1/4')).toBeInTheDocument();
+            expect(screen.getByText('Elige un día')).toBeInTheDocument();
+            // El paso se muestra cuando no es 'selection', pero inicialmente está en 'selection'
+            expect(screen.getByText('¿Cuándo quieres visitar esta propiedad?')).toBeInTheDocument();
         });
     });
 
@@ -112,14 +116,14 @@ describe('QuintoAndarVisitScheduler', () => {
             render(<QuintoAndarVisitScheduler {...defaultProps} />);
 
             // Verificar que el componente se renderiza en el paso inicial
-            expect(screen.getByText('Test Property')).toBeInTheDocument();
-            expect(screen.getByText('Selecciona fecha y hora')).toBeInTheDocument();
+            expect(screen.getByText(/Test Property/i)).toBeInTheDocument();
+            expect(screen.getByText('¿Cuándo quieres visitar esta propiedad?')).toBeInTheDocument();
         });
 
         it('debería tener botón de continuar deshabilitado inicialmente', () => {
             render(<QuintoAndarVisitScheduler {...defaultProps} />);
 
-            const continueButton = screen.getByText('Continuar →');
+            const continueButton = screen.getByRole('button', { name: /completa todas las opciones/i });
             expect(continueButton).toBeDisabled();
         });
     });
@@ -129,8 +133,8 @@ describe('QuintoAndarVisitScheduler', () => {
             render(<QuintoAndarVisitScheduler {...defaultProps} />);
 
             // Verificar que el componente se renderiza correctamente
-            expect(screen.getByText('Test Property')).toBeInTheDocument();
-            expect(screen.getByText('Selecciona fecha y hora')).toBeInTheDocument();
+            expect(screen.getByText(/Test Property/i)).toBeInTheDocument();
+            expect(screen.getByText('¿Cuándo quieres visitar esta propiedad?')).toBeInTheDocument();
         });
     });
 
@@ -138,9 +142,9 @@ describe('QuintoAndarVisitScheduler', () => {
         it('debería mostrar el componente correctamente', () => {
             render(<QuintoAndarVisitScheduler {...defaultProps} />);
 
-            // Verificar que el componente se renderiza correctamente
-            expect(screen.getByText('Test Property')).toBeInTheDocument();
-            expect(screen.getByText('Selecciona fecha y hora')).toBeInTheDocument();
+            // Verificar que el componente se renderiza correctamente en el paso inicial
+            expect(screen.getByText(/Test Property/i)).toBeInTheDocument();
+            expect(screen.getByText('¿Cuándo quieres visitar esta propiedad?')).toBeInTheDocument();
         });
     });
 
@@ -180,14 +184,14 @@ describe('QuintoAndarVisitScheduler', () => {
         it('debería tener botón de cerrar accesible', () => {
             render(<QuintoAndarVisitScheduler {...defaultProps} />);
 
-            const closeButton = screen.getByLabelText('Cerrar');
+            const closeButton = screen.getByLabelText('Cerrar modal');
             expect(closeButton).toBeInTheDocument();
         });
 
         it('debería ser navegable con teclado', () => {
             render(<QuintoAndarVisitScheduler {...defaultProps} />);
 
-            const closeButton = screen.getByLabelText('Cerrar');
+            const closeButton = screen.getByLabelText('Cerrar modal');
             expect(closeButton).toBeInTheDocument();
         });
     });

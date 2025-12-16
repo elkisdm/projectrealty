@@ -240,7 +240,7 @@ export function PropertyPriceBreakdown({
         {onSelectOtherUnit && (
           <button
             onClick={onSelectOtherUnit}
-            className="w-full text-sm text-[#8B6CFF] hover:text-[#7a5ce6] font-medium py-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B6CFF] focus-visible:ring-offset-2 rounded-xl"
+            className="w-full text-sm text-[#8B6CFF] hover:text-[#7a5ce6] font-medium py-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B6CFF] focus-visible:ring-offset-2 rounded-xl mt-4"
             aria-label="Seleccionar otro departamento"
           >
             Selecciona otro departamento

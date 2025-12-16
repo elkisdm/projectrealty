@@ -88,6 +88,12 @@ export interface CreateVisitRequest {
   userId: string;
   channel?: 'whatsapp' | 'web';
   idempotencyKey: string;
+  // Datos de contacto opcionales (se guardan en visit_contacts)
+  contactData?: {
+    name: string;
+    phone: string;
+    email?: string;
+  };
 }
 
 export interface CreateVisitResponse {
@@ -141,10 +147,26 @@ export const TIME_SLOTS_30MIN = [
   '18:00', '18:30', '19:00', '19:30', '20:00'
 ];
 
+/**
+ * Horarios operacionales para agendamiento de visitas
+ * - Inicio: 9:00 AM
+ * - Fin: 20:00 PM (8:00 PM)
+ */
 export const OPERATIONAL_HOURS = {
   start: 9, // 9:00 AM
   end: 20   // 8:00 PM
 };
+
+/**
+ * Días disponibles para agendamiento
+ * - Disponibles: Lunes (1) a Sábado (6)
+ * - No disponibles: Domingo (0)
+ * - Nota: Los domingos no tienen horarios disponibles, pero se puede agendar para otros días
+ */
+export const AVAILABLE_DAYS = {
+  min: 1, // Lunes
+  max: 6  // Sábado
+} as const;
 
 // Utilidades para RFC 3339
 export const formatRFC3339 = (date: Date, timezone: string = 'America/Santiago'): string => {

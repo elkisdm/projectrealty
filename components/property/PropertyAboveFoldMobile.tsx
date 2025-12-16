@@ -67,9 +67,9 @@ interface PropertyAboveFoldMobileProps {
     variant?: "catalog" | "marketing" | "admin";
     onScheduleVisit: () => void;
     onWhatsApp?: () => void;
+    onSelectOtherUnit?: () => void;
     onSave?: () => void;
     onShare?: () => void;
-    onSelectOtherUnit?: () => void;
 }
 
 export function PropertyAboveFoldMobile({
@@ -78,9 +78,9 @@ export function PropertyAboveFoldMobile({
     variant = "catalog",
     onScheduleVisit,
     onWhatsApp,
+    onSelectOtherUnit,
     onSave,
-    onShare,
-    onSelectOtherUnit
+    onShare
 }: PropertyAboveFoldMobileProps) {
     const [isSaved, setIsSaved] = useState(false);
     const [activeImageIndex, setActiveImageIndex] = useState(0);

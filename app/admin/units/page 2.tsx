@@ -265,7 +265,7 @@ export default function UnitsAdminPage() {
 
       fetchUnits();
     } catch (err) {
-      throw err;
+      alert(err instanceof Error ? err.message : "Error desconocido al importar");
     }
   };
 

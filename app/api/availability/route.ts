@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createRateLimiter } from '@lib/rate-limit';
 import { logger } from '@lib/logger';
+import { supabaseAdmin } from '@lib/supabase';
 import { 
   AvailabilityResponse, 
   VisitSlot, 
@@ -25,9 +26,9 @@ const generateMockSlots = (listingId: string, startDate: Date, endDate: Date): V
   const currentDate = new Date(startDate);
   
   while (currentDate <= endDate) {
-    // Solo generar slots para días laborales (lunes a viernes)
+    // Solo generar slots para días laborales (lunes a sábado, excluyendo domingos)
     const dayOfWeek = currentDate.getDay();
-    if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+    if (dayOfWeek >= 1 && dayOfWeek <= 6) {
       
       TIME_SLOTS_30MIN.forEach(time => {
         const [hours, minutes] = time.split(':').map(Number);
@@ -125,8 +126,48 @@ export async function GET(request: NextRequest) {
       );
     }
     
-    // Generar slots disponibles (en producción consultar base de datos)
-    const slots = generateMockSlots(listingId, startDate, endDate);
+    // Determinar si usar Supabase o mock
+    const USE_SUPABASE = process.env.USE_SUPABASE === 'true';
+    
+    let slots: VisitSlot[];
+    
+    if (USE_SUPABASE && supabaseAdmin) {
+      // Consultar slots desde Supabase
+      try {
+        const { data: dbSlots, error } = await supabaseAdmin
+          .from('visit_slots')
+          .select('*')
+          .eq('listing_id', listingId)
+          .eq('status', 'open')
+          .gte('start_time', startDate.toISOString())
+          .lte('start_time', endDate.toISOString())
+          .order('start_time', { ascending: true });
+
+        if (error) {
+          logger.error('❌ Error consultando slots en Supabase:', error);
+          // Fallback a mock si hay error
+          slots = generateMockSlots(listingId, startDate, endDate);
+        } else {
+          // Convertir slots de BD a formato VisitSlot
+          slots = (dbSlots || []).map(dbSlot => ({
+            id: dbSlot.id,
+            listingId: dbSlot.listing_id,
+            startTime: dbSlot.start_time,
+            endTime: dbSlot.end_time,
+            status: dbSlot.status as VisitSlot['status'],
+            source: dbSlot.source as VisitSlot['source'],
+            createdAt: dbSlot.created_at
+          }));
+        }
+      } catch (error) {
+        logger.error('❌ Error en consulta Supabase:', error);
+        // Fallback a mock
+        slots = generateMockSlots(listingId, startDate, endDate);
+      }
+    } else {
+      // Usar mock para desarrollo
+      slots = generateMockSlots(listingId, startDate, endDate);
+    }
     
     // Filtrar solo slots abiertos
     const availableSlots = slots.filter(slot => slot.status === 'open');

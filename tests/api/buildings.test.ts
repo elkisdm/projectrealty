@@ -2,15 +2,28 @@
  * @jest-environment node
  */
 
-import { describe, test, expect, beforeEach, jest } from '@jest/globals';
-import { NextRequest } from 'next/server';
-import { GET } from '@/app/api/buildings/route';
-import { SearchFiltersSchema, BuildingsResponse, UnitSchema } from '@/schemas/models';
-import type { Unit } from '@/schemas/models';
+// Mock de módulos que el processor usa internamente para evitar inicialización real
+jest.mock('@/lib/tremendo-units-processor', () => ({
+  getTremendoUnitsProcessor: jest.fn().mockResolvedValue({
+    getTremendoBuildings: jest.fn().mockReturnValue([]),
+    getTremendoCondominios: jest.fn().mockReturnValue([]),
+  }),
+}));
 
-// Mock del processor
+jest.mock('@/lib/supabase.mock', () => ({
+  createMockSupabaseClient: jest.fn(() => ({
+    from: jest.fn(() => ({
+      select: jest.fn().mockReturnThis(),
+      order: jest.fn().mockResolvedValue({ data: [], error: null }),
+    })),
+  })),
+}));
+
+// Mock del processor - DEBE estar antes de cualquier import que use el processor
+let mockGetUnits: jest.Mock;
+
 jest.mock('@/lib/supabase-data-processor', () => {
-  const mockUnit: Unit = {
+  const mockUnit = {
     id: 'unit-123',
     slug: 'edificio-test-unidad-123',
     codigoUnidad: '101',
@@ -24,17 +37,47 @@ jest.mock('@/lib/supabase-data-processor', () => {
     gastoComun: 50000,
   };
 
-  const mockGetUnits = jest.fn().mockResolvedValue({
+  const mockGetUnitsFn = jest.fn().mockResolvedValue({
     units: [mockUnit],
     total: 1,
     hasMore: false,
   });
 
+  // Mock completo que evita cualquier inicialización real
+  // IMPORTANTE: El mock debe retornar inmediatamente sin ejecutar código real
   return {
     getSupabaseProcessor: jest.fn().mockResolvedValue({
-      getUnits: mockGetUnits,
+      getUnits: mockGetUnitsFn,
+      // Mockear otros métodos que puedan ser llamados
+      getUnitBySlug: jest.fn().mockResolvedValue(null),
+      getBuildings: jest.fn().mockResolvedValue([]),
+      // Evitar que se llame loadDataFromSupabase
+      isInitialized: true,
     }),
+    SupabaseDataProcessor: jest.fn().mockImplementation(() => {
+      // Constructor mock que no hace nada - evita cualquier inicialización
+      return {
+        getUnits: mockGetUnitsFn,
+        getUnitBySlug: jest.fn().mockResolvedValue(null),
+        getBuildings: jest.fn().mockResolvedValue([]),
+        isInitialized: true,
+      };
+    }),
+    __mockGetUnits: mockGetUnitsFn,
   };
+});
+
+import { describe, test, expect, beforeEach, jest, beforeAll } from '@jest/globals';
+import { NextRequest } from 'next/server';
+// Importar GET después de que los mocks estén configurados
+import { GET } from '@/app/api/buildings/route';
+import { SearchFiltersSchema, BuildingsResponse, UnitSchema } from '@/schemas/models';
+import type { Unit } from '@/schemas/models';
+
+// Obtener referencia al mock después de que jest.mock se ejecute
+beforeAll(() => {
+  const processorModule = require('@/lib/supabase-data-processor');
+  mockGetUnits = processorModule.__mockGetUnits;
 });
 
 // Mock del rate limiter - por defecto permite todas las requests
@@ -44,7 +87,7 @@ jest.mock('@lib/rate-limit', () => ({
   })),
 }));
 
-// Mock del logger
+// Mock del logger - debe estar antes de cualquier import
 jest.mock('@lib/logger', () => ({
   logger: {
     log: jest.fn(),
@@ -56,6 +99,39 @@ jest.mock('@lib/logger', () => ({
 describe('GET /api/buildings', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Resetear el mock para que retorne datos por defecto
+    if (mockGetUnits) {
+      mockGetUnits.mockResolvedValue({
+        units: [{
+          id: 'unit-123',
+          slug: 'edificio-test-unidad-123',
+          codigoUnidad: '101',
+          buildingId: 'building-456',
+          tipologia: 'Estudio',
+          price: 500000,
+          disponible: true,
+          dormitorios: 1,
+          banos: 1,
+          garantia: 500000,
+          gastoComun: 50000,
+        }],
+        total: 1,
+        hasMore: false,
+      });
+    }
+  });
+
+  test('mock está funcionando correctamente', async () => {
+    const { getSupabaseProcessor } = await import('@/lib/supabase-data-processor');
+    const processor = await getSupabaseProcessor();
+    expect(processor).toBeDefined();
+    expect(processor.getUnits).toBeDefined();
+    expect(typeof processor.getUnits).toBe('function');
+    
+    const result = await processor.getUnits({}, 1, 12);
+    expect(result).toBeDefined();
+    expect(result.units).toBeDefined();
+    expect(Array.isArray(result.units)).toBe(true);
   });
 
   const createRequest = (searchParams: Record<string, string> = {}) => {
@@ -71,6 +147,14 @@ describe('GET /api/buildings', () => {
       const request = createRequest();
       const response = await GET(request);
       const data = await response.json() as BuildingsResponse;
+      
+      if (response.status !== 200) {
+        // Imprimir el error completo para debugging
+        console.error('=== ERROR DEBUG ===');
+        console.error('Status:', response.status);
+        console.error('Response data:', JSON.stringify(data, null, 2));
+        console.error('==================');
+      }
 
       expect(response.status).toBe(200);
       expect(data).toHaveProperty('units');
