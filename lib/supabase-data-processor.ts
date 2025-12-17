@@ -639,12 +639,19 @@ class SupabaseDataProcessor {
     
     const units = paginatedData;
 
-    // Mapear a formato Unit
-    const mappedUnits = units.map((unitRow) => {
-      const building = unitRow.buildings;
-      if (!building) {
-        throw new Error(`Unidad ${unitRow.id} no tiene building asociado`);
-      }
+    // Mapear a formato Unit, filtrando unidades sin building
+    const mappedUnits = units
+      .filter((unitRow) => {
+        if (!unitRow.buildings) {
+          // En lugar de lanzar error, filtrar silenciosamente unidades sin building
+          // Esto puede pasar con datos mock o datos inconsistentes
+          console.warn(`[SupabaseDataProcessor] Unidad ${unitRow.id} no tiene building asociado, omitiendo`);
+          return false;
+        }
+        return true;
+      })
+      .map((unitRow) => {
+      const building = unitRow.buildings!; // Safe porque ya filtramos arriba
 
       // Generar slug de unidad: building-slug-codigoUnidad (usar código de unidad si está disponible)
       const rowWithFields = unitRow as UnitRowWithFields;

@@ -127,11 +127,35 @@ async function readFromSupabase(): Promise<Building[]> {
     const buildings: Building[] = buildingsWithUnits
       .filter((building: unknown) => {
         // Filtrar edificios que no tienen los datos mínimos requeridos
-        const b = building as { id?: string; name?: string };
+        const b = building as { id?: string; name?: string; units?: unknown[] };
         if (!b.id || !b.name || typeof b.name !== 'string' || b.name.trim() === '') {
           logger.warn(`[readFromSupabase] Skipping building with invalid id or name: ${JSON.stringify({ id: b.id, name: b.name })}`);
           return false;
         }
+        
+        // Verificar que tenga al menos una unidad válida
+        const units = b.units || [];
+        if (!Array.isArray(units) || units.length === 0) {
+          return false;
+        }
+        
+        const hasValidUnit = units.some((u: unknown) => {
+          if (typeof u !== 'object' || u === null) return false;
+          const unit = u as { id?: string; tipologia?: string; price?: number };
+          return unit.id && 
+                 unit.tipologia && 
+                 typeof unit.tipologia === 'string' && 
+                 unit.price !== null && 
+                 unit.price !== undefined && 
+                 typeof unit.price === 'number' && 
+                 unit.price > 0;
+        });
+        
+        if (!hasValidUnit) {
+          logger.warn(`[readFromSupabase] Building ${b.name || b.id} has no valid units, skipping`);
+          return false;
+        }
+        
         return true;
       })
       .map((building: unknown) => {
@@ -175,11 +199,6 @@ async function readFromSupabase(): Promise<Building[]> {
         }
         return true;
       });
-      
-      // Si no hay unidades válidas, este edificio no se incluirá (ya filtrado arriba)
-      if (validUnits.length === 0) {
-        logger.warn(`[readFromSupabase] Building ${b.name || b.id} has no valid units, will be skipped`);
-      }
       
       // Calcular precio_desde y precio_hasta desde las unidades válidas
       const availableUnits = validUnits.filter(u => u.disponible !== false);
