@@ -642,10 +642,16 @@ class SupabaseDataProcessor {
     // Mapear a formato Unit, filtrando unidades sin building
     const mappedUnits = units
       .filter((unitRow) => {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/bf5372fb-b70d-4713-b992-51094d7d9401',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/supabase-data-processor.ts:643',message:'Checking unit building association',data:{unitId:unitRow.id,hasBuilding:!!unitRow.buildings,buildingId:unitRow.buildings?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+        // #endregion
         if (!unitRow.buildings) {
           // En lugar de lanzar error, filtrar silenciosamente unidades sin building
           // Esto puede pasar con datos mock o datos inconsistentes
           console.warn(`[SupabaseDataProcessor] Unidad ${unitRow.id} no tiene building asociado, omitiendo`);
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/bf5372fb-b70d-4713-b992-51094d7d9401',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/supabase-data-processor.ts:648',message:'Unit filtered - no building',data:{unitId:unitRow.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+          // #endregion
           return false;
         }
         return true;

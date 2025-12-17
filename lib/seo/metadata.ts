@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { extractFloorNumber } from "@/lib/utils/unit";
 
 /**
  * Utilidades para generar metadata SEO consistente
@@ -103,6 +104,7 @@ export function generateUnitMetadata({
   slug,
   comunaSlug,
   image,
+  codigoUnidad,
 }: {
   tipologia: string;
   comuna: string;
@@ -112,9 +114,21 @@ export function generateUnitMetadata({
   slug: string;
   comunaSlug: string;
   image?: string;
+  codigoUnidad?: string;
 }): Metadata {
   const tipologiaLabel = tipologia === "Studio" || tipologia === "Estudio" ? "Estudio" : tipologia;
-  const title = `${tipologiaLabel} en Arriendo en ${comuna} | 0% Comisión`;
+  
+  // Extraer piso del código de unidad si está disponible
+  const floorNumber = codigoUnidad ? extractFloorNumber(codigoUnidad) : null;
+  
+  // Construir título con formato: "Departamento de [tipologia] en [Comuna] - Piso [X]"
+  let title: string;
+  if (floorNumber !== null) {
+    title = `Departamento de ${tipologiaLabel} en ${comuna} - Piso ${floorNumber} | 0% Comisión`;
+  } else {
+    title = `${tipologiaLabel} en Arriendo en ${comuna} | 0% Comisión`;
+  }
+  
   const description = `Arrienda ${tipologiaLabel} en ${comuna} sin comisión de corretaje. ${dormitorios} dormitorio${dormitorios > 1 ? "s" : ""}, ${banos} baño${banos > 1 ? "s" : ""}. Precio: $${price.toLocaleString("es-CL")}.`;
 
   return generateBaseMetadata({

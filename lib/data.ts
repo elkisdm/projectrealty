@@ -126,22 +126,35 @@ async function readFromSupabase(): Promise<Building[]> {
     // Transformar los datos al formato esperado
     const buildings: Building[] = buildingsWithUnits
       .filter((building: unknown) => {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/bf5372fb-b70d-4713-b992-51094d7d9401',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/data.ts:128',message:'Filtering building before transform',data:{buildingId:(building as any)?.id,buildingName:(building as any)?.name,unitsCount:Array.isArray((building as any)?.units)?(building as any).units.length:0},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
+        
         // Filtrar edificios que no tienen los datos mínimos requeridos
         const b = building as { id?: string; name?: string; units?: unknown[] };
         if (!b.id || !b.name || typeof b.name !== 'string' || b.name.trim() === '') {
           logger.warn(`[readFromSupabase] Skipping building with invalid id or name: ${JSON.stringify({ id: b.id, name: b.name })}`);
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/bf5372fb-b70d-4713-b992-51094d7d9401',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/data.ts:132',message:'Building filtered out - invalid id/name',data:{id:b.id,name:b.name,idType:typeof b.id,nameType:typeof b.name},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+          // #endregion
           return false;
         }
         
         // Verificar que tenga al menos una unidad válida
         const units = b.units || [];
         if (!Array.isArray(units) || units.length === 0) {
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/bf5372fb-b70d-4713-b992-51094d7d9401',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/data.ts:140',message:'Building filtered out - no units',data:{buildingId:b.id,buildingName:b.name,unitsCount:units.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+          // #endregion
           return false;
         }
         
         const hasValidUnit = units.some((u: unknown) => {
           if (typeof u !== 'object' || u === null) return false;
           const unit = u as { id?: string; tipologia?: string; price?: number };
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/bf5372fb-b70d-4713-b992-51094d7d9401',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/data.ts:145',message:'Checking unit validity',data:{unitId:unit.id,tipologia:unit.tipologia,price:unit.price,priceType:typeof unit.price},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+          // #endregion
           return unit.id && 
                  unit.tipologia && 
                  typeof unit.tipologia === 'string' && 
@@ -153,12 +166,18 @@ async function readFromSupabase(): Promise<Building[]> {
         
         if (!hasValidUnit) {
           logger.warn(`[readFromSupabase] Building ${b.name || b.id} has no valid units, skipping`);
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/bf5372fb-b70d-4713-b992-51094d7d9401',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/data.ts:155',message:'Building filtered out - no valid units',data:{buildingId:b.id,buildingName:b.name,unitsCount:units.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+          // #endregion
           return false;
         }
         
         return true;
       })
       .map((building: unknown) => {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/bf5372fb-b70d-4713-b992-51094d7d9401',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/data.ts:161',message:'Transforming building',data:{buildingId:(building as any)?.id,buildingName:(building as any)?.name},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
       const b = building as {
         id: string;
         slug?: string;
@@ -186,15 +205,27 @@ async function readFromSupabase(): Promise<Building[]> {
       
       // Filtrar unidades inválidas antes de procesarlas
       const validUnits = (b.units || []).filter(u => {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/bf5372fb-b70d-4713-b992-51094d7d9401',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/data.ts:188',message:'Filtering unit before processing',data:{unitId:u.id,tipologia:u.tipologia,price:u.price,priceType:typeof u.price},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+        // #endregion
         // Filtrar unidades sin ID, sin tipología válida, o con precio inválido
         if (!u.id || typeof u.id !== 'string' || u.id.trim() === '') {
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/bf5372fb-b70d-4713-b992-51094d7d9401',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/data.ts:191',message:'Unit filtered - invalid id',data:{unitId:u.id,idType:typeof u.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+          // #endregion
           return false;
         }
         if (!u.tipologia || typeof u.tipologia !== 'string') {
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/bf5372fb-b70d-4713-b992-51094d7d9401',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/data.ts:195',message:'Unit filtered - invalid tipologia',data:{unitId:u.id,tipologia:u.tipologia,tipologiaType:typeof u.tipologia},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+          // #endregion
           return false;
         }
         // Filtrar unidades con precio inválido (null, undefined, 0 o negativo)
         if (u.price === null || u.price === undefined || typeof u.price !== 'number' || u.price <= 0) {
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/bf5372fb-b70d-4713-b992-51094d7d9401',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/data.ts:199',message:'Unit filtered - invalid price',data:{unitId:u.id,price:u.price,priceType:typeof u.price},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+          // #endregion
           return false;
         }
         return true;
@@ -222,7 +253,7 @@ async function readFromSupabase(): Promise<Building[]> {
           : ['/images/default-building.jpg'];
       }
       
-      return {
+      const buildingResult = {
         id: b.id,
         slug: b.slug || `edificio-${b.id}`,
         name: b.name.trim(), // Asegurar que name esté definido y no vacío
@@ -256,6 +287,9 @@ async function readFromSupabase(): Promise<Building[]> {
           
           // Normalizar tipología antes de crear la unidad
           const normalizedTipologia = normalizeTipologia(u.tipologia || '1D1B');
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/bf5372fb-b70d-4713-b992-51094d7d9401',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/data.ts:258',message:'Normalizing tipologia',data:{originalTipologia:u.tipologia,normalizedTipologia},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+          // #endregion
           
           // Usar helper para crear Unit completo
           return normalizeUnit(
@@ -279,19 +313,33 @@ async function readFromSupabase(): Promise<Building[]> {
           );
         })
       };
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/bf5372fb-b70d-4713-b992-51094d7d9401',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/data.ts:281',message:'Building transformed before validation',data:{buildingId:buildingResult.id,buildingName:buildingResult.name,unitsCount:buildingResult.units.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
+      return buildingResult;
     });
 
     // Validar los edificios
     const validatedBuildings: Building[] = [];
     
     for (let i = 0; i < buildings.length; i++) {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/bf5372fb-b70d-4713-b992-51094d7d9401',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/data.ts:287',message:'Validating building',data:{buildingId:buildings[i]?.id,buildingName:buildings[i]?.name,unitsCount:buildings[i]?.units?.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
       try {
         const validated = validateBuilding(buildings[i]);
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/bf5372fb-b70d-4713-b992-51094d7d9401',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/data.ts:289',message:'Building validation passed',data:{buildingId:validated.id,buildingName:validated.name},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
         validatedBuildings.push(validated);
       } catch (error) {
         // Log detallado del error de validación
         const buildingName = buildings[i]?.name || buildings[i]?.id || 'unknown';
         const buildingId = buildings[i]?.id || 'unknown';
+        
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/bf5372fb-b70d-4713-b992-51094d7d9401',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/data.ts:295',message:'Building validation failed',data:{buildingId,buildingName,errorMessage:error instanceof Error?error.message:String(error),buildingData:JSON.stringify(buildings[i])},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
         
         if (error && typeof error === 'object' && 'issues' in error) {
           const zodError = error as { issues: Array<{ path: string[]; message: string }> };
@@ -299,6 +347,9 @@ async function readFromSupabase(): Promise<Building[]> {
             `${issue.path.join('.')}: ${issue.message}`
           ).join(', ');
           logger.error(`[readFromSupabase] Building ${buildingName} (id: ${buildingId}) failed validation: ${errorDetails}`);
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/bf5372fb-b70d-4713-b992-51094d7d9401',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/data.ts:301',message:'Zod validation errors',data:{buildingId,buildingName,errors:zodError.issues.map(i=>({path:i.path,message:i.message}))},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+          // #endregion
         } else if (error instanceof Error) {
           logger.error(`[readFromSupabase] Building ${buildingName} (id: ${buildingId}) failed validation: ${error.message}`);
         } else {
@@ -334,7 +385,13 @@ async function readFromSupabase(): Promise<Building[]> {
 
 // Función para normalizar tipologías de formato "1D/1B" a "1D1B"
 function normalizeTipologia(tipologia: string): string {
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/bf5372fb-b70d-4713-b992-51094d7d9401',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/data.ts:336',message:'Normalizing tipologia - input',data:{tipologia,tipologiaType:typeof tipologia},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+  // #endregion
   if (!tipologia || typeof tipologia !== 'string') {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/bf5372fb-b70d-4713-b992-51094d7d9401',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/data.ts:339',message:'Normalizing tipologia - invalid input, using default',data:{tipologia,tipologiaType:typeof tipologia,default:'1D1B'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
     return '1D1B'; // Default si es inválido
   }
   
@@ -345,6 +402,9 @@ function normalizeTipologia(tipologia: string): string {
     .trim();
   
   if (!normalized) {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/bf5372fb-b70d-4713-b992-51094d7d9401',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/data.ts:349',message:'Normalizing tipologia - empty after normalize, using default',data:{originalTipologia:tipologia,normalized,default:'1D1B'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
     return '1D1B'; // Default si está vacío después de normalizar
   }
   
@@ -352,7 +412,11 @@ function normalizeTipologia(tipologia: string): string {
   const validFormats = ['Studio', 'Estudio', '1D1B', '2D1B', '2D2B', '3D2B'];
   if (validFormats.includes(normalized)) {
     // Mapear "Estudio" a "Studio"
-    return normalized === 'Estudio' ? 'Studio' : normalized;
+    const result = normalized === 'Estudio' ? 'Studio' : normalized;
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/bf5372fb-b70d-4713-b992-51094d7d9401',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/data.ts:355',message:'Normalizing tipologia - valid format found',data:{originalTipologia:tipologia,normalized,result},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
+    return result;
   }
   
   // Intentar convertir formatos comunes
@@ -370,7 +434,11 @@ function normalizeTipologia(tipologia: string): string {
   };
   
   const lower = normalized.toLowerCase();
-  return conversions[lower] || '1D1B'; // Default a 1D1B si no se puede convertir
+  const result = conversions[lower] || '1D1B'; // Default a 1D1B si no se puede convertir
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/bf5372fb-b70d-4713-b992-51094d7d9401',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/data.ts:373',message:'Normalizing tipologia - conversion result',data:{originalTipologia:tipologia,normalized,lower,result,foundInConversions:!!conversions[lower]},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+  // #endregion
+  return result;
 }
 
 // Función para leer desde mocks

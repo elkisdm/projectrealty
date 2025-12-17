@@ -113,6 +113,7 @@ export async function generateMetadata({ params }: UnitPageProps): Promise<Metad
     slug,
     comunaSlug: comuna,
     image: primaryImage,
+    codigoUnidad: unit.codigoUnidad,
   });
 }
 

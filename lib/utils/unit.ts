@@ -31,6 +31,34 @@ export function extractDormitoriosFromTipologia(tipologia: string): number {
 }
 
 /**
+ * Extrae el número de piso del código de unidad
+ * Ejemplos: "2204" -> 22, "301" -> 3, "1205" -> 12
+ * @param unitCode - Código de la unidad (ej: "2204", "301", "A-1205")
+ * @returns Número de piso o null si no se puede extraer
+ */
+export function extractFloorNumber(unitCode: string): number | null {
+  if (!unitCode) return null;
+  
+  // Remover caracteres no numéricos
+  const numericCode = unitCode.replace(/\D/g, '');
+  if (!numericCode || numericCode.length < 2) return null;
+  
+  // Intentar extraer piso desde los primeros 2 dígitos (patrón más común: XXYY)
+  // Para códigos como 2201, 301, 1205, etc.
+  if (numericCode.length >= 4) {
+    // 4+ dígitos: tomar primeros 2 como piso (2201 -> 22)
+    const floor = parseInt(numericCode.substring(0, 2), 10);
+    if (floor > 0 && floor <= 99) return floor;
+  } else if (numericCode.length === 3) {
+    // 3 dígitos: tomar primer 1 como piso (301 -> 3)
+    const floor = parseInt(numericCode.substring(0, 1), 10);
+    if (floor > 0 && floor <= 9) return floor;
+  }
+  
+  return null;
+}
+
+/**
  * Crea un objeto Unit completo con valores por defecto para campos requeridos
  * 
  * @param partial - Objeto parcial de Unit con los campos disponibles
