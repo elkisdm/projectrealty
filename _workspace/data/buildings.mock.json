@@ -1,0 +1,26 @@
+[
+  {
+    "id": "bldg-001",
+    "title": "Edificio Mirador de La Florida",
+    "area": "La Florida",
+    "tipology": "1D/1B, 2D/2B, Studio",
+    "slug": "edificio-mirador-la-florida",
+    "image": "/images/mirador-cover.jpg"
+  },
+  {
+    "id": "bldg-002", 
+    "title": "Parque Ñuñoa Residence",
+    "area": "Ñuñoa",
+    "tipology": "1D/1B, 2D/1B",
+    "slug": "parque-nunoa-residence",
+    "image": "/images/nunoa-cover.jpg"
+  },
+  {
+    "id": "bldg-003",
+    "title": "Sky Alto Las Condes",
+    "area": "Las Condes", 
+    "tipology": "Studio, 1D/1B",
+    "slug": "sky-alto-las-condes",
+    "image": "/images/lascondes-cover.jpg"
+  }
+]

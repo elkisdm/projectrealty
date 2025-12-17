@@ -5,6 +5,7 @@ import { normalizeComunaSlug } from "@/lib/utils/slug";
 import { generateUnitMetadata, getBaseUrl } from "@/lib/seo/metadata";
 import { generateUnitBreadcrumbs } from "@/lib/seo/breadcrumbs";
 import { safeJsonLd } from "@/lib/seo/jsonld";
+import { getSupabaseProcessor } from "@/lib/supabase-data-processor";
 import { UnitDetailClient } from "./UnitDetailClient";
 
 type UnitPageProps = {
@@ -20,32 +21,32 @@ export const revalidate = 3600; // 1 hour
 export default async function UnitPage({ params }: UnitPageProps) {
   const { comuna, slug } = await params;
 
-  // Obtener unidad desde la API
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || "http://localhost:3000";
+  // Obtener unidad directamente usando el processor (más eficiente que fetch interno)
   let unitData: UnitDetailResponse;
 
   try {
-    const response = await fetch(`${baseUrl}/api/buildings/${slug}`, {
-      next: { revalidate: 3600 },
-    });
+    const processor = await getSupabaseProcessor();
+    const result = await processor.getUnitBySlug(slug);
 
-    if (!response.ok) {
-      if (response.status === 404) {
-        notFound();
-      }
-      throw new Error(`API error: ${response.status}`);
+    if (!result) {
+      notFound();
     }
 
-    unitData = await response.json();
-  } catch (error) {
-    console.error('Error fetching unit:', error);
-    notFound();
-  }
+    // Mapear al formato esperado por UnitDetailResponse
+    unitData = {
+      unit: result.unit,
+      building: result.building,
+      ...(result.similarUnits && result.similarUnits.length > 0 && { similarUnits: result.similarUnits }),
+    };
 
-  // Verificar que la comuna coincida
-  const normalizedComuna = normalizeComunaSlug(unitData.building.comuna);
-  if (normalizedComuna !== comuna) {
-    // Redirigir a la URL correcta si la comuna no coincide
+    // Verificar que la comuna coincida
+    const normalizedComuna = normalizeComunaSlug(unitData.building.comuna);
+    if (normalizedComuna !== comuna) {
+      // La comuna no coincide, redirigir o mostrar 404
+      notFound();
+    }
+  } catch (error) {
+    console.error('[UnitPage] Error fetching unit:', error);
     notFound();
   }
 
@@ -75,19 +76,22 @@ export default async function UnitPage({ params }: UnitPageProps) {
 export async function generateMetadata({ params }: UnitPageProps): Promise<Metadata> {
   const { comuna, slug } = await params;
 
-  const baseUrl = getBaseUrl();
   let unitData: UnitDetailResponse | null = null;
 
   try {
-    const response = await fetch(`${baseUrl}/api/buildings/${slug}`, {
-      next: { revalidate: 3600 },
-    });
+    const processor = await getSupabaseProcessor();
+    const result = await processor.getUnitBySlug(slug);
 
-    if (response.ok) {
-      unitData = await response.json();
+    if (result) {
+      unitData = {
+        unit: result.unit,
+        building: result.building,
+        ...(result.similarUnits && result.similarUnits.length > 0 && { similarUnits: result.similarUnits }),
+      };
     }
   } catch (error) {
     // Si falla, usar metadata genérica
+    console.error('Error fetching unit metadata:', error);
   }
 
   if (!unitData) {

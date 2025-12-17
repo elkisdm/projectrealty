@@ -14,10 +14,10 @@ const rateLimiter = createRateLimiter({ windowMs: 60_000, max: 60 });
  * 
  * Query params:
  * - q?: string - Búsqueda por texto
- * - comuna?: string - Filtro por comuna
+ * - comuna?: string | string[] - Filtro por comuna (soporta multiselección con comas)
  * - precioMin?: number - Precio mínimo
  * - precioMax?: number - Precio máximo
- * - dormitorios?: number - Cantidad de dormitorios
+ * - dormitorios?: number | string | string[] - Cantidad de dormitorios ("Estudio", "1", "2", "3" o número, soporta multiselección con comas)
  * - page?: number - Página (default: 1)
  * - limit?: number - Límite por página (default: 12, max: 100)
  * 
@@ -58,12 +58,50 @@ export async function GET(request: NextRequest) {
 
     // Obtener y validar query params con Zod
     const { searchParams } = new URL(request.url);
+    
+    // Manejar dormitorios que puede ser string, array de strings, o número
+    const dormitoriosParam = searchParams.get('dormitorios');
+    let dormitorios: string | string[] | number | undefined = undefined;
+    
+    if (dormitoriosParam && dormitoriosParam.trim()) {
+      const trimmed = dormitoriosParam.trim();
+      // Si contiene comas, es un array
+      if (trimmed.includes(',')) {
+        const parts = trimmed.split(',').map(d => d.trim()).filter(d => d.length > 0);
+        dormitorios = parts.length > 0 ? parts : undefined;
+      } else {
+        // Intentar parsear como número solo si es puramente numérico
+        const parsed = parseInt(trimmed, 10);
+        // Solo usar el número si el string original es exactamente el número parseado
+        // Esto evita que "Estudio" se convierta en NaN
+        if (!isNaN(parsed) && trimmed === parsed.toString()) {
+          dormitorios = parsed;
+        } else {
+          // Es un string como "Estudio", "1", "2", "3"
+          dormitorios = trimmed;
+        }
+      }
+    }
+    
+    // Manejar comuna: puede ser string o array (comma-separated)
+    const comunaParam = searchParams.get('comuna');
+    let comuna: string | string[] | undefined = undefined;
+    if (comunaParam && comunaParam.trim()) {
+      const trimmed = comunaParam.trim();
+      if (trimmed.includes(',')) {
+        const parts = trimmed.split(',').map(c => c.trim()).filter(c => c.length > 0);
+        comuna = parts.length > 0 ? parts : undefined;
+      } else {
+        comuna = trimmed;
+      }
+    }
+    
     const queryParams = {
-      q: searchParams.get('q') || undefined,
-      comuna: searchParams.get('comuna') || undefined,
+      q: searchParams.get('q')?.trim() || undefined,
+      comuna,
       precioMin: searchParams.get('precioMin') ? parseInt(searchParams.get('precioMin') || '0', 10) : undefined,
       precioMax: searchParams.get('precioMax') ? parseInt(searchParams.get('precioMax') || '0', 10) : undefined,
-      dormitorios: searchParams.get('dormitorios') ? parseInt(searchParams.get('dormitorios') || '0', 10) : undefined,
+      dormitorios,
       page: searchParams.get('page') ? parseInt(searchParams.get('page') || '1', 10) : undefined,
       limit: searchParams.get('limit') ? parseInt(searchParams.get('limit') || '12', 10) : undefined,
     };

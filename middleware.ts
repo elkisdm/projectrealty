@@ -1,9 +1,36 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { isAuthenticatedAdmin } from "@lib/admin/auth-middleware";
 import { validateAdminRedirect } from "@lib/admin/validate-redirect";
-import { readFileSync } from "fs";
-import { join } from "path";
+import { featureFlags } from "./config/feature-flags";
+
+// Función de autenticación compatible con Edge Runtime
+function isAuthenticatedAdmin(request: NextRequest): boolean {
+  const adminToken = process.env.ADMIN_TOKEN;
+  
+  // En desarrollo, si no hay token configurado, permitir acceso
+  if (process.env.NODE_ENV === "development" && !adminToken) {
+    return true;
+  }
+  
+  // Si no hay token configurado en producción, denegar acceso
+  if (!adminToken) {
+    return false;
+  }
+  
+  // Verificar token en header
+  const headerToken = request.headers.get("x-admin-token");
+  if (headerToken === adminToken) {
+    return true;
+  }
+  
+  // Verificar token en cookie
+  const cookieToken = request.cookies.get("admin-token")?.value;
+  if (cookieToken === adminToken) {
+    return true;
+  }
+  
+  return false;
+}
 
 // Rutas que requieren autenticación
 const PROTECTED_ROUTES = ["/admin"];
@@ -55,8 +82,9 @@ function isMvpRoute(pathname: string): boolean {
   if (pathname === "/") return true;
   if (pathname === "/buscar" || pathname === "/search") return true;
   
-  // Rutas de propiedad
+  // Rutas de propiedad (legacy y nueva estructura SEO)
   if (pathname.startsWith("/property/")) return true;
+  if (pathname.startsWith("/arriendo/departamento/")) return true;
   
   // APIs MVP
   if (pathname.startsWith("/api/buildings")) return true;
@@ -89,16 +117,9 @@ function isMvpRoute(pathname: string): boolean {
   return false;
 }
 
-// Función para leer feature flags del archivo JSON
-function readFeatureFlag(flagName: string): boolean {
-  try {
-    const flagsPath = join(process.cwd(), 'config', 'feature-flags.json');
-    const flagsContent = readFileSync(flagsPath, 'utf8');
-    const flags = JSON.parse(flagsContent);
-    return Boolean(flags[flagName]);
-  } catch {
-    return false;
-  }
+// Función para leer feature flags desde el módulo TypeScript
+function readFeatureFlag(flagName: keyof typeof featureFlags): boolean {
+  return Boolean(featureFlags[flagName]);
 }
 
 export async function middleware(request: NextRequest) {
@@ -121,7 +142,7 @@ export async function middleware(request: NextRequest) {
 
   // Verificar si es una ruta protegida (admin)
   if (isProtectedRoute(pathname)) {
-    const isAuthenticated = await isAuthenticatedAdmin(request);
+    const isAuthenticated = isAuthenticatedAdmin(request);
     
     if (!isAuthenticated) {
       // Redirigir a página de login o devolver 401

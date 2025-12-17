@@ -215,16 +215,14 @@ export async function generateMetadata({ params }: PropertyPageProps) {
     description: `Arrienda ${building.name} en ${building.comuna} sin comisión de corretaje. ${building.amenities.join(", ")}.`,
     alternates: { canonical: `/property/${slug}` },
     openGraph: {
-      title: `${building.name} - 0% Comisión`.
-        replace(/\s+/g, " "),
+      title: `${building.name} - 0% Comisión`.replace(/\s+/g, " "),
       description: `Arrienda ${building.name} en ${building.comuna} sin comisión de corretaje.`,
       type: "website",
       images: [building.coverImage ?? building.gallery?.[0] ?? PROPERTY_PAGE_CONSTANTS.DEFAULT_IMAGE],
     },
     twitter: {
       card: "summary_large_image",
-      title: `${building.name} - 0% Comisión`.
-        replace(/\s+/g, " "),
+      title: `${building.name} - 0% Comisión`.replace(/\s+/g, " "),
       images: [building.coverImage ?? building.gallery?.[0] ?? PROPERTY_PAGE_CONSTANTS.DEFAULT_IMAGE],
     },
   };

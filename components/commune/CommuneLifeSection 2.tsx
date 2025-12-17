@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { motion } from "framer-motion";
+import { motion, cubicBezier } from "framer-motion";
 import Image from "next/image";
 import { MapPin, Users, Car, Leaf, Star, ArrowRight } from "lucide-react";
 
@@ -68,7 +68,7 @@ export function CommuneLifeSection({
             y: 0,
             transition: {
                 duration: 0.6,
-                ease: [0.4, 0, 0.2, 1],
+                ease: cubicBezier(0.4, 0, 0.2, 1),
                 staggerChildren: 0.1
             }
         }
@@ -82,7 +82,7 @@ export function CommuneLifeSection({
             scale: 1,
             transition: {
                 duration: 0.4,
-                ease: [0.4, 0, 0.2, 1]
+                ease: cubicBezier(0.4, 0, 0.2, 1)
             }
         }
     };

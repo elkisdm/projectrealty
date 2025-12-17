@@ -646,14 +646,16 @@ class SupabaseDataProcessor {
         throw new Error(`Unidad ${unitRow.id} no tiene building asociado`);
       }
 
-      // Generar slug de unidad: building-slug-id (sin código de unidad)
+      // Generar slug de unidad: building-slug-codigoUnidad (usar código de unidad si está disponible)
+      const rowWithFields = unitRow as UnitRowWithFields;
+      const codigoUnidad = rowWithFields.unidad || unitRow.id.substring(0, 8);
       const unitSlug = building.slug 
-        ? `${building.slug}-${unitRow.id.substring(0, 8)}`
-        : `${building.id}-${unitRow.id.substring(0, 8)}`;
+        ? `${building.slug}-${codigoUnidad}`
+        : `${building.id}-${codigoUnidad}`;
 
       // Calcular garantía (por defecto 1 mes de arriendo)
       const garantia = unitRow.price ? unitRow.price : 0;
-      const gastoComun = (unitRow as UnitRowWithFields).gastos_comunes || 0;
+      const gastoComun = rowWithFields.gastos_comunes || 0;
 
       // Obtener imágenes (usar gallery del edificio si no hay imágenes específicas)
       // Siempre asegurar al menos una imagen para cumplir con el schema
@@ -665,11 +667,6 @@ class SupabaseDataProcessor {
       } else {
         images = ['/images/default-unit.jpg']; // Fallback obligatorio
       }
-
-      const rowWithFields = unitRow as UnitRowWithFields;
-      
-      // Generar codigoUnidad: usar campo 'unidad' si existe, sino usar ID truncado
-      const codigoUnidad = rowWithFields.unidad || unitRow.id.substring(0, 8);
       
       return {
         id: unitRow.id,
@@ -815,6 +812,7 @@ class SupabaseDataProcessor {
       m2?: number;
       price: number;
       gastoComun: number;
+      garantia: number;
       disponible: boolean;
       images: string[];
       [key: string]: unknown;
@@ -911,6 +909,23 @@ class SupabaseDataProcessor {
         break;
       }
 
+      // Buscar por código de unidad si el slug lo contiene (formato: building-slug-codigoUnidad)
+      const unitRowWithFields = unitRow as UnitRowWithFields;
+      const codigoUnidad = unitRowWithFields.unidad || unitRow.id.substring(0, 8);
+      if (codigoUnidad) {
+        // Verificar si el slug termina con el código de unidad
+        const slugEndsWithCodigo = unitSlug.endsWith(codigoUnidad) || unitSlug.includes(`-${codigoUnidad}`);
+        if (slugEndsWithCodigo) {
+          // Verificar que el building slug también coincida (al inicio)
+          const buildingSlugMatch = building.slug && (unitSlug.startsWith(building.slug) || unitSlug.includes(building.slug));
+          const buildingIdMatch = !building.slug && (unitSlug.startsWith(building.id) || unitSlug.includes(building.id));
+          if (buildingSlugMatch || buildingIdMatch) {
+            foundUnit = unitRow;
+            break;
+          }
+        }
+      }
+
       // También buscar por ID directo como fallback
       if (unitRow.id === unitSlug || unitSlug.endsWith(unitRow.id.substring(0, 8))) {
         foundUnit = unitRow;
@@ -928,24 +943,24 @@ class SupabaseDataProcessor {
     }
 
     // Mapear unidad encontrada
-    const unitSlugGenerated = building.slug 
-      ? `${building.slug}-${foundUnit.id.substring(0, 8)}`
-      : `${building.id}-${foundUnit.id.substring(0, 8)}`;
+    const foundUnitWithFields = foundUnit as UnitRowWithFields;
+    const codigoUnidad = foundUnitWithFields.unidad || foundUnit.id.substring(0, 8);
+
+    // Generar slug usando código de unidad (formato: building-slug-codigoUnidad)
+    const finalUnitSlug = building.slug 
+      ? `${building.slug}-${codigoUnidad}`
+      : `${building.id}-${codigoUnidad}`;
 
     const garantia = foundUnit.price ? foundUnit.price : 0;
     const gastoComun = foundUnit.gastos_comunes || 0;
 
     const images = building.gallery && building.gallery.length > 0 
-      ? building.gallery.slice(0, 5)
+      ? building.gallery.slice(0, 5) 
       : (building.cover_image ? [building.cover_image] : ['/images/default-unit.jpg']);
-
-    // Generar codigoUnidad: usar campo 'unidad' si existe, sino usar ID truncado
-    const foundUnitWithFields = foundUnit as UnitRowWithFields;
-    const codigoUnidad = foundUnitWithFields.unidad || foundUnit.id.substring(0, 8);
 
     const unit = {
       id: foundUnit.id,
-      slug: unitSlugGenerated,
+      slug: finalUnitSlug,
       codigoUnidad,
       buildingId: building.id,
       tipologia: foundUnit.tipologia || 'Studio',
@@ -1019,6 +1034,7 @@ class SupabaseDataProcessor {
         const uWithFields = u as UnitRowWithFields;
         const uCodigoUnidad = uWithFields.unidad || u.id.substring(0, 8);
 
+        const uGarantia = u.price || 0;
         return {
           id: u.id,
           slug: uSlug,
@@ -1030,6 +1046,7 @@ class SupabaseDataProcessor {
           m2: u.m2 || u.area_interior_m2 || undefined,
           price: u.price || 0,
           gastoComun: u.gastos_comunes || 0,
+          garantia: uGarantia,
           disponible: u.disponible ?? true,
           images: uImages,
         };

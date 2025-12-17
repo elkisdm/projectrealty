@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, cubicBezier } from "framer-motion";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -59,7 +59,7 @@ export const AmenityChips: React.FC<AmenityChipsProps> = ({
       scale: 1,
       y: 0,
       transition: {
-        type: "spring",
+        type: "spring" as const,
         stiffness: 300,
         damping: 20
       }
@@ -68,7 +68,7 @@ export const AmenityChips: React.FC<AmenityChipsProps> = ({
       scale: 1.05,
       y: -2,
       transition: {
-        type: "spring",
+        type: "spring" as const,
         stiffness: 400,
         damping: 25
       }
@@ -110,11 +110,11 @@ export const AmenityChips: React.FC<AmenityChipsProps> = ({
                 whileHover={{
                   scale: 1.05,
                   y: -2,
-                  transition: { duration: 0.2, ease: [0.4, 0, 0.2, 1] }
+                  transition: { duration: 0.2, ease: cubicBezier(0.4, 0, 0.2, 1) }
                 }}
                 whileTap={{
                   scale: 0.95,
-                  transition: { duration: 0.1, ease: [0.4, 0, 0.2, 1] }
+                  transition: { duration: 0.1, ease: cubicBezier(0.4, 0, 0.2, 1) }
                 }}
               >
                 <Icon className="w-4 h-4 flex-shrink-0" />

@@ -1567,3 +1567,4 @@ Ver `config/env.example` para template completo.
 **✅ Estado:** Completo y actualizado
 
 
+

@@ -1,8 +1,5 @@
 import { Metadata } from 'next';
-import HeroV2 from '@/components/marketing/HeroV2';
-import FeaturedGrid from '@/components/marketing/FeaturedGrid';
-import HowItWorks from '@/components/marketing/HowItWorks';
-import Trust from '@/components/marketing/Trust';
+import LandingV2Client from './LandingV2Client';
 
 export const metadata: Metadata = {
     title: 'Arrienda Sin Comisión - Encuentra tu hogar ideal',
@@ -25,12 +22,5 @@ export const metadata: Metadata = {
 };
 
 export default async function LandingV2Page() {
-    return (
-        <main className="min-h-screen bg-white dark:bg-gray-900">
-            <HeroV2 />
-            <FeaturedGrid />
-            <HowItWorks />
-            <Trust />
-        </main>
-    );
+    return <LandingV2Client />;
 }

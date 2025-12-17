@@ -131,7 +131,10 @@ export function SearchForm({ className = "" }: SearchFormProps) {
       <SearchPills
         options={comunasPrincipales}
         selected={comuna}
-        onSelect={(value) => setValue("comuna", value || undefined, { shouldValidate: true })}
+        onSelect={(value) => {
+          const comunaValue = Array.isArray(value) ? value[0] : value;
+          setValue("comuna", comunaValue || undefined, { shouldValidate: true });
+        }}
         label="Comuna"
       />
 

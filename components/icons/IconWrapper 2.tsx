@@ -8,7 +8,7 @@
  */
 
 import React, { forwardRef, useMemo, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, cubicBezier } from 'framer-motion';
 import { useIconContext, useIconConfig } from './IconProvider';
 import { IconSize, StrokeWeight, IconVariant, ICON_SIZES } from '@workspace/scripts/icon-gen/tokens';
 
@@ -186,7 +186,7 @@ export const IconWrapper = forwardRef<HTMLDivElement, IconWrapperProps>(
                 },
                 transition: {
                     duration: 0.3,
-                    ease: "easeOut"
+                    ease: cubicBezier(0.4, 0, 0.2, 1)
                 }
             };
         }, [effectiveAnimated]);

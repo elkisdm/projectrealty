@@ -137,10 +137,15 @@ export function useAdvancedFilters({
     const chips: FilterChip[] = [];
 
     if (filters.comuna !== "Todas") {
+      const comunaValue = Array.isArray(filters.comuna) 
+        ? filters.comuna.length === 1 
+          ? filters.comuna[0] 
+          : `${filters.comuna.length} comunas`
+        : filters.comuna;
       chips.push({
         id: 'comuna',
         label: 'Comuna',
-        value: filters.comuna,
+        value: comunaValue,
         onRemove: () => setFilters({ comuna: "Todas" })
       });
     }
@@ -208,7 +213,12 @@ export function useAdvancedFilters({
     const params = new URLSearchParams();
     
     // Basic filters only
-    if (filters.comuna !== "Todas") params.set("comuna", filters.comuna);
+    if (filters.comuna !== "Todas") {
+      const comunaValue = Array.isArray(filters.comuna) 
+        ? filters.comuna[0] 
+        : filters.comuna;
+      params.set("comuna", comunaValue);
+    }
     if (filters.tipologia !== "Todas") params.set("tipologia", filters.tipologia);
     if (filters.minPrice !== null) params.set("minPrice", filters.minPrice.toString());
     if (filters.maxPrice !== null) params.set("maxPrice", filters.maxPrice.toString());

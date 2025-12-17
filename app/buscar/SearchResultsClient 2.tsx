@@ -165,7 +165,12 @@ export function SearchResultsClient() {
 
     if (q) params.set("q", q);
     if (newFilters.comuna && newFilters.comuna !== "Todas") {
-      params.set("comuna", newFilters.comuna);
+      const comunaValue = Array.isArray(newFilters.comuna) 
+        ? newFilters.comuna[0] 
+        : newFilters.comuna;
+      if (comunaValue && comunaValue !== "Todas") {
+        params.set("comuna", comunaValue);
+      }
     }
     if (newFilters.minPrice) {
       params.set("precioMin", newFilters.minPrice.toString());

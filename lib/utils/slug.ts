@@ -4,10 +4,13 @@
 
 /**
  * Normaliza un texto a slug (minúsculas, sin acentos, sin caracteres especiales)
+ * Maneja correctamente caracteres especiales del español como Ñ
  */
 export function generateSlug(text: string): string {
   return text
     .toLowerCase()
+    .replace(/ñ/g, 'n')  // Convertir ñ a n antes de normalizar
+    .replace(/Ñ/g, 'n')  // Convertir Ñ a n
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9\s-]/g, '')

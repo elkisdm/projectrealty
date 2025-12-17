@@ -39,7 +39,6 @@ export async function listBuildings({ comuna, minPrice, maxPrice, tipologia, sor
     return { 
       ...b, 
       cover: b.cover, 
-      promo: b.promo, 
       amenities: b.amenities, 
       gallery: b.gallery, 
       units: normalizedUnits,

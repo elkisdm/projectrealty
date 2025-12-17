@@ -4,7 +4,7 @@ import { useState, useRef, RefObject } from 'react';
 import { track } from '@lib/analytics';
 
 interface WaitlistFormProps {
-  initialFocusRef?: RefObject<HTMLInputElement>;
+  initialFocusRef?: RefObject<HTMLInputElement | null>;
 }
 
 export function WaitlistForm({ initialFocusRef }: WaitlistFormProps) {
@@ -52,7 +52,19 @@ export function WaitlistForm({ initialFocusRef }: WaitlistFormProps) {
         }),
       });
 
-      const data = await response.json();
+      // Verificar Content-Type antes de parsear JSON
+      const contentType = response.headers.get('content-type') || '';
+      let data: any = {};
+      
+      if (contentType.includes('application/json')) {
+        try {
+          data = await response.json();
+        } catch {
+          throw new Error('Respuesta inválida del servidor');
+        }
+      } else if (response.ok) {
+        throw new Error('Respuesta inesperada del servidor');
+      }
       
       if (response.ok && data.success) {
         setIsSuccess(true);

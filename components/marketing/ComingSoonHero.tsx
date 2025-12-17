@@ -9,6 +9,7 @@ import {
   FileText,
   Calendar
 } from "lucide-react";
+import { cubicBezier } from "framer-motion";
 import { buildWhatsAppUrl } from "@lib/whatsapp";
 import { PromoBadge } from "./PromoBadge";
 import { track } from "@lib/analytics";
@@ -65,7 +66,7 @@ export function ComingSoonHero() {
       y: 0,
       transition: {
         duration: 0.4,
-        ease: "easeOut",
+        ease: cubicBezier(0.4, 0, 0.2, 1),
       },
     },
   } as const;
@@ -78,14 +79,14 @@ export function ComingSoonHero() {
       transition: {
         duration: 0.4,
         delay: custom * 0.03,
-        ease: "easeOut",
+        ease: cubicBezier(0.4, 0, 0.2, 1),
       },
     }),
   } as const;
 
   // Local reference for TypeScript narrowing
   const m = motion;
-  
+
   return (
     <div className="relative min-h-[70vh] flex items-center overflow-hidden bg-transparent">
       {/* Contenido principal */}
