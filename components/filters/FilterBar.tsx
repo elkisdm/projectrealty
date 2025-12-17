@@ -6,6 +6,9 @@ import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { SortSelect } from "./SortSelect";
 import { SearchPills } from "@/components/marketing/SearchPills";
 import { NumberInput } from "@/components/ui/NumberInput";
+import { SearchInput } from "./SearchInput";
+import { FilterDescription } from "./FilterDescription";
+import { hasActiveFilters } from "@/lib/utils/filterDescription";
 import type { FilterValues } from "../../types/filters";
 
 // Re-export for backward compatibility
@@ -20,6 +23,8 @@ interface FilterBarProps {
   onSort: (sort: string) => void;
   isLoading?: boolean;
   useDormitorios?: boolean; // Si es true, usar pills de dormitorios en lugar de dropdown de tipología
+  q?: string; // Búsqueda por texto
+  onSearchChange?: (q: string) => void; // Callback para cambios en la búsqueda
 }
 
 export function FilterBar({
@@ -31,11 +36,24 @@ export function FilterBar({
   onSort,
   isLoading = false,
   useDormitorios = false, // Por defecto mantener tipología para compatibilidad
+  q = "",
+  onSearchChange,
 }: FilterBarProps) {
   const [open, setOpen] = useState(false);
   const prefersReducedMotion = useReducedMotion();
 
   const set = (patch: Partial<FilterValues>) => onChange({ ...value, ...patch });
+  
+  // Preparar filtros para FilterDescription
+  const activeFiltersForDescription = {
+    comuna: value.comuna !== "Todas" ? value.comuna : undefined,
+    precioMin: value.minPrice !== null ? value.minPrice : undefined,
+    precioMax: value.maxPrice !== null ? value.maxPrice : undefined,
+    dormitorios: value.dormitorios,
+    estacionamiento: value.estacionamiento === true ? true : undefined,
+    bodega: value.bodega === true ? true : undefined,
+    mascotas: value.mascotas === true ? true : undefined,
+  };
 
   const comunas = ["Las Condes", "Ñuñoa", "Providencia", "Santiago", "Macul", "La Florida"];
   const tipologias = ["Todas", "Studio", "1D/1B", "2D/1B", "2D/2B"];
@@ -56,6 +74,29 @@ export function FilterBar({
 
   return (
     <div className="sticky top-0 z-30 backdrop-blur bg-white dark:bg-gray-900/95 ring-1 ring-gray-200 dark:ring-gray-700 rounded-2xl p-4 shadow-sm">
+      {/* Barra de búsqueda */}
+      {onSearchChange && (
+        <div className="mb-4">
+          <SearchInput
+            value={q}
+            onChange={onSearchChange}
+            placeholder="Buscar por dirección, comuna, nombre de edificio..."
+            className="w-full"
+            autoFocus={false}
+          />
+        </div>
+      )}
+      
+      {/* FilterDescription */}
+      {hasActiveFilters(activeFiltersForDescription) && (
+        <div className="mb-4">
+          <FilterDescription
+            filters={activeFiltersForDescription}
+            onClear={onClear}
+          />
+        </div>
+      )}
+      
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <button
           onClick={() => setOpen(!open)}

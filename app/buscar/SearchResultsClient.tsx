@@ -3,7 +3,6 @@
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import { FilterBar } from "@/components/filters/FilterBar";
-import { FilterChips } from "@/components/filters/FilterChips";
 import { ResultsBreadcrumb } from "@/components/search/ResultsBreadcrumb";
 import { EmptyResults } from "@/components/search/EmptyResults";
 import { ResultsError } from "@/components/search/ResultsError";
@@ -79,7 +78,12 @@ export function SearchResultsClient() {
 
       if (q) params.set("q", q);
       if (newFilters.comuna && newFilters.comuna !== "Todas") {
-        params.set("comuna", newFilters.comuna);
+        const comunaValue = Array.isArray(newFilters.comuna) 
+          ? newFilters.comuna[0] 
+          : newFilters.comuna;
+        if (comunaValue && comunaValue !== "Todas") {
+          params.set("comuna", comunaValue);
+        }
       }
       if (newFilters.minPrice) {
         params.set("precioMin", newFilters.minPrice.toString());
@@ -88,7 +92,10 @@ export function SearchResultsClient() {
         params.set("precioMax", newFilters.maxPrice.toString());
       }
       if (newFilters.dormitorios) {
-        params.set("dormitorios", newFilters.dormitorios);
+        const dormitoriosValue = Array.isArray(newFilters.dormitorios)
+          ? newFilters.dormitorios.join(",")
+          : newFilters.dormitorios;
+        params.set("dormitorios", dormitoriosValue);
       }
       if (newSort && newSort !== "default") {
         params.set("sort", newSort);
@@ -155,16 +162,63 @@ export function SearchResultsClient() {
     updateURL(filters, sort, 1); // Reset a página 1 al aplicar filtros
   }, [filters, sort, updateURL, q]);
 
-  // Filtros activos para FilterChips
-  const activeFilters = {
+  const handleSearchChange = useCallback(
+    (newQ: string) => {
+      const params = new URLSearchParams();
+      
+      if (newQ && newQ.trim()) {
+        params.set("q", newQ.trim());
+      }
+      
+      // Mantener filtros actuales
+      if (filters.comuna && filters.comuna !== "Todas") {
+        const comunaValue = Array.isArray(filters.comuna) 
+          ? filters.comuna.join(",")
+          : filters.comuna;
+        if (comunaValue && comunaValue !== "Todas") {
+          params.set("comuna", comunaValue);
+        }
+      }
+      if (filters.minPrice) {
+        params.set("precioMin", filters.minPrice.toString());
+      }
+      if (filters.maxPrice) {
+        params.set("precioMax", filters.maxPrice.toString());
+      }
+      if (filters.dormitorios) {
+        const dormitoriosValue = Array.isArray(filters.dormitorios)
+          ? filters.dormitorios.join(",")
+          : filters.dormitorios;
+        params.set("dormitorios", dormitoriosValue);
+      }
+      if (sort && sort !== "default") {
+        params.set("sort", sort);
+      }
+      if (page > 1) {
+        params.set("page", page.toString());
+      }
+
+      const queryString = params.toString();
+      router.push(`/buscar${queryString ? `?${queryString}` : ""}`, {
+        scroll: false,
+      });
+    },
+    [filters, sort, page, router]
+  );
+
+  // Filtros activos para FilterDescription (formato compatible)
+  const activeFiltersForDescription = {
     comuna: filters.comuna !== "Todas" ? filters.comuna : undefined,
-    precioMin: filters.minPrice ?? undefined,
-    precioMax: filters.maxPrice ?? undefined,
+    precioMin: filters.minPrice !== null ? filters.minPrice : undefined,
+    precioMax: filters.maxPrice !== null ? filters.maxPrice : undefined,
     dormitorios: filters.dormitorios,
+    estacionamiento: filters.estacionamiento === true ? true : undefined,
+    bodega: filters.bodega === true ? true : undefined,
+    mascotas: filters.mascotas === true ? true : undefined,
   };
 
   const handleRemoveFilter = useCallback(
-    (key: keyof typeof activeFilters) => {
+    (key: "comuna" | "precioMin" | "precioMax" | "dormitorios" | "estacionamiento" | "bodega" | "mascotas") => {
       const newFilters = { ...filters };
       if (key === "comuna") {
         newFilters.comuna = "Todas";
@@ -174,6 +228,12 @@ export function SearchResultsClient() {
         newFilters.maxPrice = null;
       } else if (key === "dormitorios") {
         newFilters.dormitorios = undefined;
+      } else if (key === "estacionamiento") {
+        newFilters.estacionamiento = null;
+      } else if (key === "bodega") {
+        newFilters.bodega = null;
+      } else if (key === "mascotas") {
+        newFilters.mascotas = null;
       }
       handleFiltersChange(newFilters);
     },
@@ -185,7 +245,10 @@ export function SearchResultsClient() {
     filters.comuna !== "Todas" ||
     filters.minPrice !== null ||
     filters.maxPrice !== null ||
-    filters.dormitorios !== undefined;
+    filters.dormitorios !== undefined ||
+    filters.estacionamiento !== null ||
+    filters.bodega !== null ||
+    filters.mascotas !== null;
 
   // Handler para reintentar en caso de error
   const handleRetry = useCallback(() => {
@@ -208,7 +271,7 @@ export function SearchResultsClient() {
         pageType="search"
         additionalParams={{
           has_filters: hasActiveFilters || !!q,
-          filters_applied: activeFilters,
+          filters_applied: activeFiltersForDescription,
         }}
       />
       <div className="mx-auto max-w-7xl px-6 py-8 lg:px-8">
@@ -237,17 +300,7 @@ export function SearchResultsClient() {
           )}
         </div>
 
-        {/* FilterChips - Filtros activos */}
-        {hasActiveFilters && (
-          <div className="mb-4">
-            <FilterChips
-              filters={activeFilters}
-              onRemoveFilter={handleRemoveFilter}
-            />
-          </div>
-        )}
-
-        {/* Barra de filtros */}
+        {/* Barra de filtros (incluye búsqueda y FilterDescription) */}
         <div className="mb-8">
           <FilterBar
             value={filters}
@@ -258,6 +311,8 @@ export function SearchResultsClient() {
             onSort={handleSortChange}
             useDormitorios={true}
             isLoading={isFetching}
+            q={q || ""}
+            onSearchChange={handleSearchChange}
           />
         </div>
 
