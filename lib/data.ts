@@ -25,6 +25,17 @@ function validateBuilding(raw: unknown): Building {
 // Función para leer desde Supabase
 async function readFromSupabase(): Promise<Building[]> {
   try {
+    // Validar variables de entorno antes de intentar importar
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    
+    if (!supabaseUrl || !supabaseServiceKey) {
+      const missingVars = [];
+      if (!supabaseUrl) missingVars.push('SUPABASE_URL');
+      if (!supabaseServiceKey) missingVars.push('SUPABASE_SERVICE_ROLE_KEY');
+      throw new Error(`Missing required environment variables: ${missingVars.join(', ')}. Please configure them in Vercel settings.`);
+    }
+    
     // Importar Supabase dinámicamente solo cuando se necesita
     const { supabase, supabaseAdmin } = await import("@lib/supabase");
     
@@ -32,7 +43,7 @@ async function readFromSupabase(): Promise<Building[]> {
     const client = supabaseAdmin || supabase;
     
     if (!client) {
-      throw new Error('No Supabase client available. Please configure SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY');
+      throw new Error('No Supabase client available. Please configure SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in environment variables.');
     }
     
     // Obtener edificios con sus unidades usando la relación correcta
@@ -71,23 +82,59 @@ async function readFromSupabase(): Promise<Building[]> {
       .limit(100);
 
     if (buildingsError) {
-      throw new Error(`Error fetching buildings from Supabase: ${buildingsError.message}`);
+      logger.error(`[readFromSupabase] Supabase query error:`, {
+        message: buildingsError.message,
+        details: buildingsError.details,
+        hint: buildingsError.hint,
+        code: buildingsError.code
+      });
+      throw new Error(`Error fetching buildings from Supabase: ${buildingsError.message}${buildingsError.hint ? ` (${buildingsError.hint})` : ''}`);
     }
 
     if (!buildingsData || buildingsData.length === 0) {
       return [];
     }
 
-    // Mantener edificios que al menos tengan unidades
-    const buildingsWithUnits = buildingsData.filter((building: unknown): building is { units?: unknown[] } => {
+    // Mantener edificios que al menos tengan unidades válidas
+    const buildingsWithUnits = buildingsData.filter((building: unknown): building is { units?: unknown[]; id?: string; name?: string } => {
       if (typeof building !== 'object' || building === null) return false;
-      const b = building as { units?: unknown[] };
+      const b = building as { units?: unknown[]; id?: string; name?: string };
+      
+      // Verificar que tenga ID y nombre válidos
+      if (!b.id || typeof b.id !== 'string' || b.id.trim() === '') return false;
+      if (!b.name || typeof b.name !== 'string' || b.name.trim() === '') return false;
+      
       const units = b.units || [];
-      return Array.isArray(units) && units.length > 0;
+      if (!Array.isArray(units) || units.length === 0) return false;
+      
+      // Verificar que al menos una unidad tenga datos válidos (tipología y precio)
+      const hasValidUnit = units.some((u: unknown) => {
+        if (typeof u !== 'object' || u === null) return false;
+        const unit = u as { id?: string; tipologia?: string; price?: number };
+        return unit.id && 
+               unit.tipologia && 
+               typeof unit.tipologia === 'string' && 
+               unit.price !== null && 
+               unit.price !== undefined && 
+               typeof unit.price === 'number' && 
+               unit.price > 0;
+      });
+      
+      return hasValidUnit;
     });
 
     // Transformar los datos al formato esperado
-    const buildings: Building[] = buildingsWithUnits.map((building: unknown) => {
+    const buildings: Building[] = buildingsWithUnits
+      .filter((building: unknown) => {
+        // Filtrar edificios que no tienen los datos mínimos requeridos
+        const b = building as { id?: string; name?: string };
+        if (!b.id || !b.name || typeof b.name !== 'string' || b.name.trim() === '') {
+          logger.warn(`[readFromSupabase] Skipping building with invalid id or name: ${JSON.stringify({ id: b.id, name: b.name })}`);
+          return false;
+        }
+        return true;
+      })
+      .map((building: unknown) => {
       const b = building as {
         id: string;
         slug?: string;
@@ -113,9 +160,30 @@ async function readFromSupabase(): Promise<Building[]> {
         }>;
       };
       
-      // Calcular precio_desde y precio_hasta desde las unidades
-      const availableUnits = (b.units || []).filter(u => u.disponible);
-      const prices = availableUnits.map(u => u.price || 0).filter(p => p > 0);
+      // Filtrar unidades inválidas antes de procesarlas
+      const validUnits = (b.units || []).filter(u => {
+        // Filtrar unidades sin ID, sin tipología válida, o con precio inválido
+        if (!u.id || typeof u.id !== 'string' || u.id.trim() === '') {
+          return false;
+        }
+        if (!u.tipologia || typeof u.tipologia !== 'string') {
+          return false;
+        }
+        // Filtrar unidades con precio inválido (null, undefined, 0 o negativo)
+        if (u.price === null || u.price === undefined || typeof u.price !== 'number' || u.price <= 0) {
+          return false;
+        }
+        return true;
+      });
+      
+      // Si no hay unidades válidas, este edificio no se incluirá (ya filtrado arriba)
+      if (validUnits.length === 0) {
+        logger.warn(`[readFromSupabase] Building ${b.name || b.id} has no valid units, will be skipped`);
+      }
+      
+      // Calcular precio_desde y precio_hasta desde las unidades válidas
+      const availableUnits = validUnits.filter(u => u.disponible !== false);
+      const prices = availableUnits.map(u => u.price!).filter(p => p > 0);
       const precio_desde = prices.length > 0 ? Math.min(...prices) : undefined;
       const precio_hasta = prices.length > 0 ? Math.max(...prices) : undefined;
       
@@ -138,7 +206,7 @@ async function readFromSupabase(): Promise<Building[]> {
       return {
         id: b.id,
         slug: b.slug || `edificio-${b.id}`,
-        name: b.name,
+        name: b.name.trim(), // Asegurar que name esté definido y no vacío
         comuna: b.comuna && b.comuna.trim() ? b.comuna.trim() : 'Santiago', // Fallback a Santiago si está vacío
         address: b.address || 'Dirección no disponible',
         amenities,
@@ -150,7 +218,7 @@ async function readFromSupabase(): Promise<Building[]> {
         precio_hasta,
         gc_mode: (b.gc_mode === 'MF' || b.gc_mode === 'variable') ? b.gc_mode : undefined,
         featured: false,
-        units: (b.units || []).map((unit: unknown) => {
+        units: validUnits.map((unit: unknown) => {
           const u = unit as {
             id: string;
             tipologia?: string;
@@ -167,17 +235,20 @@ async function readFromSupabase(): Promise<Building[]> {
             images?: string[];
           };
           
+          // Normalizar tipología antes de crear la unidad
+          const normalizedTipologia = normalizeTipologia(u.tipologia || '1D1B');
+          
           // Usar helper para crear Unit completo
           return normalizeUnit(
             {
               id: u.id,
-              tipologia: u.tipologia || 'Studio',
+              tipologia: normalizedTipologia, // Usar tipología normalizada
               m2: u.m2,
-              price: u.price,
+              price: u.price!, // Ya validado arriba que price > 0
               disponible: u.disponible ?? true, // Default a true si no está definido
               estacionamiento: u.estacionamiento ?? false,
               bodega: u.bodega ?? false,
-              bedrooms: u.bedrooms ?? (u.tipologia === 'Studio' ? 0 : 1), // Default según tipología
+              bedrooms: u.bedrooms ?? (normalizedTipologia === 'Studio' ? 0 : 1), // Default según tipología normalizada
               bathrooms: u.bathrooms ?? 1, // Default a 1
               pet_friendly: u.pet_friendly !== undefined ? u.pet_friendly : false, // Mapear pet_friendly desde Supabase
               imagesTipologia: u.images_tipologia, // Mapear desde snake_case a camelCase
@@ -200,19 +271,22 @@ async function readFromSupabase(): Promise<Building[]> {
         validatedBuildings.push(validated);
       } catch (error) {
         // Log detallado del error de validación
+        const buildingName = buildings[i]?.name || buildings[i]?.id || 'unknown';
+        const buildingId = buildings[i]?.id || 'unknown';
+        
         if (error && typeof error === 'object' && 'issues' in error) {
           const zodError = error as { issues: Array<{ path: string[]; message: string }> };
           const errorDetails = zodError.issues.map(issue => 
             `${issue.path.join('.')}: ${issue.message}`
           ).join(', ');
-          logger.error(`Building ${buildings[i].name} failed validation: ${errorDetails}`);
+          logger.error(`[readFromSupabase] Building ${buildingName} (id: ${buildingId}) failed validation: ${errorDetails}`);
         } else if (error instanceof Error) {
-          logger.error(`Building ${buildings[i].name} failed validation: ${error.message}`);
+          logger.error(`[readFromSupabase] Building ${buildingName} (id: ${buildingId}) failed validation: ${error.message}`);
         } else {
-          logger.error(`Building ${buildings[i].name} failed validation:`, error);
+          logger.error(`[readFromSupabase] Building ${buildingName} (id: ${buildingId}) failed validation:`, error);
         }
         // Silenciosamente omitir edificios que no pasan validación
-        logger.warn(`Building ${buildings[i].name} skipped due to validation error`);
+        logger.warn(`[readFromSupabase] Building ${buildingName} (id: ${buildingId}) skipped due to validation error`);
       }
     }
     
@@ -225,32 +299,55 @@ async function readFromSupabase(): Promise<Building[]> {
     
     return validatedBuildings;
   } catch (error) {
-    logger.error('Error reading from Supabase:', error);
+    // Log detallado del error para debugging
+    if (error instanceof Error) {
+      logger.error('[readFromSupabase] Error reading from Supabase:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
+    } else {
+      logger.error('[readFromSupabase] Error reading from Supabase:', error);
+    }
     throw error;
   }
 }
 
 // Función para normalizar tipologías de formato "1D/1B" a "1D1B"
 function normalizeTipologia(tipologia: string): string {
+  if (!tipologia || typeof tipologia !== 'string') {
+    return '1D1B'; // Default si es inválido
+  }
+  
   // Mapeo de formatos comunes a formato canónico
   const normalized = tipologia
     .replace(/\//g, '') // Remover barras
     .replace(/\s+/g, '') // Remover espacios
     .trim();
   
+  if (!normalized) {
+    return '1D1B'; // Default si está vacío después de normalizar
+  }
+  
   // Validar que esté en formato canónico
-  const validFormats = ['Studio', '1D1B', '2D1B', '2D2B', '3D2B'];
+  const validFormats = ['Studio', 'Estudio', '1D1B', '2D1B', '2D2B', '3D2B'];
   if (validFormats.includes(normalized)) {
-    return normalized;
+    // Mapear "Estudio" a "Studio"
+    return normalized === 'Estudio' ? 'Studio' : normalized;
   }
   
   // Intentar convertir formatos comunes
   const conversions: Record<string, string> = {
     'studio': 'Studio',
+    'estudio': 'Studio',
     '1d1b': '1D1B',
+    '1d/1b': '1D1B',
     '2d1b': '2D1B',
+    '2d/1b': '2D1B',
     '2d2b': '2D2B',
+    '2d/2b': '2D2B',
     '3d2b': '3D2B',
+    '3d/2b': '3D2B',
   };
   
   const lower = normalized.toLowerCase();
@@ -366,7 +463,15 @@ export async function readAll(): Promise<Building[]> {
         return [];
       }
     } catch (error) {
-      logger.error(`[readAll] ❌ Error leyendo de Supabase:`, error);
+      // Log detallado del error
+      if (error instanceof Error) {
+        logger.error(`[readAll] ❌ Error leyendo de Supabase: ${error.message}`);
+        if (error.message.includes('Missing required environment variables')) {
+          logger.error(`[readAll] 💡 Solución: Configura las variables de entorno en Vercel Dashboard → Settings → Environment Variables`);
+        }
+      } else {
+        logger.error(`[readAll] ❌ Error leyendo de Supabase:`, error);
+      }
       logger.warn(`[readAll] ⚠️ USE_SUPABASE=true pero falló. Retornando array vacío en lugar de mocks para evitar datos incorrectos.`);
       // NO caer a mocks si USE_SUPABASE está activo - retornar vacío
       return [];
