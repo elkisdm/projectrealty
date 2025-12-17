@@ -39,6 +39,12 @@ export default {
         "accent-success": "var(--accent-success)",
         "accent-warning": "var(--accent-warning)",
         "accent-error": "var(--accent-error)",
+        // Color de acción para CTAs (estilo Basics)
+        action: {
+          DEFAULT: "var(--action)",
+          hover: "var(--action-hover)",
+          text: "var(--action-text)",
+        },
       },
       // Utilidades de tema unificadas
       backgroundColor: {
