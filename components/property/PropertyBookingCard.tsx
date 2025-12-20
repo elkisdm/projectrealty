@@ -33,6 +33,12 @@ export function PropertyBookingCard({
   const reajuste = unit.reajuste || "cada 3 meses según UF";
   const [showPreApproval, setShowPreApproval] = useState(false);
 
+  // Calcular si hay unidades para mostrar el botón
+  // Mostrar siempre que haya unidades en el edificio (el modal mostrará TODAS las unidades)
+  const totalUnitsCount = building.units?.length || 0;
+  // Mostrar botón si hay unidades en el edificio (importante: 1 edificio con 111 departamentos)
+  const shouldShowChangeButton = onSelectOtherUnit && totalUnitsCount > 0;
+
   // Formatear precio
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('es-CL', {
@@ -194,7 +200,7 @@ export function PropertyBookingCard({
             </div>
 
             {/* Botón opcional: Selecciona otro departamento */}
-            {onSelectOtherUnit && (
+            {shouldShowChangeButton && (
               <button
                 onClick={onSelectOtherUnit}
                 className="w-full text-sm text-[#8B6CFF] hover:text-[#7a5ce6] font-medium py-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B6CFF] focus-visible:ring-offset-2 rounded-xl mt-4"

@@ -20,6 +20,7 @@ import { PropertyTabs } from "./PropertyTabs";
 import { PropertySimilarUnits } from "./PropertySimilarUnits";
 import { CommuneLifeSection } from "./CommuneLifeSection";
 import { PropertyFAQ } from "./PropertyFAQ";
+import { UnitSelectorModal } from "./UnitSelectorModal";
 
 // Import directo para evitar problemas de lazy loading
 import { RelatedList } from "@components/lists/RelatedList";
@@ -117,7 +118,8 @@ export function PropertyClient({
 }: PropertyClientProps) {
     const [isLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isVisitModalOpen, setIsVisitModalOpen] = useState(false);
+    const [isUnitSelectorModalOpen, setIsUnitSelectorModalOpen] = useState(false);
 
     // Usar el hook para manejar la l?gica de la unidad
     const {
@@ -152,16 +154,60 @@ export function PropertyClient({
         }
     }, [building.id, building.slug, building.name, building.comuna, selectedUnit, variant]);
 
-    // Listen for custom event to open modal
+    // Listen for custom event to open visit modal
     useEffect(() => {
         const handleOpenModal = () => {
-            setIsModalOpen(true);
+            setIsVisitModalOpen(true);
         };
 
         window.addEventListener('openVisitScheduler', handleOpenModal);
         return () => {
             window.removeEventListener('openVisitScheduler', handleOpenModal);
         };
+    }, []);
+
+    // Handler para abrir modal de selector de unidades
+    const handleOpenUnitSelector = React.useCallback(() => {
+        // Validar que existan unidades en el edificio
+        if (!building?.units || !Array.isArray(building.units)) {
+            logger.warn("Building units not available", { buildingId: building?.id });
+            return;
+        }
+
+        // El modal debe mostrar TODAS las unidades del edificio, no solo las disponibles
+        // Esto permite ver todas las opciones aunque algunas no estén disponibles
+        const totalUnits = building.units.length;
+        const availableUnits = building.units.filter((unit) => unit.disponible !== false);
+        
+        if (totalUnits === 0) {
+            logger.warn("No units in building", { buildingId: building.id });
+            return;
+        }
+
+        // Log para debugging
+        logger.log("Opening unit selector modal", {
+            buildingId: building.id,
+            totalUnits,
+            availableUnits: availableUnits.length,
+            currentUnitId: selectedUnit?.id,
+        });
+
+        // Trackear evento de apertura de modal
+        track("unit_selector_modal_opened", {
+            property_id: building.id,
+            property_slug: building.slug,
+            current_unit_id: selectedUnit?.id,
+            total_units_count: totalUnits,
+            available_units_count: availableUnits.length,
+            variant,
+        });
+
+        setIsUnitSelectorModalOpen(true);
+    }, [building, selectedUnit, variant]);
+
+    // Handler para cerrar modal de selector de unidades
+    const handleCloseUnitSelector = React.useCallback(() => {
+        setIsUnitSelectorModalOpen(false);
     }, []);
 
     // Handle errors gracefully
@@ -316,8 +362,9 @@ export function PropertyClient({
                                     disponible: false
                                 }}
                                 variant={variant}
-                                onScheduleVisit={() => setIsModalOpen(true)}
+                                onScheduleVisit={() => setIsVisitModalOpen(true)}
                                 onWhatsApp={handleWhatsAppClick}
+                                onSelectOtherUnit={handleOpenUnitSelector}
                                 onSave={() => {
                                     // TODO: Implementar guardar en favoritos
                                     logger.log("Save clicked");
@@ -393,8 +440,9 @@ export function PropertyClient({
                             <PropertyBookingCard
                                 unit={selectedUnit}
                                 building={building}
-                                onScheduleVisit={() => setIsModalOpen(true)}
+                                onScheduleVisit={() => setIsVisitModalOpen(true)}
                                 onWhatsApp={handleWhatsAppClick}
+                                onSelectOtherUnit={handleOpenUnitSelector}
                             />
                         )}
                     </div>
@@ -402,8 +450,8 @@ export function PropertyClient({
 
                 {/* Modal de Agendamiento QuintoAndar */}
                 <QuintoAndarVisitScheduler
-                    isOpen={isModalOpen}
-                    onClose={() => setIsModalOpen(false)}
+                    isOpen={isVisitModalOpen}
+                    onClose={() => setIsVisitModalOpen(false)}
                     listingId={building.id}
                     propertyName={building.name}
                     propertyAddress={building.address}
@@ -418,8 +466,16 @@ export function PropertyClient({
                             visit_id: visitData.visitId,
                             variant,
                         });
-                        setIsModalOpen(false);
+                        setIsVisitModalOpen(false);
                     }}
+                />
+
+                {/* Modal de Selector de Unidades */}
+                <UnitSelectorModal
+                    isOpen={isUnitSelectorModalOpen}
+                    onClose={handleCloseUnitSelector}
+                    building={building}
+                    currentUnitId={selectedUnit?.id}
                 />
             </div>
         </ErrorBoundary>

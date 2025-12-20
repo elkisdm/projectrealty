@@ -6,6 +6,7 @@ import { generateUnitMetadata, getBaseUrl } from "@/lib/seo/metadata";
 import { generateUnitBreadcrumbs } from "@/lib/seo/breadcrumbs";
 import { safeJsonLd } from "@/lib/seo/jsonld";
 import { getSupabaseProcessor } from "@/lib/supabase-data-processor";
+import { getBuildingBySlug } from "@/lib/data";
 import { UnitDetailClient } from "./UnitDetailClient";
 
 type UnitPageProps = {
@@ -32,10 +33,22 @@ export default async function UnitPage({ params }: UnitPageProps) {
       notFound();
     }
 
+    // Obtener el building completo con TODAS sus unidades
+    const fullBuilding = await getBuildingBySlug(result.building.slug);
+    
     // Mapear al formato esperado por UnitDetailResponse
+    // Extender el building con todas las unidades si están disponibles
+    const buildingWithAllUnits = fullBuilding 
+      ? {
+          ...result.building,
+          // Incluir todas las unidades del edificio completo como propiedad adicional
+          allUnits: fullBuilding.units || [],
+        }
+      : result.building;
+
     unitData = {
       unit: result.unit,
-      building: result.building,
+      building: buildingWithAllUnits,
       ...(result.similarUnits && result.similarUnits.length > 0 && { similarUnits: result.similarUnits }),
     };
 

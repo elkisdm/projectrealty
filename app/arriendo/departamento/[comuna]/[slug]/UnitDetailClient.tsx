@@ -7,6 +7,7 @@ import { logger } from "@lib/logger";
 import { buildPropertyWhatsAppUrl } from "@lib/whatsapp";
 import type { Unit, Building } from "@schemas/models";
 import { QuintoAndarVisitScheduler } from "@components/flow/QuintoAndarVisitScheduler";
+import { UnitSelectorModal } from "@components/property/UnitSelectorModal";
 
 // Componentes de propiedad
 import { PropertyAboveFoldMobile } from "@components/property/PropertyAboveFoldMobile";
@@ -75,7 +76,8 @@ interface UnitDetailClientProps {
     comuna: string;
     amenities: string[];
     gallery: string[];
-  };
+    allUnits?: Unit[]; // Todas las unidades del edificio (opcional)
+  } & Record<string, unknown>; // Permitir propiedades adicionales como allUnits
   similarUnits?: Unit[];
 }
 
@@ -84,9 +86,16 @@ export function UnitDetailClient({
   building,
   similarUnits = [],
 }: UnitDetailClientProps) {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isVisitModalOpen, setIsVisitModalOpen] = useState(false);
+  const [isUnitSelectorModalOpen, setIsUnitSelectorModalOpen] = useState(false);
+
+  // Usar todas las unidades del edificio si están disponibles, sino solo la unidad actual
+  const allBuildingUnits = building.allUnits && building.allUnits.length > 0 
+    ? building.allUnits 
+    : [unit];
 
   // Convertir building reducido a Building completo para componentes que lo requieren
+  // Usar todas las unidades obtenidas, no solo la unidad actual
   const fullBuilding: Building = {
     id: building.id,
     name: building.name,
@@ -97,8 +106,47 @@ export function UnitDetailClient({
     gallery: building.gallery.length > 0 ? building.gallery : ["/images/default-building.jpg"],
     coverImage: building.gallery[0] || "/images/default-building.jpg",
     precio_desde: unit.price,
-    units: [unit],
+    units: allBuildingUnits, // TODAS las unidades del edificio
   };
+
+  // Handler para abrir modal de selector de unidades
+  const handleOpenUnitSelector = React.useCallback(() => {
+    // Validar que existan unidades en el edificio
+    if (!fullBuilding?.units || !Array.isArray(fullBuilding.units)) {
+      logger.warn("Building units not available", { buildingId: building?.id });
+      return;
+    }
+
+    const totalUnits = fullBuilding.units.length;
+    
+    if (totalUnits === 0) {
+      logger.warn("No units in building", { buildingId: building.id });
+      return;
+    }
+
+    // Log para debugging
+    logger.log("Opening unit selector modal from UnitDetailClient", {
+      buildingId: building.id,
+      totalUnits,
+      currentUnitId: unit?.id,
+    });
+
+    // Trackear evento de apertura de modal
+    track("unit_selector_modal_opened", {
+      property_id: building.id,
+      property_slug: building.slug,
+      current_unit_id: unit?.id,
+      total_units_count: totalUnits,
+      variant: "catalog",
+    });
+
+    setIsUnitSelectorModalOpen(true);
+  }, [fullBuilding, building, unit]);
+
+  // Handler para cerrar modal de selector de unidades
+  const handleCloseUnitSelector = React.useCallback(() => {
+    setIsUnitSelectorModalOpen(false);
+  }, []);
 
   // Analytics tracking on mount
   useEffect(() => {
@@ -116,10 +164,10 @@ export function UnitDetailClient({
     });
   }, [building.id, building.slug, building.name, building.comuna, unit]);
 
-  // Listen for custom event to open modal
+  // Listen for custom event to open visit modal
   useEffect(() => {
     const handleOpenModal = () => {
-      setIsModalOpen(true);
+      setIsVisitModalOpen(true);
     };
 
     window.addEventListener("openVisitScheduler", handleOpenModal);
@@ -172,8 +220,9 @@ export function UnitDetailClient({
                 building={fullBuilding}
                 selectedUnit={unit}
                 variant="catalog"
-                onScheduleVisit={() => setIsModalOpen(true)}
+                onScheduleVisit={() => setIsVisitModalOpen(true)}
                 onWhatsApp={handleWhatsAppClick}
+                onSelectOtherUnit={handleOpenUnitSelector}
                 onSave={() => {
                   logger.log("Save clicked");
                 }}
@@ -221,16 +270,17 @@ export function UnitDetailClient({
             <PropertyBookingCard
               unit={unit}
               building={fullBuilding}
-              onScheduleVisit={() => setIsModalOpen(true)}
+              onScheduleVisit={() => setIsVisitModalOpen(true)}
               onWhatsApp={handleWhatsAppClick}
+              onSelectOtherUnit={handleOpenUnitSelector}
             />
           </div>
         </main>
 
         {/* Modal de Agendamiento QuintoAndar */}
         <QuintoAndarVisitScheduler
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
+          isOpen={isVisitModalOpen}
+          onClose={() => setIsVisitModalOpen(false)}
           listingId={building.id}
           propertyName={building.name}
           propertyAddress={building.address}
@@ -245,8 +295,16 @@ export function UnitDetailClient({
               visit_id: visitData.visitId,
               variant: "catalog",
             });
-            setIsModalOpen(false);
+            setIsVisitModalOpen(false);
           }}
+        />
+
+        {/* Modal de Selector de Unidades */}
+        <UnitSelectorModal
+          isOpen={isUnitSelectorModalOpen}
+          onClose={handleCloseUnitSelector}
+          building={fullBuilding}
+          currentUnitId={unit.id}
         />
       </div>
     </ErrorBoundary>

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import type { Unit, Building } from "@schemas/models";
+import { logger } from "@lib/logger";
 
 interface UsePropertyUnitProps {
   building: Building;
@@ -55,9 +56,27 @@ export function usePropertyUnit({ building, defaultUnitId }: UsePropertyUnitProp
     const units = building.units.filter(unit => unit.disponible);
     if (defaultUnitId) {
       const unit = units.find(u => u.id === defaultUnitId);
-      if (unit) return unit;
+      if (unit) {
+        return unit;
+      } else {
+        // Loggear cuando defaultUnitId no corresponde a unidad disponible
+        logger.warn("usePropertyUnit: defaultUnitId no corresponde a unidad disponible", {
+          buildingId: building.id,
+          defaultUnitId,
+          availableUnitIds: units.map(u => u.id),
+        });
+      }
     }
-    return units[0] || null;
+    // Usar primera unidad disponible como fallback
+    const fallbackUnit = units[0] || null;
+    if (fallbackUnit && defaultUnitId) {
+      logger.info("usePropertyUnit: usando primera unidad disponible como fallback", {
+        buildingId: building.id,
+        requestedUnitId: defaultUnitId,
+        fallbackUnitId: fallbackUnit.id,
+      });
+    }
+    return fallbackUnit;
   };
 
   const [selectedUnit, setSelectedUnit] = useState<Unit | null>(getInitialUnit);
@@ -85,13 +104,33 @@ export function usePropertyUnit({ building, defaultUnitId }: UsePropertyUnitProp
 
     // Buscar la nueva unidad
     let newUnit: Unit | null = null;
+    let usedFallback = false;
     
     if (defaultUnitId) {
       newUnit = availableUnits.find(u => u.id === defaultUnitId) || null;
+      
+      // Si defaultUnitId no corresponde a unidad disponible, loggear y usar fallback
+      if (!newUnit) {
+        logger.warn("usePropertyUnit: defaultUnitId no corresponde a unidad disponible en useEffect", {
+          buildingId: building.id,
+          defaultUnitId,
+          availableUnitIds: availableUnits.map(u => u.id),
+          availableUnitsCount: availableUnits.length,
+        });
+        usedFallback = true;
+      }
     }
     
+    // Usar primera unidad disponible como fallback si no se encontró la solicitada
     if (!newUnit && availableUnits.length > 0) {
       newUnit = availableUnits[0];
+      if (defaultUnitId) {
+        logger.info("usePropertyUnit: usando primera unidad disponible como fallback en useEffect", {
+          buildingId: building.id,
+          requestedUnitId: defaultUnitId,
+          fallbackUnitId: newUnit.id,
+        });
+      }
     }
 
     // Actualizar solo si es diferente
@@ -99,6 +138,13 @@ export function usePropertyUnit({ building, defaultUnitId }: UsePropertyUnitProp
       setSelectedUnit(prev => {
         if (prev?.id === newUnit!.id) return prev;
         return newUnit;
+      });
+    } else if (availableUnits.length === 0) {
+      // Si no hay unidades disponibles, loggear advertencia
+      logger.warn("usePropertyUnit: no hay unidades disponibles", {
+        buildingId: building.id,
+        defaultUnitId,
+        totalUnits: building.units.length,
       });
     }
   // Solo depender de defaultUnitId - disponibleUnits se lee pero no causa re-ejecución

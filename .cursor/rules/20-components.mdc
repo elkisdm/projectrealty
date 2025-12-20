@@ -16,3 +16,42 @@ alwaysApply: false
 - Componentes reutilizables con props tipadas.
 - Manejo de estados de carga y error.
 - Responsive design mobile-first.
+
+## ⚠️ PATRÓN CRÍTICO: Modales con Framer Motion
+
+**SIEMPRE usar este patrón para modales con AnimatePresence:**
+
+```typescript
+// ✅ CORRECTO
+if (typeof document === "undefined") return null;
+
+return createPortal(
+  <AnimatePresence mode="wait">
+    {isOpen && (
+      <motion.div key="modal-key">
+        {/* contenido */}
+      </motion.div>
+    )}
+  </AnimatePresence>,
+  document.body
+);
+```
+
+**NUNCA hacer esto (❌ INCORRECTO):**
+```typescript
+// ❌ INCORRECTO - Las animaciones no funcionarán
+return (
+  <AnimatePresence>
+    {isOpen && createPortal(<motion.div>...</motion.div>, document.body)}
+  </AnimatePresence>
+);
+```
+
+**Reglas:**
+1. Portal primero: `createPortal()` debe ser la función externa
+2. AnimatePresence dentro: debe estar dentro del portal
+3. Condición dentro: `{isOpen &&}` debe estar dentro de AnimatePresence
+4. Key única: el motion.div debe tener una key única
+5. Preferir BaseModal: usar `@components/ui/BaseModal` para nuevos modales
+
+Ver documentación completa: `docs/MODAL_PATTERN.md`

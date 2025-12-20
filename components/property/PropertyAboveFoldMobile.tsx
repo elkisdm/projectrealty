@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useRef } from "react";
 import Image from "next/image";
-import { Share2, Heart, ArrowLeft, MapPin } from "lucide-react";
+import { Share2, Heart, ArrowLeft, MapPin, ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { Building, Unit } from "@schemas/models";
 import { StickyCtaBar } from "@components/ui/StickyCtaBar";
@@ -122,6 +122,30 @@ export function PropertyAboveFoldMobile({
         }
     };
 
+    // Navegar a imagen anterior
+    const goToPrevious = () => {
+        if (scrollRef.current && activeImageIndex > 0) {
+            const newIndex = activeImageIndex - 1;
+            scrollRef.current.scrollTo({
+                left: newIndex * scrollRef.current.clientWidth,
+                behavior: 'smooth'
+            });
+            setActiveImageIndex(newIndex);
+        }
+    };
+
+    // Navegar a imagen siguiente
+    const goToNext = () => {
+        if (scrollRef.current && activeImageIndex < finalImages.length - 1) {
+            const newIndex = activeImageIndex + 1;
+            scrollRef.current.scrollTo({
+                left: newIndex * scrollRef.current.clientWidth,
+                behavior: 'smooth'
+            });
+            setActiveImageIndex(newIndex);
+        }
+    };
+
     // Calcular precio total por mes (arriendo + GGCC)
     const arriendo = selectedUnit?.price || building.precio_desde || 290000;
     const ggcc = selectedUnit?.gastoComun || 45000;
@@ -135,6 +159,10 @@ export function PropertyAboveFoldMobile({
     const petFriendly = selectedUnit?.petFriendly ?? true;
     const minutosMetro = 6;
     const stock = building.units?.filter(u => u.disponible).length || 7;
+    const totalUnitsCount = building.units?.length || 0;
+    // Mostrar botón si hay unidades en el edificio (mostrar TODAS las unidades en el modal, no solo disponibles)
+    // Esto es importante porque hay 1 edificio con 111 departamentos
+    const shouldShowChangeButton = onSelectOtherUnit && totalUnitsCount > 0;
 
     // Formatear texto informativo
     const getInfoText = () => {
@@ -163,7 +191,7 @@ export function PropertyAboveFoldMobile({
     return (
         <section aria-labelledby="af-title" className="relative">
             {/* Hero Image con Overlay (60-70vh) */}
-            <div className="relative min-h-[60vh] max-h-[70vh] h-[65vh] w-full overflow-hidden">
+            <div className="relative min-h-[60vh] max-h-[70vh] h-[65vh] w-full overflow-hidden rounded-2xl">
                 {/* Slider de imágenes */}
                 <div
                     ref={scrollRef}
@@ -267,6 +295,37 @@ export function PropertyAboveFoldMobile({
                         {activeImageIndex + 1} / {totalImages}
                     </div>
                 )}
+
+                {/* Flechas de navegación interactivas */}
+                {finalImages.length > 1 && (
+                    <>
+                        {/* Flecha izquierda */}
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                goToPrevious();
+                            }}
+                            disabled={activeImageIndex === 0}
+                            className="absolute left-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center bg-black/60 hover:bg-black/80 backdrop-blur-sm text-white rounded-full transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-white/50 shadow-lg"
+                            aria-label="Imagen anterior"
+                        >
+                            <ChevronLeft className="w-5 h-5 md:w-6 md:h-6" />
+                        </button>
+
+                        {/* Flecha derecha */}
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                goToNext();
+                            }}
+                            disabled={activeImageIndex === finalImages.length - 1}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center bg-black/60 hover:bg-black/80 backdrop-blur-sm text-white rounded-full transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-white/50 shadow-lg"
+                            aria-label="Imagen siguiente"
+                        >
+                            <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />
+                        </button>
+                    </>
+                )}
             </div>
 
             {/* Breadcrumb y título (debajo del hero) */}
@@ -280,7 +339,7 @@ export function PropertyAboveFoldMobile({
                     <h1 id="af-title" className="text-xl font-semibold leading-tight text-gray-900 dark:text-white flex-1">
                         {tipologia} luminoso en {building.comuna}
                     </h1>
-                    {onSelectOtherUnit && (
+                    {shouldShowChangeButton && (
                         <button
                             onClick={onSelectOtherUnit}
                             className="shrink-0 px-3 py-1.5 text-xs font-medium text-[#8B6CFF] hover:text-[#7a5ce6] border border-[#8B6CFF]/30 hover:border-[#8B6CFF]/50 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B6CFF] focus-visible:ring-offset-2"
