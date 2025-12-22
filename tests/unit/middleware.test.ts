@@ -31,16 +31,21 @@ global.Response = class MockResponse {
 
 import { NextRequest } from 'next/server';
 import { middleware } from '../../middleware';
-import { isAuthenticatedAdmin } from '../../lib/admin/auth-middleware';
 
-// Mock del módulo auth-middleware
-jest.mock('../../lib/admin/auth-middleware', () => ({
-  isAuthenticatedAdmin: jest.fn(),
-}));
+// Mock de process.env para controlar la autenticación
+const originalEnv = process.env;
 
 describe('middleware', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    process.env = { ...originalEnv };
+    // En desarrollo sin token, permite acceso por defecto
+    process.env.NODE_ENV = 'development';
+    delete process.env.ADMIN_TOKEN;
+  });
+
+  afterAll(() => {
+    process.env = originalEnv;
   });
 
   const createMockRequest = (pathname: string): NextRequest => {
@@ -69,48 +74,48 @@ describe('middleware', () => {
       const response = await middleware(request);
       
       expect(response.status).toBe(200);
-      expect(isAuthenticatedAdmin).not.toHaveBeenCalled();
     });
 
-    it('debería requerir autenticación para /admin', async () => {
-      (isAuthenticatedAdmin as jest.Mock).mockResolvedValue(false);
+    it('debería requerir autenticación para /admin en producción', async () => {
+      process.env.NODE_ENV = 'production';
+      process.env.ADMIN_TOKEN = 'test-token';
       
       const request = createMockRequest('/admin');
       const response = await middleware(request);
       
-      expect(isAuthenticatedAdmin).toHaveBeenCalled();
       expect(response.status).toBe(307); // Redirect
     });
 
-    it('debería permitir acceso a /admin si está autenticado', async () => {
-      (isAuthenticatedAdmin as jest.Mock).mockResolvedValue(true);
+    it('debería permitir acceso a /admin si está autenticado con token', async () => {
+      process.env.NODE_ENV = 'production';
+      process.env.ADMIN_TOKEN = 'test-token';
       
       const request = createMockRequest('/admin');
+      request.headers.set('x-admin-token', 'test-token');
       const response = await middleware(request);
       
-      expect(isAuthenticatedAdmin).toHaveBeenCalled();
       expect(response.status).toBe(200);
     });
 
-    it('debería requerir autenticación para /admin/buildings', async () => {
-      (isAuthenticatedAdmin as jest.Mock).mockResolvedValue(false);
+    it('debería requerir autenticación para /admin/buildings en producción', async () => {
+      process.env.NODE_ENV = 'production';
+      process.env.ADMIN_TOKEN = 'test-token';
       
       const request = createMockRequest('/admin/buildings');
       const response = await middleware(request);
       
-      expect(isAuthenticatedAdmin).toHaveBeenCalled();
       expect(response.status).toBe(307); // Redirect
     });
   });
 
   describe('API routes', () => {
     it('debería retornar 401 para /api/admin/stats sin autenticación', async () => {
-      (isAuthenticatedAdmin as jest.Mock).mockResolvedValue(false);
+      process.env.NODE_ENV = 'production';
+      process.env.ADMIN_TOKEN = 'test-token';
       
       const request = createMockRequest('/api/admin/stats');
       const response = await middleware(request);
       
-      expect(isAuthenticatedAdmin).toHaveBeenCalled();
       expect(response.status).toBe(401);
       
       const json = await response.json();
@@ -118,12 +123,13 @@ describe('middleware', () => {
     });
 
     it('debería permitir acceso a /api/admin/stats si está autenticado', async () => {
-      (isAuthenticatedAdmin as jest.Mock).mockResolvedValue(true);
+      process.env.NODE_ENV = 'production';
+      process.env.ADMIN_TOKEN = 'test-token';
       
       const request = createMockRequest('/api/admin/stats');
+      request.headers.set('x-admin-token', 'test-token');
       const response = await middleware(request);
       
-      expect(isAuthenticatedAdmin).toHaveBeenCalled();
       expect(response.status).toBe(200);
     });
   });
@@ -133,7 +139,6 @@ describe('middleware', () => {
       const request = createMockRequest('/');
       const response = await middleware(request);
       
-      expect(isAuthenticatedAdmin).not.toHaveBeenCalled();
       expect(response.status).toBe(200);
     });
 
@@ -141,14 +146,14 @@ describe('middleware', () => {
       const request = createMockRequest('/api/buildings');
       const response = await middleware(request);
       
-      expect(isAuthenticatedAdmin).not.toHaveBeenCalled();
       expect(response.status).toBe(200);
     });
   });
 
   describe('Redirect con query params', () => {
     it('debería preservar URL original en redirect a login', async () => {
-      (isAuthenticatedAdmin as jest.Mock).mockResolvedValue(false);
+      process.env.NODE_ENV = 'production';
+      process.env.ADMIN_TOKEN = 'test-token';
       
       const request = createMockRequest('/admin/buildings');
       const response = await middleware(request);
