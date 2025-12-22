@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+  <title>check - outline - md</title>
+  <desc>Ícono de verificación</desc>
+  
+  
+  <defs>
+    <filter id="glass-check" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="blur" />
+      <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7" result="glow" />
+      <feBlend in="SourceGraphic" in2="glow" mode="normal" />
+    </filter>
+  </defs>
+  <g filter="url(#glass-check)" style="backdrop-filter: blur(10px);">
+    <rect width="24" height="24" fill="rgba(255, 255, 255, 0.08)" stroke="rgba(255, 255, 255, 0.14)" stroke-width="0.5" rx="4" />
+    <g fill="none" stroke="#A28BFF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M 20 6" fill="none" stroke="currentColor" />
+    <path d="L 9 17 4 12"  />
+    </g>
+  </g>
+</svg>

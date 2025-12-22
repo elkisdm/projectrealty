@@ -1,0 +1,504 @@
+{
+  "metadata": {
+    "version": "2.0.0",
+    "created": "2025-01-27",
+    "description": "Especificación de mapeo raw→canónico v2 con reglas de RECONCILE_NOTES",
+    "author": "Dev Senior",
+    "reconcile_notes_version": "v1"
+  },
+  "data_sources": {
+    "assetplan": {
+      "description": "Proveedor principal de datos inmobiliarios",
+      "format": "JSON",
+      "sample_file": "data/sources/assetplan-from-csv.json",
+      "volume": "~50,000 registros",
+      "pk_technical": "OP (id único de unidad)"
+    }
+  },
+  "availability": {
+    "available_flag": {
+      "description": "Disponibilidad publicable de la unidad",
+      "formula": "Estado ∈ {'RE - Acondicionamiento', 'Lista para arrendar'} AND Arriendo Total > 1",
+      "transformation": "isAvailableForPublishing",
+      "validation": "boolean",
+      "business_rules": [
+        "Solo unidades con estado válido y arriendo > 1",
+        "RE - Acondicionamiento se publica con badge 'Pronto'"
+      ]
+    }
+  },
+  "aggregations": {
+    "price_from_by_building": {
+      "description": "Precio mínimo de unidades publicables por edificio",
+      "formula": "MIN(price) WHERE disponible = true AND rent_amount > 1",
+      "transformation": "calculatePriceFrom",
+      "validation": "positive_number_or_undefined",
+      "business_rules": [
+        "Excluir unidades con Arriendo Total ≤ 1",
+        "Tomar el mínimo del resto de unidades publicables"
+      ]
+    },
+    "price_to_by_building": {
+      "description": "Precio máximo de unidades publicables por edificio",
+      "formula": "MAX(price) WHERE disponible = true AND rent_amount > 1",
+      "transformation": "calculatePriceTo",
+      "validation": "positive_number_or_undefined",
+      "business_rules": [
+        "Excluir unidades con Arriendo Total ≤ 1",
+        "Tomar el máximo del resto de unidades publicables"
+      ]
+    }
+  },
+  "promotion": {
+    "no_guarantee_surcharge_pct": {
+      "description": "Recargo por sin garantía",
+      "value": 6,
+      "unit": "percent",
+      "application": "rent + extras (parking/bodega) si suman a la renta",
+      "transformation": "calculateNoGuaranteeSurcharge",
+      "validation": "number_6",
+      "business_rules": [
+        "Recargo fijo del 6%",
+        "Se aplica sobre canon y estacionamiento/bodega si suman al arriendo"
+      ]
+    }
+  },
+  "pricing": {
+    "gc_mode_rule": {
+      "description": "Regla de modo de garantía",
+      "formula": "MF fijo excepto OP en lista (VISD,SNMD,LIAD,MRSD); Retail variable",
+      "transformation": "determineGCMode",
+      "validation": "enum_mf_variable",
+      "business_rules": [
+        "MF fijo por defecto",
+        "OP excepciones: VISD, SNMD, LIAD, MRSD",
+        "Retail siempre variable"
+      ]
+    },
+    "renta_minima": {
+      "description": "Renta mínima requerida",
+      "formula": "arriendo_total * rentas_necesarias",
+      "transformation": "calculateRentaMinima",
+      "validation": "positive_number",
+      "business_rules": [
+        "Valor fijo de ingesta",
+        "Sumable por titular + avales"
+      ]
+    }
+  },
+  "unit": {
+    "parking_ids": {
+      "description": "Identificadores de estacionamiento",
+      "format": "pipe_separated",
+      "example": "31|32",
+      "transformation": "parse_ids_or_pipe",
+      "validation": "string_or_null",
+      "business_rules": [
+        "Son identificadores, no cantidad",
+        "Formato canónico: 'id|id'",
+        "Valor 'x' = Opcional disponible",
+        "has_parking = false, parking_ids = null, parking_opcional = true"
+      ]
+    },
+    "storage_ids": {
+      "description": "Identificadores de bodega",
+      "format": "pipe_separated",
+      "example": "15|16",
+      "transformation": "parse_ids_or_pipe",
+      "validation": "string_or_null",
+      "business_rules": [
+        "Son identificadores, no cantidad",
+        "Formato canónico: 'id|id'",
+        "Valor 'x' = Opcional disponible",
+        "has_storage = false, storage_ids = null, storage_opcional = true"
+      ]
+    },
+    "orientation": {
+      "description": "Orientación de la unidad",
+      "domain": ["N", "NE", "E", "SE", "S", "SO", "O", "NO"],
+      "transformation": "normalizeOrientation",
+      "validation": "enum_orientation",
+      "business_rules": [
+        "Dominio estricto de 8 orientaciones",
+        "Descartar variantes no estándar"
+      ]
+    },
+    "guarantee_installments": {
+      "description": "Cuotas de garantía",
+      "range": [1, 12],
+      "transformation": "validateGuaranteeInstallments",
+      "validation": "number_1_to_12",
+      "business_rules": [
+        "Máximo 12 cuotas",
+        "Validar rango 1..12"
+      ]
+    },
+    "guarantee_months": {
+      "description": "Cantidad de garantías en meses",
+      "domain": [0, 1, 2],
+      "transformation": "validateGuaranteeMonths",
+      "validation": "enum_0_1_2",
+      "business_rules": [
+        "Permitir 0, 1, 2 meses",
+        "Sumar con garantía mascota cuando aplique"
+      ]
+    }
+  },
+  "normalization": {
+    "commune": {
+      "description": "Normalización de comunas",
+      "transformation": "normalizeComuna",
+      "validation": "string_non_empty",
+      "business_rules": [
+        "Eliminar códigos líderes/medios/finales",
+        "Normalizar tildes/ñ (Title Case)",
+        "Regex: /\\b\\d{3,}\\b/ para quitar enteros",
+        "Colapsar dobles espacios",
+        "Separar por guiones, tomar tópico más largo"
+      ],
+      "examples": {
+        "8930002 San Miguel": "San Miguel",
+        "San Miguel - San Miguel 27888": "San Miguel",
+        "Las Condes": "Las Condes"
+      }
+    },
+    "typology": {
+      "description": "Normalización de tipologías",
+      "canonical_internal": ["Studio", "1D1B", "2D1B", "2D2B", "3D2B"],
+      "public_simple": ["estudio", "1d", "2d", "3d", "4d", "loft"],
+      "transformation": "normalizeTypology",
+      "validation": "enum_canonical",
+      "business_rules": [
+        "Set canónico interno para filtros",
+        "Mapeo público simple para UI",
+        "Mantener canónico para filtros por baño/dormitorios"
+      ]
+    },
+    "area": {
+      "description": "Corrección de áreas",
+      "transformation": "correctArea",
+      "validation": "range_20_200_m2",
+      "business_rules": [
+        "Corregir valores en cm² → m²",
+        "Dividir por 100 cuando > 1000",
+        "Rango válido: 20-200 m² (interior), 0-50 m² (exterior)"
+      ]
+    }
+  },
+  "tracing": {
+    "link_listing": {
+      "description": "Link de listing para trazabilidad",
+      "transformation": "validateLinkListing",
+      "validation": "url_with_unit_number",
+      "business_rules": [
+        "Trazabilidad obligatoria",
+        "Si no contiene número de unidad → marcar para revisión"
+      ]
+    }
+  },
+  "featured": {
+    "highlighted_flag": {
+      "description": "Campo especial destacado",
+      "formula": "Tremenda promo = true OR % Descuento ≥ 50 OR Sin Garantia = true OR precioDesde en percentil 25 de comuna para tipología",
+      "transformation": "calculateFeaturedFlag",
+      "validation": "boolean",
+      "business_rules": [
+        "Regla OR de condiciones",
+        "Render: badge 'Destacado'",
+        "Ordenamiento preferente en catálogo"
+      ]
+    }
+  },
+  "raw_to_canonical_mapping": {
+    "building": {
+      "id": {
+        "raw_field": "id",
+        "canonical_field": "id",
+        "transformation": "coerceId",
+        "validation": "string_non_empty"
+      },
+      "name": {
+        "raw_field": "nombre",
+        "canonical_field": "name",
+        "transformation": "normalizeString",
+        "validation": "string_non_empty"
+      },
+      "comuna": {
+        "raw_field": "comuna",
+        "canonical_field": "comuna",
+        "transformation": "normalizeComuna",
+        "validation": "string_non_empty"
+      },
+      "address": {
+        "raw_field": "direccion",
+        "canonical_field": "address",
+        "transformation": "normalizeString",
+        "validation": "string_non_empty"
+      },
+      "gc_mode": {
+        "raw_field": "gc_mode",
+        "canonical_field": "gcMode",
+        "transformation": "determineGCMode",
+        "validation": "enum_mf_variable"
+      }
+    },
+    "unit": {
+      "id": {
+        "raw_field": "OP",
+        "canonical_field": "id",
+        "transformation": "coerceId",
+        "validation": "string_non_empty"
+      },
+      "building_id": {
+        "raw_field": "Condominio",
+        "canonical_field": "buildingId",
+        "transformation": "coerceId",
+        "validation": "foreign_key_exists"
+      },
+      "unit_number": {
+        "raw_field": "Unidad",
+        "canonical_field": "unitNumber",
+        "transformation": "normalizeString",
+        "validation": "string_non_empty"
+      },
+      "tipologia": {
+        "raw_field": "tipologia",
+        "canonical_field": "tipologia",
+        "transformation": "normalizeTypology",
+        "validation": "enum_canonical"
+      },
+      "area_interior_m2": {
+        "raw_field": "area_interior_m2",
+        "canonical_field": "areaInteriorM2",
+        "transformation": "correctArea",
+        "validation": "range_20_200_m2"
+      },
+      "area_exterior_m2": {
+        "raw_field": "area_exterior_m2",
+        "canonical_field": "areaExteriorM2",
+        "transformation": "correctArea",
+        "validation": "range_0_50_m2"
+      },
+      "price": {
+        "raw_field": "Arriendo Total",
+        "canonical_field": "price",
+        "transformation": "number",
+        "validation": "number_positive"
+      },
+      "disponible": {
+        "raw_field": "Estado",
+        "canonical_field": "disponible",
+        "transformation": "isAvailableForPublishing",
+        "validation": "boolean"
+      },
+      "parking_ids": {
+        "raw_field": "Estac",
+        "canonical_field": "parkingIds",
+        "transformation": "parse_ids_or_pipe",
+        "validation": "string_or_null"
+      },
+      "storage_ids": {
+        "raw_field": "Bod",
+        "canonical_field": "storageIds",
+        "transformation": "parse_ids_or_pipe",
+        "validation": "string_or_null"
+      },
+      "orientation": {
+        "raw_field": "Orientacion",
+        "canonical_field": "orientation",
+        "transformation": "normalizeOrientation",
+        "validation": "enum_orientation"
+      },
+      "guarantee_installments": {
+        "raw_field": "Cuotas Garantia",
+        "canonical_field": "guaranteeInstallments",
+        "transformation": "validateGuaranteeInstallments",
+        "validation": "number_1_to_12"
+      },
+      "guarantee_months": {
+        "raw_field": "Cant. Garantias (meses)",
+        "canonical_field": "guaranteeMonths",
+        "transformation": "validateGuaranteeMonths",
+        "validation": "enum_0_1_2"
+      },
+      "rentas_necesarias": {
+        "raw_field": "Rentas Necesarias",
+        "canonical_field": "rentasNecesarias",
+        "transformation": "number",
+        "validation": "number_positive"
+      },
+      "link_listing": {
+        "raw_field": "Link Listing",
+        "canonical_field": "linkListing",
+        "transformation": "validateLinkListing",
+        "validation": "url_with_unit_number"
+      }
+    }
+  },
+  "derived_variables": {
+    "precioDesde": {
+      "description": "Precio mínimo de unidades publicables",
+      "formula": "MIN(price) WHERE disponible = true AND rent_amount > 1",
+      "transformation": "calculatePriceFrom",
+      "validation": "positive_number_or_undefined"
+    },
+    "precioHasta": {
+      "description": "Precio máximo de unidades publicables",
+      "formula": "MAX(price) WHERE disponible = true AND rent_amount > 1",
+      "transformation": "calculatePriceTo",
+      "validation": "positive_number_or_undefined"
+    },
+    "hasAvailability": {
+      "description": "Indica si el edificio tiene unidades publicables",
+      "formula": "EXISTS(units WHERE disponible = true AND rent_amount > 1)",
+      "transformation": "hasAvailability",
+      "validation": "boolean"
+    },
+    "rentaMinima": {
+      "description": "Renta mínima requerida",
+      "formula": "arriendo_total * rentas_necesarias",
+      "transformation": "calculateRentaMinima",
+      "validation": "positive_number"
+    },
+    "featured": {
+      "description": "Flag de destacado",
+      "formula": "Tremenda promo OR % Descuento ≥ 50 OR Sin Garantia OR precioDesde en percentil 25",
+      "transformation": "calculateFeaturedFlag",
+      "validation": "boolean"
+    }
+  },
+  "validation_rules": {
+    "hard_checks": [
+      {
+        "name": "precioDesde_consistency",
+        "description": "precioDesde debe ser igual al mínimo de unidades publicables",
+        "sql": "SELECT b.id FROM buildings b JOIN LATERAL (SELECT MIN(u.price) FROM units u WHERE u.building_id = b.id AND u.disponible = true AND u.price > 1) m ON true WHERE b.precio_desde <> m.min_precio",
+        "severity": "CRITICAL"
+      },
+      {
+        "name": "precioHasta_consistency",
+        "description": "precioHasta debe ser igual al máximo de unidades publicables",
+        "sql": "SELECT b.id FROM buildings b JOIN LATERAL (SELECT MAX(u.price) FROM units u WHERE u.building_id = b.id AND u.disponible = true AND u.price > 1) m ON true WHERE b.precio_hasta <> m.max_precio",
+        "severity": "CRITICAL"
+      },
+      {
+        "name": "typology_canonical",
+        "description": "Tipologías deben estar en formato canónico",
+        "sql": "SELECT DISTINCT tipologia FROM units WHERE tipologia !~ '^(Studio|1D1B|2D1B|2D2B|3D2B)$'",
+        "severity": "CRITICAL"
+      },
+      {
+        "name": "area_reasonable",
+        "description": "Áreas deben estar en rango razonable después de corrección",
+        "sql": "SELECT id FROM units WHERE area_interior_m2 > 200 OR area_exterior_m2 > 50 OR area_interior_m2 < 20",
+        "severity": "CRITICAL"
+      },
+      {
+        "name": "op_uniqueness",
+        "description": "OP debe ser único",
+        "sql": "SELECT OP, COUNT(*) FROM units GROUP BY OP HAVING COUNT(*) > 1",
+        "severity": "CRITICAL"
+      },
+      {
+        "name": "condominio_unidad_uniqueness",
+        "description": "Condominio+Unidad debe ser único para trazabilidad",
+        "sql": "SELECT building_id, unit_number, COUNT(*) FROM units GROUP BY building_id, unit_number HAVING COUNT(*) > 1",
+        "severity": "CRITICAL"
+      }
+    ],
+    "soft_checks": [
+      {
+        "name": "commune_digits",
+        "description": "Comunas no deben contener dígitos en cualquier posición",
+        "sql": "SELECT DISTINCT comuna FROM buildings WHERE comuna ~ '\\d'",
+        "severity": "MODERATE"
+      },
+      {
+        "name": "link_listing_unit_number",
+        "description": "Link Listing debe contener número de unidad",
+        "sql": "SELECT id, link_listing FROM units WHERE link_listing IS NOT NULL AND link_listing !~ '\\d'",
+        "severity": "MODERATE"
+      },
+      {
+        "name": "gc_mode_coherence",
+        "description": "GC Total debe tener modo coherente",
+        "sql": "SELECT id, gc_mode FROM buildings WHERE gc_mode NOT IN ('MF', 'variable')",
+        "severity": "MODERATE"
+      },
+      {
+        "name": "guarantee_installments_range",
+        "description": "Cuotas Garantía debe estar en rango 1..12",
+        "sql": "SELECT id, guarantee_installments FROM units WHERE guarantee_installments < 1 OR guarantee_installments > 12",
+        "severity": "MODERATE"
+      }
+    ]
+  },
+  "transformation_stubs": {
+    "isAvailableForPublishing": {
+      "description": "Determina si una unidad está disponible para publicación",
+      "parameters": ["estado", "arriendo_total"],
+      "return": "boolean",
+      "implementation": "lib/adapters/assetplan.ts"
+    },
+    "calculatePriceFrom": {
+      "description": "Calcula precio mínimo de unidades publicables",
+      "parameters": ["units"],
+      "return": "number | undefined",
+      "implementation": "lib/derive.ts"
+    },
+    "calculatePriceTo": {
+      "description": "Calcula precio máximo de unidades publicables",
+      "parameters": ["units"],
+      "return": "number | undefined",
+      "implementation": "lib/derive.ts"
+    },
+    "parse_ids_or_pipe": {
+      "description": "Parsea identificadores separados por pipe",
+      "parameters": ["raw_value"],
+      "return": "{ids: string | null, has_optional: boolean}",
+      "implementation": "lib/adapters/assetplan.ts"
+    },
+    "normalizeOrientation": {
+      "description": "Normaliza orientación a dominio estricto",
+      "parameters": ["raw_orientation"],
+      "return": "string | undefined",
+      "implementation": "lib/adapters/assetplan.ts"
+    },
+    "validateGuaranteeInstallments": {
+      "description": "Valida cuotas de garantía en rango 1..12",
+      "parameters": ["installments"],
+      "return": "number | undefined",
+      "implementation": "lib/adapters/assetplan.ts"
+    },
+    "validateGuaranteeMonths": {
+      "description": "Valida meses de garantía en {0,1,2}",
+      "parameters": ["months"],
+      "return": "number | undefined",
+      "implementation": "lib/adapters/assetplan.ts"
+    },
+    "determineGCMode": {
+      "description": "Determina modo de garantía",
+      "parameters": ["raw_mode", "building_id"],
+      "return": "'MF' | 'variable'",
+      "implementation": "lib/adapters/assetplan.ts"
+    },
+    "calculateRentaMinima": {
+      "description": "Calcula renta mínima requerida",
+      "parameters": ["arriendo_total", "rentas_necesarias"],
+      "return": "number",
+      "implementation": "lib/derive.ts"
+    },
+    "validateLinkListing": {
+      "description": "Valida link de listing con número de unidad",
+      "parameters": ["link"],
+      "return": "string | null",
+      "implementation": "lib/adapters/assetplan.ts"
+    },
+    "calculateFeaturedFlag": {
+      "description": "Calcula flag de destacado",
+      "parameters": ["promo_data", "price_percentile"],
+      "return": "boolean",
+      "implementation": "lib/derive.ts"
+    }
+  }
+}

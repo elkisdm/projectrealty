@@ -1,0 +1,64 @@
+{
+  "id": "ap_building_001",
+  "slug": "sample-assetplan-building",
+  "nombre": "Edificio Demo AssetPlan",
+  "comuna": "Ñuñoa",
+  "direccion": "Av. Demo 1234",
+  "coverImage": "https://example.com/images/cover.jpg",
+  "amenities": ["Piscina", "Gimnasio", "Cowork"],
+  "media": {
+    "images": [
+      "https://example.com/images/1.jpg",
+      "https://example.com/images/2.jpg",
+      "https://example.com/images/3.jpg",
+      "https://example.com/images/4.jpg"
+    ],
+    "tour360": "https://example.com/tour",
+    "video": "https://example.com/video"
+  },
+  "serviceLevel": "pro",
+  "badges": ["Comisión corretaje gratis", "Servicio Pro"],
+  "nearestTransit": {
+    "name": "Metro Demo",
+    "distanceMin": 8
+  },
+  "units": [
+    {
+      "id": "u1",
+      "codigoInterno": "A-101",
+      "tipologia": "Studio",
+      "bathrooms": 1,
+      "area_interior_m2": 25,
+      "area_exterior_m2": 3,
+      "piso": 1,
+      "price": 400000,
+      "disponible": true
+    },
+    {
+      "id": "u2",
+      "codigoInterno": "B-502",
+      "tipologia": "1D/1B",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "m2": 35,
+      "piso": 5,
+      "price": 480000,
+      "disponible": true,
+      "promotions": ["50% OFF"]
+    },
+    {
+      "id": "u3",
+      "codigoInterno": "C-802",
+      "tipologia": "2D/2B",
+      "bedrooms": 2,
+      "bathrooms": 2,
+      "area_interior_m2": 55,
+      "area_exterior_m2": 5,
+      "piso": 8,
+      "price": 650000,
+      "disponible": false
+    }
+  ]
+}
+
+

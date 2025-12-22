@@ -263,7 +263,7 @@ async function readFromSupabase(): Promise<Building[]> {
         gallery,
         coverImage: b.cover_image || gallery[0],
         badges: Array.isArray(b.badges) ? (b.badges as PromotionBadge[]) : [],
-        serviceLevel: (b.service_level === 'pro' || b.service_level === 'standard') ? b.service_level : undefined,
+        serviceLevel: (b.service_level === 'pro' || b.service_level === 'standard') ? (b.service_level as 'pro' | 'standard') : undefined,
         precio_desde,
         precio_hasta,
         gc_mode: (b.gc_mode === 'MF' || b.gc_mode === 'variable') ? b.gc_mode : undefined,

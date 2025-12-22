@@ -1,0 +1,56 @@
+[
+  {
+    "id": "edificio-ya-en-m²",
+    "slug": "edificio-ya-en-m²",
+    "nombre": "Edificio Ya En M²",
+    "comuna": "Las Condes",
+    "direccion": "Test 1",
+    "units": [
+      {
+        "id": "101",
+        "tipologia": "1D1B",
+        "area_interior_m2": 45,
+        "area_exterior_m2": 5,
+        "price": 500000,
+        "disponible": true,
+        "petFriendly": false
+      }
+    ]
+  },
+  {
+    "id": "edificio-mixto",
+    "slug": "edificio-mixto",
+    "nombre": "Edificio Mixto",
+    "comuna": "Ñuñoa",
+    "direccion": "Test 2",
+    "units": [
+      {
+        "id": "202",
+        "tipologia": "2D2B",
+        "area_interior_m2": 35,
+        "area_exterior_m2": 8,
+        "price": 750000,
+        "disponible": true,
+        "petFriendly": false
+      }
+    ]
+  },
+  {
+    "id": "edificio-edge",
+    "slug": "edificio-edge",
+    "nombre": "Edificio Edge",
+    "comuna": "Providencia",
+    "direccion": "Test 3",
+    "units": [
+      {
+        "id": "303",
+        "tipologia": "Studio",
+        "area_interior_m2": 500,
+        "area_exterior_m2": 2,
+        "price": 400000,
+        "disponible": true,
+        "petFriendly": false
+      }
+    ]
+  }
+]

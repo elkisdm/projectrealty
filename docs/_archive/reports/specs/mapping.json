@@ -1,0 +1,420 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "created": "2025-01-27",
+    "description": "Especificación de mapeo raw→canónico y variables derivadas para Hommie 0% Comisión",
+    "author": "Arquitecto de Datos Senior"
+  },
+  "data_sources": {
+    "assetplan": {
+      "description": "Proveedor principal de datos inmobiliarios",
+      "format": "JSON",
+      "sample_file": "data/sources/assetplan-from-csv.json",
+      "volume": "~50,000 registros"
+    },
+    "mock": {
+      "description": "Datos de desarrollo y testing",
+      "format": "JSON",
+      "sample_file": "data/buildings.json",
+      "volume": "5 edificios"
+    }
+  },
+  "raw_to_canonical_mapping": {
+    "building": {
+      "id": {
+        "raw_field": "id",
+        "canonical_field": "id",
+        "transformation": "coerceId",
+        "validation": "string_non_empty",
+        "description": "Identificador único del edificio"
+      },
+      "slug": {
+        "raw_field": "slug",
+        "canonical_field": "slug",
+        "transformation": "normalizeString",
+        "fallback": "id",
+        "validation": "string_non_empty",
+        "description": "Slug URL-friendly del edificio"
+      },
+      "name": {
+        "raw_field": "nombre",
+        "canonical_field": "name",
+        "transformation": "normalizeString",
+        "validation": "string_non_empty",
+        "description": "Nombre del edificio"
+      },
+      "comuna": {
+        "raw_field": "comuna",
+        "canonical_field": "comuna",
+        "transformation": "normalizeComuna",
+        "validation": "string_non_empty",
+        "description": "Comuna del edificio (sin códigos postales)"
+      },
+      "address": {
+        "raw_field": "direccion",
+        "canonical_field": "address",
+        "transformation": "normalizeString",
+        "validation": "string_non_empty",
+        "description": "Dirección del edificio"
+      },
+      "amenities": {
+        "raw_field": "amenities",
+        "canonical_field": "amenities",
+        "transformation": "AMENITY_LABEL_TO_KEY",
+        "validation": "array_non_empty",
+        "description": "Lista de amenities normalizadas"
+      },
+      "gallery": {
+        "raw_field": "media.images",
+        "canonical_field": "gallery",
+        "transformation": "filter_boolean",
+        "validation": "array_min_3",
+        "description": "Galería de imágenes del edificio"
+      },
+      "coverImage": {
+        "raw_field": "coverImage",
+        "canonical_field": "coverImage",
+        "transformation": "normalizeString",
+        "fallback": "gallery[0]",
+        "validation": "string_non_empty",
+        "description": "Imagen de portada del edificio"
+      },
+      "badges": {
+        "raw_field": "badges",
+        "canonical_field": "badges",
+        "transformation": "BADGE_LABEL_TO_TAG",
+        "validation": "array_optional",
+        "description": "Badges de promociones del edificio"
+      },
+      "serviceLevel": {
+        "raw_field": "serviceLevel",
+        "canonical_field": "serviceLevel",
+        "transformation": "normalizeServiceLevel",
+        "fallback": "infer_from_badges",
+        "validation": "enum_pro_standard",
+        "description": "Nivel de servicio del edificio"
+      }
+    },
+    "unit": {
+      "id": {
+        "raw_field": "id",
+        "canonical_field": "id",
+        "transformation": "coerceId",
+        "validation": "string_non_empty",
+        "description": "Identificador único de la unidad"
+      },
+      "buildingId": {
+        "raw_field": "building_id",
+        "canonical_field": "buildingId",
+        "transformation": "coerceId",
+        "validation": "foreign_key_exists",
+        "description": "Referencia al edificio padre"
+      },
+      "tipologia": {
+        "raw_field": "tipologia",
+        "canonical_field": "tipologia",
+        "transformation": "normalizeTypology",
+        "validation": "enum_typologies",
+        "description": "Tipología de la unidad (normalizada)"
+      },
+      "m2": {
+        "raw_field": "m2",
+        "canonical_field": "m2",
+        "transformation": "correctArea",
+        "validation": "number_positive",
+        "description": "Área total en metros cuadrados"
+      },
+      "area_interior_m2": {
+        "raw_field": "area_interior_m2",
+        "canonical_field": "area_interior_m2",
+        "transformation": "correctArea",
+        "validation": "number_20_200",
+        "description": "Área interior en metros cuadrados"
+      },
+      "area_exterior_m2": {
+        "raw_field": "area_exterior_m2",
+        "canonical_field": "area_exterior_m2",
+        "transformation": "correctArea",
+        "validation": "number_0_50",
+        "description": "Área exterior en metros cuadrados"
+      },
+      "price": {
+        "raw_field": "price",
+        "canonical_field": "price",
+        "transformation": "number",
+        "validation": "number_100k_100M",
+        "description": "Precio de arriendo en CLP"
+      },
+      "disponible": {
+        "raw_field": "disponible",
+        "canonical_field": "disponible",
+        "transformation": "boolean",
+        "validation": "boolean",
+        "description": "Indica si la unidad está disponible"
+      },
+      "estacionamiento": {
+        "raw_field": "estacionamiento",
+        "canonical_field": "estacionamiento",
+        "transformation": "boolean",
+        "fallback": false,
+        "validation": "boolean",
+        "description": "Indica si incluye estacionamiento"
+      },
+      "bodega": {
+        "raw_field": "bodega",
+        "canonical_field": "bodega",
+        "transformation": "boolean",
+        "fallback": false,
+        "validation": "boolean",
+        "description": "Indica si incluye bodega"
+      }
+    }
+  },
+  "derived_variables": {
+    "precioDesde": {
+      "description": "Precio mínimo de unidades disponibles",
+      "formula": "MIN(units.price WHERE units.disponible = true)",
+      "type": "number",
+      "unit": "CLP",
+      "calculation": {
+        "function": "precioDesde",
+        "parameters": ["units"],
+        "implementation": "lib/derive.ts:42-45",
+        "validation": "positive_number_or_undefined"
+      },
+      "business_rules": [
+        "Solo incluir unidades con disponible = true",
+        "Si no hay unidades disponibles, retornar undefined",
+        "Usar para mostrar 'desde $X' en UI"
+      ]
+    },
+    "hasAvailability": {
+      "description": "Indica si el edificio tiene unidades disponibles",
+      "formula": "EXISTS(units WHERE units.disponible = true)",
+      "type": "boolean",
+      "calculation": {
+        "function": "hasAvailability",
+        "parameters": ["units"],
+        "implementation": "lib/derive.ts:47",
+        "validation": "boolean"
+      },
+      "business_rules": [
+        "Retornar true si al menos una unidad está disponible",
+        "Usar para filtrar edificios en listados",
+        "Determina si mostrar CTA de contacto"
+      ]
+    },
+    "precioRango": {
+      "description": "Rango de precios de unidades disponibles",
+      "formula": "{min: MIN(price), max: MAX(price)} WHERE disponible = true",
+      "type": "PriceRange",
+      "unit": "CLP",
+      "calculation": {
+        "function": "precioRango",
+        "parameters": ["units"],
+        "implementation": "lib/derive.ts:49-52",
+        "validation": "min_less_than_max"
+      },
+      "business_rules": [
+        "Solo incluir unidades disponibles",
+        "max debe ser >= min",
+        "Usar para filtros de precio en UI"
+      ]
+    },
+    "typologySummary": {
+      "description": "Resumen agregado por tipología",
+      "formula": "GROUP BY tipologia, agregar conteos y rangos",
+      "type": "TypologyAggregate[]",
+      "calculation": {
+        "function": "typologySummary",
+        "parameters": ["units"],
+        "implementation": "lib/derive.ts:54-85",
+        "validation": "array_of_aggregates"
+      },
+      "business_rules": [
+        "Agrupar solo unidades disponibles",
+        "Incluir conteo de unidades por tipología",
+        "Calcular rangos de precio y área por tipología",
+        "Detectar promociones por tipología"
+      ]
+    },
+    "serviceLevel": {
+      "description": "Nivel de servicio del edificio",
+      "formula": "explicit OR infer_from_badges",
+      "type": "'pro' | 'standard' | undefined",
+      "calculation": {
+        "function": "normalizeServiceLevel",
+        "parameters": ["raw.serviceLevel", "badges"],
+        "implementation": "lib/adapters/assetplan.ts:185-192",
+        "validation": "enum_or_undefined"
+      },
+      "business_rules": [
+        "Preferir valor explícito del proveedor",
+        "Inferir 'pro' si tiene badge SERVICE_PRO",
+        "Usar para diferenciar niveles de servicio"
+      ]
+    }
+  },
+  "normalization_rules": {
+    "tipology": {
+      "description": "Normalización de tipologías",
+      "patterns": {
+        "Studio": ["Studio", "STUDIO", "Monoambiente", "MONOAMBIENTE"],
+        "1D1B": ["1D1B", "1D/1B", "1D 1B", "1 dormitorio 1 baño"],
+        "2D1B": ["2D1B", "2D/1B", "2D 1B", "2 dormitorios 1 baño"],
+        "2D2B": ["2D2B", "2D/2B", "2D 2B", "2 dormitorios 2 baños"],
+        "3D2B": ["3D2B", "3D/2B", "3D 2B", "3 dormitorios 2 baños"]
+      },
+      "transformation": "normalizeTypology",
+      "validation": "regex_typology_format"
+    },
+    "comuna": {
+      "description": "Normalización de comunas",
+      "patterns": {
+        "remove_codes": "regex_replace('^\\d+\\s+', '')",
+        "examples": {
+          "8930002 San Miguel": "San Miguel",
+          "Las Condes": "Las Condes"
+        }
+      },
+      "transformation": "normalizeComuna",
+      "validation": "string_non_empty"
+    },
+    "area": {
+      "description": "Corrección de áreas",
+      "patterns": {
+        "cm2_to_m2": "divide_by_100_if_greater_than_1000",
+        "examples": {
+          "4000": 40,
+          "5800": 58,
+          "150": 1.5
+        }
+      },
+      "transformation": "correctArea",
+      "validation": "range_20_200_m2"
+    }
+  },
+  "validation_rules": {
+    "hard_checks": [
+      {
+        "name": "precioDesde_consistency",
+        "description": "precioDesde debe ser igual al mínimo de unidades disponibles",
+        "sql": "SELECT b.id FROM buildings b JOIN LATERAL (SELECT MIN(u.price) FROM units u WHERE u.building_id = b.id AND u.disponible = true) m ON true WHERE b.precio_desde <> m.min_precio",
+        "severity": "CRITICAL"
+      },
+      {
+        "name": "typology_format",
+        "description": "Tipologías deben estar en formato canónico",
+        "sql": "SELECT DISTINCT tipologia FROM units WHERE tipologia !~ '^(Studio|1D1B|2D1B|2D2B|3D2B)$'",
+        "severity": "CRITICAL"
+      },
+      {
+        "name": "area_reasonable",
+        "description": "Áreas deben estar en rango razonable",
+        "sql": "SELECT id FROM units WHERE area_interior_m2 > 200 OR area_exterior_m2 > 50",
+        "severity": "CRITICAL"
+      },
+      {
+        "name": "gallery_minimum",
+        "description": "Galerías deben tener al menos 3 imágenes",
+        "sql": "SELECT id FROM buildings WHERE array_length(gallery, 1) < 3",
+        "severity": "CRITICAL"
+      },
+      {
+        "name": "referential_integrity",
+        "description": "Todas las unidades deben tener building válido",
+        "sql": "SELECT u.id FROM units u LEFT JOIN buildings b ON u.building_id = b.id WHERE b.id IS NULL",
+        "severity": "CRITICAL"
+      }
+    ],
+    "soft_checks": [
+      {
+        "name": "comuna_codes",
+        "description": "Comunas no deben incluir códigos postales",
+        "sql": "SELECT DISTINCT comuna FROM buildings WHERE comuna ~ '^\\d+'",
+        "severity": "MODERATE"
+      },
+      {
+        "name": "amenities_mapped",
+        "description": "Amenities deben estar en catálogo interno",
+        "sql": "SELECT DISTINCT unnest(amenities) FROM buildings WHERE unnest(amenities) NOT IN ('piscina', 'gimnasio', ...)",
+        "severity": "MODERATE"
+      },
+      {
+        "name": "price_range",
+        "description": "Precios deben estar en rango válido",
+        "sql": "SELECT id FROM units WHERE price < 100000 OR price > 100000000",
+        "severity": "MODERATE"
+      }
+    ]
+  },
+  "quality_metrics": {
+    "completeness": {
+      "description": "Porcentaje de campos requeridos completos",
+      "formula": "(campos_completos / total_campos) * 100",
+      "threshold": ">= 90%"
+    },
+    "consistency": {
+      "description": "Porcentaje de datos consistentes",
+      "formula": "(registros_consistentes / total_registros) * 100",
+      "threshold": ">= 95%"
+    },
+    "accuracy": {
+      "description": "Porcentaje de datos precisos",
+      "formula": "(registros_precisos / total_registros) * 100",
+      "threshold": ">= 98%"
+    },
+    "timeliness": {
+      "description": "Frescura de los datos",
+      "formula": "MAX(updated_at) - NOW()",
+      "threshold": "<= 24 horas"
+    }
+  },
+  "data_quality_dashboard": {
+    "metrics": [
+      {
+        "name": "total_buildings",
+        "description": "Total de edificios en el sistema",
+        "type": "count"
+      },
+      {
+        "name": "buildings_with_availability",
+        "description": "Edificios con unidades disponibles",
+        "type": "count",
+        "percentage": "total_buildings"
+      },
+      {
+        "name": "normalized_typologies",
+        "description": "Tipologías en formato canónico",
+        "type": "percentage",
+        "target": "100%"
+      },
+      {
+        "name": "complete_galleries",
+        "description": "Galerías con mínimo 3 imágenes",
+        "type": "percentage",
+        "target": "100%"
+      },
+      {
+        "name": "avg_quality_score",
+        "description": "Score promedio de calidad",
+        "type": "score",
+        "target": ">= 85"
+      }
+    ],
+    "alerts": [
+      {
+        "name": "critical_issues",
+        "description": "Problemas críticos detectados",
+        "threshold": "0",
+        "action": "block_deployment"
+      },
+      {
+        "name": "moderate_issues",
+        "description": "Problemas moderados detectados",
+        "threshold": "<= 5%",
+        "action": "review_required"
+      }
+    ]
+  }
+}

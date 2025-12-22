@@ -5,9 +5,11 @@ import { ThemeProvider } from "@lib/theme-context";
 import { Header } from "@components/marketing/Header";
 import { Footer } from "@components/marketing/Footer";
 import { getFlagValue } from "@lib/flags";
+import { getBaseUrl } from "@lib/seo/metadata";
 import Providers from "./providers";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(getBaseUrl()),
   title: {
     default: "Elkis Realtor · 0% Comisión",
     template: "%s | Elkis Realtor",
