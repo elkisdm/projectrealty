@@ -1,0 +1,31 @@
+{
+  "generatedAt": "2025-08-16T17:53:16.057Z",
+  "meta": {
+    "urlMasked": "",
+    "anonKeyMasked": "",
+    "serviceRoleKeyMasked": ""
+  },
+  "checks": [
+    {
+      "name": "buildings_select1",
+      "pass": false,
+      "detail": "TypeError: Cannot read properties of null (reading 'from')"
+    },
+    {
+      "name": "units_count",
+      "pass": false,
+      "detail": "TypeError: Cannot read properties of null (reading 'from')"
+    },
+    {
+      "name": "v_filters_available_sample",
+      "pass": false,
+      "detail": "TypeError: Cannot read properties of null (reading 'from')"
+    },
+    {
+      "name": "functions_exist",
+      "pass": false,
+      "detail": "TypeError: Cannot read properties of null (reading 'rpc')"
+    }
+  ],
+  "allPass": false
+}

@@ -5,9 +5,9 @@ import { Switch } from '@headlessui/react';
 // TODO: Uncomment when heroicons is installed
 // import { CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
-// Mock temporal
-const CheckIcon = (props: any) => <div data-testid="check-icon" {...props} />;
-const XMarkIcon = (props: any) => <div data-testid="xmark-icon" {...props} />;
+// Iconos temporales hasta que heroicons esté instalado
+const CheckIcon = (props: React.ComponentProps<'div'>) => <div data-testid="check-icon" {...props} />;
+const XMarkIcon = (props: React.ComponentProps<'div'>) => <div data-testid="xmark-icon" {...props} />;
 import { track } from '@lib/analytics';
 
 interface FlagToggleProps {
@@ -83,9 +83,9 @@ export function FlagToggle({
       } else {
         setError(result.error || 'Error al aplicar override');
       }
-    } catch (_err) {
+    } catch {
       setError('Error de conexión');
-      // console.error('Flag toggle error:', _err);
+      // console.error('Flag toggle error:', err);
     } finally {
       setLoading(false);
     }

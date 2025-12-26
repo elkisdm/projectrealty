@@ -1,59 +1,43 @@
-export interface TimeRange {
-  start: Date;
-  end: Date;
-}
+import { AvailabilitySlot, CalendarEvent, IsoDate, TimeRange } from "@/types/calendar";
+import { normalizeEventsToDaySlots, mergeInternalBlocks } from "./normalizers";
 
-export interface CalendarEvent {
-  id: string;
-  title: string;
-  start: Date;
-  end: Date;
-  description?: string;
-}
-
-export interface AvailabilitySlot {
-  start: Date;
-  end: Date;
-  available: boolean;
-}
+export type ExternalCalendars = {
+  externalEvents: CalendarEvent[]; // Google/ICS, marcados busy=true por defecto
+  internalBlocks?: CalendarEvent[]; // bloqueos internos (visitas, buffers, mantenimiento)
+};
 
 export function buildAvailability(
-  events: CalendarEvent[],
-  timeRange: TimeRange,
-  slotDuration: number = 30 // minutes
+  date: IsoDate,
+  visibleHours: TimeRange,
+  input: ExternalCalendars,
+  slotMinutes = 60
 ): AvailabilitySlot[] {
-  const slots: AvailabilitySlot[] = [];
-  const start = new Date(timeRange.start);
-  const end = new Date(timeRange.end);
+  const external = input.externalEvents ?? [];
+  const internal = input.internalBlocks ?? [];
 
-  // Generate time slots
-  for (let current = new Date(start); current < end; current.setMinutes(current.getMinutes() + slotDuration)) {
-    const slotStart = new Date(current);
-    const slotEnd = new Date(current.getTime() + slotDuration * 60 * 1000);
+  // 1) Slots base a partir de eventos externos (free/busy)
+  const base = normalizeEventsToDaySlots(date, external, visibleHours, slotMinutes);
 
-    // Check if slot conflicts with any event
-    const hasConflict = events.some(event => {
-      return (
-        (slotStart >= event.start && slotStart < event.end) ||
-        (slotEnd > event.start && slotEnd <= event.end) ||
-        (slotStart <= event.start && slotEnd >= event.end)
-      );
-    });
+  // 2) Aplicar bloqueos internos
+  const withInternal = mergeInternalBlocks(base, internal);
 
-    slots.push({
-      start: slotStart,
-      end: slotEnd,
-      available: !hasConflict,
-    });
+  // 3) Orden y merge trivial de adyacentes con mismo estado (opcional)
+  return mergeAdjacent(withInternal);
+}
+
+function mergeAdjacent(slots: AvailabilitySlot[]): AvailabilitySlot[] {
+  if (slots.length === 0) return slots;
+  const out: AvailabilitySlot[] = [];
+  let acc = { ...slots[0] };
+  for (let i = 1; i < slots.length; i++) {
+    const cur = slots[i];
+    if (cur.available === acc.available) {
+      acc.end = cur.end;
+      continue;
+    }
+    out.push(acc);
+    acc = { ...cur };
   }
-
-  return slots;
-}
-
-export function getAvailableSlots(slots: AvailabilitySlot[]): AvailabilitySlot[] {
-  return slots.filter(slot => slot.available);
-}
-
-export function getBusySlots(slots: AvailabilitySlot[]): AvailabilitySlot[] {
-  return slots.filter(slot => !slot.available);
+  out.push(acc);
+  return out;
 }

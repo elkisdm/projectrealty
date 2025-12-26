@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
-import { BackgroundFX } from '@components/visual/BackgroundFX';
-import { ComingSoonHero } from '@components/marketing/ComingSoonHero';
+import { ComingSoonClient } from '@components/marketing/ComingSoonClient';
 
 export const metadata: Metadata = {
-  title: "Próximamente - Hommie",
+  title: "Próximamente - Elkis Realtor",
   description: "Estamos preparando la nueva experiencia de arriendo 0% comisión. Sin letra chica.",
   robots: {
     index: false,
@@ -12,10 +11,5 @@ export const metadata: Metadata = {
 };
 
 export default function ComingSoonPage() {
-  return (
-    <div className="relative min-h-screen w-full">
-      <BackgroundFX />
-      <ComingSoonHero />
-    </div>
-  );
+  return <ComingSoonClient />;
 }

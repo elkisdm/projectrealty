@@ -4,7 +4,7 @@ import { useState, useRef, RefObject } from 'react';
 import { track } from '@lib/analytics';
 
 interface WaitlistFormProps {
-  initialFocusRef?: RefObject<HTMLInputElement>;
+  initialFocusRef?: RefObject<HTMLInputElement | null>;
 }
 
 export function WaitlistForm({ initialFocusRef }: WaitlistFormProps) {
@@ -52,7 +52,19 @@ export function WaitlistForm({ initialFocusRef }: WaitlistFormProps) {
         }),
       });
 
-      const data = await response.json();
+      // Verificar Content-Type antes de parsear JSON
+      const contentType = response.headers.get('content-type') || '';
+      let data: any = {};
+      
+      if (contentType.includes('application/json')) {
+        try {
+          data = await response.json();
+        } catch {
+          throw new Error('Respuesta inválida del servidor');
+        }
+      } else if (response.ok) {
+        throw new Error('Respuesta inesperada del servidor');
+      }
       
       if (response.ok && data.success) {
         setIsSuccess(true);
@@ -91,9 +103,9 @@ export function WaitlistForm({ initialFocusRef }: WaitlistFormProps) {
     return (
       <div className="text-center space-y-4">
         <div className="flex justify-center">
-          <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center">
+          <div className="w-12 h-12 bg-emerald-500/20 dark:bg-emerald-400/20 rounded-full flex items-center justify-center">
             <svg 
-              className="w-6 h-6 text-green-400" 
+              className="w-6 h-6 text-emerald-500 dark:text-emerald-400" 
               fill="none" 
               stroke="currentColor" 
               viewBox="0 0 24 24"
@@ -108,17 +120,17 @@ export function WaitlistForm({ initialFocusRef }: WaitlistFormProps) {
           </div>
         </div>
         <div>
-          <h3 className="text-lg font-medium text-white mb-2">
+          <h3 className="text-lg font-medium text-foreground mb-2">
             ¡Listo! Te avisaremos cuando esté disponible
           </h3>
-          <p className="text-sm text-white/80">
+          <p className="text-sm text-muted-foreground">
             Te enviaremos un email cuando lancemos la nueva experiencia de arriendo.
           </p>
         </div>
         <button
           type="button"
           onClick={handleReset}
-          className="w-full rounded-2xl px-5 py-3 bg-white/10 hover:bg-white/20 text-white font-medium transition-colors focus-visible:ring-4 focus-visible:ring-white/20 focus-visible:outline-none min-h-[44px] flex items-center justify-center"
+          className="w-full rounded-2xl px-5 py-3 bg-muted hover:bg-muted/80 text-foreground font-medium transition-colors focus-visible:ring-4 focus-visible:ring-primary/20 focus-visible:outline-none min-h-[44px] flex items-center justify-center"
         >
           Enviar otro email
         </button>
@@ -140,7 +152,7 @@ export function WaitlistForm({ initialFocusRef }: WaitlistFormProps) {
 
       {/* Campo Email */}
       <div>
-        <label htmlFor="email" className="block text-sm font-medium text-white mb-2">
+        <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
           Email *
         </label>
         <input
@@ -154,11 +166,11 @@ export function WaitlistForm({ initialFocusRef }: WaitlistFormProps) {
           disabled={isLoading}
           aria-invalid={error ? "true" : "false"}
           aria-describedby={error ? "email-error" : undefined}
-          className="w-full rounded-2xl px-4 py-3 bg-white/10 border border-white/20 text-white placeholder-white/50 focus:border-white/40 focus:ring-4 focus:ring-white/20 focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full rounded-2xl px-4 py-3 bg-background/10 dark:bg-background/20 border border-border/20 dark:border-border/30 text-foreground placeholder-muted-foreground focus:border-primary/40 focus:ring-4 focus:ring-primary/20 focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           placeholder="tu@email.com"
         />
         {error && (
-          <p id="email-error" className="mt-1 text-sm text-red-400" role="alert">
+          <p id="email-error" className="mt-1 text-sm text-red-500 dark:text-red-400" role="alert">
             {error}
           </p>
         )}
@@ -166,7 +178,7 @@ export function WaitlistForm({ initialFocusRef }: WaitlistFormProps) {
 
       {/* Campo Teléfono (opcional) */}
       <div>
-        <label htmlFor="phone" className="block text-sm font-medium text-white mb-2">
+        <label htmlFor="phone" className="block text-sm font-medium text-foreground mb-2">
           Teléfono (opcional)
         </label>
         <input
@@ -176,7 +188,7 @@ export function WaitlistForm({ initialFocusRef }: WaitlistFormProps) {
           onChange={(e) => setPhone(e.target.value)}
           autoComplete="tel"
           disabled={isLoading}
-          className="w-full rounded-2xl px-4 py-3 bg-white/10 border border-white/20 text-white placeholder-white/50 focus:border-white/40 focus:ring-4 focus:ring-white/20 focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full rounded-2xl px-4 py-3 bg-background/10 dark:bg-background/20 border border-border/20 dark:border-border/30 text-foreground placeholder-muted-foreground focus:border-primary/40 focus:ring-4 focus:ring-primary/20 focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           placeholder="+56912345678"
         />
       </div>
@@ -185,11 +197,11 @@ export function WaitlistForm({ initialFocusRef }: WaitlistFormProps) {
       <button
         type="submit"
         disabled={isLoading}
-        className="w-full rounded-2xl px-5 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium transition-all focus-visible:ring-4 focus-visible:ring-white/20 focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none active:scale-[0.98] min-h-[44px] flex items-center justify-center"
+        className="w-full rounded-2xl px-5 py-3 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-primary-foreground font-medium transition-all focus-visible:ring-4 focus-visible:ring-primary/20 focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none active:scale-[0.98] min-h-[44px] flex items-center justify-center"
       >
         {isLoading ? (
           <div className="flex items-center justify-center space-x-2">
-            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
             <span>Enviando...</span>
           </div>
         ) : (

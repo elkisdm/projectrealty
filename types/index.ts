@@ -1,4 +1,22 @@
-export type Unit = {
+// Re-export types from schemas for consistency
+export type {
+  Unit,
+  Building,
+  BookingRequest,
+  WaitlistRequest,
+  SearchFilters,
+  PromotionBadge,
+  TypologySummary,
+  Media,
+  ParkingStorage,
+  UnitV2,
+  BuildingV2,
+  PromotionType,
+  BuildingsResponse
+} from '../schemas/models';
+
+// Legacy types for backward compatibility
+export type LegacyUnit = {
   id: string;
   tipologia: string;
   m2: number;
@@ -8,8 +26,9 @@ export type Unit = {
   disponible: boolean;
 };
 
-export type Building = {
+export type LegacyBuilding = {
   id: string;
+  slug: string;
   name: string;
   comuna: string;
   address: string;
@@ -17,6 +36,6 @@ export type Building = {
   hero?: string;
   promo?: { label: string; tag?: string };
   amenities: string[];
-  units: Unit[];
+  units: LegacyUnit[];
   gallery: string[];
 };

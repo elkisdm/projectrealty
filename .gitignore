@@ -31,5 +31,9 @@ coverage/
 *.tar.gz
 arriendo-zero-backup-*.tar.gz
 
+# Temp files
+.temp-files/
+.vibe/
+*.log
 
 .vercel

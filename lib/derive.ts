@@ -30,12 +30,12 @@ export function computeUnitTotalArea(unit: Unit): number {
   const hasInterior = isPositiveNumber(unit.area_interior_m2);
   const hasExterior = isPositiveNumber(unit.area_exterior_m2);
   if (hasInterior || hasExterior) {
-    const interior = hasInterior ? (unit.area_interior_m2 as number) : 0;
-    const exterior = hasExterior ? (unit.area_exterior_m2 as number) : 0;
+    const interior = hasInterior ? (unit.area_interior_m2 ?? 0) : 0;
+    const exterior = hasExterior ? (unit.area_exterior_m2 ?? 0) : 0;
     const sum = interior + exterior;
-    return isPositiveNumber(sum) ? sum : unit.m2;
+    return isPositiveNumber(sum) ? sum : (unit.m2 ?? 0);
   }
-  return unit.m2;
+  return unit.m2 ?? 0;
 }
 
 function hasAnyPromotion(badges?: PromotionBadge[] | undefined): boolean {

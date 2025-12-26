@@ -1,19 +1,19 @@
 /**
- * Advanced Filters Hook
- * Extends basic FilterValues with search and advanced filtering capabilities
+ * Advanced Filters Hook (Simplified for MVP)
+ * Only supports basic filters: comuna and price
  */
 
 import { useState, useCallback, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { searchBuildings } from '../lib/search';
 import type { 
   FilterValues, 
-  AdvancedFilterValues, 
   FilterChip, 
   FilterAnalytics 
 } from '../types/filters';
 import type { Building } from '../schemas/models';
-import type { SearchResult } from '../lib/search';
+
+// Simplified AdvancedFilterValues for MVP (only comuna and price)
+export type AdvancedFilterValues = FilterValues;
 
 export interface UseAdvancedFiltersParams {
   buildings: Building[];
@@ -34,7 +34,7 @@ export interface UseAdvancedFiltersReturn {
   
   // Results
   filteredBuildings: Building[];
-  searchResults: SearchResult[];
+  searchResults: never[]; // Empty for MVP
   resultsCount: number;
   
   // Filter state
@@ -49,29 +49,14 @@ export interface UseAdvancedFiltersReturn {
 }
 
 // Re-export types for backward compatibility
-export type { AdvancedFilterValues, FilterChip, FilterAnalytics };
+export type { FilterChip, FilterAnalytics };
 
 const DEFAULT_FILTERS: AdvancedFilterValues = {
-  // Basic filters (backward compatibility)
+  // Basic filters only
   comuna: "Todas",
   tipologia: "Todas", 
   minPrice: null,
   maxPrice: null,
-  
-  // Advanced filters
-  query: "",
-  amenities: [],
-  minM2: null,
-  maxM2: null,
-  estacionamiento: null,
-  bodega: null,
-  amoblado: null,
-  petFriendly: null,
-  bedrooms: null,
-  bathrooms: null,
-  hasPromotions: null,
-  serviceLevel: null,
-  nearTransit: null,
 };
 
 /**
@@ -87,13 +72,13 @@ export function toBasicFilters(advanced: AdvancedFilterValues): FilterValues {
 }
 
 /**
- * Advanced filters hook with search and multiple filter capabilities
+ * Simplified filters hook for MVP (only comuna and price)
  */
 export function useAdvancedFilters({
   buildings,
   initialFilters = {},
   urlSync = true,
-  // debounceMs = 300,
+  debounceMs: _debounceMs = 300,
 }: UseAdvancedFiltersParams): UseAdvancedFiltersReturn {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -109,52 +94,29 @@ export function useAdvancedFilters({
         tipologia: searchParams.get("tipologia") || baseFilters.tipologia,
         minPrice: searchParams.get("minPrice") ? Number(searchParams.get("minPrice")) : baseFilters.minPrice,
         maxPrice: searchParams.get("maxPrice") ? Number(searchParams.get("maxPrice")) : baseFilters.maxPrice,
-        query: searchParams.get("q") || baseFilters.query,
-        amenities: searchParams.get("amenities")?.split(',').filter(Boolean) || baseFilters.amenities,
-        minM2: searchParams.get("minM2") ? Number(searchParams.get("minM2")) : baseFilters.minM2,
-        maxM2: searchParams.get("maxM2") ? Number(searchParams.get("maxM2")) : baseFilters.maxM2,
-        estacionamiento: searchParams.get("estacionamiento") === "true" ? true : 
-                        searchParams.get("estacionamiento") === "false" ? false : baseFilters.estacionamiento,
-        bodega: searchParams.get("bodega") === "true" ? true : 
-                searchParams.get("bodega") === "false" ? false : baseFilters.bodega,
       };
     }
     
     return baseFilters;
   });
 
-  // Create debounced search function
-  // const _debouncedSearch = useMemo(
-  //   () => createDebouncedSearch(searchBuildings, debounceMs),
-  //   [debounceMs]
-  // );
-
-  // Apply all filters to buildings
-  const { filteredBuildings, searchResults } = useMemo(() => {
+  // Apply basic filters to buildings (only comuna and price for MVP)
+  const filteredBuildings = useMemo(() => {
     let results = [...buildings];
-    let searchRes: SearchResult[] = [];
 
-    // Step 1: Apply search query if present
-    if (filters.query.trim()) {
-      searchRes = searchBuildings(results, { 
-        query: filters.query,
-        threshold: 0.1,
-        maxResults: 100
-      });
-      results = searchRes.map(r => r.building);
-    }
-
-    // Step 2: Apply basic filters
+    // Filter by comuna
     if (filters.comuna && filters.comuna !== "Todas") {
       results = results.filter(building => building.comuna === filters.comuna);
     }
 
+    // Filter by tipologia
     if (filters.tipologia && filters.tipologia !== "Todas") {
       results = results.filter(building => 
         building.units.some(unit => unit.tipologia === filters.tipologia)
       );
     }
 
+    // Filter by price
     if (filters.minPrice !== null) {
       results = results.filter(building => 
         building.units.some(unit => unit.price >= filters.minPrice!)
@@ -167,102 +129,23 @@ export function useAdvancedFilters({
       );
     }
 
-    // Step 3: Apply advanced filters
-    if (filters.amenities.length > 0) {
-      results = results.filter(building => 
-        filters.amenities.every(amenity => building.amenities.includes(amenity))
-      );
-    }
-
-    if (filters.minM2 !== null) {
-      results = results.filter(building => 
-        building.units.some(unit => unit.m2 >= filters.minM2!)
-      );
-    }
-
-    if (filters.maxM2 !== null) {
-      results = results.filter(building => 
-        building.units.some(unit => unit.m2 <= filters.maxM2!)
-      );
-    }
-
-    if (filters.estacionamiento !== null) {
-      results = results.filter(building => 
-        building.units.some(unit => unit.estacionamiento === filters.estacionamiento)
-      );
-    }
-
-    if (filters.bodega !== null) {
-      results = results.filter(building => 
-        building.units.some(unit => unit.bodega === filters.bodega)
-      );
-    }
-
-    if (filters.amoblado !== null) {
-      results = results.filter(building => 
-        building.units.some(unit => unit.amoblado === filters.amoblado)
-      );
-    }
-
-    if (filters.petFriendly !== null) {
-      results = results.filter(building => 
-        building.units.some(unit => unit.petFriendly === filters.petFriendly)
-      );
-    }
-
-    if (filters.bedrooms !== null) {
-      results = results.filter(building => 
-        building.units.some(unit => unit.bedrooms === filters.bedrooms)
-      );
-    }
-
-    if (filters.bathrooms !== null) {
-      results = results.filter(building => 
-        building.units.some(unit => unit.bathrooms === filters.bathrooms)
-      );
-    }
-
-    if (filters.hasPromotions !== null) {
-      results = results.filter(building => {
-        const hasPromos = building.units.some(unit => 
-          unit.promotions && unit.promotions.length > 0
-        );
-        return hasPromos === filters.hasPromotions;
-      });
-    }
-
-    if (filters.serviceLevel !== null) {
-      results = results.filter(building => building.serviceLevel === filters.serviceLevel);
-    }
-
-    if (filters.nearTransit !== null) {
-      results = results.filter(building => {
-        const hasTransit = building.nearestTransit?.distanceMin !== undefined;
-        return hasTransit === filters.nearTransit;
-      });
-    }
-
-    return { filteredBuildings: results, searchResults: searchRes };
+    return results;
   }, [buildings, filters]);
 
-  // Generate filter chips for active filters
+  // Generate filter chips for active filters (simplified for MVP)
   const activeFilterChips = useMemo((): FilterChip[] => {
     const chips: FilterChip[] = [];
 
-    if (filters.query.trim()) {
-      chips.push({
-        id: 'query',
-        label: 'Búsqueda',
-        value: `"${filters.query}"`,
-        onRemove: () => setFilters({ query: '' })
-      });
-    }
-
     if (filters.comuna !== "Todas") {
+      const comunaValue = Array.isArray(filters.comuna) 
+        ? filters.comuna.length === 1 
+          ? filters.comuna[0] 
+          : `${filters.comuna.length} comunas`
+        : filters.comuna;
       chips.push({
         id: 'comuna',
         label: 'Comuna',
-        value: filters.comuna,
+        value: comunaValue,
         onRemove: () => setFilters({ comuna: "Todas" })
       });
     }
@@ -289,51 +172,8 @@ export function useAdvancedFilters({
       });
     }
 
-    if (filters.amenities.length > 0) {
-      filters.amenities.forEach(amenity => {
-        chips.push({
-          id: `amenity-${amenity}`,
-          label: 'Amenidad',
-          value: amenity,
-          onRemove: () => setFilters({ 
-            amenities: filters.amenities.filter(a => a !== amenity) 
-          })
-        });
-      });
-    }
-
-    if (filters.minM2 !== null || filters.maxM2 !== null) {
-      const min = filters.minM2 ? `${filters.minM2}m²` : '';
-      const max = filters.maxM2 ? `${filters.maxM2}m²` : '';
-      const value = min && max ? `${min} - ${max}` : min || max;
-      
-      chips.push({
-        id: 'm2',
-        label: 'Metros²',
-        value,
-        onRemove: () => setFilters({ minM2: null, maxM2: null })
-      });
-    }
-
-    if (filters.estacionamiento !== null) {
-      chips.push({
-        id: 'estacionamiento',
-        label: 'Estacionamiento',
-        value: filters.estacionamiento ? 'Sí' : 'No',
-        onRemove: () => setFilters({ estacionamiento: null })
-      });
-    }
-
-    if (filters.bodega !== null) {
-      chips.push({
-        id: 'bodega',
-        label: 'Bodega',
-        value: filters.bodega ? 'Sí' : 'No',
-        onRemove: () => setFilters({ bodega: null })
-      });
-    }
-
     return chips;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- setFilters is stable (useCallback with [])
   }, [filters]);
 
   // Update filters with partial values
@@ -351,10 +191,10 @@ export function useAdvancedFilters({
     });
   }, [filters]);
 
-  // Set search query specifically (with debounce potential)
-  const setQuery = useCallback((query: string) => {
-    setFilters({ query });
-  }, [setFilters]);
+  // Set search query (no-op for MVP, kept for compatibility)
+  const setQuery = useCallback((_query: string) => {
+    // No search functionality in MVP
+  }, []);
 
   // Clear all filters
   const clearFilters = useCallback(() => {
@@ -366,43 +206,39 @@ export function useAdvancedFilters({
     clearFilters();
   }, [clearFilters]);
 
-  // Update URL with current filters
+  // Update URL with current filters (simplified for MVP)
   const updateURL = useCallback(() => {
     if (!urlSync) return;
 
     const params = new URLSearchParams();
     
-    // Basic filters
-    if (filters.comuna !== "Todas") params.set("comuna", filters.comuna);
+    // Basic filters only
+    if (filters.comuna !== "Todas") {
+      const comunaValue = Array.isArray(filters.comuna) 
+        ? filters.comuna[0] 
+        : filters.comuna;
+      params.set("comuna", comunaValue);
+    }
     if (filters.tipologia !== "Todas") params.set("tipologia", filters.tipologia);
     if (filters.minPrice !== null) params.set("minPrice", filters.minPrice.toString());
     if (filters.maxPrice !== null) params.set("maxPrice", filters.maxPrice.toString());
-    
-    // Advanced filters
-    if (filters.query.trim()) params.set("q", filters.query);
-    if (filters.amenities.length > 0) params.set("amenities", filters.amenities.join(','));
-    if (filters.minM2 !== null) params.set("minM2", filters.minM2.toString());
-    if (filters.maxM2 !== null) params.set("maxM2", filters.maxM2.toString());
-    if (filters.estacionamiento !== null) params.set("estacionamiento", filters.estacionamiento.toString());
-    if (filters.bodega !== null) params.set("bodega", filters.bodega.toString());
 
     const url = params.toString() ? `?${params.toString()}` : "";
     router.replace(`${window.location.pathname}${url}`, { scroll: false });
   }, [filters, router, urlSync]);
 
-  // Get analytics data
+  // Get analytics data (simplified for MVP)
   const getFilterAnalytics = useCallback((): FilterAnalytics => {
     const filtersUsed = Object.entries(filters)
       .filter(([key, value]) => {
         const defaultValue = DEFAULT_FILTERS[key as keyof AdvancedFilterValues];
-        if (Array.isArray(value)) return value.length > 0;
         return value !== defaultValue;
       })
       .map(([key]) => key);
 
     return {
       totalFilters: filtersUsed.length,
-      searchQuery: filters.query.trim() || null,
+      searchQuery: null, // No search in MVP
       filtersUsed,
       resultCount: filteredBuildings.length,
     };
@@ -420,7 +256,7 @@ export function useAdvancedFilters({
     
     // Results
     filteredBuildings,
-    searchResults,
+    searchResults: [], // Empty for MVP
     resultsCount: filteredBuildings.length,
     
     // Filter state

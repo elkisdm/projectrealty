@@ -1,0 +1,205 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "generatedAt": "2025-01-27T10:00:00Z",
+    "author": "Hommie Design System",
+    "description": "Conjunto de íconos base para el sistema de diseño Hommie"
+  },
+  "config": {
+    "defaultSize": "md",
+    "defaultStroke": "normal",
+    "defaultPreset": "light"
+  },
+  "glyphs": [
+    {
+      "name": "home",
+      "category": "navigation",
+      "description": "Ícono de casa",
+      "recommendedSize": "md",
+      "recommendedStroke": "normal",
+      "tags": ["casa", "inicio", "navegación"],
+      "paths": [
+        {
+          "command": "M",
+          "params": [3, 9],
+          "attributes": {
+            "fill": "none",
+            "stroke": "currentColor"
+          }
+        },
+        {
+          "command": "L",
+          "params": [12, 2, 21, 9]
+        },
+        {
+          "command": "V",
+          "params": [20]
+        },
+        {
+          "command": "A",
+          "params": [2, 2, 0, 0, 1, 19, 22]
+        },
+        {
+          "command": "H",
+          "params": [5]
+        },
+        {
+          "command": "A",
+          "params": [2, 2, 0, 0, 1, 3, 20]
+        },
+        {
+          "command": "V",
+          "params": [9]
+        }
+      ]
+    },
+    {
+      "name": "search",
+      "category": "navigation",
+      "description": "Ícono de búsqueda",
+      "recommendedSize": "sm",
+      "recommendedStroke": "light",
+      "tags": ["buscar", "lupa", "navegación"],
+      "paths": [
+        {
+          "command": "M",
+          "params": [21, 21],
+          "attributes": {
+            "fill": "none",
+            "stroke": "currentColor"
+          }
+        },
+        {
+          "command": "L",
+          "params": [16.65, 16.65]
+        },
+        {
+          "command": "M",
+          "params": [19, 11]
+        },
+        {
+          "command": "A",
+          "params": [8, 8, 0, 1, 1, 3, 11]
+        },
+        {
+          "command": "A",
+          "params": [8, 8, 0, 0, 1, 19, 11]
+        }
+      ]
+    },
+    {
+      "name": "heart",
+      "category": "social",
+      "description": "Ícono de corazón",
+      "recommendedSize": "lg",
+      "recommendedStroke": "bold",
+      "tags": ["corazón", "like", "favorito"],
+      "paths": [
+        {
+          "command": "M",
+          "params": [20.84, 4.61],
+          "attributes": {
+            "fill": "none",
+            "stroke": "currentColor"
+          }
+        },
+        {
+          "command": "A",
+          "params": [5.5, 5.5, 0, 0, 0, 12, 2.5]
+        },
+        {
+          "command": "A",
+          "params": [5.5, 5.5, 0, 0, 0, 3.16, 4.61]
+        },
+        {
+          "command": "A",
+          "params": [5.5, 5.5, 0, 0, 0, 12, 21.5]
+        },
+        {
+          "command": "L",
+          "params": [20.84, 4.61]
+        }
+      ]
+    },
+    {
+      "name": "settings",
+      "category": "system",
+      "description": "Ícono de configuración",
+      "recommendedSize": "md",
+      "recommendedStroke": "normal",
+      "tags": ["configuración", "ajustes", "sistema"],
+      "paths": [
+        {
+          "command": "M",
+          "params": [12, 15],
+          "attributes": {
+            "fill": "none",
+            "stroke": "currentColor"
+          }
+        },
+        {
+          "command": "A",
+          "params": [3, 3, 0, 1, 1, 12, 15]
+        },
+        {
+          "command": "M",
+          "params": [19.4, 15]
+        },
+        {
+          "command": "A",
+          "params": [1.65, 1.65, 0, 0, 0, 21, 13.35]
+        },
+        {
+          "command": "A",
+          "params": [1.65, 1.65, 0, 0, 0, 19.4, 12]
+        },
+        {
+          "command": "L",
+          "params": [17.75, 12]
+        },
+        {
+          "command": "A",
+          "params": [1.65, 1.65, 0, 0, 0, 16.1, 10.35]
+        },
+        {
+          "command": "A",
+          "params": [1.65, 1.65, 0, 0, 0, 14.45, 12]
+        },
+        {
+          "command": "L",
+          "params": [12, 12]
+        },
+        {
+          "command": "A",
+          "params": [1.65, 1.65, 0, 0, 0, 10.35, 13.65]
+        },
+        {
+          "command": "A",
+          "params": [1.65, 1.65, 0, 0, 0, 12, 15]
+        }
+      ]
+    },
+    {
+      "name": "check",
+      "category": "status",
+      "description": "Ícono de verificación",
+      "recommendedSize": "sm",
+      "recommendedStroke": "light",
+      "tags": ["check", "verificación", "éxito"],
+      "paths": [
+        {
+          "command": "M",
+          "params": [20, 6],
+          "attributes": {
+            "fill": "none",
+            "stroke": "currentColor"
+          }
+        },
+        {
+          "command": "L",
+          "params": [9, 17, 4, 12]
+        }
+      ]
+    }
+  ]
+}

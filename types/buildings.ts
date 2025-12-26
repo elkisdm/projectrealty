@@ -1,4 +1,4 @@
-import { Building } from './index';
+import { Building } from '../schemas/models';
 
 // Tipos para filtros
 export interface BuildingFilters {

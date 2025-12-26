@@ -4,10 +4,14 @@
  */
 
 export interface FilterValues {
-  comuna: string;
-  tipologia: string;
+  comuna: string | string[]; // Soporta string simple o array para multiselección
+  tipologia: string; // Mantener para compatibilidad
+  dormitorios?: string | string[]; // "Estudio", "1", "2", "3" - soporta multiselección
   minPrice: number | null;
   maxPrice: number | null;
+  estacionamiento?: boolean | null;
+  bodega?: boolean | null;
+  mascotas?: boolean | null;
 }
 
 export interface AdvancedFilterValues extends FilterValues {

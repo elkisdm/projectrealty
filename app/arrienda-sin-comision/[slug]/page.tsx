@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
-import { HOME_AMENGUAL_EXTENDED } from "@lib/arrienda-sin-comision-mocks";
-import ArriendaSinComisionBuildingDetail from "@components/marketing/ArriendaSinComisionBuildingDetail";
+import { HOME_AMENGUAL_EXTENDED } from "@/lib/arrienda-sin-comision-mocks";
+import ArriendaSinComisionBuildingDetail from "@/components/marketing/ArriendaSinComisionBuildingDetail";
 
 interface BuildingDetailPageProps {
   params: Promise<{

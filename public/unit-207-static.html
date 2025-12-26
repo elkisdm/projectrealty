@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unidad 207 - Home Amengual | Hommie 0% Comisión</title>
+    <meta name="description" content="Hermoso departamento de 2 dormitorios y 2 baños en el corazón de Providencia. Excelente ubicación cerca de metro y servicios.">
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#16a34a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Hommie 207">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?ixlib=rb-4.0.3&auto=format&fit=crop&w=192&q=80">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0fdf4',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Framer Motion -->
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .hero-gradient {
+            background: linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.7));
+        }
+        .sticky-cta {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 50;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+        }
+        .image-gallery {
+            scroll-snap-type: x mandatory;
+        }
+        .image-gallery img {
+            scroll-snap-align: start;
+        }
+        .amenity-chip {
+            transition: all 0.3s ease;
+        }
+        .amenity-chip:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white">
+    <!-- Header -->
+    <header class="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <h1 class="text-xl font-bold text-primary-600">Hommie</h1>
+                    <span class="ml-2 text-sm text-gray-500">0% Comisión</span>
+                </div>
+                <button class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700" onclick="toggleTheme()">
+                    <i data-lucide="moon" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="relative h-96 lg:h-[500px] overflow-hidden">
+        <div class="absolute inset-0">
+            <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" 
+                 alt="Home Amengual" 
+                 class="w-full h-full object-cover">
+            <div class="absolute inset-0 hero-gradient"></div>
+        </div>
+        <div class="relative z-10 flex items-end h-full p-6 lg:p-8">
+            <div class="text-white">
+                <h2 class="text-3xl lg:text-5xl font-bold mb-2">Home Amengual</h2>
+                <p class="text-lg lg:text-xl opacity-90">Unidad 207 - 2D2B</p>
+                <p class="text-sm opacity-75">Av. Amengual 1234, Providencia</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Column -->
+            <div class="lg:col-span-2 space-y-8">
+                <!-- Image Gallery -->
+                <section class="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-lg">
+                    <div class="image-gallery flex overflow-x-auto">
+                        <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+                             alt="Sala de estar" class="w-full h-64 lg:h-96 object-cover flex-shrink-0">
+                        <img src="https://images.unsplash.com/photo-1560448204-6032e02f0b67?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+                             alt="Cocina" class="w-full h-64 lg:h-96 object-cover flex-shrink-0">
+                        <img src="https://images.unsplash.com/photo-1560448204-6032e02f0b68?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+                             alt="Dormitorio" class="w-full h-64 lg:h-96 object-cover flex-shrink-0">
+                        <img src="https://images.unsplash.com/photo-1560448204-6032e02f0b69?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+                             alt="Baño" class="w-full h-64 lg:h-96 object-cover flex-shrink-0">
+                    </div>
+                </section>
+
+                <!-- Property Details -->
+                <section class="bg-white dark:bg-gray-800 rounded-2xl p-6 lg:p-8 shadow-lg">
+                    <h3 class="text-2xl font-bold mb-6">Detalles de la Propiedad</h3>
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
+                            <i data-lucide="bed" class="w-8 h-8 mx-auto mb-2 text-primary-600"></i>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">Dormitorios</p>
+                            <p class="text-xl font-bold">2</p>
+                        </div>
+                        <div class="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
+                            <i data-lucide="bath" class="w-8 h-8 mx-auto mb-2 text-primary-600"></i>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">Baños</p>
+                            <p class="text-xl font-bold">2</p>
+                        </div>
+                        <div class="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
+                            <i data-lucide="ruler" class="w-8 h-8 mx-auto mb-2 text-primary-600"></i>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">Superficie</p>
+                            <p class="text-xl font-bold">65 m²</p>
+                        </div>
+                        <div class="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
+                            <i data-lucide="building" class="w-8 h-8 mx-auto mb-2 text-primary-600"></i>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">Piso</p>
+                            <p class="text-xl font-bold">2</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Amenities -->
+                <section class="bg-white dark:bg-gray-800 rounded-2xl p-6 lg:p-8 shadow-lg">
+                    <h3 class="text-2xl font-bold mb-6">Amenities del Edificio</h3>
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="amenity-chip flex items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
+                            <i data-lucide="waves" class="w-6 h-6 mr-3 text-primary-600"></i>
+                            <span class="font-medium">Piscina</span>
+                        </div>
+                        <div class="amenity-chip flex items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
+                            <i data-lucide="dumbbell" class="w-6 h-6 mr-3 text-primary-600"></i>
+                            <span class="font-medium">Gimnasio</span>
+                        </div>
+                        <div class="amenity-chip flex items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
+                            <i data-lucide="utensils" class="w-6 h-6 mr-3 text-primary-600"></i>
+                            <span class="font-medium">Quinchos</span>
+                        </div>
+                        <div class="amenity-chip flex items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
+                            <i data-lucide="monitor" class="w-6 h-6 mr-3 text-primary-600"></i>
+                            <span class="font-medium">Cowork</span>
+                        </div>
+                        <div class="amenity-chip flex items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
+                            <i data-lucide="shield" class="w-6 h-6 mr-3 text-primary-600"></i>
+                            <span class="font-medium">Conserjería 24/7</span>
+                        </div>
+                        <div class="amenity-chip flex items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
+                            <i data-lucide="bike" class="w-6 h-6 mr-3 text-primary-600"></i>
+                            <span class="font-medium">Bicicleteros</span>
+                        </div>
+                        <div class="amenity-chip flex items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
+                            <i data-lucide="users" class="w-6 h-6 mr-3 text-primary-600"></i>
+                            <span class="font-medium">Sala de eventos</span>
+                        </div>
+                        <div class="amenity-chip flex items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
+                            <i data-lucide="washing-machine" class="w-6 h-6 mr-3 text-primary-600"></i>
+                            <span class="font-medium">Lavandería</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Description -->
+                <section class="bg-white dark:bg-gray-800 rounded-2xl p-6 lg:p-8 shadow-lg">
+                    <h3 class="text-2xl font-bold mb-6">Descripción</h3>
+                    <p class="text-gray-600 dark:text-gray-400 leading-relaxed">
+                        Hermoso departamento de 2 dormitorios y 2 baños en el corazón de Providencia. 
+                        Excelente ubicación cerca de metro y servicios. El departamento cuenta con 
+                        orientación norte, lo que garantiza excelente iluminación natural durante todo el día.
+                    </p>
+                    <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <div class="p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
+                            <h4 class="font-semibold mb-2">Características</h4>
+                            <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                                <li>• Orientación Norte</li>
+                                <li>• Estacionamiento incluido</li>
+                                <li>• Bodega incluida</li>
+                                <li>• Cocina equipada</li>
+                                <li>• Closet empotrado</li>
+                            </ul>
+                        </div>
+                        <div class="p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
+                            <h4 class="font-semibold mb-2">Ubicación</h4>
+                            <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                                <li>• Metro Providencia (5 min)</li>
+                                <li>• Supermercados cercanos</li>
+                                <li>• Restaurantes y cafés</li>
+                                <li>• Farmacias 24/7</li>
+                                <li>• Bancos y servicios</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Right Column -->
+            <div class="space-y-6">
+                <!-- Price Card -->
+                <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg sticky top-24">
+                    <div class="text-center mb-6">
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Precio mensual</p>
+                        <p class="text-3xl font-bold text-primary-600">$850.000</p>
+                        <p class="text-sm text-gray-500">0% comisión</p>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <button onclick="scheduleVisit()" 
+                                class="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors">
+                            <i data-lucide="calendar" class="w-5 h-5 inline mr-2"></i>
+                            Agendar visita
+                        </button>
+                        
+                        <button onclick="callNow()" 
+                                class="w-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-semibold py-3 px-6 rounded-xl transition-colors">
+                            <i data-lucide="phone" class="w-5 h-5 inline mr-2"></i>
+                            Llamar ahora
+                        </button>
+                        
+                        <button onclick="shareProperty()" 
+                                class="w-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-semibold py-3 px-6 rounded-xl transition-colors">
+                            <i data-lucide="share-2" class="w-5 h-5 inline mr-2"></i>
+                            Compartir
+                        </button>
+                    </div>
+
+                    <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                        <h4 class="font-semibold mb-3">Desglose de gastos</h4>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span>Arriendo</span>
+                                <span>$850.000</span>
+                            </div>
+                            <div class="flex justify-between text-green-600">
+                                <span>Descuento 0% comisión</span>
+                                <span>-$0</span>
+                            </div>
+                            <div class="flex justify-between font-semibold pt-2 border-t">
+                                <span>Total mensual</span>
+                                <span>$850.000</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contact Info -->
+                <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
+                    <h4 class="font-semibold mb-4">Información de contacto</h4>
+                    <div class="space-y-3">
+                        <div class="flex items-center">
+                            <i data-lucide="user" class="w-5 h-5 mr-3 text-primary-600"></i>
+                            <span>María González</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i data-lucide="phone" class="w-5 h-5 mr-3 text-primary-600"></i>
+                            <span>+56 9 1234 5678</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i data-lucide="mail" class="w-5 h-5 mr-3 text-primary-600"></i>
+                            <span>maria@hommie.cl</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Sticky CTA Bar (Mobile) -->
+    <div class="sticky-cta lg:hidden">
+        <div class="flex items-center justify-between p-4">
+            <div>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Precio mensual</p>
+                <p class="text-xl font-bold text-primary-600">$850.000</p>
+            </div>
+            <div class="flex space-x-2">
+                <button onclick="callNow()" 
+                        class="bg-gray-100 dark:bg-gray-700 p-3 rounded-xl">
+                    <i data-lucide="phone" class="w-5 h-5 text-primary-600"></i>
+                </button>
+                <button onclick="scheduleVisit()" 
+                        class="bg-primary-600 text-white px-6 py-3 rounded-xl font-semibold">
+                    Agendar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Theme toggle
+        function toggleTheme() {
+            document.documentElement.classList.toggle('dark');
+            const icon = document.querySelector('[data-lucide="moon"]');
+            if (document.documentElement.classList.contains('dark')) {
+                icon.setAttribute('data-lucide', 'sun');
+            } else {
+                icon.setAttribute('data-lucide', 'moon');
+            }
+            lucide.createIcons();
+        }
+
+        // Action functions
+        function scheduleVisit() {
+            alert('¡Funcionalidad de agendar visita! En la versión completa esto abriría un calendario.');
+        }
+
+        function callNow() {
+            window.location.href = 'tel:+56912345678';
+        }
+
+        function shareProperty() {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Unidad 207 - Home Amengual',
+                    text: 'Hermoso departamento de 2 dormitorios en Providencia',
+                    url: window.location.href
+                });
+            } else {
+                // Fallback for browsers that don't support Web Share API
+                const url = window.location.href;
+                navigator.clipboard.writeText(url).then(() => {
+                    alert('¡Enlace copiado al portapapeles!');
+                });
+            }
+        }
+
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // Image gallery navigation
+        let currentImageIndex = 0;
+        const images = document.querySelectorAll('.image-gallery img');
+        
+        function showImage(index) {
+            images.forEach((img, i) => {
+                img.style.transform = `translateX(-${index * 100}%)`;
+            });
+            currentImageIndex = index;
+        }
+
+        // Auto-advance gallery
+        setInterval(() => {
+            currentImageIndex = (currentImageIndex + 1) % images.length;
+            showImage(currentImageIndex);
+        }, 5000);
+
+        // Touch/swipe support for mobile
+        let startX = 0;
+        let endX = 0;
+        
+        const gallery = document.querySelector('.image-gallery');
+        gallery.addEventListener('touchstart', (e) => {
+            startX = e.touches[0].clientX;
+        });
+        
+        gallery.addEventListener('touchend', (e) => {
+            endX = e.changedTouches[0].clientX;
+            handleSwipe();
+        });
+        
+        function handleSwipe() {
+            const threshold = 50;
+            const diff = startX - endX;
+            
+            if (Math.abs(diff) > threshold) {
+                if (diff > 0 && currentImageIndex < images.length - 1) {
+                    showImage(currentImageIndex + 1);
+                } else if (diff < 0 && currentImageIndex > 0) {
+                    showImage(currentImageIndex - 1);
+                }
+            }
+        }
+
+        // Check for reduced motion preference
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            // Disable animations for users who prefer reduced motion
+            document.querySelectorAll('.amenity-chip').forEach(chip => {
+                chip.style.transition = 'none';
+            });
+        }
+
+        // Register Service Worker for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then((registration) => {
+                        console.log('SW registered: ', registration);
+                    })
+                    .catch((registrationError) => {
+                        console.log('SW registration failed: ', registrationError);
+                    });
+            });
+        }
+
+        // Install prompt for PWA
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            
+            // Show install button if needed
+            const installButton = document.createElement('button');
+            installButton.textContent = 'Instalar App';
+            installButton.className = 'fixed top-20 right-4 bg-primary-600 text-white px-4 py-2 rounded-lg z-50';
+            installButton.onclick = () => {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('User accepted the install prompt');
+                    } else {
+                        console.log('User dismissed the install prompt');
+                    }
+                    deferredPrompt = null;
+                    installButton.remove();
+                });
+            };
+            document.body.appendChild(installButton);
+        });
+    </script>
+</body>
+</html>

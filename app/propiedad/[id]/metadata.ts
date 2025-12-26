@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import { getBaseUrl } from "@lib/site";
 
-interface Props { params: { id: string } }
+interface Props { params: Promise<{ id: string }> }
 
-export function generateMetadata({ params }: Props): Metadata {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params;
   const baseUrl = getBaseUrl();
   const title = "Propiedad en arriendo 0% comisión";
   const description = "Descubre detalles de esta propiedad y agenda tu visita sin pagar comisión.";
-  const url = `${baseUrl}/propiedad/${params.id}`;
+  const url = `${baseUrl}/propiedad/${id}`;
   return {
     title,
     description,

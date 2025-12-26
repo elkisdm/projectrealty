@@ -1,112 +1,127 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Search, Calendar, Key, CheckCircle } from "lucide-react";
-
-const steps = [
-    {
-        icon: Search,
-        title: "Busca tu propiedad",
-        description: "Encuentra la propiedad perfecta en nuestra plataforma con filtros avanzados",
-        color: "from-blue-500 to-cyan-500",
-    },
-    {
-        icon: Calendar,
-        title: "Agenda tu visita",
-        description: "Reserva una visita virtual o presencial en el horario que prefieras",
-        color: "from-purple-500 to-pink-500",
-    },
-    {
-        icon: Key,
-        title: "Firma digital",
-        description: "Completa todo el proceso de arriendo de forma 100% digital",
-        color: "from-green-500 to-emerald-500",
-    },
-    {
-        icon: CheckCircle,
-        title: "¡Disfruta tu hogar!",
-        description: "Recibe las llaves y disfruta de tu nueva casa sin comisiones",
-        color: "from-orange-500 to-red-500",
-    },
-];
+import MotionWrapper from "@/components/ui/MotionWrapper";
 
 export default function HowItWorks() {
-    return (
-        <section className="py-20 bg-white">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8 }}
-                    viewport={{ once: true }}
-                    className="text-center mb-16"
-                >
-                    <h2 className="text-4xl font-bold text-slate-900 mb-4">
-                        ¿Cómo funciona?
-                    </h2>
-                    <p className="text-xl text-slate-600 max-w-2xl mx-auto">
-                        Proceso simple y transparente en solo 4 pasos
-                    </p>
-                </motion.div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                    {steps.map((step, index) => (
-                        <motion.div
-                            key={index}
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.6, delay: index * 0.1 }}
-                            viewport={{ once: true }}
-                            className="text-center"
-                        >
-                            <div className="relative">
-                                {/* Step Number */}
-                                <div className="absolute -top-2 -left-2 w-8 h-8 bg-slate-900 text-white rounded-full flex items-center justify-center text-sm font-bold">
-                                    {index + 1}
-                                </div>
+  const steps = [
+    {
+      number: "01",
+      title: "Explora Home Amengual",
+      description: "Descubre este increíble edificio en Estación Central con 4 tipologías disponibles y las mejores amenidades.",
+      icon: (
+        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+      ),
+      color: "text-cyan-600 dark:text-cyan-400",
+      bgColor: "bg-cyan-50 dark:bg-cyan-950/20",
+      borderColor: "border-cyan-200 dark:border-cyan-800/30",
+    },
+    {
+      number: "02",
+      title: "Ahorra la comisión",
+      description: "Selecciona tu tipología ideal y ahorra el 100% de la comisión. Precios desde $450,000.",
+      icon: (
+        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      ),
+      color: "text-blue-600 dark:text-blue-400",
+      bgColor: "bg-blue-50 dark:bg-blue-950/20",
+      borderColor: "border-blue-200 dark:border-blue-800/30",
+    },
+    {
+      number: "03",
+      title: "Reserva tu departamento",
+      description: "Te acompañamos en todo el proceso hasta la firma. Soporte personalizado y sin complicaciones.",
+      icon: (
+        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      ),
+      color: "text-purple-600 dark:text-purple-400",
+      bgColor: "bg-purple-50 dark:bg-purple-950/20",
+      borderColor: "border-purple-200 dark:border-purple-800/30",
+    },
+  ];
 
-                                {/* Icon */}
-                                <div className={`w-16 h-16 mx-auto mb-6 rounded-2xl bg-gradient-to-r ${step.color} flex items-center justify-center shadow-lg`}>
-                                    <step.icon className="h-8 w-8 text-white" />
-                                </div>
-
-                                {/* Connector Line */}
-                                {index < steps.length - 1 && (
-                                    <div className="hidden lg:block absolute top-8 left-full w-full h-0.5 bg-gradient-to-r from-slate-200 to-slate-300 transform translate-x-4" />
-                                )}
-                            </div>
-
-                            <h3 className="text-xl font-semibold text-slate-900 mb-3">
-                                {step.title}
-                            </h3>
-                            <p className="text-slate-600 leading-relaxed">
-                                {step.description}
-                            </p>
-                        </motion.div>
-                    ))}
-                </div>
-
-                {/* CTA Section */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8, delay: 0.4 }}
-                    viewport={{ once: true }}
-                    className="text-center mt-16"
-                >
-                    <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl p-8 text-white">
-                        <h3 className="text-2xl font-bold mb-4">
-                            ¿Listo para encontrar tu hogar?
-                        </h3>
-                        <p className="text-purple-100 mb-6 max-w-2xl mx-auto">
-                            Únete a miles de personas que ya encontraron su hogar ideal sin pagar comisiones de corretaje
-                        </p>
-                        <button className="bg-white text-purple-600 font-semibold px-8 py-3 rounded-xl hover:bg-slate-100 transition-colors duration-200">
-                            Comenzar Búsqueda
-                        </button>
-                    </div>
-                </motion.div>
+  return (
+    <>
+      <section aria-labelledby="how-heading" className="px-6 py-16 lg:px-8 lg:py-24">
+        <div className="mx-auto max-w-6xl">
+          {/* Header minimalista */}
+          <MotionWrapper direction="up" delay={0.1}>
+            <div className="text-center mb-16">
+              <h2 id="how-heading" className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl mb-4">
+                ¿Cómo funciona?
+              </h2>
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                Proceso simple para arrendar en Home Amengual
+              </p>
             </div>
-        </section>
-    );
+          </MotionWrapper>
+          
+          {/* Steps - diseño minimalista y simétrico */}
+          <div className="grid gap-12 md:grid-cols-3">
+            {steps.map((step, index) => (
+              <MotionWrapper key={step.number} direction="up" delay={0.2 + index * 0.1}>
+                <div className="relative group">
+                  {/* Línea conectora en desktop */}
+                  {index < steps.length - 1 && (
+                    <div className="absolute left-full top-8 hidden h-px w-12 bg-gradient-to-r from-border to-transparent md:block" />
+                  )}
+                  
+                  {/* Contenedor principal - más cuadrado y minimalista */}
+                  <div className="relative bg-card border border-border/50 rounded-3xl p-8 h-full transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 hover:border-primary/20">
+                    
+                    {/* Icono - diseño minimalista */}
+                    <div className="flex items-center justify-center w-16 h-16 mx-auto mb-6">
+                      <div className={`w-full h-full rounded-2xl ${step.bgColor} ${step.borderColor} border-2 flex items-center justify-center ${step.color}`}>
+                        {step.icon}
+                      </div>
+                    </div>
+                    
+                    {/* Número del paso - minimalista */}
+                    <div className="text-center mb-6">
+                      <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${step.color} ${step.bgColor} ${step.borderColor} border`}>
+                        {step.number.slice(-1)}
+                      </span>
+                    </div>
+                    
+                    {/* Contenido */}
+                    <div className="text-center">
+                      <h3 className="text-xl font-semibold text-foreground mb-4">
+                        {step.title}
+                      </h3>
+                      <p className="text-muted-foreground leading-relaxed">
+                        {step.description}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </MotionWrapper>
+            ))}
+          </div>
+
+          {/* CTA */}
+          <MotionWrapper direction="up" delay={0.6}>
+            <div className="mt-16 text-center">
+              <button
+                onClick={() => window.dispatchEvent(new CustomEvent('openContactModal'))}
+                className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white px-8 py-4 text-base font-semibold shadow-lg transition-all duration-200 hover:shadow-xl hover:shadow-cyan-500/25 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-cyan-500"
+              >
+                Quiero más información
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+              </button>
+            </div>
+          </MotionWrapper>
+        </div>
+      </section>
+    </>
+  );
 }
+
+

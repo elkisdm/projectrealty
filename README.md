@@ -1,3 +1,134 @@
+# Hommie 0% Comisión
+
+Plataforma de arriendo sin comisión - Next.js 15 + TypeScript + Supabase
+
+---
+
+## 🚀 Deploy a Producción
+
+### Estado Actual
+
+✅ **Proyecto listo para producción:**
+- ✅ 0 errores TypeScript en código fuente
+- ✅ Build exitoso (32 páginas generadas)
+- ✅ 0 errores de lint
+- ✅ Tests: 87.1% pasando (607/697)
+- ✅ Estructura limpia y organizada
+
+### Verificación Pre-Deploy
+
+Antes de hacer deploy, ejecuta el script de verificación:
+
+```bash
+node scripts/verify-production-ready.mjs
+```
+
+Este script verifica:
+- ✅ TypeScript sin errores
+- ✅ Build exitoso
+- ✅ Lint aceptable
+- ✅ Tests críticos
+- ✅ Variables de entorno
+- ✅ Estructura limpia
+
+### Documentación Completa
+
+📋 **Checklist de Producción:** [docs/PRODUCCION_CHECKLIST.md](./docs/PRODUCCION_CHECKLIST.md)  
+🔧 **Variables de Entorno:** [docs/VARIABLES_ENTORNO.md](./docs/VARIABLES_ENTORNO.md)  
+🚀 **Guía de Deploy:** [docs/DEPLOY.md](./docs/DEPLOY.md)  
+📊 **Reporte de Build:** [docs/BUILD_PRODUCTION_REPORT.md](./docs/BUILD_PRODUCTION_REPORT.md)
+
+### Quick Start para Deploy
+
+1. **Verificar preparación:**
+   ```bash
+   node scripts/verify-production-ready.mjs
+   ```
+
+2. **Configurar variables de entorno:**
+   - Ver [docs/VARIABLES_ENTORNO.md](./docs/VARIABLES_ENTORNO.md)
+   - Configurar en plataforma de deploy (Vercel/Netlify)
+
+3. **Deploy:**
+   ```bash
+   # Vercel (recomendado)
+   vercel --prod
+   
+   # O conectar repositorio en Vercel Dashboard
+   ```
+
+4. **Post-deploy:**
+   - Verificar funcionalidad core: `node scripts/verify-core-functionality.mjs [url]`
+   - Revisar checklist: [docs/PRODUCCION_CHECKLIST.md](./docs/PRODUCCION_CHECKLIST.md)
+
+### Plan de Sprints Completado
+
+✅ **Sprint 1:** Corrección crítica (TypeScript) - 100%  
+✅ **Sprint 2:** Limpieza de código - 100%  
+✅ **Sprint 3:** Limpieza de estructura - 100%  
+✅ **Sprint 4:** Verificación y tests - 100%  
+✅ **Sprint 5:** Preparación para producción - 100%
+
+📖 **Plan completo:** [PLAN_SPRINTS_PRODUCCION.md](./PLAN_SPRINTS_PRODUCCION.md)
+
+---
+
+## 🎯 MVP Mode
+
+El proyecto está configurado en **modo MVP** con solo 4 funcionalidades esenciales activas:
+
+### Rutas Activas del MVP
+
+1. **Home (`/`)** - Formulario de búsqueda con filtros básicos
+2. **Resultados (`/buscar`)** - Página de resultados de búsqueda con filtros aplicados
+3. **Propiedad (`/property/[slug]`)** - Detalle completo de propiedad individual
+4. **Agendamiento** - Modal integrado en página de propiedad para agendar visitas
+
+### Rutas Deshabilitadas
+
+Las siguientes rutas están deshabilitadas y retornan 404:
+- `/coming-soon`
+- `/arrienda-sin-comision/*`
+- `/flash-videos`
+- `/landing-v2`
+- `/cotizador`
+- `/agendamiento` y `/agendamiento-mejorado` (standalone)
+- `/propiedad/[id]` (legacy)
+
+### Activar/Desactivar MVP Mode
+
+El modo MVP se controla mediante el feature flag `mvpMode` en `config/feature-flags.json`:
+
+```json
+{
+  "mvpMode": true
+}
+```
+
+**Para desactivar MVP Mode:**
+```bash
+# Editar config/feature-flags.json y cambiar mvpMode a false
+# O usar el middleware para permitir todas las rutas
+```
+
+### Documentación MVP
+
+- **User Journey:** [docs/MVP_USER_JOURNEY.md](./docs/MVP_USER_JOURNEY.md) - Historia del cliente y flujo completo
+- **Rutas MVP:** [docs/MVP_ROUTES.md](./docs/MVP_ROUTES.md) - Documentación detallada de rutas activas
+
+### Flujo del Usuario (MVP)
+
+```
+Home (/) 
+  → Formulario de búsqueda
+  → Resultados (/buscar?q=...&comuna=...)
+  → Propiedad (/property/[slug])
+  → Agendar Visita (modal)
+  → Confirmación
+```
+
+---
+
 ## Sistema de Feature Flags - Coming Soon
 
 El proyecto usa un sistema de feature flags unificado que permite activar/desactivar el modo "coming soon" simplemente con commit & push.

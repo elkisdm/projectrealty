@@ -34,7 +34,9 @@ describe('useVirtualGrid', () => {
 
   describe('Responsive breakpoints', () => {
     it('should detect mobile breakpoint correctly', () => {
-      mockWindow(600, 800);
+      act(() => {
+        mockWindow(600, 800);
+      });
       
       const { result } = renderHook(() => useVirtualGrid({ 
         items: mockItems.slice(0, 10) 
@@ -45,7 +47,9 @@ describe('useVirtualGrid', () => {
     });
 
     it('should detect tablet breakpoint correctly', () => {
-      mockWindow(800, 600);
+      act(() => {
+        mockWindow(800, 600);
+      });
       
       const { result } = renderHook(() => useVirtualGrid({ 
         items: mockItems.slice(0, 10) 
@@ -56,7 +60,9 @@ describe('useVirtualGrid', () => {
     });
 
     it('should detect desktop breakpoint correctly', () => {
-      mockWindow(1100, 800);
+      act(() => {
+        mockWindow(1100, 800);
+      });
       
       const { result } = renderHook(() => useVirtualGrid({ 
         items: mockItems.slice(0, 10) 
@@ -67,7 +73,9 @@ describe('useVirtualGrid', () => {
     });
 
     it('should detect wide breakpoint correctly', () => {
-      mockWindow(1600, 1000);
+      act(() => {
+        mockWindow(1600, 1000);
+      });
       
       const { result } = renderHook(() => useVirtualGrid({ 
         items: mockItems.slice(0, 10) 
@@ -80,7 +88,9 @@ describe('useVirtualGrid', () => {
 
   describe('Grid calculations', () => {
     it('should calculate correct dimensions for desktop', () => {
-      mockWindow(1200, 800);
+      act(() => {
+        mockWindow(1200, 800);
+      });
       
       const { result } = renderHook(() => useVirtualGrid({ 
         items: mockItems.slice(0, 10) 

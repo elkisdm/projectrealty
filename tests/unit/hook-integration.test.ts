@@ -1,4 +1,4 @@
-import { useBuildingsStore } from '../../stores/buildingsStore';
+import { useBuildingsStore } from '../../lib/stores/buildingsStore';
 import { Building } from '../../types';
 
 // Mock de un building de prueba

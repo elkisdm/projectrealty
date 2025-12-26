@@ -1,108 +1,72 @@
-export interface ICSEvent {
-  uid: string;
-  summary: string;
-  start: Date;
-  end: Date;
-  description?: string;
+import { CalendarEvent, asIsoDateTime } from "@/types/calendar";
+
+interface IcsEventParsing {
+  uid?: string;
+  summary?: string;
+  dtstart: string;
+  dtend: string;
 }
 
-export async function fetchIcsEvents(icsUrl: string): Promise<ICSEvent[]> {
+export async function fetchIcsEvents(url: string): Promise<CalendarEvent[]> {
+  if (process.env.NODE_ENV !== 'production' && !url) {
+    return [];
+  }
+  if (!url) return [];
   try {
-    const response = await fetch(icsUrl);
-    
-    if (!response.ok) {
-      throw new Error(`Failed to fetch ICS file: ${response.status}`);
-    }
-
-    const icsContent = await response.text();
-    return parseICSContent(icsContent);
-  } catch (error) {
-    console.error('Error fetching ICS events:', error);
+    const res = await fetch(url);
+    if (!res.ok) return [];
+    const text = await res.text();
+    return parseIcs(text).map((ev, idx) => ({
+      id: ev.uid ?? String(idx),
+      title: ev.summary ?? 'Ocupado',
+      start: asIsoDateTime(toIso(ev.dtstart)),
+      end: asIsoDateTime(toIso(ev.dtend)),
+      busy: true,
+      source: { kind: 'ics' as const, url }
+    }));
+  } catch {
     return [];
   }
 }
 
-function parseICSContent(icsContent: string): ICSEvent[] {
-  const events: ICSEvent[] = [];
-  const lines = icsContent.split('\n');
-  
-  let currentEvent: Partial<ICSEvent> = {};
-  let inEvent = false;
-
+function parseIcs(content: string): IcsEventParsing[] {
+  const events: IcsEventParsing[] = [];
+  const lines = content.split(/\r?\n/);
+  let cur: Partial<IcsEventParsing> | null = null;
   for (const line of lines) {
-    const trimmedLine = line.trim();
-    
-    if (trimmedLine === 'BEGIN:VEVENT') {
-      inEvent = true;
-      currentEvent = {};
-    } else if (trimmedLine === 'END:VEVENT') {
-      if (inEvent && currentEvent.uid && currentEvent.summary && currentEvent.start && currentEvent.end) {
-        events.push(currentEvent as ICSEvent);
+    if (line === 'BEGIN:VEVENT') { cur = {}; continue; }
+    if (line === 'END:VEVENT') { 
+      if (cur?.dtstart && cur?.dtend) {
+        events.push({
+          uid: cur.uid,
+          summary: cur.summary,
+          dtstart: cur.dtstart,
+          dtend: cur.dtend,
+        });
       }
-      inEvent = false;
-      currentEvent = {};
-    } else if (inEvent) {
-      const [key, value] = trimmedLine.split(':', 2);
-      
-      switch (key) {
-        case 'UID':
-          currentEvent.uid = value;
-          break;
-        case 'SUMMARY':
-          currentEvent.summary = value;
-          break;
-        case 'DESCRIPTION':
-          currentEvent.description = value;
-          break;
-        case 'DTSTART':
-          currentEvent.start = parseICSDate(value);
-          break;
-        case 'DTEND':
-          currentEvent.end = parseICSDate(value);
-          break;
-      }
+      cur = null; 
+      continue; 
     }
+    if (!cur) continue;
+    if (line.startsWith('UID:')) cur.uid = line.slice(4).trim();
+    if (line.startsWith('SUMMARY:')) cur.summary = line.slice(8).trim();
+    if (line.startsWith('DTSTART')) cur.dtstart = line.split(':').pop()!.trim();
+    if (line.startsWith('DTEND')) cur.dtend = line.split(':').pop()!.trim();
   }
-
   return events;
 }
 
-function parseICSDate(dateString: string): Date {
-  // Handle different ICS date formats
-  if (dateString.includes('T')) {
-    // DateTime format: 20231201T120000Z
-    const year = dateString.substring(0, 4);
-    const month = dateString.substring(4, 6);
-    const day = dateString.substring(6, 8);
-    const hour = dateString.substring(9, 11);
-    const minute = dateString.substring(11, 13);
-    const second = dateString.substring(13, 15);
-    
-    return new Date(`${year}-${month}-${day}T${hour}:${minute}:${second}Z`);
-  } else {
-    // Date format: 20231201
-    const year = dateString.substring(0, 4);
-    const month = dateString.substring(4, 6);
-    const day = dateString.substring(6, 8);
-    
-    return new Date(`${year}-${month}-${day}`);
+function toIso(value: string): string {
+  // Soporta formatos como 20250101T090000Z o 20250101
+  if (/Z$/.test(value)) {
+    const y = value.slice(0,4); const m = value.slice(4,6); const d = value.slice(6,8);
+    const t = value.slice(9,15);
+    const hh = t.slice(0,2); const mm = t.slice(2,4); const ss = t.slice(4,6);
+    return `${y}-${m}-${d}T${hh}:${mm}:${ss}Z`;
   }
-}
-
-export function convertICSEventsToCalendarEvents(
-  icsEvents: ICSEvent[]
-): Array<{
-  id: string;
-  title: string;
-  start: Date;
-  end: Date;
-  description?: string;
-}> {
-  return icsEvents.map(event => ({
-    id: event.uid,
-    title: event.summary,
-    start: event.start,
-    end: event.end,
-    description: event.description,
-  }));
+  if (/^\d{8}$/.test(value)) {
+    const y = value.slice(0,4); const m = value.slice(4,6); const d = value.slice(6,8);
+    return `${y}-${m}-${d}T00:00:00Z`;
+  }
+  return new Date(value).toISOString();
 }

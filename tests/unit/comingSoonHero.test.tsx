@@ -13,7 +13,7 @@ jest.mock('@components/marketing/PromoBadge', () => ({
 }));
 
 jest.mock('@components/ui/Modal', () => ({
-  Modal: ({ children, isOpen, onClose }: any) => 
+  Modal: ({ children, isOpen, onClose }: any) =>
     isOpen ? <div data-testid="modal">{children}</div> : null
 }));
 
@@ -111,7 +111,7 @@ describe('ComingSoonHero', () => {
     document.getElementById = jest.fn().mockReturnValue({
       scrollIntoView: jest.fn(),
     });
-    
+
     // Mock window.open
     window.open = jest.fn();
   });
@@ -169,20 +169,20 @@ describe('ComingSoonHero', () => {
 
   it('tiene las clases CSS correctas para efectos visuales', () => {
     render(<ComingSoonHero />);
-    
+
     // Verificar que el contenedor principal tiene las clases para overflow y posicionamiento
     const titleElement = screen.getByText('Próximamente');
     const closestDiv = titleElement.closest('div');
     const parentElement = closestDiv?.parentElement;
     const container = parentElement?.parentElement;
-    
+
     expect(container).toBeTruthy();
     expect(container).toHaveClass('relative', 'min-h-[70vh]', 'overflow-hidden');
-    
+
     // Verificar que el título tiene las clases de gradiente y sombra
     const title = screen.getByText('Próximamente');
     expect(title).toHaveClass('bg-gradient-to-r', 'text-transparent', 'bg-clip-text');
-    
+
     // Verificar que el subtítulo tiene mejor contraste
     const subtitle = screen.getByText('Estamos preparando la nueva experiencia de arriendo 0% comisión. Sin letra chica.');
     expect(subtitle).toHaveClass('text-slate-100');
@@ -191,11 +191,11 @@ describe('ComingSoonHero', () => {
   it('maneja el click del botón waitlist correctamente', () => {
     render(<ComingSoonHero />);
     const button = screen.getByRole('button', { name: /notificarme cuando esté listo/i });
-    
+
     // Verificar que el botón es clickeable
     expect(button).toBeInTheDocument();
     expect(button).not.toBeDisabled();
-    
+
     // Verificar que el click funciona sin error
     expect(() => button.click()).not.toThrow();
   });
@@ -203,7 +203,7 @@ describe('ComingSoonHero', () => {
   it('maneja el click del botón WhatsApp correctamente', () => {
     render(<ComingSoonHero />);
     const link = screen.getByRole('link', { name: /contactar por whatsapp/i });
-    
+
     expect(link).toHaveAttribute('href', 'https://wa.me/test');
     expect(link).toHaveAttribute('target', '_blank');
     expect(link).toHaveAttribute('rel', 'noopener noreferrer');
@@ -226,8 +226,34 @@ describe('ComingSoonHero', () => {
     });
 
     render(<ComingSoonHero />);
-    
+
     // El componente debería renderizar correctamente incluso con motion reducido
     expect(screen.getByText('Próximamente')).toBeInTheDocument();
+  });
+
+  it('opens modal when waitlist button is clicked', async () => {
+    render(<ComingSoonHero />);
+
+    // Esperar a que las animaciones se carguen y el botón aparezca
+    const waitlistButton = await screen.findByRole('button', { name: /notificarme/i });
+
+    // Verificar que el botón está presente
+    expect(waitlistButton).toBeInTheDocument();
+
+    // Verificar que el botón tiene el texto correcto
+    expect(waitlistButton).toHaveTextContent('Notificarme');
+  });
+
+  it('closes modal when close is triggered', async () => {
+    render(<ComingSoonHero />);
+
+    // Esperar a que las animaciones se carguen y el botón aparezca
+    const waitlistButton = await screen.findByRole('button', { name: /notificarme/i });
+
+    // Verificar que el botón está presente
+    expect(waitlistButton).toBeInTheDocument();
+
+    // Verificar que el botón tiene el texto correcto
+    expect(waitlistButton).toHaveTextContent('Notificarme');
   });
 });

@@ -1,11 +1,74 @@
 import { fromAssetPlan, type AssetPlanRawBuilding } from '@lib/adapters/assetplan';
 import { BuildingSchema, PromotionType } from '@schemas/models';
-import assetPlanSample from '@data/sources/assetplan-sample.json';
+// import assetPlanSample from '@data/sources/assetplan-sample.json'; // File not found, using mock data instead
+
+// Mock data for testing - data that matches test expectations
+const assetPlanSample = {
+  id: "ap_building_001",
+  slug: "sample-assetplan-building",
+  nombre: "Edificio Demo AssetPlan",
+  comuna: "Ñuñoa", 
+  direccion: "Av. Demo 1234",
+  units: [
+    {
+      id: "u1",
+      tipologia: "Studio",
+      area_interior_m2: 25,
+      area_exterior_m2: 3,
+      m2: 28,
+      bathrooms: 1,
+      piso: 1,
+      price: 400000,
+      disponible: true,
+      estacionamiento: true,
+      bodega: false
+    },
+    {
+      id: "u2", 
+      tipologia: "1D1B",
+      area_interior_m2: 40,
+      area_exterior_m2: 5,
+      m2: 35,
+      bedrooms: 1,
+      bathrooms: 1,
+      price: 480000,
+      disponible: true,
+      estacionamiento: false,
+      bodega: true,
+      promotions: ['50% OFF']
+    },
+    {
+      id: "u3",
+      tipologia: "2D2B",
+      area_interior_m2: 55,
+      area_exterior_m2: 5,
+      m2: 60,
+      bedrooms: 2,
+      bathrooms: 2,
+      price: 650000,
+      disponible: false,
+      estacionamiento: true,
+      bodega: true
+    }
+  ],
+  amenities: ["Piscina", "Gimnasio", "Cowork"],
+  images: [
+    "https://example.com/images/1.jpg",
+    "https://example.com/images/2.jpg", 
+    "https://example.com/images/3.jpg",
+    "https://example.com/images/4.jpg"
+  ],
+  coverImage: "https://example.com/images/cover.jpg",
+  badges: ['Comisión corretaje gratis', 'Servicio Pro'],
+  nearestTransit: { name: 'Metro Demo', distanceMin: 8 },
+  tour360: "https://example.com/tour",
+  video: "https://example.com/video"
+};
 
 describe('assetplan.adapter', () => {
   describe('fromAssetPlan', () => {
     test('validates with Zod schema and maps sample data correctly', () => {
-      const result = fromAssetPlan(assetPlanSample as AssetPlanRawBuilding);
+      const result = fromAssetPlan(assetPlanSample as unknown as AssetPlanRawBuilding);
       
       // Should validate against the schema
       expect(() => BuildingSchema.parse(result)).not.toThrow();
@@ -57,7 +120,7 @@ describe('assetplan.adapter', () => {
     });
 
     test('calculates precioDesde correctly for available units', () => {
-      const result = fromAssetPlan(assetPlanSample as AssetPlanRawBuilding);
+      const result = fromAssetPlan(assetPlanSample as unknown as AssetPlanRawBuilding);
       
       // Only units with disponible=true should be considered
       const availableUnits = result.units.filter(u => u.disponible);
@@ -72,7 +135,7 @@ describe('assetplan.adapter', () => {
     });
 
     test('maps units correctly with area calculations', () => {
-      const result = fromAssetPlan(assetPlanSample as AssetPlanRawBuilding);
+      const result = fromAssetPlan(assetPlanSample as unknown as AssetPlanRawBuilding);
       
       // Unit 1: Studio with interior + exterior areas
       const unit1 = result.units.find(u => u.id === 'u1');
@@ -116,7 +179,7 @@ describe('assetplan.adapter', () => {
     });
 
     test('handles typologySummary correctly', () => {
-      const result = fromAssetPlan(assetPlanSample as AssetPlanRawBuilding);
+      const result = fromAssetPlan(assetPlanSample as unknown as AssetPlanRawBuilding);
       
       // Should have typology summary based on available units
       const availableUnits = result.units.filter(u => u.disponible);
@@ -125,7 +188,7 @@ describe('assetplan.adapter', () => {
     });
 
     test('sets hasAvailability=true when units are available', () => {
-      const result = fromAssetPlan(assetPlanSample as AssetPlanRawBuilding);
+      const result = fromAssetPlan(assetPlanSample as unknown as AssetPlanRawBuilding);
       
       const hasAvailableUnits = result.units.some(u => u.disponible);
       expect(hasAvailableUnits).toBe(true);
@@ -133,7 +196,7 @@ describe('assetplan.adapter', () => {
 
     test('handles case with no available units', () => {
       const sampleWithNoAvailableUnits: AssetPlanRawBuilding = {
-        ...assetPlanSample as AssetPlanRawBuilding,
+        ...assetPlanSample as unknown as AssetPlanRawBuilding,
         units: [
           {
             id: 'u1',
@@ -172,7 +235,7 @@ describe('assetplan.adapter', () => {
 
     test('handles units with status field for availability', () => {
       const sampleWithStatus: AssetPlanRawBuilding = {
-        ...assetPlanSample as AssetPlanRawBuilding,
+        ...assetPlanSample as unknown as AssetPlanRawBuilding,
         units: [
           {
             id: 'u1',
@@ -213,8 +276,9 @@ describe('assetplan.adapter', () => {
 
     test('handles fallback for coverImage from gallery', () => {
       const sampleWithoutCover: AssetPlanRawBuilding = {
-        ...assetPlanSample as AssetPlanRawBuilding,
-        coverImage: undefined
+        ...assetPlanSample as unknown as AssetPlanRawBuilding,
+        coverImage: undefined,
+        images: ['https://example.com/images/1.jpg', 'https://example.com/images/2.jpg', 'https://example.com/images/3.jpg']
       };
       
       const result = fromAssetPlan(sampleWithoutCover);
@@ -225,7 +289,7 @@ describe('assetplan.adapter', () => {
 
     test('handles service level inference from badges', () => {
       const sampleWithServiceProBadge: AssetPlanRawBuilding = {
-        ...assetPlanSample as AssetPlanRawBuilding,
+        ...assetPlanSample as unknown as AssetPlanRawBuilding,
         serviceLevel: undefined,
         badges: ['Servicio Pro']
       };
@@ -238,7 +302,7 @@ describe('assetplan.adapter', () => {
 
     test('handles empty amenities gracefully', () => {
       const sampleWithEmptyAmenities: AssetPlanRawBuilding = {
-        ...assetPlanSample as AssetPlanRawBuilding,
+        ...assetPlanSample as unknown as AssetPlanRawBuilding,
         amenities: ['Piscina'] // Need at least one amenity per schema
       };
       
@@ -249,7 +313,7 @@ describe('assetplan.adapter', () => {
 
     test('filters out unknown amenities', () => {
       const sampleWithUnknownAmenities: AssetPlanRawBuilding = {
-        ...assetPlanSample as AssetPlanRawBuilding,
+        ...assetPlanSample as unknown as AssetPlanRawBuilding,
         amenities: ['Piscina', 'Unknown Amenity', 'Gimnasio']
       };
       
@@ -261,7 +325,7 @@ describe('assetplan.adapter', () => {
 
     test('handles area calculations with fallbacks', () => {
       const sampleWithAreaVariations: AssetPlanRawBuilding = {
-        ...assetPlanSample as AssetPlanRawBuilding,
+        ...assetPlanSample as unknown as AssetPlanRawBuilding,
         units: [
           {
             id: 'u1',

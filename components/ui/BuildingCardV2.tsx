@@ -1,16 +1,21 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { PromotionBadge } from "@components/ui/PromotionBadge";
 import { formatPrice } from "@lib/utils";
 import { track } from "@lib/analytics";
-import type { Building } from "@types";
+import type { Building, Unit, LegacyBuilding } from "@types";
+import type { BuildingSummary } from "../../hooks/useFetchBuildings";
 // import type { PromotionBadge as PromotionBadgeType } from "@schemas/models";
 import { PromotionType } from "@schemas/models";
+import { useLongPress } from "@hooks/useLongPress";
+import { ContextMenu, useContextMenuOptions } from "./ContextMenu";
 
 type BuildingCardV2Props = {
-  building: Building;
+  building: Building | BuildingSummary | LegacyBuilding;
   priority?: boolean;
   showBadge?: boolean;
   className?: string;
@@ -18,6 +23,55 @@ type BuildingCardV2Props = {
 
 const DEFAULT_BLUR =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0nMTYnIGhlaWdodD0nMTAnIHhtbG5zPSdodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2Zyc+PHJlY3Qgd2lkdGg9JzE2JyBoZWlnaHQ9JzEwJyBmaWxsPSIjMjIyMjIyIi8+PC9zdmc+";
+
+// Helper functions to work with Building, BuildingSummary, and LegacyBuilding types
+function getCoverImage(building: Building | BuildingSummary | LegacyBuilding): string {
+  if ('cover' in building && building.cover) return building.cover;
+  if ('coverImage' in building && building.coverImage) return building.coverImage;
+  if ('gallery' in building && building.gallery && building.gallery.length > 0) return building.gallery[0];
+  // Fallback a imagen por defecto
+  return '/images/lascondes-cover.jpg';
+}
+
+function getUnitsInfo(building: Building | BuildingSummary | LegacyBuilding) {
+  if ('units' in building) {
+    const available = building.units.filter((unit) => 'disponible' in unit && unit.disponible);
+    return { available: available.length, total: building.units.length };
+  }
+  // For BuildingSummary, use hasAvailability flag
+  if ('hasAvailability' in building) {
+    return { available: building.hasAvailability ? 1 : 0, total: 1 };
+  }
+  return { available: 0, total: 0 };
+}
+
+function getPromoInfo(building: Building | BuildingSummary | LegacyBuilding) {
+  if ('promo' in building && building.promo) {
+    return {
+      label: building.promo.label,
+      tag: building.promo.tag || "Promoción"
+    };
+  }
+  if ('badges' in building && building.badges && building.badges.length > 0) {
+    const firstBadge = building.badges[0];
+    return {
+      label: firstBadge.label,
+      tag: firstBadge.tag || "Promoción"
+    };
+  }
+  return null;
+}
+
+function getPrice(building: Building | BuildingSummary | LegacyBuilding): number {
+  if ('precioDesde' in building) return building.precioDesde;
+  if ('units' in building && building.units.length > 0) {
+    const availableUnits = building.units.filter((unit) => 'disponible' in unit && unit.disponible);
+    if (availableUnits.length > 0) {
+      return Math.min(...availableUnits.map((unit) => 'price' in unit ? unit.price : 0));
+    }
+  }
+  return 0;
+}
 
 // Helper function to get the primary badge with priority
 // function getPrimaryBadge(badges?: PromotionBadgeType[]): PromotionBadgeType | null {
@@ -38,17 +92,17 @@ const DEFAULT_BLUR =
 function calculateBuildingStats(building: Building) {
   const availableUnits = building.units.filter(unit => unit.disponible);
   const totalUnits = building.units.length;
-  
+
   // Calculate price range
   const prices = availableUnits.map(unit => unit.price);
   const minPrice = Math.min(...prices);
   const maxPrice = Math.max(...prices);
-  
+
   // Calculate m2 range
-  const m2s = availableUnits.map(unit => unit.m2);
-  const minM2 = Math.min(...m2s);
-  const maxM2 = Math.max(...m2s);
-  
+  const m2s = availableUnits.map(unit => 'm2' in unit ? unit.m2 : undefined).filter((m2): m2 is number => m2 !== undefined);
+  const minM2 = m2s.length > 0 ? Math.min(...m2s) : 0;
+  const maxM2 = m2s.length > 0 ? Math.max(...m2s) : 0;
+
   // Group by tipologia
   const tipologiaGroups = availableUnits.reduce((acc, unit) => {
     if (!acc[unit.tipologia]) {
@@ -57,15 +111,15 @@ function calculateBuildingStats(building: Building) {
     acc[unit.tipologia].push(unit);
     return acc;
   }, {} as Record<string, typeof availableUnits>);
-  
+
   const tipologiaSummary = Object.entries(tipologiaGroups).map(([tipologia, units]) => ({
     key: tipologia,
     label: tipologia,
     count: units.length,
     minPrice: Math.min(...units.map(u => u.price)),
-    minM2: Math.min(...units.map(u => u.m2)),
+    minM2: Math.min(...units.map(u => 'm2' in u ? (u.m2 ?? 0) : 0)),
   }));
-  
+
   return {
     hasAvailability: availableUnits.length > 0,
     availableCount: availableUnits.length,
@@ -82,58 +136,119 @@ function calculateBuildingStats(building: Building) {
 function formatTypologyChip(summary: { key: string; label: string; count: number; minPrice?: number; minM2?: number }): string {
   const displayLabel = summary.label;
   const count = summary.count;
-  
+
   if (count === 1) {
     return `${displayLabel} — 1 disp`;
   }
   return `${displayLabel} — +${count} disp`;
 }
 
-export function BuildingCardV2({ 
-  building, 
-  priority = false, 
+export function BuildingCardV2({
+  building,
+  priority = false,
   showBadge = true,
   className = ""
 }: BuildingCardV2Props) {
-  const cover = building.cover;
-  const href = `/propiedad/${building.id}`;
-  const stats = calculateBuildingStats(building);
+  const router = useRouter();
+  const [contextMenuOpen, setContextMenuOpen] = useState(false);
+  const [contextMenuPosition, setContextMenuPosition] = useState<{ x: number; y: number } | undefined>();
   
+  const cover = getCoverImage(building);
+  // Usar slug si está disponible, sino usar id
+  const href = 'slug' in building && building.slug
+    ? `/property/${building.slug}`
+    : `/property/${building.id}`;
+  const unitsInfo = getUnitsInfo(building);
+  const price = getPrice(building);
+
   const handleClick = () => {
     track("property_view", {
       property_id: building.id,
       property_name: building.name,
     });
   };
-  
-  const primaryBadge = building.promo ? {
+
+  // Long press handler
+  const longPressHandlers = useLongPress({
+    onLongPress: (event) => {
+      const touchEvent = event as TouchEvent;
+      const clientX = touchEvent.touches?.[0]?.clientX || (event as MouseEvent).clientX;
+      const clientY = touchEvent.touches?.[0]?.clientY || (event as MouseEvent).clientY;
+      setContextMenuPosition({ x: clientX, y: clientY });
+      setContextMenuOpen(true);
+    },
+    delay: 500,
+    threshold: 10,
+    enableHapticFeedback: true,
+  });
+
+  // Context menu options
+  const buildingName = 'name' in building ? building.name : 'Edificio';
+  const comuna = 'comuna' in building ? building.comuna : '';
+  const contextMenuOptions = useContextMenuOptions(
+    () => {
+      // Compartir
+      if (typeof navigator !== 'undefined' && navigator.share) {
+        navigator.share({
+          title: buildingName,
+          text: `Mira este edificio en ${comuna}`,
+          url: typeof window !== 'undefined' ? `${window.location.origin}${href}` : href,
+        }).catch(() => {
+          // Fallback: copiar al portapapeles
+          if (typeof window !== 'undefined' && navigator.clipboard) {
+            navigator.clipboard.writeText(`${window.location.origin}${href}`);
+          }
+        });
+      } else if (typeof window !== 'undefined' && navigator.clipboard) {
+        navigator.clipboard.writeText(`${window.location.origin}${href}`);
+      }
+    },
+    () => {
+      // Agregar a favoritos
+      // TODO: Implementar lógica de favoritos
+      console.log('Agregar a favoritos:', building.id);
+    },
+    () => {
+      // Vista rápida - navegar a la propiedad
+      router.push(href);
+    }
+  );
+
+  const promoInfo = getPromoInfo(building);
+  const primaryBadge = promoInfo ? {
     type: PromotionType.FREE_COMMISSION,
-    label: building.promo.label,
-    tag: building.promo.tag || "Promoción"
+    label: promoInfo.label,
+    tag: promoInfo.tag
   } : null;
-  
-  const hasAvailability = stats.hasAvailability;
-  const typologyChips = stats.tipologiaSummary;
+
+  const hasAvailability = unitsInfo.available > 0;
+  let typologyChips: { key: string; label: string; count: number }[] = [];
+  if ('units' in building && hasAvailability) {
+    typologyChips = calculateBuildingStats(building as Building).tipologiaSummary
+      .sort((a, b) => a.key.localeCompare(b.key));
+  }
 
   // Enhanced aria-label with availability info
-  const ariaLabel = hasAvailability 
+  const ariaLabel = hasAvailability
     ? `Ver propiedad ${building.name} en ${building.comuna}, ${typologyChips.length > 0 ? `${typologyChips.length} tipologías disponibles` : 'unidades disponibles'}`
     : `Ver propiedad ${building.name} en ${building.comuna}, sin disponibilidad`;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className={className}
-    >
-      <Link
-        href={href}
-        onClick={handleClick}
-        aria-label={ariaLabel}
-        className="group block focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)] rounded-2xl"
+    <>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className={className}
       >
-        <article className="rounded-2xl bg-[var(--soft)]/90 ring-1 ring-white/10 overflow-hidden transition-all group-hover:ring-[var(--ring)]/60 group-hover:shadow-lg">
+        <Link
+          href={href}
+          onClick={handleClick}
+          aria-label={ariaLabel}
+          className={`group block focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)] rounded-2xl ${longPressHandlers.isPressing ? 'scale-[0.98] opacity-90' : ''}`}
+          {...longPressHandlers.handlers}
+        >
+          <article className="rounded-2xl bg-[var(--soft)]/90 ring-1 ring-white/10 overflow-hidden transition-all group-hover:ring-[var(--ring)]/60 group-hover:shadow-lg">
           <div className="relative aspect-[16/10]">
             <Image
               src={cover}
@@ -147,8 +262,8 @@ export function BuildingCardV2({
             />
             {showBadge && primaryBadge && (
               <div className="absolute top-3 left-3">
-                <PromotionBadge 
-                  label={primaryBadge.label} 
+                <PromotionBadge
+                  label={primaryBadge.label}
                   tag={primaryBadge.tag}
                 />
               </div>
@@ -165,7 +280,7 @@ export function BuildingCardV2({
               <div className="text-right shrink-0">
                 {hasAvailability ? (
                   <>
-                    <div className="font-bold">{formatPrice(stats.precioDesde)}</div>
+                    <div className="font-bold tabular-nums">{formatPrice(price)}</div>
                     <div className="text-[12px] text-[var(--subtext)]">Desde</div>
                   </>
                 ) : (
@@ -176,27 +291,65 @@ export function BuildingCardV2({
                 )}
               </div>
             </div>
-            
+
             {/* Typology chips */}
             {hasAvailability && typologyChips.length > 0 && (
               <div className="flex flex-wrap gap-1.5 min-h-[24px]">
-                {typologyChips.slice(0, 3).map((chip, _index) => (
-                  <span 
-                    key={chip.key}
-                    className="inline-flex items-center px-2 py-1 rounded-md text-[11px] font-medium bg-[var(--soft)] text-[var(--text)] ring-1 ring-white/10"
-                    title={chip.label}
-                  >
-                    {formatTypologyChip(chip)}
-                  </span>
-                ))}
-                {typologyChips.length > 3 && (
-                  <span className="inline-flex items-center px-2 py-1 rounded-md text-[11px] font-medium bg-[var(--soft)] text-[var(--subtext)] ring-1 ring-white/10">
-                    +{typologyChips.length - 3} más
-                  </span>
-                )}
+                {typologyChips.slice(0, 3).map((chip) => {
+                  // Determinar href según el tipo de building
+                  const buildingHref = 'slug' in building && building.slug
+                    ? `/property/${building.slug}?tipologia=${encodeURIComponent(chip.key)}`
+                    : `/property/${'id' in building ? building.id : 'unknown'}?tipologia=${encodeURIComponent(chip.key)}`;
+
+                  return (
+                    <button
+                      key={chip.key}
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        track("typology_click", {
+                          property_id: building.id,
+                          property_name: building.name,
+                          tipologia: chip.key,
+                        });
+                        router.push(buildingHref);
+                      }}
+                      className="inline-flex items-center px-2 py-1 rounded-md text-[11px] font-medium bg-[var(--soft)] text-[var(--text)] ring-1 ring-white/10 hover:bg-[var(--primary)]/20 hover:ring-[var(--primary)]/50 transition-colors cursor-pointer"
+                      title={`Ver unidades ${chip.label}`}
+                    >
+                      {formatTypologyChip(chip)}
+                    </button>
+                  );
+                })}
+                {typologyChips.length > 3 && (() => {
+                  const buildingHref = 'slug' in building && building.slug
+                    ? `/property/${building.slug}?ver=unidades`
+                    : `/property/${'id' in building ? building.id : 'unknown'}?ver=unidades`;
+
+                  return (
+                    <button
+                      key="more-units"
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        track("view_all_units", {
+                          property_id: building.id,
+                          property_name: building.name,
+                        });
+                        router.push(buildingHref);
+                      }}
+                      className="inline-flex items-center px-2 py-1 rounded-md text-[11px] font-medium bg-[var(--soft)] text-[var(--subtext)] ring-1 ring-white/10 hover:bg-[var(--primary)]/20 hover:ring-[var(--primary)]/50 transition-colors cursor-pointer"
+                      title="Ver todas las unidades"
+                    >
+                      +{typologyChips.length - 3} más
+                    </button>
+                  );
+                })()}
               </div>
             )}
-            
+
             {/* Empty state for no availability with subtle visual indication */}
             {!hasAvailability && (
               <div className="flex items-center justify-center min-h-[24px] opacity-50">
@@ -207,5 +360,12 @@ export function BuildingCardV2({
         </article>
       </Link>
     </motion.div>
+    <ContextMenu
+      isOpen={contextMenuOpen}
+      onClose={() => setContextMenuOpen(false)}
+      options={contextMenuOptions}
+      position={contextMenuPosition}
+    />
+    </>
   );
 }

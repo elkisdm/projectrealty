@@ -28,7 +28,7 @@ export function BookingForm({ buildingId, buildingName, defaultUnitId }: Booking
     message: "",
     preferredDate: "",
   });
-  
+
   const [formState, setFormState] = useState<FormState>("idle");
   const [errors, setErrors] = useState<Partial<FormData>>({});
   const formRef = useRef<HTMLFormElement>(null);
@@ -68,7 +68,7 @@ export function BookingForm({ buildingId, buildingName, defaultUnitId }: Booking
 
   const handleInputChange = (field: keyof FormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    
+
     // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: undefined }));
@@ -84,7 +84,7 @@ export function BookingForm({ buildingId, buildingName, defaultUnitId }: Booking
 
   const validateForm = (): boolean => {
     const newErrors: Partial<FormData> = {};
-    
+
     (["name", "email", "phone"] as const).forEach(field => {
       const error = validateField(field, formData[field]);
       if (error) newErrors[field] = error;
@@ -96,7 +96,7 @@ export function BookingForm({ buildingId, buildingName, defaultUnitId }: Booking
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
     setFormState("loading");
@@ -125,8 +125,7 @@ export function BookingForm({ buildingId, buildingName, defaultUnitId }: Booking
         contacto_metodo: "form",
       });
       setFormData({ name: "", email: "", phone: "", message: "", preferredDate: "" });
-    } catch (_error) {
-      // console.error("Booking error:", _error);
+    } catch {
       setFormState("error");
     }
   };
@@ -157,7 +156,7 @@ export function BookingForm({ buildingId, buildingName, defaultUnitId }: Booking
   return (
     <div className="rounded-2xl bg-white/5 ring-1 ring-white/10 p-6">
       <h3 className="text-lg font-semibold mb-4">Reservar visita</h3>
-      
+
       <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
         {/* Name Field */}
         <div>
@@ -174,9 +173,8 @@ export function BookingForm({ buildingId, buildingName, defaultUnitId }: Booking
               value={formData.name}
               onChange={(e) => handleInputChange("name", e.target.value)}
               onBlur={() => handleBlur("name")}
-              className={`w-full pl-10 pr-3 py-2 bg-[var(--soft)]/50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--ring)] focus:border-transparent ${
-                errors.name ? "border-red-400" : "border-white/10"
-              }`}
+              className={`w-full pl-10 pr-3 py-2 bg-[var(--soft)]/50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--ring)] focus:border-transparent ${errors.name ? "border-red-400" : "border-white/10"
+                }`}
               placeholder="Tu nombre completo"
               required
               autoComplete="name"
@@ -206,9 +204,8 @@ export function BookingForm({ buildingId, buildingName, defaultUnitId }: Booking
               value={formData.email}
               onChange={(e) => handleInputChange("email", e.target.value)}
               onBlur={() => handleBlur("email")}
-              className={`w-full pl-10 pr-3 py-2 bg-[var(--soft)]/50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--ring)] focus:border-transparent ${
-                errors.email ? "border-red-400" : "border-white/10"
-              }`}
+              className={`w-full pl-10 pr-3 py-2 bg-[var(--soft)]/50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--ring)] focus:border-transparent ${errors.email ? "border-red-400" : "border-white/10"
+                }`}
               placeholder="tu@email.com"
               required
               autoComplete="email"
@@ -238,9 +235,8 @@ export function BookingForm({ buildingId, buildingName, defaultUnitId }: Booking
               value={formData.phone}
               onChange={(e) => handleInputChange("phone", e.target.value)}
               onBlur={() => handleBlur("phone")}
-              className={`w-full pl-10 pr-3 py-2 bg-[var(--soft)]/50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--ring)] focus:border-transparent ${
-                errors.phone ? "border-red-400" : "border-white/10"
-              }`}
+              className={`w-full pl-10 pr-3 py-2 bg-[var(--soft)]/50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--ring)] focus:border-transparent ${errors.phone ? "border-red-400" : "border-white/10"
+                }`}
               placeholder="+56 9 1234 5678"
               required
               autoComplete="tel"
@@ -322,16 +318,16 @@ export function BookingForm({ buildingId, buildingName, defaultUnitId }: Booking
       <div className="mt-4 pt-4 border-t border-white/10">
         {(() => {
           const message = `Hola, me interesa ${buildingName}`;
-          const href = buildWhatsAppUrl({ 
-            message: message, 
-            url: typeof window !== "undefined" ? window.location.href : undefined 
+          const href = buildWhatsAppUrl({
+            message: message,
+            url: typeof window !== "undefined" ? window.location.href : undefined
           }) || "";
           const canWhatsApp = Boolean(process.env.NEXT_PUBLIC_WHATSAPP_PHONE) && Boolean(href);
           return canWhatsApp ? (
-            <a 
+            <a
               href={href}
-              target="_blank" 
-              rel="noreferrer" 
+              target="_blank"
+              rel="noreferrer"
               onClick={() => track("cta_whatsapp_click", { context: "booking_form", property_id: buildingId })}
               className="text-center text-sm text-[var(--subtext)] hover:underline inline-flex items-center justify-center gap-2 w-full"
             >

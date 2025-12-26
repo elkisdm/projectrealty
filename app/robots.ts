@@ -2,21 +2,20 @@ import type { MetadataRoute } from 'next';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
-function readComingSoonSafe(): boolean {
+function readFeatureFlag(flagName: string): boolean {
   try {
-    // Leer el archivo TypeScript directamente
-    const flagsPath = join(process.cwd(), 'config', 'feature-flags.ts');
+    const flagsPath = join(process.cwd(), 'config', 'feature-flags.json');
     const flagsContent = readFileSync(flagsPath, 'utf8');
-    const comingSoonMatch = flagsContent.match(/comingSoon:\s*(true|false)/);
-    return comingSoonMatch ? comingSoonMatch[1] === 'true' : false;
+    const flags = JSON.parse(flagsContent);
+    return Boolean(flags[flagName]);
   } catch {
-    // Fallback seguro: permitir crawl por defecto
     return false;
   }
 }
 
 export default function robots(): MetadataRoute.Robots {
-  const comingSoon = readComingSoonSafe();
+  const comingSoon = readFeatureFlag('comingSoon');
+  const mvpMode = readFeatureFlag('mvpMode');
   
   if (comingSoon) {
     return { 
@@ -24,6 +23,36 @@ export default function robots(): MetadataRoute.Robots {
         userAgent: '*', 
         disallow: '/' 
       } 
+    };
+  }
+  
+  // En modo MVP, permitir rutas MVP y nuevas rutas SEO
+  if (mvpMode) {
+    return {
+      rules: [
+        {
+          userAgent: '*',
+          allow: [
+            '/',
+            '/buscar',
+            '/arriendo',
+            '/arriendo/departamento',
+            '/arriendo/departamento/*',
+            '/property/',
+          ],
+          disallow: [
+            '/coming-soon',
+            '/arrienda-sin-comision',
+            '/flash-videos',
+            '/landing-v2',
+            '/cotizador',
+            '/agendamiento',
+            '/agendamiento-mejorado',
+            '/propiedad',
+            '/admin',
+          ],
+        },
+      ],
     };
   }
   

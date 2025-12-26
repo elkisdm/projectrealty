@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unidad 207 - Home Amengual | Hommie 0% Comisión</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+    <div class="max-w-4xl mx-auto p-6">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-green-600 mb-2">Hommie</h1>
+            <p class="text-xl text-gray-600">0% Comisión</p>
+        </header>
+
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+            <!-- Hero Image -->
+            <div class="relative h-64 bg-gradient-to-r from-blue-500 to-purple-600">
+                <div class="absolute inset-0 flex items-end p-6">
+                    <div class="text-white">
+                        <h2 class="text-3xl font-bold mb-2">Home Amengual</h2>
+                        <p class="text-lg">Unidad 207 - 2D2B</p>
+                        <p class="text-sm opacity-75">Av. Amengual 1234, Providencia</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content -->
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Left Column -->
+                    <div>
+                        <h3 class="text-2xl font-bold mb-4">Detalles de la Propiedad</h3>
+                        <div class="grid grid-cols-2 gap-4 mb-6">
+                            <div class="text-center p-4 bg-gray-50 rounded-xl">
+                                <p class="text-sm text-gray-600">Dormitorios</p>
+                                <p class="text-2xl font-bold">2</p>
+                            </div>
+                            <div class="text-center p-4 bg-gray-50 rounded-xl">
+                                <p class="text-sm text-gray-600">Baños</p>
+                                <p class="text-2xl font-bold">2</p>
+                            </div>
+                            <div class="text-center p-4 bg-gray-50 rounded-xl">
+                                <p class="text-sm text-gray-600">Superficie</p>
+                                <p class="text-2xl font-bold">65 m²</p>
+                            </div>
+                            <div class="text-center p-4 bg-gray-50 rounded-xl">
+                                <p class="text-sm text-gray-600">Piso</p>
+                                <p class="text-2xl font-bold">2</p>
+                            </div>
+                        </div>
+
+                        <h4 class="text-xl font-bold mb-4">Amenities</h4>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="flex items-center p-3 bg-gray-50 rounded-lg">
+                                <span class="mr-2">🏊</span>
+                                <span>Piscina</span>
+                            </div>
+                            <div class="flex items-center p-3 bg-gray-50 rounded-lg">
+                                <span class="mr-2">💪</span>
+                                <span>Gimnasio</span>
+                            </div>
+                            <div class="flex items-center p-3 bg-gray-50 rounded-lg">
+                                <span class="mr-2">🍖</span>
+                                <span>Quinchos</span>
+                            </div>
+                            <div class="flex items-center p-3 bg-gray-50 rounded-lg">
+                                <span class="mr-2">💼</span>
+                                <span>Cowork</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column -->
+                    <div>
+                        <div class="bg-green-50 p-6 rounded-2xl mb-6">
+                            <div class="text-center mb-4">
+                                <p class="text-sm text-gray-600">Precio mensual</p>
+                                <p class="text-3xl font-bold text-green-600">$850.000</p>
+                                <p class="text-sm text-green-600">0% comisión</p>
+                            </div>
+                            
+                            <div class="space-y-3">
+                                <button onclick="alert('¡Funcionalidad de agendar visita!')" 
+                                        class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors">
+                                    📅 Agendar visita
+                                </button>
+                                
+                                <button onclick="window.location.href='tel:+56912345678'" 
+                                        class="w-full bg-gray-100 hover:bg-gray-200 text-gray-900 font-semibold py-3 px-6 rounded-xl transition-colors">
+                                    📞 Llamar ahora
+                                </button>
+                                
+                                <button onclick="navigator.share({title:'Unidad 207',text:'Hermoso departamento en Providencia',url:window.location.href})" 
+                                        class="w-full bg-gray-100 hover:bg-gray-200 text-gray-900 font-semibold py-3 px-6 rounded-xl transition-colors">
+                                    📤 Compartir
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="bg-white border border-gray-200 p-4 rounded-xl">
+                            <h4 class="font-semibold mb-3">Información de contacto</h4>
+                            <div class="space-y-2 text-sm">
+                                <div class="flex items-center">
+                                    <span class="mr-2">👤</span>
+                                    <span>María González</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <span class="mr-2">📞</span>
+                                    <span>+56 9 1234 5678</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <span class="mr-2">📧</span>
+                                    <span>maria@hommie.cl</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div class="mt-8 p-6 bg-gray-50 rounded-xl">
+                    <h3 class="text-xl font-bold mb-4">Descripción</h3>
+                    <p class="text-gray-600 leading-relaxed">
+                        Hermoso departamento de 2 dormitorios y 2 baños en el corazón de Providencia. 
+                        Excelente ubicación cerca de metro y servicios. El departamento cuenta con 
+                        orientación norte, lo que garantiza excelente iluminación natural durante todo el día.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile CTA -->
+        <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 md:hidden">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-600">Precio mensual</p>
+                    <p class="text-xl font-bold text-green-600">$850.000</p>
+                </div>
+                <div class="flex space-x-2">
+                    <button onclick="window.location.href='tel:+56912345678'" 
+                            class="bg-gray-100 p-3 rounded-xl">
+                        📞
+                    </button>
+                    <button onclick="alert('¡Funcionalidad de agendar visita!')" 
+                            class="bg-green-600 text-white px-6 py-3 rounded-xl font-semibold">
+                        Agendar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Test de funcionalidad
+        console.log('✅ Página cargada correctamente');
+        
+        // Verificar si estamos en móvil
+        if (window.innerWidth <= 768) {
+            console.log('📱 Modo móvil detectado');
+        }
+        
+        // Verificar Web Share API
+        if (navigator.share) {
+            console.log('📤 Web Share API disponible');
+        }
+    </script>
+</body>
+</html>

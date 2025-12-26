@@ -2,8 +2,7 @@
 import React, { useState, useCallback } from 'react';
 import { Filter, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { SearchInput } from './SearchInput';
-import { FilterChips } from './FilterChips';
+import { FilterChip } from './FilterChip';
 import { SortSelect } from './SortSelect';
 import { useAdvancedFilters } from '../../hooks/useAdvancedFilters';
 import type { AdvancedFilterValues } from '../../types/filters';
@@ -27,25 +26,22 @@ export function AdvancedFilterBar({
   sort = "relevance",
   className = "",
   initialFilters,
-  showSearchSuggestions = true,
+  showSearchSuggestions: _showSearchSuggestions = true,
   urlSync = true,
 }: AdvancedFilterBarProps) {
-  // const [_isExpanded, _setIsExpanded] = useState(false);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   // Advanced filters hook with full functionality
   const {
     filters,
     setFilters,
-    setQuery,
+    setQuery: _setQuery,
     clearFilters,
     filteredBuildings,
-    searchResults,
     resultsCount,
     hasActiveFilters,
     activeFilterChips,
     updateURL,
-    // getFilterAnalytics: _getFilterAnalytics
   } = useAdvancedFilters({
     buildings,
     initialFilters,
@@ -65,35 +61,7 @@ export function AdvancedFilterBar({
     }
   }, [filters, urlSync, updateURL]);
 
-  // Get search suggestions from buildings data
-  const searchSuggestions = React.useMemo(() => {
-    if (!showSearchSuggestions) return [];
-    
-    const suggestions = new Set<string>();
-    
-    buildings.forEach(building => {
-      // Add building names
-      suggestions.add(building.name);
-      
-      // Add comuna names
-      suggestions.add(building.comuna);
-      
-      // Add amenities
-      building.amenities.forEach(amenity => suggestions.add(amenity));
-      
-      // Add typologies
-      building.units.forEach(unit => {
-        if (unit.tipologia) suggestions.add(unit.tipologia);
-      });
-    });
-    
-    return Array.from(suggestions).sort();
-  }, [buildings, showSearchSuggestions]);
-
-  // Handle search input
-  const handleSearchChange = useCallback((query: string) => {
-    setQuery(query);
-  }, [setQuery]);
+  // Search suggestions and handler removed - they weren't being used
 
   // Handle sort change
   const handleSortChange = useCallback((newSort: string) => {
@@ -120,16 +88,16 @@ export function AdvancedFilterBar({
     const comunas = new Set<string>();
     const tipologias = new Set<string>();
     const amenities = new Set<string>();
-    
+
     buildings.forEach(building => {
       comunas.add(building.comuna);
       building.amenities.forEach(amenity => amenities.add(amenity));
-      
+
       building.units.forEach(unit => {
         if (unit.tipologia) tipologias.add(unit.tipologia);
       });
     });
-    
+
     return {
       comunas: Array.from(comunas).sort(),
       tipologias: Array.from(tipologias).sort(),
@@ -144,21 +112,21 @@ export function AdvancedFilterBar({
         bg-black/40 backdrop-blur border border-white/20 
         rounded-2xl p-4 space-y-4
       ">
-        
+
         {/* Search and Sort Row */}
         <div className="flex flex-col lg:flex-row gap-4">
-          
-          {/* Search Input */}
-          <div className="flex-1">
+
+          {/* Search Input - Disabled for MVP */}
+          {/* <div className="flex-1">
             <SearchInput
-              value={filters.query}
+              value={filters.query || ''}
               onChange={handleSearchChange}
               suggestions={searchSuggestions}
               placeholder="Buscar propiedades, ubicaciones o amenidades..."
               autoFocus={false}
               className="w-full"
             />
-          </div>
+          </div> */}
 
           {/* Sort Select */}
           <div className="lg:w-48">
@@ -200,11 +168,6 @@ export function AdvancedFilterBar({
             ) : (
               <span>
                 {resultsCount} de {buildings.length} propiedades
-                {filters.query && searchResults.length > 0 && (
-                  <span className="ml-2 text-[var(--primary)]">
-                    (búsqueda activa)
-                  </span>
-                )}
               </span>
             )}
           </div>
@@ -226,12 +189,16 @@ export function AdvancedFilterBar({
 
         {/* Active Filter Chips */}
         {activeFilterChips.length > 0 && (
-          <FilterChips
-            chips={activeFilterChips}
-            onClearAll={handleClearAll}
-            maxVisible={6}
-            showClearAll={false} // We have our own clear button above
-          />
+          <div className="flex flex-wrap gap-2">
+            {activeFilterChips.map((chip) => (
+              <FilterChip
+                key={chip.id}
+                label={chip.label}
+                value={chip.value}
+                onRemove={chip.onRemove}
+              />
+            ))}
+          </div>
         )}
 
       </div>
@@ -251,15 +218,15 @@ export function AdvancedFilterBar({
             "
           >
             <div className="space-y-6">
-              
+
               {/* Basic Filters */}
               <div>
                 <h3 className="text-lg font-semibold text-white mb-4">
                   Filtros Básicos
                 </h3>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  
+
                   {/* Comuna Filter */}
                   <div>
                     <label htmlFor="comuna-filter" className="block text-sm font-medium text-white mb-2">
@@ -357,93 +324,10 @@ export function AdvancedFilterBar({
                 <h3 className="text-lg font-semibold text-white mb-4">
                   Filtros Avanzados
                 </h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  
-                  {/* M2 Range */}
-                  <div>
-                    <label htmlFor="min-m2-filter" className="block text-sm font-medium text-white mb-2">
-                      Metros² mínimos
-                    </label>
-                    <input
-                      id="min-m2-filter"
-                      type="number"
-                      value={filters.minM2 || ''}
-                      onChange={(e) => handleFilterChange('minM2', e.target.value ? Number(e.target.value) : null)}
-                      placeholder="30"
-                      className="
-                        w-full px-3 py-2 
-                        bg-white/10 border border-white/20 
-                        rounded-xl text-white placeholder-[var(--subtext)]
-                        focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/50
-                      "
-                    />
-                  </div>
 
-                  <div>
-                    <label htmlFor="max-m2-filter" className="block text-sm font-medium text-white mb-2">
-                      Metros² máximos
-                    </label>
-                    <input
-                      id="max-m2-filter"
-                      type="number"
-                      value={filters.maxM2 || ''}
-                      onChange={(e) => handleFilterChange('maxM2', e.target.value ? Number(e.target.value) : null)}
-                      placeholder="120"
-                      className="
-                        w-full px-3 py-2 
-                        bg-white/10 border border-white/20 
-                        rounded-xl text-white placeholder-[var(--subtext)]
-                        focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/50
-                      "
-                    />
-                  </div>
-
-                  {/* Boolean Filters */}
-                  <div className="space-y-3">
-                    <label className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        checked={filters.estacionamiento === true}
-                        onChange={(e) => handleFilterChange('estacionamiento', e.target.checked ? true : null)}
-                        className="
-                          w-4 h-4 text-[var(--primary)] 
-                          bg-white/10 border-white/20 
-                          rounded focus:ring-[var(--primary)]/50
-                        "
-                      />
-                      <span className="text-sm text-white">Con estacionamiento</span>
-                    </label>
-
-                    <label className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        checked={filters.bodega === true}
-                        onChange={(e) => handleFilterChange('bodega', e.target.checked ? true : null)}
-                        className="
-                          w-4 h-4 text-[var(--primary)] 
-                          bg-white/10 border-white/20 
-                          rounded focus:ring-[var(--primary)]/50
-                        "
-                      />
-                      <span className="text-sm text-white">Con bodega</span>
-                    </label>
-
-                    <label className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        checked={filters.petFriendly === true}
-                        onChange={(e) => handleFilterChange('petFriendly', e.target.checked ? true : null)}
-                        className="
-                          w-4 h-4 text-[var(--primary)] 
-                          bg-white/10 border-white/20 
-                          rounded focus:ring-[var(--primary)]/50
-                        "
-                      />
-                      <span className="text-sm text-white">Pet friendly</span>
-                    </label>
-                  </div>
-
+                {/* Advanced filters disabled for MVP - only comuna and price */}
+                <div className="text-center text-white/60 py-4">
+                  <p className="text-sm">Filtros avanzados disponibles próximamente</p>
                 </div>
               </div>
 

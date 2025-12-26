@@ -2,7 +2,9 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BookingForm } from '@components/forms/BookingForm';
 
-const mockFetch = global.fetch as unknown as jest.Mock;
+// Setup fetch mock
+global.fetch = jest.fn();
+const mockFetch = global.fetch as jest.Mock;
 
 describe('BookingForm', () => {
   beforeEach(() => {

@@ -20,19 +20,42 @@ export type BuildingSummary = {
   typologySummary?: TypologySummary[]; // compact summary for list
 };
 
-interface BuildingsResponse { buildings: BuildingSummary[] }
+interface PaginationInfo {
+  page: number;
+  limit: number;
+  totalCount: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+  count: number;
+}
+
+interface BuildingsResponse { 
+  buildings: BuildingSummary[];
+  pagination?: PaginationInfo;
+  meta?: {
+    searchTerm: string | null;
+    filtersApplied: boolean;
+  };
+}
 
 interface FetchBuildingsParams {
   filters: FilterValues;
   sort?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
 }
 
-const createQueryKey = (filters: FilterValues, sort?: string) => {
+const createQueryKey = (filters: FilterValues, sort?: string, search?: string, page?: number, limit?: number) => {
   const key = ["buildings"];
   
   // Only add non-default filter values to the key
   if (filters.comuna && filters.comuna !== "Todas") {
-    key.push("comuna", filters.comuna);
+    const comunaValue = Array.isArray(filters.comuna) 
+      ? filters.comuna[0] 
+      : filters.comuna;
+    key.push("comuna", comunaValue);
   }
   if (filters.tipologia && filters.tipologia !== "Todas") {
     key.push("tipologia", filters.tipologia);
@@ -43,19 +66,31 @@ const createQueryKey = (filters: FilterValues, sort?: string) => {
   if (filters.maxPrice) {
     key.push("maxPrice", filters.maxPrice.toString());
   }
+  if (search && search.trim() !== "") {
+    key.push("search", search.trim());
+  }
   if (sort && sort !== "default") {
     key.push("sort", sort);
+  }
+  if (page && page > 1) {
+    key.push("page", page.toString());
+  }
+  if (limit && limit !== 12) {
+    key.push("limit", limit.toString());
   }
   
   return key;
 };
 
-const fetchBuildings = async ({ filters, sort }: FetchBuildingsParams): Promise<BuildingSummary[]> => {
+const fetchBuildings = async ({ filters, sort, search, page = 1, limit = 12 }: FetchBuildingsParams): Promise<BuildingsResponse> => {
   const params = new URLSearchParams();
   
   // Only add non-default filter values to the URL
   if (filters.comuna && filters.comuna !== "Todas") {
-    params.append("comuna", filters.comuna);
+    const comunaValue = Array.isArray(filters.comuna) 
+      ? filters.comuna[0] 
+      : filters.comuna;
+    params.append("comuna", comunaValue);
   }
   if (filters.tipologia && filters.tipologia !== "Todas") {
     params.append("tipologia", filters.tipologia);
@@ -66,9 +101,20 @@ const fetchBuildings = async ({ filters, sort }: FetchBuildingsParams): Promise<
   if (filters.maxPrice) {
     params.append("maxPrice", filters.maxPrice.toString());
   }
+
+  // Add search parameter
+  if (search && search.trim() !== "") {
+    params.append("search", search.trim());
+  }
+
+  // Add sort parameter
   if (sort && sort !== "default") {
     params.append("sort", sort);
   }
+
+  // Add pagination parameters
+  params.append("page", page.toString());
+  params.append("limit", limit.toString());
   
   const url = `/api/buildings${params.toString() ? `?${params.toString()}` : ""}`;
   
@@ -79,13 +125,13 @@ const fetchBuildings = async ({ filters, sort }: FetchBuildingsParams): Promise<
   }
   
   const data: BuildingsResponse = await response.json();
-  return data.buildings;
+  return data;
 };
 
-export function useFetchBuildings({ filters, sort }: FetchBuildingsParams) {
+export function useFetchBuildings({ filters, sort, search, page, limit }: FetchBuildingsParams) {
   return useQuery({
-    queryKey: createQueryKey(filters, sort),
-    queryFn: () => fetchBuildings({ filters, sort }),
+    queryKey: createQueryKey(filters, sort, search, page, limit),
+    queryFn: () => fetchBuildings({ filters, sort, search, page, limit }),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
     refetchOnWindowFocus: false,

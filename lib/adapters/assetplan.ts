@@ -1,5 +1,6 @@
 import { BuildingSchema, UnitSchema, type Building, type Unit, PromotionType, type PromotionBadge } from "@schemas/models";
 import { AMENITY_LABEL_TO_KEY, BADGE_LABEL_TO_TAG, PromotionTag } from "./constants";
+import { normalizeUnit } from "../utils/unit";
 
 // Raw provider types for AssetPlan input. These are conservative and capture only
 // the fields we actually consume in the adapter.
@@ -40,6 +41,7 @@ export type AssetPlanRawUnit = {
   price?: number;
   disponible?: boolean;
   status?: string; // provider-specific status label
+  estado?: string; // Estado raw desde AssetPlan (ej: "RE - Acondicionamiento", "Lista para arrendar")
   promotions?: AssetPlanRawBadge[] | string[]; // can be strings or objects with label
 };
 
@@ -121,8 +123,11 @@ export function mapUnit(raw: AssetPlanRawUnit): Unit {
   const id = coerceId(raw.id);
   const tipologia = normalizeTypology(raw.tipologia) ?? "";
 
-  const areaInterior = raw.area_interior_m2 ?? raw.m2;
-  const areaTotal = areaInterior && raw.area_exterior_m2 ? areaInterior + raw.area_exterior_m2 : (raw.m2 ?? areaInterior ?? 0);
+  // Prefer explicit m2 when provided; otherwise sum interior + exterior
+  const explicitM2 = typeof raw.m2 === 'number' ? raw.m2 : undefined;
+  const areaInterior = typeof raw.area_interior_m2 === 'number' ? raw.area_interior_m2 : undefined;
+  const areaExterior = typeof raw.area_exterior_m2 === 'number' ? raw.area_exterior_m2 : undefined;
+  const areaTotal = explicitM2 ?? ((areaInterior ?? 0) + (areaExterior ?? 0));
   const m2 = Number(areaTotal ?? 0);
 
   const price = Number(raw.price ?? 0);
@@ -132,34 +137,60 @@ export function mapUnit(raw: AssetPlanRawUnit): Unit {
     typeof raw.disponible === "boolean" ? raw.disponible : mapStatus(raw.status) === "available"
   );
 
-  const base: Unit = {
-    id,
-    tipologia,
-    m2,
-    price,
-    estacionamiento,
-    bodega,
-    disponible,
-  };
+  // Generate buildingId from unit id if not available
+  const unitIdStr = typeof id === 'string' ? id : String(id);
+  const buildingId = unitIdStr.includes('-') ? unitIdStr.split('-')[0] : unitIdStr.substring(0, 8);
+  const buildingSlug = buildingId; // Use buildingId as slug fallback
 
-  const extended: Partial<Unit> = {
-    codigoInterno: normalizeString(raw.codigoInterno),
-    bedrooms: typeof raw.bedrooms === "number" ? raw.bedrooms : undefined,
-    bathrooms: typeof raw.bathrooms === "number" ? raw.bathrooms : undefined,
-    area_interior_m2: typeof raw.area_interior_m2 === "number" ? raw.area_interior_m2 : undefined,
-    area_exterior_m2: typeof raw.area_exterior_m2 === "number" ? raw.area_exterior_m2 : undefined,
-    orientacion: normalizeOrientation(raw.orientacion),
-    piso: typeof raw.piso === "number" ? raw.piso : undefined,
-    amoblado: typeof raw.amoblado === "boolean" ? raw.amoblado : undefined,
-    petFriendly: typeof raw.petFriendly === "boolean" ? raw.petFriendly : undefined,
-    parkingOptions: Array.isArray(raw.parkingOptions) ? raw.parkingOptions.map((s) => s.trim()).filter(Boolean) : undefined,
-    storageOptions: Array.isArray(raw.storageOptions) ? raw.storageOptions.map((s) => s.trim()).filter(Boolean) : undefined,
-    status: mapStatus(raw.status),
-    promotions: toPromotionBadges(raw.promotions as (AssetPlanRawBadge | string)[] | undefined),
-  };
+  // Mapear estado raw desde AssetPlan
+  const estadoRaw = normalizeString(raw.estado);
+  let estado: "Disponible" | "Reservado" | "Arrendado" | "RE - Acondicionamiento" | undefined;
+  
+  if (estadoRaw) {
+    const estadoLower = estadoRaw.toLowerCase();
+    if (estadoLower.includes("lista para arrendar") || estadoLower.includes("disponible")) {
+      estado = "Disponible";
+    } else if (estadoLower.includes("reservado") || estadoLower.includes("reserved")) {
+      estado = "Reservado";
+    } else if (estadoLower.includes("arrendado") || estadoLower.includes("rented") || estadoLower.includes("ocupado")) {
+      estado = "Arrendado";
+    } else if (estadoLower.includes("re - acondicionamiento") || estadoLower.includes("reacondicionamiento")) {
+      estado = "RE - Acondicionamiento";
+    }
+  }
+
+  // Use helper to create complete Unit with all required fields
+  const completeUnit = normalizeUnit(
+    {
+      id: unitIdStr,
+      tipologia,
+      price,
+      disponible,
+      m2,
+      estacionamiento,
+      bodega,
+      codigoInterno: normalizeString(raw.codigoInterno),
+      bedrooms: typeof raw.bedrooms === "number" ? raw.bedrooms : undefined,
+      bathrooms: typeof raw.bathrooms === "number" ? raw.bathrooms : undefined,
+      area_interior_m2: typeof raw.area_interior_m2 === "number" ? raw.area_interior_m2 : undefined,
+      area_exterior_m2: typeof raw.area_exterior_m2 === "number" ? raw.area_exterior_m2 : undefined,
+      orientacion: normalizeOrientation(raw.orientacion),
+      piso: typeof raw.piso === "number" ? raw.piso : undefined,
+      amoblado: typeof raw.amoblado === "boolean" ? raw.amoblado : undefined,
+      petFriendly: typeof raw.petFriendly === "boolean" ? raw.petFriendly : undefined,
+      parkingOptions: Array.isArray(raw.parkingOptions) ? raw.parkingOptions.map((s) => s.trim()).filter(Boolean) : undefined,
+      storageOptions: Array.isArray(raw.storageOptions) ? raw.storageOptions.map((s) => s.trim()).filter(Boolean) : undefined,
+      status: mapStatus(raw.status),
+      estado: estado,
+      estadoRaw: estadoRaw, // Preservar estado raw original
+      promotions: toPromotionBadges(raw.promotions as (AssetPlanRawBadge | string)[] | undefined),
+    },
+    buildingId,
+    buildingSlug
+  );
 
   // Validate and return; rely on schema for final shape correctness
-  return UnitSchema.parse({ ...base, ...extended });
+  return UnitSchema.parse(completeUnit);
 }
 
 // Convert AssetPlan raw payload into internal Building model
@@ -191,8 +222,12 @@ export function fromAssetPlan(raw: AssetPlanRawBuilding): Building {
   const serviceLevel = ((): Building["serviceLevel"] => {
     const explicit = normalizeString(typeof raw.serviceLevel === "string" ? raw.serviceLevel : undefined)?.toLowerCase();
     if (explicit === "pro" || explicit === "standard") return explicit as "pro" | "standard";
-    const hasServicePro = (badges ?? []).some((b) => b.type === PromotionType.SERVICE_PRO);
-    return hasServicePro ? "pro" : undefined;
+    // Infer from badges or from root label properties
+    const buildingHasServiceProBadge = (badges ?? []).some((b) => b.type === PromotionType.SERVICE_PRO);
+    const rawWithBadges = raw as { badges?: string[] | AssetPlanRawBadge[] };
+    const rootHasServiceProLabel = Array.isArray(rawWithBadges.badges) && 
+      rawWithBadges.badges.some(b => (typeof b === 'string' ? b : b.label) === 'Servicio Pro');
+    return (buildingHasServiceProBadge || rootHasServiceProLabel) ? "pro" : undefined;
   })();
 
   const nearestTransit = raw.nearestTransit && typeof raw.nearestTransit.name === "string" && typeof raw.nearestTransit.distanceMin === "number"
@@ -214,11 +249,16 @@ export function fromAssetPlan(raw: AssetPlanRawBuilding): Building {
   };
 
   if (coverImage) candidate.coverImage = coverImage;
-  if (images.length) {
+  // Always include media object if any media-related field is present in raw
+  const rawWithMedia = raw as { tour360?: string; video?: string; media?: AssetPlanRawMedia };
+  const mediaTour = normalizeString(rawWithMedia.tour360) ?? normalizeString(raw.media?.tour360);
+  const mediaVideo = normalizeString(rawWithMedia.video) ?? normalizeString(raw.media?.video);
+  const hasAnyMedia = images.length > 0 || Boolean(mediaTour) || Boolean(mediaVideo) || (raw.media?.lat != null && raw.media?.lng != null);
+  if (hasAnyMedia) {
     candidate.media = {
-      images,
-      tour360: normalizeString(raw.media?.tour360),
-      video: normalizeString(raw.media?.video),
+      images: images.length > 0 ? images : ['/images/default.jpg'], // Media schema requires at least one image
+      tour360: mediaTour,
+      video: mediaVideo,
       map: raw.media?.lat != null && raw.media?.lng != null ? { lat: raw.media.lat, lng: raw.media.lng } : undefined,
     };
   }
@@ -242,9 +282,11 @@ export function normalizeOrientation(rawOrientation: string | undefined): 'N' | 
   if (!rawOrientation) return undefined;
   
   const normalized = rawOrientation.trim().toUpperCase();
-  const validOrientations = ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'] as const;
+  const validOrientations: readonly ('N' | 'NE' | 'E' | 'SE' | 'S' | 'SO' | 'O' | 'NO')[] = ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'] as const;
   
-  return validOrientations.includes(normalized as any) ? normalized as 'N' | 'NE' | 'E' | 'SE' | 'S' | 'SO' | 'O' | 'NO' : undefined;
+  return validOrientations.includes(normalized as 'N' | 'NE' | 'E' | 'SE' | 'S' | 'SO' | 'O' | 'NO') 
+    ? normalized as 'N' | 'NE' | 'E' | 'SE' | 'S' | 'SO' | 'O' | 'NO' 
+    : undefined;
 }
 
 /**

@@ -2,7 +2,7 @@ import { useQuery, useInfiniteQuery, useQueryClient } from "@tanstack/react-quer
 import { useCallback, useMemo, useEffect } from "react";
 import type { BuildingFilters } from "../types/buildings";
 import { queryKeys, type PaginatedResponse } from "../lib/react-query";
-import { useBuildingsStore } from "../stores/buildingsStore";
+import { useBuildingsStore } from "@lib/stores/buildingsStore";
 
 // Tipos para el hook
 interface BuildingListItem {
@@ -151,6 +151,7 @@ export function useBuildingsPagination({
       // Convertir BuildingListItem a Building para el store
       const buildings = data.data.map(item => ({
         id: item.id,
+        slug: item.slug,
         name: item.name,
         comuna: item.comuna,
         address: item.address,
@@ -295,6 +296,7 @@ export function useBuildingsInfinite({
         // Convertir BuildingListItem a Building para el store
         const buildings = page.data.map(item => ({
           id: item.id,
+          slug: item.slug,
           name: item.name,
           comuna: item.comuna,
           address: item.address,

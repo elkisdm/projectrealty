@@ -91,7 +91,7 @@ export function PaginationControls({
       className={`flex items-center justify-between ${className}`}
     >
       {/* Información de resultados */}
-      <div className="text-sm text-gray-600 dark:text-gray-400">
+      <div className="text-sm text-gray-300:text-gray-400">
         <span className="font-medium">{startItem}</span>
         {' - '}
         <span className="font-medium">{endItem}</span>
@@ -108,9 +108,9 @@ export function PaginationControls({
           disabled={!hasPrevPage || isLoading}
           className={`
             inline-flex items-center px-3 py-2 text-sm font-medium
-            bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600
+            bg-gray-800:bg-gray-800 border border-gray-300 dark:border-gray-600
             rounded-2xl transition-all duration-200
-            hover:bg-gray-50 dark:hover:bg-gray-700
+            hover:bg-gray-900:hover:bg-gray-700
             focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
             disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white
             dark:disabled:hover:bg-gray-800
@@ -129,7 +129,7 @@ export function PaginationControls({
               return (
                 <span
                   key={`dots-${index}`}
-                  className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400"
+                  className="px-3 py-2 text-sm text-gray-400:text-gray-400"
                 >
                   ...
                 </span>
@@ -151,7 +151,7 @@ export function PaginationControls({
                   disabled:cursor-wait
                   ${isCurrentPage
                     ? 'bg-blue-600 text-white border border-blue-600 hover:bg-blue-700'
-                    : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                    : 'bg-gray-800:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 hover:bg-gray-900:hover:bg-gray-700'
                   }
                 `}
                 aria-label={`Ir a página ${pageNumber}`}
@@ -176,9 +176,9 @@ export function PaginationControls({
           disabled={!hasNextPage || isLoading}
           className={`
             inline-flex items-center px-3 py-2 text-sm font-medium
-            bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600
+            bg-gray-800:bg-gray-800 border border-gray-300 dark:border-gray-600
             rounded-2xl transition-all duration-200
-            hover:bg-gray-50 dark:hover:bg-gray-700
+            hover:bg-gray-900:hover:bg-gray-700
             focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
             disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white
             dark:disabled:hover:bg-gray-800
@@ -208,7 +208,7 @@ export function InfiniteScrollControls({
   if (!hasNextPage && loadedCount >= totalCount) {
     return (
       <div className={`text-center py-8 ${className}`}>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
+        <p className="text-sm text-gray-400:text-gray-400">
           Has visto todos los {totalCount} resultados
         </p>
       </div>
@@ -264,7 +264,7 @@ export function InfiniteScrollControls({
       )}
       
       {/* Información de progreso */}
-      <div className="mt-3 text-sm text-gray-500 dark:text-gray-400">
+      <div className="mt-3 text-sm text-gray-400:text-gray-400">
         Mostrando {loadedCount} de {totalCount} resultados
         {totalCount > loadedCount && (
           <>
@@ -339,7 +339,7 @@ export function AutoInfiniteScroll({
       {/* Loading indicator */}
       {isFetchingNextPage && (
         <div className="text-center">
-          <div className="inline-flex items-center text-sm text-gray-500 dark:text-gray-400">
+          <div className="inline-flex items-center text-sm text-gray-400:text-gray-400">
             <svg
               className="animate-spin -ml-1 mr-3 h-4 w-4"
               xmlns="http://www.w3.org/2000/svg"
@@ -369,7 +369,7 @@ export function AutoInfiniteScroll({
       {/* Mensaje final */}
       {!hasNextPage && loadedCount >= totalCount && (
         <div className="text-center">
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-gray-400:text-gray-400">
             Has visto todos los {totalCount} resultados
           </p>
         </div>

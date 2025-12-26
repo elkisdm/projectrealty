@@ -1,135 +1,153 @@
-"use client";
+import Image from "next/image";
+import Link from "next/link";
+import { getAllBuildings } from "@lib/data";
+import { formatPrice } from "@lib/utils";
+import { logger } from "@lib/logger";
 
-import { motion } from "framer-motion";
-import { Star, MapPin, Bed, Bath, Square } from "lucide-react";
+type FeaturedGridProps = Record<string, never>;
 
-interface FeaturedProperty {
-    id: string;
-    name: string;
-    commune: string;
-    price: number;
-    image: string;
-    rating: number;
-    bedrooms: number;
-    bathrooms: number;
-    area: number;
+async function getFeaturedBuildings() {
+  try {
+    const allBuildings = await getAllBuildings({});
+
+    // Filtrar edificios con disponibilidad y tomar los primeros 3
+    const featuredBuildings = allBuildings
+      .filter(building => {
+        const available = building.units.filter((u) => u.disponible);
+        return available.length > 0;
+      })
+      .slice(0, 3);
+
+    return featuredBuildings;
+  } catch (error) {
+    logger.error('Error getting featured buildings:', error);
+    return [];
+  }
 }
 
-const featuredProperties: FeaturedProperty[] = [
-    {
-        id: "1",
-        name: "Departamento Las Condes",
-        commune: "Las Condes",
-        price: 850000,
-        image: "/images/featured-1.jpg",
-        rating: 4.8,
-        bedrooms: 2,
-        bathrooms: 2,
-        area: 75,
-    },
-    {
-        id: "2",
-        name: "Loft Providencia",
-        commune: "Providencia",
-        price: 650000,
-        image: "/images/featured-2.jpg",
-        rating: 4.6,
-        bedrooms: 1,
-        bathrooms: 1,
-        area: 45,
-    },
-    {
-        id: "3",
-        name: "Casa Ñuñoa",
-        commune: "Ñuñoa",
-        price: 1200000,
-        image: "/images/featured-3.jpg",
-        rating: 4.9,
-        bedrooms: 3,
-        bathrooms: 2,
-        area: 120,
-    },
-];
+export default async function FeaturedGrid(_: FeaturedGridProps) {
+  const buildings = await getFeaturedBuildings();
 
-export default function FeaturedGrid() {
+  // Fallback si no hay proyectos destacados
+  if (buildings.length === 0) {
     return (
-        <section className="py-20 bg-slate-50">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8 }}
-                    viewport={{ once: true }}
-                    className="text-center mb-16"
-                >
-                    <h2 className="text-4xl font-bold text-slate-900 mb-4">
-                        Propiedades Destacadas
-                    </h2>
-                    <p className="text-xl text-slate-600 max-w-2xl mx-auto">
-                        Las mejores opciones seleccionadas para ti
-                    </p>
-                </motion.div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {featuredProperties.map((property, index) => (
-                        <motion.div
-                            key={property.id}
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.6, delay: index * 0.1 }}
-                            viewport={{ once: true }}
-                            className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300"
-                        >
-                            <div className="relative h-48 bg-gradient-to-br from-purple-400 to-pink-400">
-                                <div className="absolute inset-0 bg-black/20" />
-                                <div className="absolute top-4 right-4 flex items-center bg-white/90 backdrop-blur-sm rounded-full px-2 py-1">
-                                    <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                                    <span className="text-sm font-semibold text-slate-900 ml-1">
-                                        {property.rating}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div className="p-6">
-                                <div className="flex items-center text-slate-500 text-sm mb-2">
-                                    <MapPin className="h-4 w-4 mr-1" />
-                                    {property.commune}
-                                </div>
-
-                                <h3 className="text-xl font-semibold text-slate-900 mb-3">
-                                    {property.name}
-                                </h3>
-
-                                <div className="flex items-center justify-between mb-4">
-                                    <div className="text-2xl font-bold text-slate-900">
-                                        ${property.price.toLocaleString()}
-                                    </div>
-                                    <div className="text-sm text-slate-500">/mes</div>
-                                </div>
-
-                                <div className="flex items-center justify-between text-slate-600">
-                                    <div className="flex items-center">
-                                        <Bed className="h-4 w-4 mr-1" />
-                                        <span className="text-sm">{property.bedrooms}</span>
-                                    </div>
-                                    <div className="flex items-center">
-                                        <Bath className="h-4 w-4 mr-1" />
-                                        <span className="text-sm">{property.bathrooms}</span>
-                                    </div>
-                                    <div className="flex items-center">
-                                        <Square className="h-4 w-4 mr-1" />
-                                        <span className="text-sm">{property.area}m²</span>
-                                    </div>
-                                </div>
-
-                                <button className="w-full mt-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold py-3 rounded-xl hover:from-purple-600 hover:to-pink-600 transition-all duration-200">
-                                    Ver Detalles
-                                </button>
-                            </div>
-                        </motion.div>
-                    ))}
-                </div>
-            </div>
-        </section>
+      <section aria-labelledby="featured-heading" className="px-6 py-12 lg:px-8">
+        <div className="mx-auto max-w-6xl">
+          <h2 id="featured-heading" className="text-2xl font-semibold tracking-tight">
+            Proyectos destacados
+          </h2>
+          <div className="mt-8 rounded-2xl border border-border bg-card p-8 text-center">
+            <p className="text-muted-foreground">
+              Próximamente tendremos proyectos destacados disponibles
+            </p>
+          </div>
+        </div>
+      </section>
     );
+  }
+
+  return (
+    <section aria-labelledby="featured-heading" className="relative px-6 py-16 lg:px-8 lg:py-24">
+      {/* Background gradient */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 -z-10 bg-gradient-to-b from-bg via-bg to-surface/20"
+      />
+
+      <div className="mx-auto max-w-6xl">
+        {/* Header */}
+        <div className="text-center">
+          <h2 id="featured-heading" className="text-3xl font-bold tracking-tight sm:text-4xl">
+            Proyectos destacados
+          </h2>
+          <p className="mt-4 text-lg text-muted-foreground">
+            Descubre las mejores opciones disponibles con 0% comisión
+          </p>
+        </div>
+
+        {/* Grid de proyectos */}
+        <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {buildings.map((building) => {
+            const available = building.units.filter((u) => u.disponible);
+            const hasAvailability = available.length > 0;
+            const coverImage = building.coverImage || building.gallery?.[0] || '/images/lascondes-cover.jpg';
+
+            return (
+              <article
+                key={building.id}
+                className="group relative overflow-hidden rounded-2xl bg-card shadow-lg transition-all duration-300 hover:shadow-xl hover:shadow-primary/10"
+              >
+                {/* Imagen */}
+                <div className="relative aspect-[4/3] overflow-hidden">
+                  <Image
+                    src={coverImage}
+                    alt={`${building.name} en ${building.comuna}`}
+                    fill
+                    className="object-cover transition-transform duration-300 group-hover:scale-105"
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  />
+
+                  {/* Badge de disponibilidad */}
+                  {hasAvailability && (
+                    <div className="absolute top-3 left-3">
+                      <span className="inline-flex items-center rounded-full bg-green-500/90 px-2 py-1 text-xs font-medium text-white backdrop-blur-sm">
+                        Disponible
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Overlay de hover */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                </div>
+
+                {/* Contenido */}
+                <div className="p-6">
+                  <div className="mb-2">
+                    <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">
+                      {building.name}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">{building.comuna}</p>
+                  </div>
+
+                  <div className="mb-4">
+                    <p className="text-2xl font-bold text-primary tabular-nums">
+                      {formatPrice(building.precioDesde ?? undefined)}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Desde</p>
+                  </div>
+
+                  {/* CTA */}
+                  <Link
+                    href={`/property/${building.slug}`}
+                    aria-label={`Ver detalles de ${building.name}`}
+                    className="inline-flex w-full items-center justify-center rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-all duration-200 hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
+                  >
+                    Ver detalles
+                    <svg className="ml-2 h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                    </svg>
+                  </Link>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+
+        {/* CTA final */}
+        <div className="mt-12 text-center">
+          <Link
+            href="/property"
+            className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-primary to-primary/80 px-8 py-3 text-base font-semibold text-primary-foreground shadow-lg transition-all duration-200 hover:shadow-xl hover:shadow-primary/25 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
+          >
+            Ver todos los proyectos
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+            </svg>
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
 }
+
+

@@ -1,176 +1,171 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Shield, Users, Award, Clock } from "lucide-react";
-
-const trustFactors = [
-    {
-        icon: Shield,
-        title: "100% Seguro",
-        description: "Proceso verificado y protegido",
-        color: "text-green-500",
-    },
-    {
-        icon: Users,
-        title: "500+ Clientes",
-        description: "Satisfechos con nuestro servicio",
-        color: "text-blue-500",
-    },
-    {
-        icon: Award,
-        title: "Mejor Precio",
-        description: "Garantizado sin comisiones",
-        color: "text-purple-500",
-    },
-    {
-        icon: Clock,
-        title: "24/7 Soporte",
-        description: "Atención disponible siempre",
-        color: "text-orange-500",
-    },
-];
-
-const testimonials = [
-    {
-        name: "María González",
-        location: "Las Condes",
-        text: "Encontré mi departamento ideal sin pagar comisiones. El proceso fue súper fácil y transparente.",
-        rating: 5,
-    },
-    {
-        name: "Carlos Rodríguez",
-        location: "Providencia",
-        text: "Excelente servicio. Ahorré más de $300.000 en comisiones y todo fue digital.",
-        rating: 5,
-    },
-    {
-        name: "Ana Silva",
-        location: "Ñuñoa",
-        text: "Recomiendo 100% esta plataforma. Proceso rápido y sin sorpresas.",
-        rating: 5,
-    },
-];
+import { useInView } from "framer-motion";
+import { useRef } from "react";
 
 export default function Trust() {
-    return (
-        <section className="py-20 bg-slate-50">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                {/* Trust Factors */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8 }}
-                    viewport={{ once: true }}
-                    className="text-center mb-16"
-                >
-                    <h2 className="text-4xl font-bold text-slate-900 mb-4">
-                        ¿Por qué confiar en nosotros?
-                    </h2>
-                    <p className="text-xl text-slate-600 max-w-2xl mx-auto">
-                        Miles de personas ya confían en nuestro servicio
-                    </p>
-                </motion.div>
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true });
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-20">
-                    {trustFactors.map((factor, index) => (
-                        <motion.div
-                            key={index}
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.6, delay: index * 0.1 }}
-                            viewport={{ once: true }}
-                            className="text-center"
-                        >
-                            <div className={`w-16 h-16 mx-auto mb-4 rounded-2xl bg-white shadow-lg flex items-center justify-center`}>
-                                <factor.icon className={`h-8 w-8 ${factor.color}`} />
-                            </div>
-                            <h3 className="text-lg font-semibold text-slate-900 mb-2">
-                                {factor.title}
-                            </h3>
-                            <p className="text-slate-600">
-                                {factor.description}
-                            </p>
-                        </motion.div>
-                    ))}
+  const stats = [
+    {
+      number: "12+",
+      label: "años en el mercado",
+      description: "Construyendo confianza desde 2012",
+    },
+    {
+      number: "100K+",
+      label: "arrendatarios felices",
+      description: "Familias que encontraron su hogar",
+    },
+    {
+      number: "100%",
+      label: "proceso digital",
+      description: "Sin papeles, sin complicaciones",
+    },
+  ];
+
+  const testimonials = [
+    {
+      name: "Carla + Bruno 🐕",
+      location: "Ñuñoa",
+      story: "disfrutan de su terraza soleada en Ñuñoa.",
+      image: "🏠"
+    },
+    {
+      name: "Ignacio",
+      location: "Providencia", 
+      story: "eligió Providencia y se olvidó de la incertidumbre: precio fijo 12 meses.",
+      image: "🏢"
+    },
+    {
+      name: "María + Tomás",
+      location: "Las Condes",
+      story: "encontraron su hogar ideal sin aval y con su mascota incluida.",
+      image: "🏡"
+    }
+  ];
+
+  return (
+    <section aria-labelledby="trust-heading" className="px-6 py-16 lg:px-8 lg:py-24 bg-gradient-to-b from-muted/20 to-background">
+      <div className="mx-auto max-w-6xl">
+        {/* Header */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="text-center"
+        >
+          <h2 id="trust-heading" className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+            Más que arriendos, construimos confianza
+          </h2>
+          <p className="mt-4 text-lg text-muted-foreground">
+            Cada número cuenta una historia de libertad y tranquilidad
+          </p>
+        </motion.div>
+
+        {/* Stats section */}
+        <div className="mt-16" ref={ref}>
+          <div className="grid gap-8 sm:grid-cols-3">
+            {stats.map((stat, index) => (
+              <motion.div 
+                key={index} 
+                className="text-center"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+              >
+                <div className="rounded-3xl border border-border bg-gradient-to-br from-card to-muted/20 p-8 hover:shadow-lg hover:shadow-amber-500/5 transition-all duration-300">
+                  <motion.div 
+                    className="text-4xl font-bold bg-gradient-to-r from-amber-500 to-orange-600 bg-clip-text text-transparent lg:text-5xl"
+                    initial={{ scale: 0 }}
+                    animate={isInView ? { scale: 1 } : { scale: 0 }}
+                    transition={{ duration: 0.5, delay: index * 0.1 }}
+                  >
+                    {stat.number}
+                  </motion.div>
+                  <div className="mt-2 text-lg font-semibold text-foreground">
+                    {stat.label}
+                  </div>
+                  <div className="mt-1 text-sm text-muted-foreground">
+                    {stat.description}
+                  </div>
                 </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
 
-                {/* Testimonials */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8 }}
-                    viewport={{ once: true }}
-                    className="text-center mb-16"
-                >
-                    <h3 className="text-3xl font-bold text-slate-900 mb-4">
-                        Lo que dicen nuestros clientes
-                    </h3>
-                </motion.div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    {testimonials.map((testimonial, index) => (
-                        <motion.div
-                            key={index}
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.6, delay: index * 0.1 }}
-                            viewport={{ once: true }}
-                            className="bg-white rounded-2xl p-6 shadow-lg"
-                        >
-                            <div className="flex items-center mb-4">
-                                {[...Array(testimonial.rating)].map((_, i) => (
-                                    <svg
-                                        key={i}
-                                        className="w-5 h-5 text-yellow-400 fill-current"
-                                        viewBox="0 0 20 20"
-                                    >
-                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                    </svg>
-                                ))}
-                            </div>
-                            <p className="text-slate-600 mb-4 italic">
-                                "{testimonial.text}"
-                            </p>
-                            <div>
-                                <div className="font-semibold text-slate-900">
-                                    {testimonial.name}
-                                </div>
-                                <div className="text-sm text-slate-500">
-                                    {testimonial.location}
-                                </div>
-                            </div>
-                        </motion.div>
-                    ))}
+        {/* Testimonials section */}
+        <div className="mt-20">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-12"
+          >
+            <h3 className="text-2xl font-semibold tracking-tight text-foreground">
+              Historias que inspiran
+            </h3>
+            <p className="mt-2 text-muted-foreground">
+              Cada hogar tiene una historia, cada historia tiene un final feliz
+            </p>
+          </motion.div>
+          
+          <div className="grid gap-6 sm:grid-cols-1 lg:grid-cols-3">
+            {testimonials.map((testimonial, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                className="group rounded-2xl border border-border bg-gradient-to-br from-card to-muted/20 p-6 text-center transition-all duration-300 hover:shadow-lg hover:shadow-amber-500/5"
+              >
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-amber-500/10 to-orange-500/5 text-3xl mb-4 group-hover:scale-110 transition-transform duration-300">
+                  {testimonial.image}
                 </div>
+                <blockquote className="text-lg font-medium text-foreground mb-4">
+                  "{testimonial.name} {testimonial.story}"
+                </blockquote>
+                <div className="text-sm text-muted-foreground">
+                  {testimonial.location}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
 
-                {/* Stats */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8, delay: 0.4 }}
-                    viewport={{ once: true }}
-                    className="mt-20 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl p-8 text-white text-center"
-                >
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-                        <div>
-                            <div className="text-3xl font-bold">500+</div>
-                            <div className="text-purple-100">Propiedades</div>
-                        </div>
-                        <div>
-                            <div className="text-3xl font-bold">1000+</div>
-                            <div className="text-purple-100">Clientes</div>
-                        </div>
-                        <div>
-                            <div className="text-3xl font-bold">$50M+</div>
-                            <div className="text-purple-100">Ahorrado</div>
-                        </div>
-                        <div>
-                            <div className="text-3xl font-bold">4.9</div>
-                            <div className="text-purple-100">Rating</div>
-                        </div>
-                    </div>
-                </motion.div>
-            </div>
-        </section>
-    );
+        {/* Final CTA */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+          className="mt-16 text-center"
+        >
+          <p className="text-lg text-muted-foreground mb-6">
+            Tu próximo hogar ya está disponible. Elige hoy y vive sin complicaciones.
+          </p>
+          <div className="mt-6">
+            <a
+              href="#buildings-grid"
+              className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 px-8 py-4 text-base font-semibold text-white shadow-lg transition-all duration-200 hover:shadow-xl hover:shadow-amber-500/25 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-amber-500"
+            >
+              Ver departamentos disponibles
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+              </svg>
+            </a>
+          </div>
+        </motion.div>
+      </div>
+    </section>
+  );
 }
+
+

@@ -33,6 +33,17 @@ export const X = createIcon('X');
 export const Filter = createIcon('Filter');
 export const ChevronUp = createIcon('ChevronUp');
 export const ChevronDown = createIcon('ChevronDown');
+export const Sun = createIcon('Sun');
+export const Moon = createIcon('Moon');
+export const ChevronLeft = createIcon('ChevronLeft');
+export const ChevronRight = createIcon('ChevronRight');
+export const ArrowLeft = createIcon('ArrowLeft');
+export const Check = createIcon('Check');
+export const AlertTriangle = createIcon('AlertTriangle');
+export const Bell = createIcon('Bell');
+export const CalendarIcon = createIcon('CalendarIcon');
+export const BarChart3 = createIcon('BarChart3');
+export const Download = createIcon('Download');
 
 export default {} as any;
 

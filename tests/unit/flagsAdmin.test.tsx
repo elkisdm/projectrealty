@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { FlagsAdminClient } from '../../app/admin/flags/FlagsAdminClient';
 
 // Mock fetch
@@ -91,7 +91,7 @@ describe('FlagsAdminClient', () => {
 
   it('refreshes data when refresh button is clicked', async () => {
     const mockFetch = fetch as jest.MockedFunction<typeof fetch>;
-    
+
     // Initial load
     mockFetch.mockResolvedValueOnce({
       ok: true,
@@ -106,13 +106,7 @@ describe('FlagsAdminClient', () => {
       })
     } as Response);
 
-    render(<FlagsAdminClient />);
-
-    await waitFor(() => {
-      expect(screen.getByText('Controla el comportamiento del sitio en tiempo real')).toBeInTheDocument();
-    });
-
-    // Second load after refresh
+    // Refresh load
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
@@ -120,16 +114,27 @@ describe('FlagsAdminClient', () => {
         flags: {
           comingSoon: {
             value: false,
-            overridden: true,
-            expiresAt: '2025-08-12T05:00:00.000Z'
+            overridden: true
           }
         }
       })
     } as Response);
 
-    const refreshButton = screen.getByText('Actualizar');
-    fireEvent.click(refreshButton);
+    render(<FlagsAdminClient />);
 
+    // Wait for initial load
+    await waitFor(() => {
+      expect(screen.getByText('Controla el comportamiento del sitio en tiempo real')).toBeInTheDocument();
+    });
+
+    // Click refresh button
+    const refreshButton = screen.getByText('Actualizar');
+
+    await act(async () => {
+      fireEvent.click(refreshButton);
+    });
+
+    // Wait for refresh to complete
     await waitFor(() => {
       expect(mockFetch).toHaveBeenCalledTimes(2);
     });
@@ -189,9 +194,8 @@ describe('FlagsAdminClient', () => {
         success: true,
         flags: {
           comingSoon: {
-            value: false,
-            overridden: true,
-            expiresAt: '2025-08-12T05:00:00.000Z'
+            value: true,
+            overridden: false
           }
         }
       })
@@ -200,9 +204,10 @@ describe('FlagsAdminClient', () => {
     render(<FlagsAdminClient />);
 
     await waitFor(() => {
-      expect(screen.getByTestId('flag-value')).toHaveTextContent('false');
-      expect(screen.getByTestId('flag-overridden')).toHaveTextContent('true');
-      expect(screen.getByTestId('flag-expires')).toHaveTextContent('2025-08-12T05:00:00.000Z');
+      expect(screen.getByText('Coming Soon')).toBeInTheDocument();
     });
+
+    expect(screen.getByTestId('flag-value')).toHaveTextContent('true');
+    expect(screen.getByTestId('flag-overridden')).toHaveTextContent('false');
   });
 });

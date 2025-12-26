@@ -4,6 +4,7 @@ import forms from "@tailwindcss/forms";
 
 export default {
   content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}"],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
@@ -12,12 +13,50 @@ export default {
           violet: "#8B6CFF",
           aqua: "#00E6B3",
         },
+        primary: {
+          DEFAULT: "#8B6CFF",
+          foreground: "#FFFFFF",
+        },
+        secondary: {
+          DEFAULT: "#00E6B3",
+          foreground: "#000000",
+        },
         // Map CSS variables to Tailwind tokens for consistency in class usage
         bg: "var(--bg)",
+        "bg-secondary": "var(--bg-secondary)",
         surface: "var(--surface)",
         soft: "var(--soft)",
+        card: "var(--card)",
         text: "var(--text)",
+        "text-secondary": "var(--text-secondary)",
         subtext: "var(--subtext)",
+        "text-muted": "var(--text-muted)",
+        border: "var(--border)",
+        "border-secondary": "var(--border-secondary)",
+        ring: "var(--ring)",
+        accent: "var(--accent)",
+        "accent-secondary": "var(--accent-secondary)",
+        "accent-success": "var(--accent-success)",
+        "accent-warning": "var(--accent-warning)",
+        "accent-error": "var(--accent-error)",
+      },
+      // Utilidades de tema unificadas
+      backgroundColor: {
+        "theme-bg": "var(--bg)",
+        "theme-surface": "var(--surface)",
+        "theme-card": "var(--card)",
+        "theme-muted": "var(--surface)",
+      },
+      textColor: {
+        "theme-text": "var(--text)",
+        "theme-secondary": "var(--text-secondary)",
+        "theme-muted": "var(--text-muted)",
+        "theme-accent": "var(--accent)",
+      },
+      borderColor: {
+        "theme-border": "var(--border)",
+        "theme-border-secondary": "var(--border-secondary)",
+        DEFAULT: "color-mix(in oklab, white 12%, transparent)",
         ring: "var(--ring)",
       },
       boxShadow: {
@@ -26,10 +65,6 @@ export default {
       backdropBlur: {
         xs: "2px",
       },
-      borderColor: ({ theme }) => ({
-        DEFAULT: "color-mix(in oklab, white 12%, transparent)",
-        ring: theme("colors.ring"),
-      }),
     },
   },
   plugins: [
