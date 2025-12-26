@@ -51,3 +51,5 @@ COMMENT ON COLUMN public.admin_users.role IS 'Rol del usuario: admin (acceso com
 
 
 
+
+

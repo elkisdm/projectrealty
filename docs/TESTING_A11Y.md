@@ -205,3 +205,5 @@ Los tests en `tests/a11y/pages.test.tsx` verifican:
 **⚠️ Nota:** La accesibilidad es un proceso continuo. Los tests automatizados detectan ~30-40% de los problemas. Las verificaciones manuales son críticas.
 
 
+
+

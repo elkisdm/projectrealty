@@ -517,3 +517,4 @@ export default async function PropertyPage({ params }) {
   - `app/arriendo/departamento/[comuna]/[slug]/page.tsx` (vía UnitDetailClient)
 
 
+

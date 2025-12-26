@@ -601,3 +601,4 @@ Modifica el **orden de renderizado** en `components/property/PropertyClient.tsx`
 5. **Condicionales:** Muchos componentes se renderizan solo si `selectedUnit` existe
 
 
+

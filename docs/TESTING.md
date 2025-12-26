@@ -435,3 +435,5 @@ Documentar aquí issues encontrados durante testing que no bloquean el release p
 **Versión:** MVP 1.0
 
 
+
+

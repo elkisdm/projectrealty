@@ -291,3 +291,4 @@ Cuando se elimina un edificio, todas sus unidades se eliminan automáticamente d
 - Procesador de datos: `lib/supabase-data-processor.ts`
 
 
+
