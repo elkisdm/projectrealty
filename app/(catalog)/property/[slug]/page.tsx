@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { getBuildingBySlug, getRelatedBuildings } from "@lib/data";
-import { PropertyClient } from "./PropertyClientV3";
+import { PropertyClient } from "./PropertyClient";
 import { safeJsonLd } from "@lib/seo/jsonld";
 import { PROPERTY_PAGE_CONSTANTS } from "@lib/constants/property";
 import { normalizeComunaSlug } from "@/lib/utils/slug";

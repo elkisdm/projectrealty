@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arquitectura del Sistema de Administración - Visual</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+        
+        nav {
+            background: #f8f9fa;
+            padding: 1rem 2rem;
+            border-bottom: 2px solid #e9ecef;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        nav button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+        
+        nav button:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        nav button.active {
+            background: #667eea;
+            color: white;
+            border-color: #764ba2;
+        }
+        
+        .content {
+            padding: 2rem;
+        }
+        
+        .diagram-section {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+        
+        .diagram-section.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .diagram-container {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 2px solid #e9ecef;
+        }
+        
+        .diagram-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #667eea;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .diagram-description {
+            color: #666;
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+        
+        .mermaid {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            border: 1px solid #dee2e6;
+        }
+        
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #667eea;
+            padding: 1rem 1.5rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+        
+        .info-box h3 {
+            color: #667eea;
+            margin-bottom: 0.5rem;
+        }
+        
+        .info-box ul {
+            margin-left: 1.5rem;
+            color: #555;
+        }
+        
+        .info-box li {
+            margin: 0.5rem 0;
+        }
+        
+        .legend {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+            padding: 1rem;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+        
+        .legend-color.presentation { background: #667eea; }
+        .legend-color.api { background: #48bb78; }
+        .legend-color.business { background: #ed8936; }
+        .legend-color.data { background: #9f7aea; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏗️ Arquitectura del Sistema de Administración</h1>
+            <p>Visualización interactiva de la arquitectura completa</p>
+        </header>
+        
+        <nav>
+            <button class="active" onclick="showDiagram('overview')">📊 Vista General</button>
+            <button onclick="showDiagram('layers')">🏛️ Capas</button>
+            <button onclick="showDiagram('dataflow')">🔄 Flujos de Datos</button>
+            <button onclick="showDiagram('modules')">🧩 Módulos</button>
+            <button onclick="showDiagram('security')">🔐 Seguridad</button>
+            <button onclick="showDiagram('components')">🎨 Componentes</button>
+        </nav>
+        
+        <div class="content">
+            <!-- Vista General -->
+            <div id="overview" class="diagram-section active">
+                <div class="diagram-container">
+                    <div class="diagram-title">📊 Arquitectura General del Sistema</div>
+                    <div class="diagram-description">
+                        Vista de alto nivel mostrando todas las capas del sistema de administración y cómo interactúan entre sí.
+                    </div>
+                    <div class="mermaid">
+graph TB
+    subgraph "Cliente"
+        Browser[🌐 Navegador]
+        AdminUI[📱 Admin UI<br/>Next.js App Router]
+    end
+    
+    subgraph "Middleware"
+        AuthMW[🔐 Middleware<br/>Autenticación]
+        RateLimit[⏱️ Rate Limiting]
+    end
+    
+    subgraph "API Layer"
+        AdminAPI[🔌 API Routes<br/>/api/admin/*]
+        StatsAPI[📊 Stats API]
+        BuildingsAPI[🏢 Buildings API]
+        UnitsAPI[🏠 Units API]
+        FlagsAPI[🚩 Flags API]
+    end
+    
+    subgraph "Business Logic"
+        AdminLib[📚 lib/admin/*]
+        AuthLib[🔑 Auth Utils]
+        DataLib[💾 Data Utils]
+        CSVLib[📄 CSV Utils]
+    end
+    
+    subgraph "Data Layer"
+        Supabase[(🗄️ Supabase<br/>PostgreSQL)]
+        FileSystem[📁 File System<br/>JSON Files]
+    end
+    
+    Browser --> AdminUI
+    AdminUI --> AuthMW
+    AuthMW --> RateLimit
+    RateLimit --> AdminAPI
+    AdminAPI --> AdminLib
+    AdminLib --> AuthLib
+    AdminLib --> DataLib
+    AdminLib --> CSVLib
+    DataLib --> Supabase
+    DataLib --> FileSystem
+    AdminAPI --> StatsAPI
+    AdminAPI --> BuildingsAPI
+    AdminAPI --> UnitsAPI
+    AdminAPI --> FlagsAPI
+                    </div>
+                    
+                    <div class="info-box">
+                        <h3>💡 Componentes Clave</h3>
+                        <ul>
+                            <li><strong>Cliente:</strong> Interfaz de usuario construida con Next.js 14 App Router</li>
+                            <li><strong>Middleware:</strong> Protección de rutas y rate limiting</li>
+                            <li><strong>API Layer:</strong> Endpoints RESTful para todas las operaciones</li>
+                            <li><strong>Business Logic:</strong> Lógica de negocio reutilizable</li>
+                            <li><strong>Data Layer:</strong> Supabase (producción) y File System (desarrollo)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Capas -->
+            <div id="layers" class="diagram-section">
+                <div class="diagram-container">
+                    <div class="diagram-title">🏛️ Arquitectura en Capas</div>
+                    <div class="diagram-description">
+                        Descomposición detallada de cada capa del sistema y sus responsabilidades.
+                    </div>
+                    <div class="mermaid">
+graph TB
+    subgraph "Capa 1: Presentación"
+        Pages[📱 Pages RSC]
+        Components[🧩 Components Client]
+        Hooks[🎣 Hooks State]
+    end
+    
+    subgraph "Capa 2: API"
+        Routes[🔌 Route Handlers]
+        Middleware[🛡️ Middleware]
+    end
+    
+    subgraph "Capa 3: Business Logic"
+        AuthLogic[🔐 Auth Logic]
+        DataLogic[💾 Data Logic]
+        CSVLogic[📄 CSV Logic]
+    end
+    
+    subgraph "Capa 4: Data"
+        Database[(🗄️ Database)]
+        Files[📁 Files]
+    end
+    
+    Pages --> Components
+    Components --> Hooks
+    Hooks --> Routes
+    Routes --> Middleware
+    Middleware --> AuthLogic
+    Middleware --> DataLogic
+    AuthLogic --> Database
+    DataLogic --> Database
+    DataLogic --> Files
+    CSVLogic --> Files
+                    </div>
+                    
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-color presentation"></div>
+                            <span>Capa de Presentación</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color api"></div>
+                            <span>Capa de API</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color business"></div>
+                            <span>Lógica de Negocio</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color data"></div>
+                            <span>Capa de Datos</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Flujos de Datos -->
+            <div id="dataflow" class="diagram-section">
+                <div class="diagram-container">
+                    <div class="diagram-title">🔄 Flujo: Crear Edificio (CRUD)</div>
+                    <div class="diagram-description">
+                        Secuencia completa de una operación CRUD típica, mostrando el flujo desde el formulario hasta la base de datos.
+                    </div>
+                    <div class="mermaid">
+sequenceDiagram
+    participant Form as 📝 BuildingForm
+    participant Hook as 🎣 useCreateBuilding
+    participant API as 🔌 /api/admin/buildings
+    participant Validator as ✅ Zod Validator
+    participant DataLib as 💾 Data Lib
+    participant DB as 🗄️ Supabase
+
+    Form->>Hook: createBuilding({ building })
+    Hook->>Hook: Optimistic update
+    Hook->>API: POST /api/admin/buildings
+    API->>Validator: Validar schema
+    Validator-->>API: Validación OK/Error
+    
+    alt Validación OK
+        API->>DataLib: createBuilding(building)
+        DataLib->>DB: INSERT INTO buildings
+        DB-->>DataLib: New building
+        DataLib-->>API: Building object
+        API-->>Hook: Success response
+        Hook->>Hook: Invalidar queries
+        Hook->>Form: Success toast
+    else Validación Error
+        API-->>Hook: 400 Error
+        Hook->>Hook: Revertir optimistic update
+        Hook->>Form: Error toast
+    end
+                    </div>
+                </div>
+                
+                <div class="diagram-container">
+                    <div class="diagram-title">🔄 Flujo: Autenticación</div>
+                    <div class="diagram-description">
+                        Proceso de autenticación y verificación de acceso al panel de administración.
+                    </div>
+                    <div class="mermaid">
+sequenceDiagram
+    participant User as 👤 Usuario
+    participant Browser as 🌐 Navegador
+    participant MW as 🛡️ Middleware
+    participant Auth as 🔐 Auth Lib
+    participant Page as 📱 Admin Page
+
+    User->>Browser: Accede a /admin
+    Browser->>MW: Request GET /admin
+    MW->>Auth: Verificar token (header/cookie)
+    Auth-->>MW: Token válido/inválido
+    
+    alt Token válido
+        MW->>Page: Permitir acceso
+        Page-->>Browser: Renderizar dashboard
+        Browser-->>User: Mostrar panel admin
+    else Token inválido
+        MW->>Browser: Redirect /admin/login
+        Browser-->>User: Mostrar login
+    end
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Módulos -->
+            <div id="modules" class="diagram-section">
+                <div class="diagram-container">
+                    <div class="diagram-title">🧩 Módulos Principales</div>
+                    <div class="diagram-description">
+                        Estructura modular del sistema de administración y sus interrelaciones.
+                    </div>
+                    <div class="mermaid">
+graph TB
+    subgraph "Dashboard Module"
+        Dashboard[📊 Dashboard]
+        Stats[📈 Stats]
+    end
+    
+    subgraph "Buildings Module"
+        Buildings[🏢 Buildings]
+        BuildingForm[📝 Form]
+        BuildingTable[📋 Table]
+    end
+    
+    subgraph "Units Module"
+        Units[🏠 Units]
+        UnitForm[📝 Form]
+        UnitTable[📋 Table]
+    end
+    
+    subgraph "Flags Module"
+        Flags[🚩 Flags]
+        FlagToggle[🔘 Toggle]
+    end
+    
+    subgraph "Completeness Module"
+        Completeness[✅ Completeness]
+        Analysis[📊 Analysis]
+    end
+    
+    Dashboard --> Stats
+    Dashboard --> Buildings
+    Dashboard --> Units
+    Dashboard --> Flags
+    Dashboard --> Completeness
+    
+    Buildings --> BuildingForm
+    Buildings --> BuildingTable
+    Units --> UnitForm
+    Units --> UnitTable
+    Flags --> FlagToggle
+    Completeness --> Analysis
+                    </div>
+                    
+                    <div class="info-box">
+                        <h3>📦 Módulos Disponibles</h3>
+                        <ul>
+                            <li><strong>Dashboard:</strong> Vista general con métricas y accesos rápidos</li>
+                            <li><strong>Buildings:</strong> Gestión completa de edificios (CRUD)</li>
+                            <li><strong>Units:</strong> Gestión completa de unidades (CRUD)</li>
+                            <li><strong>Flags:</strong> Control de feature flags y overrides</li>
+                            <li><strong>Completeness:</strong> Análisis de completitud de datos</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Seguridad -->
+            <div id="security" class="diagram-section">
+                <div class="diagram-container">
+                    <div class="diagram-title">🔐 Arquitectura de Seguridad</div>
+                    <div class="diagram-description">
+                        Flujo de seguridad y autenticación del sistema.
+                    </div>
+                    <div class="mermaid">
+graph LR
+    A[Request] --> B{Es ruta protegida?}
+    B -->|No| C[✅ Permitir acceso]
+    B -->|Sí| D{Token presente?}
+    D -->|No| E[❌ 401 Unauthorized]
+    D -->|Sí| F{Token válido?}
+    F -->|No| E
+    F -->|Sí| G{Rate limit OK?}
+    G -->|No| H[⏱️ 429 Too Many Requests]
+    G -->|Sí| C
+                    </div>
+                    
+                    <div class="info-box">
+                        <h3>🛡️ Medidas de Seguridad</h3>
+                        <ul>
+                            <li><strong>Middleware Protection:</strong> Todas las rutas /admin/* están protegidas</li>
+                            <li><strong>Token Authentication:</strong> Verificación de token en header o cookie</li>
+                            <li><strong>Rate Limiting:</strong> 20 requests por 60 segundos por IP</li>
+                            <li><strong>Validación:</strong> Zod validation en todos los endpoints</li>
+                            <li><strong>Error Handling:</strong> Respuestas seguras sin exponer información sensible</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Componentes -->
+            <div id="components" class="diagram-section">
+                <div class="diagram-container">
+                    <div class="diagram-title">🎨 Componentes Interactivos</div>
+                    <div class="diagram-description">
+                        Relación entre componentes de la UI y cómo interactúan entre sí.
+                    </div>
+                    <div class="mermaid">
+graph TB
+    subgraph "Admin Dashboard"
+        Dashboard[📊 Dashboard Page]
+        Stats[📈 Stats Cards]
+        QuickActions[⚡ Quick Actions]
+    end
+    
+    subgraph "Buildings Module"
+        BuildingsPage[🏢 Buildings Page]
+        BuildingForm[📝 Building Form]
+        BuildingTable[📋 Data Table]
+        BuildingFilters[🔍 Filters]
+    end
+    
+    subgraph "Units Module"
+        UnitsPage[🏠 Units Page]
+        UnitForm[📝 Unit Form]
+        UnitTable[📋 Data Table]
+    end
+    
+    subgraph "Shared Components"
+        SearchBar[🔎 Search Bar]
+        BulkActions[📦 Bulk Actions]
+        ImportDialog[📥 Import Dialog]
+        ExportDialog[📤 Export Dialog]
+        ErrorBoundary[⚠️ Error Boundary]
+    end
+    
+    Dashboard --> Stats
+    Dashboard --> QuickActions
+    QuickActions --> BuildingsPage
+    QuickActions --> UnitsPage
+    
+    BuildingsPage --> BuildingForm
+    BuildingsPage --> BuildingTable
+    BuildingsPage --> BuildingFilters
+    BuildingsPage --> SearchBar
+    BuildingsPage --> BulkActions
+    BuildingsPage --> ImportDialog
+    BuildingsPage --> ExportDialog
+    
+    UnitsPage --> UnitForm
+    UnitsPage --> UnitTable
+    UnitsPage --> SearchBar
+    UnitsPage --> BulkActions
+    
+    BuildingsPage --> ErrorBoundary
+    UnitsPage --> ErrorBoundary
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        mermaid.initialize({ 
+            startOnLoad: true,
+            theme: 'default',
+            themeVariables: {
+                primaryColor: '#667eea',
+                primaryTextColor: '#fff',
+                primaryBorderColor: '#764ba2',
+                lineColor: '#667eea',
+                secondaryColor: '#f8f9fa',
+                tertiaryColor: '#e9ecef'
+            }
+        });
+        
+        function showDiagram(diagramId) {
+            // Ocultar todos los diagramas
+            document.querySelectorAll('.diagram-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Remover clase active de todos los botones
+            document.querySelectorAll('nav button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Mostrar el diagrama seleccionado
+            document.getElementById(diagramId).classList.add('active');
+            
+            // Activar el botón correspondiente
+            event.target.classList.add('active');
+        }
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+

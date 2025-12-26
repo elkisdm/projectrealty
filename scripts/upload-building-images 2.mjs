@@ -1,0 +1,579 @@
+#!/usr/bin/env node
+
+/**
+ * Script para subir imágenes de edificios siguiendo la estructura:
+ * Imagenes/[Nombre del edificio]/Edificio, Estudio, 1D, 2D, 3D
+ * 
+ * Uso:
+ *   node scripts/upload-building-images.mjs <ruta-carpeta-edificio> [--building-name "Nombre"] [--building-slug "slug"]
+ * 
+ * Ejemplos:
+ *   # Subir todas las imágenes de un edificio (detecta automáticamente el nombre)
+ *   node scripts/upload-building-images.mjs "/Users/macbookpro/Downloads/Guillermo 2632"
+ * 
+ *   # Especificar nombre y slug del edificio
+ *   node scripts/upload-building-images.mjs "./Imagenes/Guillermo 2632" --building-name "Guillermo 2632" --building-slug "guillermo-2632"
+ */
+
+import { createClient } from '@supabase/supabase-js';
+import { readFileSync, readdirSync, statSync, existsSync } from 'fs';
+import { join, extname, basename, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const projectRoot = join(__dirname, '..');
+
+// Cargar variables de entorno desde .env.local
+function loadEnvFile() {
+  const envPath = join(projectRoot, '.env.local');
+  if (existsSync(envPath)) {
+    const envContent = readFileSync(envPath, 'utf-8');
+    envContent.split('\n').forEach(line => {
+      const trimmed = line.trim();
+      if (trimmed && !trimmed.startsWith('#') && trimmed.includes('=')) {
+        const [key, ...valueParts] = trimmed.split('=');
+        const value = valueParts.join('=').replace(/^["']|["']$/g, ''); // Remover comillas
+        if (key && value) {
+          process.env[key.trim()] = value.trim();
+        }
+      }
+    });
+  }
+}
+
+loadEnvFile();
+
+// Configuración de Supabase
+const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!supabaseUrl || !supabaseServiceKey) {
+  console.error('❌ Error: Variables de entorno no configuradas');
+  console.error('Necesitas configurar:');
+  console.error('  - SUPABASE_URL o NEXT_PUBLIC_SUPABASE_URL');
+  console.error('  - SUPABASE_SERVICE_ROLE_KEY');
+  console.error('\nAsegúrate de tener un archivo .env.local con estas variables.');
+  process.exit(1);
+}
+
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+// Mapeo de carpetas locales a tipologías canónicas
+const TIPOLOGIA_MAP = {
+  'Estudio': ['Estudio', 'Studio'],
+  '1D': ['1D1B'],
+  '2D': ['2D1B', '2D2B'], // Puede ser cualquiera de las dos
+  '3D': ['3D2B'],
+};
+
+/**
+ * Normaliza un nombre de edificio a slug
+ */
+function normalizeToSlug(name) {
+  return name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Remover acentos
+    .replace(/[^a-z0-9]+/g, '-') // Reemplazar espacios y caracteres especiales con guiones
+    .replace(/^-+|-+$/g, ''); // Remover guiones al inicio y final
+}
+
+/**
+ * Obtiene el MIME type correcto desde la extensión del archivo
+ */
+function getContentType(fileName) {
+  const ext = extname(fileName).toLowerCase().slice(1);
+  const mimeTypes = {
+    'jpg': 'image/jpeg',
+    'jpeg': 'image/jpeg',
+    'png': 'image/png',
+    'webp': 'image/webp',
+    'gif': 'image/gif',
+  };
+  return mimeTypes[ext] || 'image/jpeg';
+}
+
+/**
+ * Verifica si un archivo ya existe en Supabase Storage
+ * Usa una petición HEAD a la URL pública para verificar existencia
+ */
+async function fileExists(bucketName, storagePath) {
+  try {
+    const { data: { publicUrl } } = supabase.storage
+      .from(bucketName)
+      .getPublicUrl(storagePath);
+    
+    // Crear un AbortController para timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    
+    try {
+      // Hacer una petición HEAD para verificar si el archivo existe
+      // Esto es más eficiente que descargar el archivo completo
+      const response = await fetch(publicUrl, { 
+        method: 'HEAD',
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      return response.ok;
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      // Si es un abort (timeout), asumir que no existe
+      if (fetchError.name === 'AbortError') {
+        return false;
+      }
+      throw fetchError;
+    }
+  } catch (error) {
+    // Si hay error (red, etc.), asumir que no existe para evitar bloquear el proceso
+    return false;
+  }
+}
+
+/**
+ * Obtiene la URL pública de un archivo existente en Supabase Storage
+ */
+async function getExistingFileUrl(bucketName, storagePath) {
+  try {
+    const { data: { publicUrl } } = supabase.storage
+      .from(bucketName)
+      .getPublicUrl(storagePath);
+    return publicUrl;
+  } catch (error) {
+    return null;
+  }
+}
+
+/**
+ * Sube una imagen a Supabase Storage (solo si no existe)
+ */
+async function uploadImage(bucketName, storagePath, filePath, skipIfExists = true) {
+  try {
+    const fileName = basename(filePath);
+    
+    // Verificar si el archivo ya existe
+    if (skipIfExists) {
+      const exists = await fileExists(bucketName, storagePath);
+      if (exists) {
+        const existingUrl = await getExistingFileUrl(bucketName, storagePath);
+        console.log(`⏭️  Ya existe: ${fileName} → ${existingUrl}`);
+        return existingUrl;
+      }
+    }
+    
+    const fileBuffer = readFileSync(filePath);
+    const contentType = getContentType(fileName);
+    
+    console.log(`📤 Subiendo: ${fileName} → ${bucketName}/${storagePath}`);
+    
+    const { data, error } = await supabase.storage
+      .from(bucketName)
+      .upload(storagePath, fileBuffer, {
+        contentType: contentType,
+        upsert: true,
+      });
+    
+    if (error) {
+      console.error(`❌ Error subiendo ${fileName}:`, error.message);
+      return null;
+    }
+    
+    const { data: { publicUrl } } = supabase.storage
+      .from(bucketName)
+      .getPublicUrl(storagePath);
+    
+    console.log(`✅ Subido: ${publicUrl}`);
+    return publicUrl;
+    
+  } catch (error) {
+    console.error(`❌ Error procesando ${filePath}:`, error.message);
+    return null;
+  }
+}
+
+/**
+ * Obtiene el slug de un edificio desde la BD (por nombre o slug)
+ */
+async function getBuildingSlug(buildingName, buildingSlug) {
+  if (buildingSlug) {
+    // Verificar que existe en la BD
+    const { data, error } = await supabase
+      .from('buildings')
+      .select('slug')
+      .eq('slug', buildingSlug)
+      .single();
+    
+    if (!error && data) {
+      return buildingSlug;
+    }
+    console.warn(`⚠️  Slug "${buildingSlug}" no encontrado en BD, intentando por nombre...`);
+  }
+  
+  if (buildingName) {
+    // Buscar por nombre
+    const { data, error } = await supabase
+      .from('buildings')
+      .select('slug, name')
+      .ilike('name', `%${buildingName}%`)
+      .limit(1)
+      .single();
+    
+    if (!error && data) {
+      console.log(`✓ Edificio encontrado: "${data.name}" (slug: ${data.slug})`);
+      return data.slug;
+    }
+  }
+  
+  // Si no se encuentra, generar slug desde el nombre
+  const generatedSlug = normalizeToSlug(buildingName || 'edificio-desconocido');
+  console.warn(`⚠️  Edificio no encontrado en BD, usando slug generado: "${generatedSlug}"`);
+  console.warn(`   Asegúrate de que el edificio existe en la BD o créalo primero.`);
+  return generatedSlug;
+}
+
+/**
+ * Actualiza la galería del edificio en la BD
+ */
+async function updateBuildingGallery(buildingSlug, imageUrls) {
+  if (imageUrls.length === 0) return false;
+  
+  try {
+    console.log(`\n🔄 Actualizando galería del edificio (slug: ${buildingSlug})...`);
+    
+    const { data, error } = await supabase
+      .from('buildings')
+      .update({ 
+        gallery: imageUrls,
+        cover_image: imageUrls[0] // Primera imagen como portada
+      })
+      .eq('slug', buildingSlug)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error(`❌ Error actualizando edificio:`, error.message);
+      return false;
+    }
+    
+    console.log(`✅ Galería actualizada: ${imageUrls.length} imagen(es)`);
+    return true;
+    
+  } catch (error) {
+    console.error(`❌ Error:`, error.message);
+    return false;
+  }
+}
+
+/**
+ * Actualiza images_tipologia para todas las unidades de una tipología en un edificio
+ */
+async function updateTipologiaImages(buildingSlug, tipologia, imageUrls) {
+  if (imageUrls.length === 0) return false;
+  
+  try {
+    // Primero obtener el building_id desde el slug
+    const { data: building, error: buildingError } = await supabase
+      .from('buildings')
+      .select('id')
+      .eq('slug', buildingSlug)
+      .single();
+    
+    if (buildingError || !building) {
+      console.error(`❌ Edificio no encontrado: ${buildingSlug}`);
+      return false;
+    }
+    
+    console.log(`\n🔄 Actualizando imágenes de tipología "${tipologia}" para edificio...`);
+    
+    // Actualizar todas las unidades de esta tipología en este edificio
+    const { data, error } = await supabase
+      .from('units')
+      .update({ images_tipologia: imageUrls })
+      .eq('building_id', building.id)
+      .eq('tipologia', tipologia)
+      .select();
+    
+    if (error) {
+      console.error(`❌ Error actualizando unidades:`, error.message);
+      return false;
+    }
+    
+    console.log(`✅ ${data?.length || 0} unidad(es) actualizada(s) con imágenes de tipología "${tipologia}"`);
+    return true;
+    
+  } catch (error) {
+    console.error(`❌ Error:`, error.message);
+    return false;
+  }
+}
+
+/**
+ * Actualiza images_areas_comunes para todas las unidades de un edificio
+ * Esto asigna las imágenes de espacios comunes (carpeta Edificio) a todas las unidades
+ */
+async function updateAreasComunesImages(buildingSlug, imageUrls) {
+  if (imageUrls.length === 0) return false;
+  
+  try {
+    // Primero obtener el building_id desde el slug
+    const { data: building, error: buildingError } = await supabase
+      .from('buildings')
+      .select('id')
+      .eq('slug', buildingSlug)
+      .single();
+    
+    if (buildingError || !building) {
+      console.error(`❌ Edificio no encontrado: ${buildingSlug}`);
+      return false;
+    }
+    
+    console.log(`\n🔄 Actualizando imágenes de áreas comunes para todas las unidades del edificio...`);
+    
+    // Actualizar todas las unidades de este edificio con las imágenes de áreas comunes
+    const { data, error } = await supabase
+      .from('units')
+      .update({ images_areas_comunes: imageUrls })
+      .eq('building_id', building.id)
+      .select();
+    
+    if (error) {
+      console.error(`❌ Error actualizando unidades:`, error.message);
+      return false;
+    }
+    
+    console.log(`✅ ${data?.length || 0} unidad(es) actualizada(s) con imágenes de áreas comunes`);
+    return true;
+    
+  } catch (error) {
+    console.error(`❌ Error:`, error.message);
+    return false;
+  }
+}
+
+/**
+ * Crea el bucket si no existe
+ */
+async function ensureBucketExists(bucketName) {
+  const { data: buckets, error: listError } = await supabase.storage.listBuckets();
+  
+  if (listError) {
+    console.error('❌ Error listando buckets:', listError.message);
+    return false;
+  }
+  
+  const bucketExists = buckets.some(b => b.name === bucketName);
+  
+  if (!bucketExists) {
+    console.log(`📦 Creando bucket: ${bucketName}...`);
+    const { data, error } = await supabase.storage.createBucket(bucketName, {
+      public: true,
+      fileSizeLimit: 52428800, // 50MB
+      allowedMimeTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'],
+    });
+    
+    if (error) {
+      console.error(`❌ Error creando bucket:`, error.message);
+      return false;
+    }
+    
+    console.log(`✅ Bucket creado: ${bucketName}`);
+  }
+  
+  return true;
+}
+
+/**
+ * Procesa una carpeta de imágenes
+ */
+async function processFolder(buildingSlug, folderName, folderPath, bucketName = 'edificios') {
+  if (!existsSync(folderPath)) {
+    console.warn(`⚠️  Carpeta no existe: ${folderPath}`);
+    return { urls: [], stats: { total: 0, uploaded: 0, skipped: 0 } };
+  }
+  
+  const stats = statSync(folderPath);
+  if (!stats.isDirectory()) {
+    console.warn(`⚠️  No es un directorio: ${folderPath}`);
+    return { urls: [], stats: { total: 0, uploaded: 0, skipped: 0 } };
+  }
+  
+  const imageFiles = readdirSync(folderPath)
+    .filter(file => /\.(jpg|jpeg|png|webp|gif)$/i.test(file))
+    .map(file => join(folderPath, file));
+  
+  if (imageFiles.length === 0) {
+    console.warn(`⚠️  No se encontraron imágenes en: ${folderPath}`);
+    return { urls: [], stats: { total: 0, uploaded: 0, skipped: 0 } };
+  }
+  
+  console.log(`\n📁 Procesando carpeta: ${folderName} (${imageFiles.length} imagen(es))`);
+  
+  const uploadedUrls = [];
+  let uploadedCount = 0;
+  let skippedCount = 0;
+  
+  for (const filePath of imageFiles) {
+    const fileName = basename(filePath);
+    const storagePath = `${buildingSlug}/${folderName.toLowerCase()}/${fileName}`;
+    
+    // Verificar si existe antes de intentar subir
+    const exists = await fileExists(bucketName, storagePath);
+    const url = await uploadImage(bucketName, storagePath, filePath, true);
+    
+    if (url) {
+      uploadedUrls.push(url);
+      if (exists) {
+        skippedCount++;
+      } else {
+        uploadedCount++;
+      }
+    }
+  }
+  
+  return { 
+    urls: uploadedUrls, 
+    stats: { 
+      total: imageFiles.length, 
+      uploaded: uploadedCount, 
+      skipped: skippedCount 
+    } 
+  };
+}
+
+/**
+ * Función principal
+ */
+async function main() {
+  const args = process.argv.slice(2);
+  
+  if (args.length === 0) {
+    console.log(`
+📤 Script para subir imágenes de edificios
+
+Uso:
+  node scripts/upload-building-images.mjs <ruta-carpeta-edificio> [opciones]
+
+Argumentos:
+  ruta-carpeta-edificio  Ruta a la carpeta del edificio (ej: "./Imagenes/Guillermo 2632")
+
+Opciones:
+  --building-name "Nombre"    Nombre del edificio (si no se detecta del path)
+  --building-slug "slug"     Slug del edificio en la BD (si no se encuentra, se genera)
+
+Ejemplos:
+  # Subir todas las imágenes (detecta nombre del path)
+  node scripts/upload-building-images.mjs "/Users/macbookpro/Downloads/Guillermo 2632"
+
+  # Especificar nombre y slug
+  node scripts/upload-building-images.mjs "./Imagenes/Guillermo 2632" --building-name "Guillermo 2632" --building-slug "guillermo-2632"
+
+Estructura esperada:
+  [Nombre del edificio]/
+    ├── Edificio/     → Imágenes del edificio (áreas comunes, fachada)
+    ├── Estudio/      → Imágenes de tipología Estudio
+    ├── 1D/           → Imágenes de tipología 1D1B
+    ├── 2D/           → Imágenes de tipología 2D1B o 2D2B
+    └── 3D/           → Imágenes de tipología 3D2B
+`);
+    process.exit(0);
+  }
+  
+  const buildingFolderPath = args[0];
+  let buildingName = null;
+  let buildingSlug = null;
+  
+  // Parsear opciones
+  for (let i = 1; i < args.length; i++) {
+    if (args[i] === '--building-name' && args[i + 1]) {
+      buildingName = args[i + 1];
+      i++;
+    } else if (args[i] === '--building-slug' && args[i + 1]) {
+      buildingSlug = args[i + 1];
+      i++;
+    }
+  }
+  
+  // Si no se especificó nombre, intentar detectarlo del path
+  if (!buildingName) {
+    buildingName = basename(buildingFolderPath);
+  }
+  
+  console.log(`\n🏢 Procesando edificio: "${buildingName}"`);
+  console.log(`📂 Carpeta: ${buildingFolderPath}\n`);
+  
+  // Verificar que la carpeta existe
+  if (!existsSync(buildingFolderPath)) {
+    console.error(`❌ Error: La carpeta no existe: ${buildingFolderPath}`);
+    process.exit(1);
+  }
+  
+  // Asegurar que el bucket existe
+  await ensureBucketExists('edificios');
+  
+  // Obtener o generar slug del edificio
+  const finalBuildingSlug = await getBuildingSlug(buildingName, buildingSlug);
+  console.log(`\n📌 Usando slug: "${finalBuildingSlug}"\n`);
+  
+  // Procesar cada carpeta
+  const folders = ['Edificio', 'Estudio', '1D', '2D', '3D'];
+  const results = {};
+  const stats = {};
+  
+  for (const folderName of folders) {
+    const folderPath = join(buildingFolderPath, folderName);
+    const folderResult = await processFolder(finalBuildingSlug, folderName, folderPath);
+    
+    if (folderResult.urls && folderResult.urls.length > 0) {
+      results[folderName] = folderResult.urls;
+      stats[folderName] = folderResult.stats;
+    }
+  }
+  
+  // Actualizar base de datos
+  console.log(`\n${'='.repeat(60)}`);
+  console.log(`🔄 Actualizando Base de Datos\n`);
+  
+  // Actualizar galería del edificio y áreas comunes de todas las unidades
+  if (results['Edificio']) {
+    await updateBuildingGallery(finalBuildingSlug, results['Edificio']);
+    // También actualizar images_areas_comunes de todas las unidades con estas imágenes
+    await updateAreasComunesImages(finalBuildingSlug, results['Edificio']);
+  }
+  
+  // Actualizar imágenes de tipologías
+  for (const [folderName, imageUrls] of Object.entries(results)) {
+    if (folderName === 'Edificio') continue; // Ya se procesó
+    
+    const tipologias = TIPOLOGIA_MAP[folderName] || [folderName];
+    
+    for (const tipologia of tipologias) {
+      // Para 2D, actualizar ambas variantes si existen unidades
+      if (folderName === '2D') {
+        await updateTipologiaImages(finalBuildingSlug, '2D1B', imageUrls);
+        await updateTipologiaImages(finalBuildingSlug, '2D2B', imageUrls);
+      } else {
+        await updateTipologiaImages(finalBuildingSlug, tipologia, imageUrls);
+      }
+    }
+  }
+  
+  console.log(`\n${'='.repeat(60)}`);
+  console.log(`✨ Proceso completado\n`);
+  console.log(`📊 Resumen:`);
+  
+  for (const folderName of folders) {
+    const folderStats = stats[folderName];
+    if (folderStats) {
+      const total = folderStats.total || 0;
+      const uploaded = folderStats.uploaded || 0;
+      const skipped = folderStats.skipped || 0;
+      console.log(`   - ${folderName}: ${total} total (${uploaded} subidas, ${skipped} ya existían)`);
+    } else {
+      console.log(`   - ${folderName}: 0 imagen(es)`);
+    }
+  }
+}
+
+main().catch(console.error);

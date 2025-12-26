@@ -1,0 +1,69 @@
+# UI/Componentes (Next 14, TS estricto, Tailwind, Framer Motion)
+
+- Server Components por defecto; client solo si hay estado/efectos.
+- A11y: focus visible, labels, roles/aria, targets ≥44px, alt en imágenes.
+- Perf/SEO: next/image, metadatos/OG, revalidate sensato.
+- Añade tests (render + interacción básica) si creas un componente nuevo.
+- UI: Tailwind, dark theme, rounded-2xl, focus-ring.
+- A11y y perf tienen misma prioridad que diseño.
+- Respetar prefers-reduced-motion para animaciones.
+- Componentes reutilizables con props tipadas.
+- Manejo de estados de carga y error.
+- Responsive design mobile-first.
+
+## Testing y Warnings
+
+### Reglas de Testing
+- **Tests obligatorios:** Cada componente nuevo debe tener tests unitarios.
+- **Cobertura mínima:** Render básico + interacciones principales + edge cases.
+- **Mocks consistentes:** Usar mocks estándar para Next.js, Framer Motion, analytics.
+- **Naming:** `ComponentName.test.tsx` para componentes, `hookName.test.ts` para hooks.
+
+### Corrección de Warnings
+- **React act():** Envolver TODAS las actualizaciones de estado en `act()` en tests.
+- **React.forwardRef():** Usar `forwardRef` para componentes que reciben refs.
+- **Atributos booleanos:** Convertir `layout={true}` a `layout="position"` en Framer Motion.
+- **Props de Next/Image:** Filtrar props no válidas (fill, priority, blurDataURL) en mocks.
+- **Eventos asíncronos:** Usar `waitFor()` para esperar cambios de estado.
+
+### Patrones de Testing
+```typescript
+// ✅ Correcto - act() para actualizaciones de estado
+await act(async () => {
+  fireEvent.click(button);
+});
+
+// ✅ Correcto - forwardRef para componentes con refs
+export const Component = forwardRef<HTMLDivElement, Props>((props, ref) => {
+  // ...
+});
+
+// ✅ Correcto - atributos string en Framer Motion
+<motion.div layout="position" />
+
+// ✅ Correcto - mocks de Next/Image
+jest.mock('next/image', () => {
+  return function MockImage({ src, alt, ...props }: any) {
+    const imgProps = { ...props };
+    delete imgProps.fill;
+    delete imgProps.priority;
+    return <img src={src} alt={alt} {...imgProps} />;
+  };
+});
+```
+
+### Comandos de QA
+```bash
+# Ejecutar tests con warnings visibles
+pnpm test --passWithNoTests
+
+# Ejecutar tests específicos
+pnpm test ComponentName.test.tsx
+
+# Verificar cobertura
+pnpm test --coverage
+```
+description:
+globs:
+alwaysApply: false
+---

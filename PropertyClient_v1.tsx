@@ -55,7 +55,7 @@ import { UnitSelector } from "@components/UnitSelector";
 import { CostTable } from "@components/cost/CostTable";
 import { BookingForm } from "@components/forms/BookingForm";
 import { RelatedList } from "@components/lists/RelatedList";
-import { StickyMobileCTA } from "@components/StickyMobileCTA";
+import StickyMobileCTA from "@components/marketing/StickyMobileCTA";
 // import { PropertyQuotationPanel } from "@components/quotation/PropertyQuotationPanel";
 import { Header } from "@components/marketing/Header";
 import { buildWaLink } from "@lib/whatsapp";
@@ -128,7 +128,7 @@ export function PropertyClient({ building, relatedBuildings, defaultUnitId }: Pr
   }, []);
 
   // Variantes de animación para badges escalonados - MEJORADAS
-  const badgeVariants = {
+  const badgeVariants: any = {
     hidden: { opacity: 0, y: -20, scale: 0.8, rotateX: -15 },
     visible: (i: number) => ({
       opacity: 1,
@@ -154,7 +154,7 @@ export function PropertyClient({ building, relatedBuildings, defaultUnitId }: Pr
   };
 
   // Variantes para sticky top - MEJORADAS
-  const stickyVariants = {
+  const stickyVariants: any = {
     hidden: {
       opacity: 0,
       y: -30,
@@ -187,7 +187,7 @@ export function PropertyClient({ building, relatedBuildings, defaultUnitId }: Pr
   };
 
   // Variantes para CTAs premium - MEJORADAS
-  const ctaVariants = {
+  const ctaVariants: any = {
     hover: {
       scale: 1.03,
       y: -2,
@@ -208,7 +208,7 @@ export function PropertyClient({ building, relatedBuildings, defaultUnitId }: Pr
   };
 
   // Variantes para scroll animations - MEJORADAS
-  const scrollVariants = {
+  const scrollVariants: any = {
     hidden: {
       opacity: 0,
       y: 60,
@@ -229,7 +229,7 @@ export function PropertyClient({ building, relatedBuildings, defaultUnitId }: Pr
 
   // NUEVAS VARIANTES PARA MEJORAR LA EXPERIENCIA
   // Variantes para hero section
-  const heroVariants = {
+  const heroVariants: any = {
     hidden: { opacity: 0, y: 30 },
     visible: {
       opacity: 1,
@@ -243,7 +243,7 @@ export function PropertyClient({ building, relatedBuildings, defaultUnitId }: Pr
   };
 
   // Variantes para elementos de hero
-  const heroItemVariants = {
+  const heroItemVariants: any = {
     hidden: { opacity: 0, x: -20 },
     visible: {
       opacity: 1,
@@ -256,7 +256,7 @@ export function PropertyClient({ building, relatedBuildings, defaultUnitId }: Pr
   };
 
   // Variantes para características principales
-  const featureVariants = {
+  const featureVariants: any = {
     hidden: { opacity: 0, scale: 0.9 },
     visible: (i: number) => ({
       opacity: 1,

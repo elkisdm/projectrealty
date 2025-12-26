@@ -1,6 +1,27 @@
 export function clx(...classes: (string | false | null | undefined)[]) {
   return classes.filter(Boolean).join(" ");
 }
+
+// cn function compatible with classnames library (supports objects)
+export function cn(...inputs: any[]): string {
+  const classes: string[] = [];
+  
+  for (const input of inputs) {
+    if (!input) continue;
+    
+    if (typeof input === 'string') {
+      classes.push(input);
+    } else if (typeof input === 'object' && !Array.isArray(input)) {
+      for (const [key, value] of Object.entries(input)) {
+        if (value) {
+          classes.push(key);
+        }
+      }
+    }
+  }
+  
+  return classes.join(' ');
+}
 export function formatPrice(value?: number) {
   return new Intl.NumberFormat("es-CL", {
     style: "currency",

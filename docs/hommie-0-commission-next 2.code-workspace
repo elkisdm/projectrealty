@@ -1,0 +1,15 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		},
+		{
+			"path": "../../../Downloads/Guillermo 2632"
+		}
+	],
+	"settings": {
+		"typescript.tsdk": "node_modules/typescript/lib",
+		"git.ignoreLimitWarning": true,
+		"liveServer.settings.multiRootWorkspaceName": "hommie-0-commission-next"
+	}
+}

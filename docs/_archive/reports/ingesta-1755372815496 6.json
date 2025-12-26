@@ -1,0 +1,20 @@
+{
+  "timestamp": "2025-08-16T19:33:35.496Z",
+  "duration": 5,
+  "stats": {
+    "totalRows": 1473,
+    "processedRows": 1447,
+    "skippedRows": 26,
+    "buildings": 270,
+    "units": 1447,
+    "errors": []
+  },
+  "config": {
+    "BATCH_SIZE": 100,
+    "MAX_RETRIES": 3,
+    "PROVIDER": "assetplan",
+    "CSV_DELIMITER": ";",
+    "BACKUP_ENABLED": true,
+    "VALIDATION_ENABLED": true
+  }
+}

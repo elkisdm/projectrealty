@@ -387,14 +387,14 @@ export function PropertyClient({ building, relatedBuildings, defaultUnitId }: Pr
 
   // Amenidades para el componente V3 - Memoizado para performance
   const amenityChips = useMemo((): AmenityChip[] => [
-    { icon: <Wifi className="w-4 h-4" />, label: "WiFi", category: "basic" },
-    { icon: <Dumbbell className="w-4 h-4" />, label: "Gimnasio", category: "luxury" },
-    { icon: <Coffee className="w-4 h-4" />, label: "Cafetería", category: "luxury" },
-    { icon: <Car className="w-4 h-4" />, label: "Estacionamiento", category: "basic" },
-    { icon: <Shield className="w-4 h-4" />, label: "Seguridad 24/7", category: "security" },
-    { icon: <Users className="w-4 h-4" />, label: "Conserjería", category: "basic" },
-    { icon: <Package className="w-4 h-4" />, label: "Bodega", category: "basic" },
-    { icon: <Star className="w-4 h-4" />, label: "Terraza", category: "outdoor" }
+    { icon: Wifi, label: "WiFi", category: "basic" },
+    { icon: Dumbbell, label: "Gimnasio", category: "luxury" },
+    { icon: Coffee, label: "Cafetería", category: "luxury" },
+    { icon: Car, label: "Estacionamiento", category: "basic" },
+    { icon: Shield, label: "Seguridad 24/7", category: "security" },
+    { icon: Users, label: "Conserjería", category: "basic" },
+    { icon: Package, label: "Bodega", category: "basic" },
+    { icon: Star, label: "Terraza", category: "outdoor" }
   ].filter((item, index, self) =>
     index === self.findIndex(t => t.label === item.label)
   ), []);
@@ -513,19 +513,26 @@ export function PropertyClient({ building, relatedBuildings, defaultUnitId }: Pr
               </section>
 
               {/* V3 Price Breakdown para móvil */}
-              <motion.section
-                className="lg:hidden"
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-50px" }}
-                transition={DESIGN_TOKENS.animations.slideUp}
-              >
-                <PriceBreakdown
-                  priceMonthly={originalPrice}
-                  priceFrom={originalPrice + 50000}
-                  discountPercentage={10}
-                />
-              </motion.section>
+              {selectedUnit && (
+                <motion.section
+                  className="lg:hidden"
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-50px" }}
+                  transition={DESIGN_TOKENS.animations.slideUp}
+                >
+                  <PriceBreakdown
+                    building={building}
+                    selectedUnit={selectedUnit}
+                    originalPrice={originalPrice}
+                    discountPrice={Math.round(originalPrice * 0.9)}
+                    unitDetails={selectedUnit}
+                    onScheduleVisit={() => setIsVisitSchedulerOpen(true)}
+                    onSendQuotation={() => setIsVisitSchedulerOpen(true)}
+                    variant="catalog"
+                  />
+                </motion.section>
+              )}
 
               {/* V3 Amenity Chips */}
               <motion.section
@@ -535,7 +542,7 @@ export function PropertyClient({ building, relatedBuildings, defaultUnitId }: Pr
                 transition={DESIGN_TOKENS.animations.slideUp}
               >
                 <Suspense fallback={<AmenityChipsSkeleton />}>
-                  <AmenityChips amenities={amenityChips} />
+                  <AmenityChips items={amenityChips} />
                 </Suspense>
               </motion.section>
 
@@ -548,15 +555,12 @@ export function PropertyClient({ building, relatedBuildings, defaultUnitId }: Pr
               >
                 <Suspense fallback={<BuildingLinkCardSkeleton />}>
                   <BuildingLinkCard
-                    id={building.id}
-                    name={building.name}
-                    address={building.address}
-                    commune={building.comuna}
+                    buildingName={building.name}
                     photo={building.gallery[0] || "/images/edificio/original_79516B40-7BA9-4F4E-4F7D-7BA4C0A2A938-mg0578.jpg"}
-                    priceFrom={originalPrice}
-                    bedrooms={2}
-                    bathrooms={1}
-                    area={45}
+                    href={`/propiedad/${building.slug}`}
+                    commune={building.comuna}
+                    unitCount={availableUnits.length}
+                    description={building.address}
                   />
                 </Suspense>
               </motion.section>
@@ -580,28 +584,30 @@ export function PropertyClient({ building, relatedBuildings, defaultUnitId }: Pr
               {/* V3 Sticky CTA */}
               <StickyCtaBar
                 priceMonthly={originalPrice}
-                onScheduleVisit={() => setIsVisitSchedulerOpen(true)}
+                onBook={() => setIsVisitSchedulerOpen(true)}
                 onWhatsApp={() => {
                   const waLink = `https://wa.me/56912345678?text=Hola! Me interesa el departamento ${selectedUnit?.tipologia} en ${building.name}. ¿Podrías darme más información?`;
                   window.open(waLink, "_blank");
                 }}
-                onCall={() => window.open('tel:+56912345678', '_self')}
                 propertyId={building.id}
                 commune={building.comuna}
+                unit={selectedUnit || undefined}
+                buildingId={building.id}
               />
             </div>
 
             {/* V3 Sticky CTA Sidebar for Desktop */}
             <StickyCtaSidebar
               priceMonthly={originalPrice}
-              onScheduleVisit={() => setIsVisitSchedulerOpen(true)}
+              onBook={() => setIsVisitSchedulerOpen(true)}
               onWhatsApp={() => {
                 const waLink = `https://wa.me/56912345678?text=Hola! Me interesa el departamento ${selectedUnit?.tipologia} en ${building.name}. ¿Podrías darme más información?`;
                 window.open(waLink, "_blank");
               }}
-              onCall={() => window.open('tel:+56912345678', '_self')}
               propertyId={building.id}
               commune={building.comuna}
+              unit={selectedUnit || undefined}
+              buildingId={building.id}
             />
           </div>
         </main>

@@ -1,0 +1,18 @@
+{
+  "timestamp": "2025-09-19T20:25:26.861Z",
+  "cleanup": {
+    "directoriesCreated": 21,
+    "documentationMoved": 22,
+    "configMoved": 4,
+    "componentsMoved": 6,
+    "duplicatesRemoved": 9,
+    "tempDirectoriesMoved": 5
+  },
+  "structure": {
+    "docs": "Documentación organizada por categorías",
+    "config": "Configuración centralizada",
+    "components": "Componentes organizados",
+    "reports": "Reportes organizados",
+    "temp": "Directorios temporales ocultos"
+  }
+}

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+  <title>settings - filled - sm</title>
+  <desc>Ícono de configuración</desc>
+  
+  
+  <defs>
+    <filter id="glass-settings" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="blur" />
+      <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7" result="glow" />
+      <feBlend in="SourceGraphic" in2="glow" mode="normal" />
+    </filter>
+  </defs>
+  <g filter="url(#glass-settings)" style="backdrop-filter: blur(8px);">
+    <rect width="24" height="24" fill="rgba(255, 255, 255, 0.06)" stroke="rgba(255, 255, 255, 0.10)" stroke-width="0.5" rx="4" />
+    <g fill="#6D4AFF" stroke="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M 12 15" fill="none" stroke="currentColor" />
+    <path d="A 3 3 0 1 1 12 15"  />
+    <path d="M 19.4 15"  />
+    <path d="A 1.65 1.65 0 0 0 21 13.35"  />
+    <path d="A 1.65 1.65 0 0 0 19.4 12"  />
+    <path d="L 17.75 12"  />
+    <path d="A 1.65 1.65 0 0 0 16.1 10.35"  />
+    <path d="A 1.65 1.65 0 0 0 14.45 12"  />
+    <path d="L 12 12"  />
+    <path d="A 1.65 1.65 0 0 0 10.35 13.65"  />
+    <path d="A 1.65 1.65 0 0 0 12 15"  />
+    </g>
+  </g>
+</svg>
