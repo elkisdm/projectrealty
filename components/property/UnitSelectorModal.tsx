@@ -183,8 +183,8 @@ function UnitSelectorModalContent({
     // Validaciones iniciales con logging detallado
     if (!building) {
       logger.error("UnitSelectorModal: Invalid building", {
-        hasBuilding: !!building,
-        buildingId: building?.id || 'undefined',
+        hasBuilding: false,
+        buildingId: 'undefined',
         unitId: unit?.id || 'undefined',
         pathname: pathname || 'undefined',
       });
@@ -284,61 +284,44 @@ function UnitSelectorModalContent({
       onClose();
       
       // Navegar usando router.push con scroll: false
-      // router.push puede retornar undefined o una Promise, necesitamos manejar ambos casos
-      try {
-        const pushResult = router.push(newUrl, { scroll: false });
-        
-        // Si router.push retorna una Promise, manejar errores
-        if (pushResult && typeof pushResult.catch === 'function') {
-          pushResult.catch((routerError) => {
-            // Si router.push falla, loggear y resetear estado
-            const routerErrorDetails: Record<string, unknown> = {
-              errorMessage: routerError instanceof Error ? routerError.message : String(routerError),
-              errorType: routerError instanceof Error ? routerError.constructor.name : typeof routerError,
-              newUrl: newUrl || 'undefined',
-              pathname: pathname || 'undefined',
-            };
+      // router.push puede retornar void o Promise<void>, envolver en Promise.resolve para manejar ambos casos
+      Promise.resolve(router.push(newUrl, { scroll: false })).catch((routerError: unknown) => {
+        // Si router.push falla, loggear y resetear estado
+        const routerErrorDetails: Record<string, unknown> = {
+          errorMessage: routerError instanceof Error ? routerError.message : String(routerError),
+          errorType: routerError instanceof Error ? routerError.constructor.name : typeof routerError,
+          newUrl: newUrl || 'undefined',
+          pathname: pathname || 'undefined',
+        };
 
-            if (building) {
-              routerErrorDetails.buildingId = building.id || 'undefined';
-              routerErrorDetails.buildingSlug = building.slug || 'undefined';
-            }
-
-            if (unit) {
-              routerErrorDetails.unitId = unit.id || 'undefined';
-              routerErrorDetails.unitSlug = unit.slug || 'undefined';
-            }
-
-            if (routerError instanceof Error && routerError.stack) {
-              routerErrorDetails.stack = routerError.stack;
-            }
-
-            logger.error("Error navigating to unit (router.push failed)", routerErrorDetails);
-            setIsNavigating(false);
-            // Trackear error de navegación
-            track("unit_navigation_error", {
-              property_id: building?.id || 'unknown',
-              unit_id: unit?.id || 'unknown',
-              error: routerError instanceof Error ? routerError.message : String(routerError),
-            });
-          });
-        } else {
-          // Si router.push no retorna una Promise, resetear estado después de un breve delay
-          // Esto permite que la navegación se complete
-          setTimeout(() => {
-            setIsNavigating(false);
-          }, 100);
+        if (building) {
+          routerErrorDetails.buildingId = building.id || 'undefined';
+          routerErrorDetails.buildingSlug = building.slug || 'undefined';
         }
-      } catch (pushError) {
-        // Si router.push lanza un error síncrono
-        logger.error("Error calling router.push", {
-          errorMessage: pushError instanceof Error ? pushError.message : String(pushError),
-          errorType: pushError instanceof Error ? pushError.constructor.name : typeof pushError,
-          newUrl,
-          pathname,
-        });
+
+        if (unit) {
+          routerErrorDetails.unitId = unit.id || 'undefined';
+          routerErrorDetails.unitSlug = unit.slug || 'undefined';
+        }
+
+        if (routerError instanceof Error && routerError.stack) {
+          routerErrorDetails.stack = routerError.stack;
+        }
+
+        logger.error("Error navigating to unit (router.push failed)", routerErrorDetails);
         setIsNavigating(false);
-      }
+        // Trackear error de navegación
+        track("unit_navigation_error", {
+          property_id: building.id || 'unknown',
+          unit_id: unit.id || 'unknown',
+          error: routerError instanceof Error ? routerError.message : String(routerError),
+        });
+      }).finally(() => {
+        // Resetear estado después de un breve delay si no hubo error
+        setTimeout(() => {
+          setIsNavigating(false);
+        }, 100);
+      });
     } catch (error) {
       // Construir objeto de error directamente con valores seguros
       const errorDetails = {
