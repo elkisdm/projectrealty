@@ -116,11 +116,11 @@ export async function GET(request: NextRequest) {
       );
     }
     
-    // Validar que no se soliciten más de 5 días
+    // Validar que no se soliciten más de 7 días (una semana completa)
     const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-    if (daysDiff > 5) {
+    if (daysDiff > 7) {
       return NextResponse.json(
-        { error: 'No se pueden consultar más de 5 días de disponibilidad' },
+        { error: 'No se pueden consultar más de 7 días de disponibilidad' },
         { status: 400 }
       );
     }
