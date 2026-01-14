@@ -1,6 +1,5 @@
 import { Metadata } from 'next';
 import { Mail, Phone, Linkedin, ExternalLink, Github } from 'lucide-react';
-import { DownloadPDFButton } from './components/DownloadPDFButton';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 export const metadata: Metadata = {
@@ -89,15 +88,7 @@ export default function CVPage() {
                                     <span className="hidden sm:inline">LinkedIn</span>
                                     <span className="sm:hidden">LinkedIn</span>
                                 </a>
-                                <div className="hidden sm:block">
-                                    <DownloadPDFButton />
-                                </div>
                             </div>
-                        </div>
-
-                        {/* Botón PDF en mobile */}
-                        <div className="mt-3 sm:hidden">
-                            <DownloadPDFButton />
                         </div>
                     </section>
 
