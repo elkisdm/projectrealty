@@ -81,6 +81,7 @@ function isMvpRoute(pathname: string): boolean {
   // Rutas exactas MVP
   if (pathname === "/") return true;
   if (pathname === "/buscar" || pathname === "/search") return true;
+  if (pathname === "/cv") return true;
   
   // Rutas de propiedad (legacy y nueva estructura SEO)
   if (pathname.startsWith("/property/")) return true;
