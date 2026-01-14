@@ -216,6 +216,11 @@ export default function CVPage() {
                                             description: 'Landing page para asesoría inmobiliaria y calculadora de rentabilidad.',
                                             projectUrl: 'https://selectcapital.cl/',
                                         },
+                                        {
+                                            title: 'LANDING PROYECTO INMOBILIARIO',
+                                            description: 'Landing page para proyecto inmobiliario en Santiago Centro. Incluye tipologías, ubicación, cotizador y formulario de contacto.',
+                                            projectUrl: 'https://selectcapital.cl/landing/proyecto-inmobiliario/base.html',
+                                        },
                                     ].map((project) => (
                                         <div
                                             key={project.title}
