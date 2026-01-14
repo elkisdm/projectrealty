@@ -41,7 +41,7 @@ export default function CVPage() {
                     <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(0,0,0,0.02),rgba(0,0,0,0.1))] dark:bg-[linear-gradient(to_bottom,rgba(0,0,0,0.2),rgba(0,0,0,0.6))]" />
                 </div>
 
-                <main className="relative z-10 mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8 md:px-8 md:py-10 lg:py-12">
+                <main id="cv-content" className="relative z-10 mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8 md:px-8 md:py-10 lg:py-12">
                     {/* Header con ThemeToggle */}
                     <div className="mb-6 flex justify-end sm:mb-8">
                         <ThemeToggle />

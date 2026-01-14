@@ -13,8 +13,9 @@ export function DownloadPDFButton() {
             const html2canvas = (await import('html2canvas')).default;
             const { jsPDF } = await import('jspdf');
 
-            const element = document.querySelector('main');
+            const element = document.getElementById('cv-content');
             if (!element) {
+                console.error('No se encontró el elemento #cv-content');
                 setIsGenerating(false);
                 return;
             }
