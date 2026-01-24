@@ -89,6 +89,10 @@ export function MobileFilterSheet({
           {/* Bottom Sheet */}
           <motion.div
             ref={sheetRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="sheet-title"
+            aria-describedby="sheet-description"
             className="fixed bottom-0 left-0 right-0 z-[100] bg-surface dark:bg-gray-900 rounded-t-3xl shadow-2xl safe-area-bottom"
             style={{
               maxHeight,
@@ -112,7 +116,10 @@ export function MobileFilterSheet({
 
             {/* Header */}
             <div className="flex items-center justify-between px-6 pb-4 border-b border-border dark:border-gray-700">
-              <h2 className="text-xl font-bold text-text">{title}</h2>
+              <div>
+                <h2 id="sheet-title" className="text-xl font-bold text-text">{title}</h2>
+                <p id="sheet-description" className="sr-only">Ajusta los filtros para encontrar departamentos</p>
+              </div>
               <button
                 onClick={onClose}
                 className="
