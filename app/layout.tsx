@@ -3,7 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@lib/theme-context";
 import { Header } from "@components/marketing/Header";
-import { Footer } from "@components/marketing/Footer";
+import { Footer } from "@components/footer";
 import { getFlagValue } from "@lib/flags";
 import { getBaseUrl } from "@lib/seo/metadata";
 import Providers from "./providers";
