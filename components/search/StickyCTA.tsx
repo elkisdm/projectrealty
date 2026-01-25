@@ -14,12 +14,17 @@ export const StickyCTA = memo(function StickyCTA({
   isLoading = false,
   onClick,
   className = "",
+  label,
 }: StickyCTAProps) {
   const prefersReducedMotion = useReducedMotion();
 
   const getButtonText = useMemo(() => {
     if (isLoading) {
       return "Buscando...";
+    }
+    // Use custom label if provided
+    if (label) {
+      return label;
     }
     if (resultsCount === undefined) {
       return "Ver departamentos";
@@ -31,7 +36,7 @@ export const StickyCTA = memo(function StickyCTA({
       return "Ver 1 departamento";
     }
     return `Ver ${resultsCount} departamentos`;
-  }, [isLoading, resultsCount]);
+  }, [isLoading, resultsCount, label]);
 
   const isDisabled = isLoading || resultsCount === 0;
 

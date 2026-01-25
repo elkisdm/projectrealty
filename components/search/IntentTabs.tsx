@@ -8,6 +8,8 @@ interface IntentTabsProps {
   value: "rent" | "buy" | "invest";
   onChange: (value: "rent" | "buy" | "invest") => void;
   className?: string;
+  /** Visual variant: "default" or "subtle" (reduced visual weight) */
+  variant?: "default" | "subtle";
 }
 
 /**
@@ -15,7 +17,7 @@ interface IntentTabsProps {
  * QuintoAndar-style app-like panel with tabs
  * Only "Arrendar" is functional; others show "Próximamente" tooltip
  */
-export function IntentTabs({ value, onChange, className = "" }: IntentTabsProps) {
+export function IntentTabs({ value, onChange, className = "", variant = "default" }: IntentTabsProps) {
   const prefersReducedMotion = useReducedMotion();
   const [hoveredTab, setHoveredTab] = useState<string | null>(null);
 
@@ -25,8 +27,11 @@ export function IntentTabs({ value, onChange, className = "" }: IntentTabsProps)
     { id: "invest", label: "Inversión", disabled: true },
   ] as const;
 
+  // Subtle variant has smaller, less prominent styling
+  const isSubtle = variant === "subtle";
+
   return (
-    <div className={`mb-6 ${className}`}>
+    <div className={`${isSubtle ? "mb-2" : "mb-6"} ${className}`}>
       <div className="flex gap-2" role="tablist" aria-label="Tipo de búsqueda">
         {tabs.map((tab) => (
           <div key={tab.id} className="relative flex-1">
@@ -40,15 +45,24 @@ export function IntentTabs({ value, onChange, className = "" }: IntentTabsProps)
               onMouseEnter={() => setHoveredTab(tab.id)}
               onMouseLeave={() => setHoveredTab(null)}
               className={`
-                relative w-full px-4 py-3 rounded-xl text-sm font-semibold
+                relative w-full rounded-xl
                 transition-all duration-200
                 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary
-                min-h-[44px]
+                ${isSubtle
+                  ? "px-3 py-2 text-xs font-medium min-h-[36px]"
+                  : "px-4 py-3 text-sm font-semibold min-h-[44px]"
+                }
                 ${value === tab.id
-                  ? "bg-primary text-white shadow-md shadow-primary/25"
+                  ? isSubtle
+                    ? "bg-primary/10 text-primary border border-primary/30"
+                    : "bg-primary text-white shadow-md shadow-primary/25"
                   : tab.disabled
-                    ? "bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed opacity-60"
-                    : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+                    ? isSubtle
+                      ? "bg-gray-50 dark:bg-gray-800/50 text-gray-400 dark:text-gray-600 cursor-not-allowed opacity-50"
+                      : "bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed opacity-60"
+                    : isSubtle
+                      ? "bg-gray-50 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                      : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
                 }
               `}
             >

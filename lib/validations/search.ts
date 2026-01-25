@@ -14,7 +14,7 @@ export const searchFormInputSchema = z.object({
   precioMin: z.string().optional(),
   
   // New fields for Hero Cocktail
-  intent: z.enum(["rent", "buy", "invest"]).default("rent"),
+  intent: z.enum(["rent", "buy", "invest"]).optional(),
   moveIn: z.enum(["now", "30d", "60d"]).optional(),
   beds: z.enum(["studio", "1", "2", "3plus"]).optional(),
   priceMax: z.string().optional(),
@@ -76,8 +76,8 @@ export const searchFormSchema = searchFormInputSchema
       comuna: z.string().optional(),
       precioMin: z.number().min(0, "El precio mínimo debe ser mayor o igual a 0").optional(),
       
-      // New fields (intent is required after transformation)
-      intent: z.enum(["rent", "buy", "invest"]),
+      // New fields (intent defaults to "rent" if not provided)
+      intent: z.enum(["rent", "buy", "invest"]).optional(),
       moveIn: z.enum(["now", "30d", "60d"]).optional(),
       beds: z.enum(["studio", "1", "2", "3plus"]).optional(),
       priceMax: z.number().min(0, "El precio máximo debe ser mayor o igual a 0").optional(),

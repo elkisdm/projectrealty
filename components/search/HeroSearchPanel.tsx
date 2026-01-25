@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { searchFormInputSchema, type SearchFormInput } from "@/lib/validations/search";
 import { useSearchFormContext } from "@/components/marketing/SearchFormContext";
 import { mapFormToQueryParams } from "@/lib/utils/submitMapper";
+import Image from "next/image";
 import { IntentTabs } from "./IntentTabs";
 import { UniversalSearchInput, type ParsedSearchData } from "./UniversalSearchInput";
 import { HeroQuickPills } from "./HeroQuickPills";
@@ -90,11 +91,19 @@ export default function HeroSearchPanel({
       id="hero-section"
       className={`relative w-full overflow-hidden min-h-[520px] md:min-h-[600px] ${className}`}
     >
-      {/* Background gradient (placeholder for lifestyle image) */}
-      {/* TODO: Add lifestyle hero image at /public/images/hero-lifestyle.jpg (1920x600+) */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-secondary/10 to-primary/5" aria-hidden="true">
+      {/* Background hero image */}
+      <div className="absolute inset-0" aria-hidden="true">
+        <Image
+          src="/images/lascondes-hero.jpg"
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          quality={85}
+          className="object-cover"
+        />
         {/* Overlay gradient for text readability */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/25 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent" />
       </div>
 
       {/* Decorative blobs */}
@@ -117,50 +126,53 @@ export default function HeroSearchPanel({
           <MotionWrapper direction="up" delay={0.1}>
             {/* Glass card */}
             <div className="rounded-3xl bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border border-black/5 dark:border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.18)] p-6 md:p-8">
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-                {/* Intent Tabs */}
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                {/* Intent Tabs - reduced visual weight */}
                 <IntentTabs
                   value={intent}
                   onChange={(value) => setValue("intent", value)}
+                  variant="subtle"
                 />
 
-                {/* Headline */}
-                <div className="space-y-2">
-                  <h1 className="text-4xl md:text-5xl font-semibold tracking-tight leading-[1.05] text-text">
+                {/* Headline - more prominent with extra spacing */}
+                <div className="space-y-3 pt-2">
+                  <h1 className="text-4xl md:text-5xl font-bold tracking-tight leading-[1.05] text-text">
                     Arriendos. Visitas. Check-in. Listo.
                   </h1>
-                  <p className="text-base text-text-muted">
-                    Dime dónde y tu presupuesto. Te muestro 3 opciones verificadas.
+                  <p className="text-lg text-text-muted">
+                    Dime dónde. Yo me encargo del resto.
                   </p>
                 </div>
 
-                {/* Universal Search Input */}
-                <UniversalSearchInput
-                  value={q || ""}
-                  onChange={(value) => setValue("q", value)}
-                  onParsedData={handleParsedData}
-                  placeholder="Comuna, barrio o metro…"
-                />
+                {/* Universal Search Input - dominant element */}
+                <div className="pt-2">
+                  <UniversalSearchInput
+                    value={q || ""}
+                    onChange={(value) => setValue("q", value)}
+                    onParsedData={handleParsedData}
+                    placeholder="Comuna, barrio o metro…"
+                  />
+                </div>
 
-                {/* Quick Pills */}
+                {/* Quick Pills - Tipología + Features (Airbnb-style) */}
                 <HeroQuickPills
                   beds={beds}
                   petFriendly={petFriendly}
                   parking={parking}
-                  onBedsChange={(value) => setValue("beds", value as any)}
-                  onPetFriendlyChange={(value) => setValue("petFriendly", value as any)}
-                  onParkingChange={(value) => setValue("parking", value as any)}
+                  onBedsChange={(value) => setValue("beds", value as SearchFormInput["beds"])}
+                  onPetFriendlyChange={(value) => setValue("petFriendly", value as SearchFormInput["petFriendly"])}
+                  onParkingChange={(value) => setValue("parking", value as SearchFormInput["parking"])}
                 />
 
-                {/* Compact Row: Budget + Move-in */}
+                {/* Compact Row - Presupuesto + Mudanza (QuintoAndar-style) */}
                 <CompactRow
                   priceMax={priceMax}
                   moveIn={moveIn}
                   onPriceMaxChange={(value) => setValue("priceMax", value)}
-                  onMoveInChange={(value) => setValue("moveIn", value as any)}
+                  onMoveInChange={(value) => setValue("moveIn", value as SearchFormInput["moveIn"])}
                 />
 
-                {/* CTA */}
+                {/* CTA - Primary action */}
                 <HeroCTA
                   isSubmitting={isSubmitting}
                   onMoreFiltersClick={() => setShowFiltersSheet(true)}
@@ -199,20 +211,20 @@ export default function HeroSearchPanel({
         </div>
       </div>
 
-      {/* Advanced Filters Sheet */}
+      {/* Advanced Filters Sheet - LEVEL 2 Progressive Disclosure */}
       <FilterBottomSheet
         isOpen={showFiltersSheet}
         onClose={() => setShowFiltersSheet(false)}
         filters={{
-          precioMin: watch("precioMin"),
-          precioMax: priceMax,
+          precioMin: watch("precioMin") ? Number(watch("precioMin")) : undefined,
+          precioMax: priceMax ? Number(priceMax) : undefined,
           estacionamiento: parking === "true" ? true : parking === "false" ? false : undefined,
           bodega: watch("storage") === "true" ? true : watch("storage") === "false" ? false : undefined,
           mascotas: petFriendly === "true" ? true : petFriendly === "false" ? false : undefined,
         }}
         onFiltersChange={(filters) => {
-          if (filters.precioMin !== undefined) setValue("precioMin", filters.precioMin);
-          if (filters.precioMax !== undefined) setValue("priceMax", filters.precioMax.toString());
+          if (filters.precioMin !== undefined) setValue("precioMin", String(filters.precioMin));
+          if (filters.precioMax !== undefined) setValue("priceMax", String(filters.precioMax));
           if (filters.estacionamiento !== undefined)
             setValue("parking", filters.estacionamiento ? "true" : "false");
           if (filters.bodega !== undefined)
@@ -221,6 +233,13 @@ export default function HeroSearchPanel({
             setValue("petFriendly", filters.mascotas ? "true" : "false");
         }}
         resultsCount={availableCount}
+        // NEW: LEVEL 2 fields for progressive disclosure
+        beds={beds}
+        priceMax={priceMax}
+        moveIn={moveIn}
+        onBedsChange={(value) => setValue("beds", value as SearchFormInput["beds"])}
+        onPriceMaxChange={(value) => setValue("priceMax", value)}
+        onMoveInChange={(value) => setValue("moveIn", value as SearchFormInput["moveIn"])}
       />
 
       {/* Background gradient inferior */}

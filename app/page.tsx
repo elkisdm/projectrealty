@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import HeroSearchPanel from "@/components/search/HeroSearchPanel";
 import { FeaturedUnitsSection } from "@/components/marketing/FeaturedUnitsSection";
 import { BenefitsSection } from "@/components/marketing/BenefitsSection";
-import { StickySearchWrapper } from "@/components/marketing/StickySearchWrapper";
+// StickySearchWrapper removed - hero is now clean with progressive disclosure
 import { SearchFormProvider } from "@/components/marketing/SearchFormContext";
 import { generateBaseMetadata } from "@/lib/seo/metadata";
 import { HomePageTracker } from "./HomePageTracker";
@@ -37,8 +37,6 @@ export default async function Home() {
     <SearchFormProvider>
       <main className="min-h-screen bg-bg text-text">
         <HomePageTracker />
-        {/* Sticky Search Bar - aparece cuando el hero completo ha pasado */}
-        <StickySearchWrapper heroId="hero-section" />
         {/* Hero Cocktail - combines Airbnb, Zillow, QuintoAndar patterns */}
         <HeroSearchPanel availableCount={availableCount} minPrice={minPrice} />
 

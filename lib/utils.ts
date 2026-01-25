@@ -1,5 +1,6 @@
-export function clx(...classes: (string | false | null | undefined)[]) {
-  return classes.filter(Boolean).join(" ");
+type ClxInput = string | false | null | undefined | (string | false | null | undefined)[];
+export function clx(...classes: ClxInput[]): string {
+  return classes.flat().filter(Boolean).join(" ");
 }
 
 // cn function compatible with classnames library (supports objects)

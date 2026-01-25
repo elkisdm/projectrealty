@@ -46,6 +46,21 @@ export function UnifiedSearchBar({
     const [mounted, setMounted] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
 
+    // Convert SearchFilters to SearchFormInput format
+    const convertFiltersToFormInput = (filters?: Partial<SearchFilters>): Partial<SearchFormInput> => {
+        if (!filters) return {};
+        return {
+            q: filters.q,
+            comuna: Array.isArray(filters.comuna) ? filters.comuna[0] : filters.comuna,
+            dormitorios: Array.isArray(filters.dormitorios) ? filters.dormitorios[0] : filters.dormitorios,
+            estacionamiento: filters.estacionamiento !== undefined ? (filters.estacionamiento ? "true" : "false") : undefined,
+            bodega: filters.bodega !== undefined ? (filters.bodega ? "true" : "false") : undefined,
+            petFriendly: filters.petFriendly !== undefined ? (filters.petFriendly ? "true" : "false") : undefined,
+            precioMin: filters.precioMin !== undefined ? String(filters.precioMin) : undefined,
+            precioMax: filters.precioMax !== undefined ? String(filters.precioMax) : undefined,
+        };
+    };
+
     const {
         register,
         handleSubmit,
@@ -55,7 +70,7 @@ export function UnifiedSearchBar({
         reset,
     } = useForm<SearchFormInput>({
         resolver: zodResolver(searchFormInputSchema),
-        defaultValues: initialFilters,
+        defaultValues: convertFiltersToFormInput(initialFilters),
     });
 
     // Watch values for UI updates
@@ -277,8 +292,8 @@ export function UnifiedSearchBar({
                                             <SearchPills
                                                 options={COMUNAS_PRINCIPALES}
                                                 selected={comuna}
-                                                onSelect={(value) => setValue('comuna', value as string | string[] | undefined)}
-                                                multiple={true}
+                                                onSelect={(value) => setValue('comuna', Array.isArray(value) ? value[0] : value)}
+                                                multiple={false}
                                             />
                                         </div>
 
@@ -455,8 +470,8 @@ export function UnifiedSearchBar({
                                             <SearchPills
                                                 options={COMUNAS_PRINCIPALES}
                                                 selected={comuna}
-                                                onSelect={(value) => setValue('comuna', value as string | string[] | undefined)}
-                                                multiple={true}
+                                                onSelect={(value) => setValue('comuna', Array.isArray(value) ? value[0] : value)}
+                                                multiple={false}
                                             />
                                         </div>
 

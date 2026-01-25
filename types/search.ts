@@ -12,6 +12,10 @@ export interface SearchFilters {
   mascotas?: boolean;
   precioMin?: number;
   precioMax?: number;
+  // New Hero Cocktail fields for progressive disclosure
+  beds?: string | string[];
+  priceMax?: string;
+  moveIn?: string;
 }
 
 export interface SearchBarContainerProps {
@@ -41,6 +45,13 @@ export interface FilterBottomSheetProps {
   onFiltersChange: (filters: SearchFilters) => void;
   resultsCount?: number;
   isLoading?: boolean;
+  // New Hero Cocktail LEVEL 2 fields
+  beds?: string | string[];
+  priceMax?: string;
+  moveIn?: string;
+  onBedsChange?: (value: string | string[] | undefined) => void;
+  onPriceMaxChange?: (value: string | undefined) => void;
+  onMoveInChange?: (value: string | undefined) => void;
 }
 
 export interface ToggleRowProps {
@@ -56,4 +67,6 @@ export interface StickyCTAProps {
   isLoading?: boolean;
   onClick: () => void;
   className?: string;
+  /** Custom label for the button (overrides default text) */
+  label?: string;
 }
