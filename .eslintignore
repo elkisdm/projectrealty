@@ -1,3 +1,8 @@
 .next/**/*
 scripts/**/*
 **/*.mjs
+# Ignorar archivos duplicados con sufijos numéricos
+**/* 2.*
+**/* 3.*
+**/* 4.*
+**/* 5.*
