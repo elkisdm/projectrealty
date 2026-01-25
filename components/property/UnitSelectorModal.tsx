@@ -325,8 +325,8 @@ function UnitSelectorModalContent({
     } catch (error) {
       // Construir objeto de error directamente con valores seguros
       const errorDetails = {
-        errorMessage: error instanceof Error ? error.message : String(error) || 'Unknown error',
-        errorType: error instanceof Error ? error.constructor.name : typeof error || 'unknown',
+        errorMessage: error instanceof Error ? error.message : (String(error) || 'Unknown error'),
+        errorType: error instanceof Error ? error.constructor.name : typeof error,
         buildingId: building?.id ?? 'undefined',
         buildingSlug: building?.slug ?? 'undefined',
         buildingComuna: building?.comuna ?? 'undefined',
