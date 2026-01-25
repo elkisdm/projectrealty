@@ -16,7 +16,7 @@ Por eso las propiedades no aparecen en el deploy de Vercel.
 
 1. Ve a [https://vercel.com/dashboard](https://vercel.com/dashboard)
 2. Inicia sesión con tu cuenta
-3. Selecciona el proyecto **"tremendoarriendo"**
+3. Selecciona el proyecto **"projectrealty"**
 
 ### Paso 2: Ir a Environment Variables
 
