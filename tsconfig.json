@@ -29,7 +29,7 @@
         "lib/*"
       ],
       "@data/*": [
-        "_workspace/data/*"
+        "data/*"
       ],
       "@schemas/*": [
         "schemas/*"
@@ -43,8 +43,15 @@
       "@types": [
         "types/index.ts"
       ],
+      "@workspace/scripts/*": [
+        "scripts/tools/*"
+      ],
+      "@workspace/data/*": [
+        "data/*"
+      ],
       "@workspace/*": [
-        "_workspace/*"
+        "scripts/tools/*",
+        "data/*"
       ]
     },
     "incremental": true,

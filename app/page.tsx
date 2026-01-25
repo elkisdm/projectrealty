@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import HeroV2 from "@/components/marketing/HeroV2";
+import HeroSearchPanel from "@/components/search/HeroSearchPanel";
 import { FeaturedUnitsSection } from "@/components/marketing/FeaturedUnitsSection";
 import { BenefitsSection } from "@/components/marketing/BenefitsSection";
 import { StickySearchWrapper } from "@/components/marketing/StickySearchWrapper";
@@ -33,16 +33,14 @@ export default async function Home() {
     ? Math.min(...allAvailableUnits.map(unit => unit.price))
     : undefined;
 
-  // Comunas fijas para el rotador (no dependen de la BD)
-  const communes = ['Santiago', 'Ñuñoa', 'Las Condes', 'Providencia', 'La Florida', 'San Miguel', 'Macul'];
-
   return (
     <SearchFormProvider>
       <main className="min-h-screen bg-bg text-text">
         <HomePageTracker />
         {/* Sticky Search Bar - aparece cuando el hero completo ha pasado */}
         <StickySearchWrapper heroId="hero-section" />
-        <HeroV2 communes={communes} availableCount={availableCount} minPrice={minPrice} />
+        {/* Hero Cocktail - combines Airbnb, Zillow, QuintoAndar patterns */}
+        <HeroSearchPanel availableCount={availableCount} minPrice={minPrice} />
 
         {/* Departamentos destacados */}
         <FeaturedUnitsSection />

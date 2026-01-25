@@ -37,3 +37,4 @@ arriendo-zero-backup-*.tar.gz
 *.log
 
 .vercel
+tsconfig.tsbuildinfo

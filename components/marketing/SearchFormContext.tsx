@@ -15,8 +15,22 @@ const defaultFormState: SearchFormInput = {
   q: undefined,
   comuna: undefined,
   precioMin: undefined,
+
+  // New Hero Cocktail fields
+  intent: "rent",
+  moveIn: undefined,
+  beds: undefined,
+  priceMax: undefined,
+  petFriendly: undefined,
+  parking: undefined,
+  storage: undefined,
+
+  // Legacy fields (backwards compatibility)
   precioMax: undefined,
   dormitorios: undefined,
+  estacionamiento: undefined,
+  bodega: undefined,
+  mascotas: undefined,
 };
 
 interface SearchFormProviderProps {
