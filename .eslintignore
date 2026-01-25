@@ -1,8 +1,9 @@
 .next/**/*
 scripts/**/*
 **/*.mjs
+_workspace/**/*
 # Ignorar archivos duplicados con sufijos numéricos
-**/* 2.*
-**/* 3.*
-**/* 4.*
-**/* 5.*
+**/*\ 2.*
+**/*\ 3.*
+**/*\ 4.*
+**/*\ 5.*
