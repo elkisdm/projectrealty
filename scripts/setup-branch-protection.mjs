@@ -12,7 +12,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 
 const REPO_OWNER = 'elkisdm';
-const REPO_NAME = 'tremendoarriendo';
+const REPO_NAME = 'projectrealty';
 
 // Configuración de protección para main (producción)
 const MAIN_PROTECTION = {

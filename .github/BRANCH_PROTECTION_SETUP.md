@@ -7,7 +7,7 @@ Configurar protección estricta para las 2 ramas principales y establecer reglas
 
 ### **1. IR A GITHUB REPOSITORY SETTINGS**
 ```
-https://github.com/elkisdm/tremendoarriendo/settings/branches
+https://github.com/elkisdm/projectrealty/settings/branches
 ```
 
 ### **2. CONFIGURAR PROTECCIÓN PARA `main`**
