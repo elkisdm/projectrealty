@@ -123,7 +123,7 @@ function readFeatureFlag(flagName: keyof typeof featureFlags): boolean {
   return Boolean(featureFlags[flagName]);
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Verificar modo MVP
