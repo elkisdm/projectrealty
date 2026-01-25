@@ -1,10 +1,7 @@
 name: Lighthouse CI
 
 on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main, develop ]
+  workflow_dispatch: # Manual trigger only - auto runs disabled
 
 jobs:
   lighthouse:
