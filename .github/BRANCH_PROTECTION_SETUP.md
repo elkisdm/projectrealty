@@ -7,7 +7,7 @@ Configurar protección estricta para las 2 ramas principales y establecer reglas
 
 ### **1. IR A GITHUB REPOSITORY SETTINGS**
 ```
-https://github.com/elkisdm/tremendoarriendo/settings/branches
+https://github.com/elkisdm/projectrealty/settings/branches
 ```
 
 ### **2. CONFIGURAR PROTECCIÓN PARA `main`**
@@ -119,7 +119,7 @@ git ls-remote --heads origin
 
 # Ver configuración de protección
 curl -H "Authorization: token YOUR_TOKEN" \
-  https://api.github.com/repos/elkisdm/tremendoarriendo/branches/main/protection
+  https://api.github.com/repos/elkisdm/projectrealty/branches/main/protection
 ```
 
 ## ✅ **CHECKLIST DE CONFIGURACIÓN**
@@ -162,7 +162,7 @@ Proteger las ramas `main` y `develop` para mantener la organización y prevenir 
 ## 📋 **PASOS PARA CONFIGURAR PROTECCIÓN**
 
 ### **1. ACCEDER A CONFIGURACIÓN DE RAMAS**
-1. Ve a tu repositorio: `https://github.com/elkisdm/tremendoarriendo`
+1. Ve a tu repositorio: `https://github.com/elkisdm/projectrealty`
 2. Haz clic en **Settings** (Configuración)
 3. En el menú lateral, haz clic en **Branches** (Ramas)
 

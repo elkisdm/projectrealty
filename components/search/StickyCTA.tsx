@@ -31,7 +31,7 @@ export const StickyCTA = memo(function StickyCTA({
       return "Ver 1 departamento";
     }
     return `Ver ${resultsCount} departamentos`;
-  };
+  }, [isLoading, resultsCount]);
 
   const isDisabled = isLoading || resultsCount === 0;
 
@@ -67,7 +67,7 @@ export const StickyCTA = memo(function StickyCTA({
         `}
         whileHover={isDisabled || prefersReducedMotion ? {} : { scale: 1.02 }}
         whileTap={isDisabled || prefersReducedMotion ? {} : { scale: 0.98 }}
-        aria-label={getButtonText()}
+        aria-label={getButtonText}
       >
         {isLoading && (
           <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" />

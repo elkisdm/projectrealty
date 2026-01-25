@@ -143,7 +143,7 @@ export const SearchBarContainer = memo(function SearchBarContainer({
         }
         router.push(`/buscar?${params.toString()}`, { scroll: false });
       } else {
-        setLocalFilters((prev) => ({ ...prev, dormitorios: value }));
+        setLocalFilters((prev) => ({ ...prev, dormitorios: value as SearchFilters['dormitorios'] }));
       }
     },
     [isOnSearchPage, router]
@@ -230,19 +230,9 @@ export const SearchBarContainer = memo(function SearchBarContainer({
 
   const inputContainerClasses = clx(
     "flex items-center gap-3",
-    variant === "hero" && [
-      "bg-white/10 dark:bg-gray-800/80 backdrop-blur-md",
-      "rounded-full border border-white/20 dark:border-gray-700/50",
-      "shadow-lg px-4 py-3",
-    ],
-    variant === "sticky" && [
-      "bg-white dark:bg-gray-800",
-      "rounded-full shadow-sm px-4 py-2",
-    ],
-    variant === "inline" && [
-      "bg-white dark:bg-gray-800",
-      "rounded-xl border border-gray-200 dark:border-gray-700 px-4 py-3",
-    ]
+    variant === "hero" && "bg-white/10 dark:bg-gray-800/80 backdrop-blur-md rounded-full border border-white/20 dark:border-gray-700/50 shadow-lg px-4 py-3",
+    variant === "sticky" && "bg-white dark:bg-gray-800 rounded-full shadow-sm px-4 py-2",
+    variant === "inline" && "bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 px-4 py-3"
   );
 
   return (

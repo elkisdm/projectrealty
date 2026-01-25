@@ -11,7 +11,7 @@ fi
 
 TOKEN="$1"
 REPO_OWNER="elkisdm"
-REPO_NAME="tremendoarriendo"
+REPO_NAME="projectrealty"
 
 echo "🚀 Configurando protección de ramas..."
 

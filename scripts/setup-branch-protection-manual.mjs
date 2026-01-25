@@ -11,7 +11,7 @@ import { execSync } from 'child_process';
 import { writeFileSync } from 'fs';
 
 const REPO_OWNER = 'elkisdm';
-const REPO_NAME = 'tremendoarriendo';
+const REPO_NAME = 'projectrealty';
 
 // Configuración de protección para main (producción)
 const MAIN_PROTECTION = {
