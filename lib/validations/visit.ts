@@ -20,7 +20,7 @@ import { z } from "zod";
  */
 export function normalizeChileanPhone(phone: string): string {
   // Remover todos los espacios, guiones, paréntesis y puntos
-  let cleaned = phone.replace(/[\s\-\(\)\.]/g, '');
+  let cleaned = phone.replace(/[\s\-().]/g, '');
   
   // Si empieza con +56, mantenerlo
   if (cleaned.startsWith('+56')) {
@@ -63,7 +63,7 @@ export function normalizeChileanPhone(phone: string): string {
  */
 export function isValidChileanPhone(phone: string): boolean {
   // Remover espacios y caracteres especiales para validar
-  const cleaned = phone.replace(/[\s\-\(\)\.]/g, '');
+  const cleaned = phone.replace(/[\s\-().]/g, '');
   
   // Formato: +569XXXXXXXX (11 dígitos con +569)
   if (cleaned.match(/^\+569\d{8}$/)) return true;
