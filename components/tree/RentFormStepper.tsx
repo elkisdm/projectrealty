@@ -18,7 +18,7 @@ import { useFormPersistence, loadFormData, clearFormData } from "@lib/utils/form
 import { cn } from "@/lib/utils";
 import { isValidCommune } from "@lib/data/chilean-communes";
 
-const TOTAL_STEPS = 10;
+const TOTAL_STEPS = 9;
 
 const PRESUPUESTO_OPTIONS = [
   { value: "<350k", label: "Menos de $350k" },

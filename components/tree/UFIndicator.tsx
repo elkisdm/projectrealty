@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { TrendingUp, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 interface UFData {
   codigo: string;
@@ -16,6 +17,7 @@ export function UFIndicator() {
   const [ufValue, setUfValue] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const prefersReducedMotion = useReducedMotion();
 
   useEffect(() => {
     const fetchUF = async () => {
@@ -64,9 +66,9 @@ export function UFIndicator() {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: -5 }}
+      initial={prefersReducedMotion ? false : { opacity: 0, y: -5 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: 0.5 }}
+      transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.3, delay: 0.5 }}
       className="flex items-center justify-center gap-2 text-xs sm:text-sm text-subtext mb-3"
     >
       {isLoading ? (

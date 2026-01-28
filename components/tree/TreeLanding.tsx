@@ -7,10 +7,12 @@ import { track, ANALYTICS_EVENTS } from "@lib/analytics";
 import { useEffect } from "react";
 import { Home, TrendingUp, Building2, DollarSign, MessageSquare, Instagram, Linkedin } from "lucide-react";
 import { buildWhatsAppUrl } from "@lib/whatsapp";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { UFIndicator } from "./UFIndicator";
 
 export function TreeLanding() {
   const router = useRouter();
+  const prefersReducedMotion = useReducedMotion();
 
   useEffect(() => {
     track(ANALYTICS_EVENTS.TREE_VIEW);
@@ -55,9 +57,9 @@ export function TreeLanding() {
       <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6 max-w-sm">
         <header className="text-center mb-4 sm:mb-6">
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
+            initial={prefersReducedMotion ? false : { opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
+            transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.4 }}
             className="mb-4"
           >
             {/* Avatar más pequeño y minimalista */}
@@ -73,11 +75,11 @@ export function TreeLanding() {
         {/* Opciones más pequeñas y minimalistas */}
         <div className="space-y-2 sm:space-y-3 mb-4 sm:mb-6">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.1 }}
+            transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.4, delay: 0.1 }}
           >
-            <Card className="rounded-xl border border-border hover:border-brand-violet/50 dark:hover:border-brand-violet/40 transition-all duration-200 cursor-pointer group bg-card hover:shadow-md active:scale-[0.98]">
+            <Card className="rounded-xl border border-border hover:border-brand-violet/50 dark:hover:border-brand-violet/40 transition-all duration-200 cursor-pointer group bg-card hover:shadow-md active:scale-[0.98] motion-reduce:active:scale-100">
               <CardContent className="p-3 sm:p-4">
                 <button
                   onClick={() => handleCTAClick("rent")}
@@ -99,11 +101,11 @@ export function TreeLanding() {
           </motion.div>
 
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.2 }}
+            transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.4, delay: 0.2 }}
           >
-            <Card className="rounded-xl border border-border hover:border-brand-aqua/50 dark:hover:border-brand-aqua/40 transition-all duration-200 cursor-pointer group bg-card hover:shadow-md active:scale-[0.98]">
+            <Card className="rounded-xl border border-border hover:border-brand-aqua/50 dark:hover:border-brand-aqua/40 transition-all duration-200 cursor-pointer group bg-card hover:shadow-md active:scale-[0.98] motion-reduce:active:scale-100">
               <CardContent className="p-3 sm:p-4">
                 <button
                   onClick={() => handleCTAClick("buy")}
@@ -125,11 +127,11 @@ export function TreeLanding() {
           </motion.div>
 
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.3 }}
+            transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.4, delay: 0.3 }}
           >
-            <Card className="rounded-xl border border-border hover:border-brand-violet/50 dark:hover:border-brand-violet/40 transition-all duration-200 cursor-pointer group bg-card hover:shadow-md active:scale-[0.98]">
+            <Card className="rounded-xl border border-border hover:border-brand-violet/50 dark:hover:border-brand-violet/40 transition-all duration-200 cursor-pointer group bg-card hover:shadow-md active:scale-[0.98] motion-reduce:active:scale-100">
               <CardContent className="p-3 sm:p-4">
                 <button
                   onClick={() => handleCTAClick("rent-property")}
@@ -151,11 +153,11 @@ export function TreeLanding() {
           </motion.div>
 
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.4 }}
+            transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.4, delay: 0.4 }}
           >
-            <Card className="rounded-xl border border-border hover:border-brand-aqua/50 dark:hover:border-brand-aqua/40 transition-all duration-200 cursor-pointer group bg-card hover:shadow-md active:scale-[0.98]">
+            <Card className="rounded-xl border border-border hover:border-brand-aqua/50 dark:hover:border-brand-aqua/40 transition-all duration-200 cursor-pointer group bg-card hover:shadow-md active:scale-[0.98] motion-reduce:active:scale-100">
               <CardContent className="p-3 sm:p-4">
                 <button
                   onClick={() => handleCTAClick("sell-property")}
@@ -179,9 +181,9 @@ export function TreeLanding() {
 
         {/* Iconos de RRSS y WhatsApp */}
         <motion.div
-          initial={{ opacity: 0 }}
+          initial={prefersReducedMotion ? false : { opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.4, delay: 0.3 }}
+          transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.4, delay: 0.3 }}
           className="flex justify-center gap-3 sm:gap-4 mb-4 sm:mb-6"
         >
           {socialLinks.map((social) => {
@@ -192,7 +194,7 @@ export function TreeLanding() {
                 href={social.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 ${social.color} bg-surface dark:bg-surface border border-border hover:border-current focus:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2`}
+                className={`w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 motion-reduce:hover:scale-100 motion-reduce:active:scale-100 ${social.color} bg-surface dark:bg-surface border border-border hover:border-current focus:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2`}
                 aria-label={social.label}
                 onClick={() => {
                   if (social.label === "WhatsApp") {
