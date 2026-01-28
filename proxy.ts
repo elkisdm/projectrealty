@@ -87,10 +87,14 @@ function isMvpRoute(pathname: string): boolean {
   if (pathname.startsWith("/property/")) return true;
   if (pathname.startsWith("/arriendo/departamento/")) return true;
   
+  // Rutas Tree (link-in-bio)
+  if (pathname.startsWith("/tree")) return true;
+  
   // APIs MVP
   if (pathname.startsWith("/api/buildings")) return true;
   if (pathname.startsWith("/api/availability")) return true;
   if (pathname.startsWith("/api/visits")) return true;
+  if (pathname.startsWith("/api/tree")) return true;
   
   // APIs admin siempre permitidas (para uso interno)
   if (pathname.startsWith("/api/admin")) return true;

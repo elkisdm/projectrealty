@@ -4,7 +4,61 @@ import { featureFlags } from '../config/feature-flags';
 const overrideStore = new Map<string, { value: boolean; expiresAt: number }>();
 
 // Tipos para flags soportados
-export type SupportedFlag = 'comingSoon' | 'CARD_V2' | 'VIRTUAL_GRID' | 'pagination' | 'COMMUNE_SECTION' | 'FOOTER_ENABLED' | 'HEADER_ENABLED';
+export type SupportedFlag = 'comingSoon' | 'CARD_V2' | 'VIRTUAL_GRID' | 'pagination' | 'COMMUNE_SECTION' | 'FOOTER_ENABLED' | 'HEADER_ENABLED' | 'UNITCARD_V2';
+
+// Simple hash function for consistent user experience
+function hashString(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return Math.abs(hash);
+}
+
+// Get user identifier for percentage-based rollout
+function getUserIdentifier(): string {
+  if (typeof window === 'undefined') return 'server';
+  
+  // Try to get existing identifier from localStorage
+  let userId = localStorage.getItem('hommie_user_id');
+  if (!userId) {
+    // Generate a random identifier
+    userId = `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    localStorage.setItem('hommie_user_id', userId);
+  }
+  return userId;
+}
+
+/**
+ * Check if UnitCard V2 is enabled
+ * Supports both boolean flag and percentage-based rollout
+ */
+export function isUnitCardV2Enabled(): boolean {
+  // Check for override first
+  const override = overrideStore.get('UNITCARD_V2');
+  if (override && Date.now() < override.expiresAt) {
+    return override.value;
+  }
+  
+  // Phase 1: Boolean flag (full enable/disable)
+  if (process.env.NEXT_PUBLIC_UNITCARD_V2 === 'true') {
+    return true;
+  }
+  if (process.env.NEXT_PUBLIC_UNITCARD_V2 === 'false') {
+    return false;
+  }
+  
+  // Phase 2: Percentage-based rollout
+  const percentage = parseInt(process.env.NEXT_PUBLIC_UNITCARD_V2_PERCENT || '0', 10);
+  if (percentage <= 0) return false;
+  if (percentage >= 100) return true;
+  
+  const userId = getUserIdentifier();
+  const hash = hashString(userId);
+  return (hash % 100) < percentage;
+}
 
 // Interface para override
 export interface FlagOverride {
@@ -44,6 +98,8 @@ export function getFlagValue(flag: SupportedFlag): boolean {
     case 'HEADER_ENABLED':
       // Por defecto deshabilitado (solo habilitar si explícitamente se configura como "1")
       return process.env.NEXT_PUBLIC_HEADER_ENABLED === "1";
+    case 'UNITCARD_V2':
+      return isUnitCardV2Enabled();
     default:
       return false;
   }
@@ -54,7 +110,7 @@ export function applyOverride(override: FlagOverride): { success: boolean; messa
   const { flag, value, duration } = override;
   
   // Validar flag soportado
-  if (!['comingSoon', 'CARD_V2', 'VIRTUAL_GRID', 'pagination', 'COMMUNE_SECTION', 'FOOTER_ENABLED', 'HEADER_ENABLED'].includes(flag)) {
+  if (!['comingSoon', 'CARD_V2', 'VIRTUAL_GRID', 'pagination', 'COMMUNE_SECTION', 'FOOTER_ENABLED', 'HEADER_ENABLED', 'UNITCARD_V2'].includes(flag)) {
     throw new Error(`Flag no soportado: ${flag}`);
   }
   
@@ -101,6 +157,10 @@ export function getFlagsStatus(): Record<SupportedFlag, { value: boolean; overri
     HEADER_ENABLED: {
       value: getFlagValue('HEADER_ENABLED'),
       overridden: false
+    },
+    UNITCARD_V2: {
+      value: getFlagValue('UNITCARD_V2'),
+      overridden: false
     }
   };
   
@@ -138,6 +198,7 @@ export const COMING_SOON = getFlagValue('comingSoon');
 export const CARD_V2 = getFlagValue('CARD_V2');
 export const VIRTUAL_GRID = getFlagValue('VIRTUAL_GRID');
 export const PAGINATION = getFlagValue('pagination');
+export const UNITCARD_V2 = getFlagValue('UNITCARD_V2');
 
 // Limpiar overrides expirados al importar el módulo
 cleanupExpiredOverrides();

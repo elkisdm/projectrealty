@@ -3,7 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@lib/theme-context";
 import { Header } from "@components/marketing/Header";
-import { Footer } from "@components/footer";
+import { ConditionalFooter } from "@components/ConditionalFooter";
 import { getFlagValue } from "@lib/flags";
 import { getBaseUrl } from "@lib/seo/metadata";
 import Providers from "./providers";
@@ -108,7 +108,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <main id="main-content" className="flex-1 bg-background text-foreground" role="main">
                 {children}
               </main>
-              {getFlagValue('FOOTER_ENABLED') && <Footer />}
+              {getFlagValue('FOOTER_ENABLED') && <ConditionalFooter />}
             </div>
           </Providers>
         </ThemeProvider>

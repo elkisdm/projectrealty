@@ -11,6 +11,7 @@ Cuando el usuario pida IMPLEMENTAR:
 - Tests de humo cuando aplique.
 
 Stack: Next.js 14 (App Router), React 18, TS estricto, Tailwind, Framer Motion, Zod.
+Package Manager: pnpm (NUNCA uses npm ni yarn).
 Metodología: 1 chat = 1 microtarea.
 
 Reglas duras:
