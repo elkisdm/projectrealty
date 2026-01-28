@@ -69,16 +69,20 @@ export function UFIndicator() {
       initial={prefersReducedMotion ? false : { opacity: 0, y: -5 }}
       animate={{ opacity: 1, y: 0 }}
       transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.3, delay: 0.5 }}
-      className="flex items-center justify-center gap-2 text-xs sm:text-sm text-subtext mb-3"
+      className="flex items-center justify-center gap-2 text-xs sm:text-sm text-subtext mb-3 min-h-[24px] sm:min-h-[28px]"
+      aria-live="polite"
+      aria-atomic="true"
     >
       {isLoading ? (
-        <>
-          <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
-          <span>Cargando UF...</span>
-        </>
+        <div className="flex items-center gap-2 min-h-[24px] sm:min-h-[28px]">
+          <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" aria-hidden="true" />
+          <span className="inline-block w-32 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" aria-label="Cargando valor de UF">
+            <span className="sr-only">Cargando UF...</span>
+          </span>
+        </div>
       ) : (
         <>
-          <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-brand-aqua" aria-hidden="true" />
+          <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-brand-aqua flex-shrink-0" aria-hidden="true" />
           <span>
             UF hoy: <span className="font-semibold text-text">${ufValue?.toLocaleString("es-CL", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </span>
