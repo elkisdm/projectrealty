@@ -113,7 +113,7 @@ export function TreeLanding() {
       >
         Saltar al contenido principal
       </a>
-      <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-sm lg:max-w-md">
+      <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 lg:py-12 max-w-sm lg:max-w-lg">
         <header className="text-center mb-6 sm:mb-8" role="banner">
           <motion.div
             initial={prefersReducedMotion ? false : { opacity: 0, y: -20 }}
@@ -122,12 +122,12 @@ export function TreeLanding() {
             className="mb-4"
           >
             {/* Avatar con imagen de perfil y animación anime.js */}
-            <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-3 relative">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 mx-auto mb-4 relative">
               <AnimatedAvatar className={cn(
                 "w-full h-full rounded-full",
                 "bg-gradient-to-br from-brand-violet/20 via-brand-violet/30 to-brand-aqua/20",
                 "dark:from-brand-violet/30 dark:via-brand-violet/40 dark:to-brand-aqua/30",
-                "ring-2 ring-brand-violet/20 dark:ring-brand-violet/40",
+                "ring-2 ring-brand-violet/30 dark:ring-brand-violet/40",
                 "dark:shadow-lg dark:shadow-brand-violet/20",
                 "transition-all duration-300 overflow-hidden relative"
               )}>
@@ -169,7 +169,7 @@ export function TreeLanding() {
         </header>
 
         {/* Opciones más pequeñas y minimalistas con animación anime.js */}
-        <AnimatedCards className="space-y-3 sm:space-y-4 mb-6 sm:mb-8" role="navigation" aria-label="Opciones de servicio">
+        <AnimatedCards className="space-y-4 sm:space-y-5 mb-6 sm:mb-8" role="navigation" aria-label="Opciones de servicio">
           <FormPreviewTooltip flow="rent">
             <motion.div
               initial={prefersReducedMotion ? undefined : { opacity: 0, y: 20 }}
@@ -188,10 +188,10 @@ export function TreeLanding() {
               <Card
                 data-card
                 className={cn(
-                  "rounded-xl border transition-all duration-200 cursor-pointer group",
+                  "rounded-2xl border transition-all duration-200 cursor-pointer group",
                   "bg-card dark:bg-card/80 dark:backdrop-blur-sm",
                   "border-border dark:border-white/10",
-                  "shadow-sm hover:shadow-2xl hover:shadow-brand-violet/10 dark:hover:shadow-brand-violet/20",
+                  "shadow-md hover:shadow-2xl hover:shadow-brand-violet/10 dark:hover:shadow-brand-violet/20",
                   "dark:shadow-xl dark:shadow-black/20",
                   "hover:-translate-y-1 active:translate-y-0",
                   urlParams.highlight === "rent"
@@ -205,9 +205,9 @@ export function TreeLanding() {
                     className="w-full text-left min-h-[44px] focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-violet focus-visible:ring-offset-2 focus-visible:rounded-lg"
                     aria-label="Quiero arrendar - Encuentra tu próximo hogar"
                   >
-                    <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="flex items-center gap-3 sm:gap-4">
                       <div className={cn(
-                        "flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-lg",
+                        "flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-xl",
                         "bg-brand-violet/10 dark:bg-brand-violet/20",
                         "flex items-center justify-center",
                         "group-hover:bg-brand-violet/20 dark:group-hover:bg-brand-violet/30",
@@ -253,10 +253,10 @@ export function TreeLanding() {
               <Card
                 data-card
                 className={cn(
-                  "rounded-xl border transition-all duration-200 cursor-pointer group",
+                  "rounded-2xl border transition-all duration-200 cursor-pointer group",
                   "bg-card dark:bg-card/80 dark:backdrop-blur-sm",
                   "border-border dark:border-white/10",
-                  "shadow-sm hover:shadow-2xl hover:shadow-brand-aqua/10 dark:hover:shadow-brand-aqua/20",
+                  "shadow-md hover:shadow-2xl hover:shadow-brand-aqua/10 dark:hover:shadow-brand-aqua/20",
                   "dark:shadow-xl dark:shadow-black/20",
                   "hover:-translate-y-1 active:translate-y-0",
                   urlParams.highlight === "buy"
@@ -270,9 +270,9 @@ export function TreeLanding() {
                     className="w-full text-left min-h-[44px] focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-aqua focus-visible:ring-offset-2 focus-visible:rounded-lg"
                     aria-label="Quiero comprar - Invierte en tu futuro con la mejor asesoría"
                   >
-                    <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="flex items-center gap-3 sm:gap-4">
                       <div className={cn(
-                        "flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-lg",
+                        "flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-xl",
                         "bg-brand-aqua/10 dark:bg-brand-aqua/20",
                         "flex items-center justify-center",
                         "group-hover:bg-brand-aqua/20 dark:group-hover:bg-brand-aqua/30",
@@ -318,10 +318,10 @@ export function TreeLanding() {
               <Card
                 data-card
                 className={cn(
-                  "rounded-xl border transition-all duration-200 cursor-pointer group",
+                  "rounded-2xl border transition-all duration-200 cursor-pointer group",
                   "bg-card dark:bg-card/80 dark:backdrop-blur-sm",
                   "border-border dark:border-white/10",
-                  "shadow-sm hover:shadow-2xl hover:shadow-brand-violet/10 dark:hover:shadow-brand-violet/20",
+                  "shadow-md hover:shadow-2xl hover:shadow-brand-violet/10 dark:hover:shadow-brand-violet/20",
                   "dark:shadow-xl dark:shadow-black/20",
                   "hover:-translate-y-1 active:translate-y-0",
                   urlParams.highlight === "rent-property"
@@ -335,9 +335,9 @@ export function TreeLanding() {
                     className="w-full text-left min-h-[44px] focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-violet focus-visible:ring-offset-2 focus-visible:rounded-lg"
                     aria-label="Tengo una propiedad y la quiero arrendar - Publica tu propiedad"
                   >
-                    <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="flex items-center gap-3 sm:gap-4">
                       <div className={cn(
-                        "flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-lg",
+                        "flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-xl",
                         "bg-brand-violet/10 dark:bg-brand-violet/20",
                         "flex items-center justify-center",
                         "group-hover:bg-brand-violet/20 dark:group-hover:bg-brand-violet/30",
@@ -383,10 +383,10 @@ export function TreeLanding() {
               <Card
                 data-card
                 className={cn(
-                  "rounded-xl border transition-all duration-200 cursor-pointer group",
+                  "rounded-2xl border transition-all duration-200 cursor-pointer group",
                   "bg-card dark:bg-card/80 dark:backdrop-blur-sm",
                   "border-border dark:border-white/10",
-                  "shadow-sm hover:shadow-2xl hover:shadow-brand-aqua/10 dark:hover:shadow-brand-aqua/20",
+                  "shadow-md hover:shadow-2xl hover:shadow-brand-aqua/10 dark:hover:shadow-brand-aqua/20",
                   "dark:shadow-xl dark:shadow-black/20",
                   "hover:-translate-y-1 active:translate-y-0",
                   urlParams.highlight === "sell-property"
@@ -400,9 +400,9 @@ export function TreeLanding() {
                     className="w-full text-left min-h-[44px] focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-aqua focus-visible:ring-offset-2 focus-visible:rounded-lg"
                     aria-label="Quiero vender mi propiedad - Asesoría para venta de propiedades"
                   >
-                    <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="flex items-center gap-3 sm:gap-4">
                       <div className={cn(
-                        "flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-lg",
+                        "flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-xl",
                         "bg-brand-aqua/10 dark:bg-brand-aqua/20",
                         "flex items-center justify-center",
                         "group-hover:bg-brand-aqua/20 dark:group-hover:bg-brand-aqua/30",
@@ -436,7 +436,7 @@ export function TreeLanding() {
           initial={prefersReducedMotion ? false : { opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.3, delay: 0.3 }}
-          className="flex justify-center items-center gap-3 sm:gap-4 mb-6 sm:mb-8 flex-wrap"
+          className="flex justify-center items-center gap-3 sm:gap-4 lg:gap-5 mb-6 sm:mb-8 flex-wrap"
           role="list"
           aria-label="Redes sociales, contacto y compartir"
         >
