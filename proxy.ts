@@ -130,6 +130,11 @@ function readFeatureFlag(flagName: keyof typeof featureFlags): boolean {
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // En desarrollo: bypass para evitar colgues (HMR, chunks). MVP/admin siguen en build/producción.
+  if (process.env.NODE_ENV === "development") {
+    return NextResponse.next();
+  }
+
   // Verificar modo MVP
   const mvpMode = readFeatureFlag("mvpMode");
   
@@ -182,11 +187,9 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
+     * Excluir todo _next (chunks, HMR, static, image) y favicon.
+     * Evita que middleware corra en cada asset y pueda colgar dev.
      */
-    "/((?!_next/static|_next/image|favicon.ico).*)",
+    "/((?!_next|favicon\\.ico).*)",
   ],
 };

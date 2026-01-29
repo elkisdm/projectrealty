@@ -5,6 +5,8 @@ import { motion, AnimatePresence, PanInfo, useMotionValue, useTransform } from "
 import { X } from "lucide-react";
 import { bottomSheetVariants, backdropVariants, springConfigs } from "@/lib/animations/mobileAnimations";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
+import type { RefObject } from "react";
 
 interface MobileFilterSheetProps {
   isOpen: boolean;
@@ -12,6 +14,7 @@ interface MobileFilterSheetProps {
   title?: string;
   children: React.ReactNode;
   maxHeight?: string;
+  triggerRef?: RefObject<HTMLElement | null>;
 }
 
 /**
@@ -27,11 +30,20 @@ export function MobileFilterSheet({
   title = "Filtros",
   children,
   maxHeight = "90vh",
+  triggerRef,
 }: MobileFilterSheetProps) {
   const prefersReducedMotion = useReducedMotion();
   const [isDragging, setIsDragging] = useState(false);
   const y = useMotionValue(0);
   const sheetRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Focus trap
+  const { containerRef } = useFocusTrap({
+    isActive: isOpen && !isDragging, // Desactivar durante drag para no interferir con gestos
+    initialFocusRef: closeButtonRef,
+    returnFocusRef: triggerRef,
+  });
 
   // Calcular altura del sheet
   const sheetHeight = useTransform(y, (value) => {
@@ -88,7 +100,12 @@ export function MobileFilterSheet({
 
           {/* Bottom Sheet */}
           <motion.div
-            ref={sheetRef}
+            ref={(node) => {
+              sheetRef.current = node;
+              if (containerRef) {
+                (containerRef as React.MutableRefObject<HTMLElement | null>).current = node;
+              }
+            }}
             role="dialog"
             aria-modal="true"
             aria-labelledby="sheet-title"
@@ -121,6 +138,7 @@ export function MobileFilterSheet({
                 <p id="sheet-description" className="sr-only">Ajusta los filtros para encontrar departamentos</p>
               </div>
               <button
+                ref={closeButtonRef}
                 onClick={onClose}
                 className="
                   p-2 

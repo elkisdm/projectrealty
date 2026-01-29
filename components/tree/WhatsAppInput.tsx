@@ -100,7 +100,7 @@ export function WhatsAppInput({
     onBlur?.();
   }, [validationState, normalizedValue, onChange, onBlur]);
 
-  const hasError = error || (validationState === "invalid" && localValue.length >= 3);
+  const hasError = Boolean(error || (validationState === "invalid" && localValue.length >= 3));
   const showSuccess = validationState === "valid" && localValue.length >= 8;
 
   return (

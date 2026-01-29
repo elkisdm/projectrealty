@@ -52,6 +52,7 @@ export interface FilterBottomSheetProps {
   onBedsChange?: (value: string | string[] | undefined) => void;
   onPriceMaxChange?: (value: string | undefined) => void;
   onMoveInChange?: (value: string | undefined) => void;
+  triggerRef?: React.RefObject<HTMLElement | null>;
 }
 
 export interface ToggleRowProps {

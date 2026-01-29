@@ -54,6 +54,13 @@ export const ANALYTICS_EVENTS = {
   FORM_ABANDON: 'form_abandon',
   TREE_FORM_SUBMIT: 'tree_form_submit',
   CTA_SCHEDULE_CLICK: 'cta_schedule_click',
+  TREE_THEME_TOGGLE: 'tree_theme_toggle',
+  TREE_SHARE: 'tree_share',
+  TREE_BADGE_EARNED: 'tree_badge_earned',
+  TREE_VISIT_COUNT: 'tree_visit_count',
+  TREE_SCROLL_DEPTH: 'tree_scroll_depth',
+  TREE_CARD_HOVER_TIME: 'tree_card_hover_time',
+  TREE_TIME_ON_PAGE: 'tree_time_on_page',
 } as const;
 
 export type AnalyticsEvent = typeof ANALYTICS_EVENTS[keyof typeof ANALYTICS_EVENTS];

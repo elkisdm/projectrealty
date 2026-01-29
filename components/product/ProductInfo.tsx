@@ -1,3 +1,14 @@
+/**
+ * TEMPORALMENTE DESHABILITADO - Módulos faltantes
+ * Este componente requiere módulos que no existen:
+ * - @schemas/ecommerce
+ * - @stores/cartStore
+ * - @components/ecommerce/RatingDisplay
+ * 
+ * Para habilitar: crear los módulos faltantes o eliminar este archivo si no se usa.
+ */
+
+/*
 "use client";
 
 import React, { useState } from "react";
@@ -86,174 +97,181 @@ export function ProductInfo({ product }: ProductInfoProps) {
   return (
     <div className="space-y-6">
       {/* Vendor/Category */}
-      {(product.vendor || product.categoryName) && (
-        <div className="text-sm text-subtext uppercase tracking-wide">
-          {product.vendor || product.categoryName}
-        </div>
-      )}
+{
+  (product.vendor || product.categoryName) && (
+    <div className="text-sm text-subtext uppercase tracking-wide">
+      {product.vendor || product.categoryName}
+    </div>
+  )
+}
 
-      {/* Título */}
-      <h1 className="text-3xl font-bold text-text">{product.title}</h1>
+{/* Título */ }
+<h1 className="text-3xl font-bold text-text">{product.title}</h1>
 
-      {/* Rating */}
-      {product.rating && product.reviewCount && (
-        <button
-          onClick={() => {
-            // Scroll a la sección de reviews
-            const reviewsTab = document.querySelector('[data-tab="reviews"]');
-            if (reviewsTab) {
-              reviewsTab.scrollIntoView({ behavior: "smooth", block: "start" });
-              // También activar el tab si está disponible
-              const reviewsButton = document.querySelector(
-                'button[onclick*="reviews"]'
-              ) as HTMLButtonElement;
-              reviewsButton?.click();
-            }
-          }}
-          className="flex items-center gap-2 hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-[#8B6CFF] rounded px-2 py-1 -ml-2"
-          aria-label={`Ver ${product.reviewCount} reseñas`}
-        >
-          <RatingDisplay
-            rating={product.rating}
-            size="md"
-            showValue={true}
-            showCount={true}
-            reviewCount={product.reviewCount}
-          />
-        </button>
-      )}
+{/* Rating */ }
+{
+  product.rating && product.reviewCount && (
+    <button
+      onClick={() => {
+        // Scroll a la sección de reviews
+        const reviewsTab = document.querySelector('[data-tab="reviews"]');
+        if (reviewsTab) {
+          reviewsTab.scrollIntoView({ behavior: "smooth", block: "start" });
+          // También activar el tab si está disponible
+          const reviewsButton = document.querySelector(
+            'button[onclick*="reviews"]'
+          ) as HTMLButtonElement;
+          reviewsButton?.click();
+        }
+      }}
+      className="flex items-center gap-2 hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-[#8B6CFF] rounded px-2 py-1 -ml-2"
+      aria-label={`Ver ${product.reviewCount} reseñas`}
+    >
+      <RatingDisplay
+        rating={product.rating}
+        size="md"
+        showValue={true}
+        showCount={true}
+        reviewCount={product.reviewCount}
+      />
+    </button>
+  )
+}
 
-      {/* Precio */}
-      <div className="flex items-baseline gap-3">
-        <span className="text-4xl font-bold text-text">
-          {formatPrice(selectedVariant.price)}
+{/* Precio */ }
+<div className="flex items-baseline gap-3">
+  <span className="text-4xl font-bold text-text">
+    {formatPrice(selectedVariant.price)}
+  </span>
+  {selectedVariant.compareAtPrice &&
+    selectedVariant.compareAtPrice > selectedVariant.price && (
+      <>
+        <span className="text-2xl text-subtext line-through">
+          {formatPrice(selectedVariant.compareAtPrice)}
         </span>
-        {selectedVariant.compareAtPrice &&
-          selectedVariant.compareAtPrice > selectedVariant.price && (
-            <>
-              <span className="text-2xl text-subtext line-through">
-                {formatPrice(selectedVariant.compareAtPrice)}
-              </span>
-              {discount > 0 && (
-                <span className="px-2 py-1 bg-red-500 text-white rounded text-sm font-semibold">
-                  -{discount}%
-                </span>
-              )}
-            </>
-          )}
-      </div>
+        {discount > 0 && (
+          <span className="px-2 py-1 bg-red-500 text-white rounded text-sm font-semibold">
+            -{discount}%
+          </span>
+        )}
+      </>
+    )}
+</div>
 
-      {/* Descripción corta */}
-      {product.description && (
-        <p className="text-lg text-subtext">{product.description}</p>
-      )}
+{/* Descripción corta */ }
+{
+  product.description && (
+    <p className="text-lg text-subtext">{product.description}</p>
+  )
+}
 
-      {/* Selector de variantes */}
-      {option1Values.length > 0 && (
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-semibold text-text mb-2">
-              {option1Values[0] && (option1Values[0].includes("kg") || option1Values[0].includes("g"))
-                ? "Tamaño"
-                : "Sabor"}
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {option1Values.map((value) => (
-                <button
-                  key={value}
-                  onClick={() => handleVariantChange(value, undefined)}
-                  className={`px-4 py-2 rounded-lg border-2 transition-all ${
-                    selectedVariant.option1 === value
-                      ? "border-[#8B6CFF] bg-[#8B6CFF]/10 text-[#8B6CFF] font-semibold"
-                      : "border-border hover:border-[#8B6CFF]/50 text-text"
-                  }`}
-                >
-                  {value}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {option2Values.length > 0 && (
-            <div>
-              <label className="block text-sm font-semibold text-text mb-2">
-                Tamaño
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {option2Values.map((value) => (
-                  <button
-                    key={value}
-                    onClick={() =>
-                      handleVariantChange(selectedVariant.option1, value)
-                    }
-                    className={`px-4 py-2 rounded-lg border-2 transition-all ${
-                      selectedVariant.option2 === value
-                        ? "border-[#8B6CFF] bg-[#8B6CFF]/10 text-[#8B6CFF] font-semibold"
-                        : "border-border hover:border-[#8B6CFF]/50 text-text"
-                    }`}
-                  >
-                    {value}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Cantidad */}
+{/* Selector de variantes */ }
+{
+  option1Values.length > 0 && (
+    <div className="space-y-4">
       <div>
         <label className="block text-sm font-semibold text-text mb-2">
-          Cantidad
+          {option1Values[0] && (option1Values[0].includes("kg") || option1Values[0].includes("g"))
+            ? "Tamaño"
+            : "Sabor"}
         </label>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setQuantity(Math.max(1, quantity - 1))}
-            className="w-10 h-10 flex items-center justify-center border border-border rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-            aria-label="Reducir cantidad"
-          >
-            -
-          </button>
-          <span className="w-12 text-center font-semibold text-text">{quantity}</span>
-          <button
-            onClick={() =>
-              setQuantity(Math.min(selectedVariant.inventory, quantity + 1))
-            }
-            className="w-10 h-10 flex items-center justify-center border border-border rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-            aria-label="Aumentar cantidad"
-          >
-            +
-          </button>
-          <span className="text-sm text-subtext">
-            {selectedVariant.inventory} disponibles
-          </span>
+        <div className="flex flex-wrap gap-2">
+          {option1Values.map((value) => (
+            <button
+              key={value}
+              onClick={() => handleVariantChange(value, undefined)}
+              className={`px-4 py-2 rounded-lg border-2 transition-all ${selectedVariant.option1 === value
+                  ? "border-[#8B6CFF] bg-[#8B6CFF]/10 text-[#8B6CFF] font-semibold"
+                  : "border-border hover:border-[#8B6CFF]/50 text-text"
+                }`}
+            >
+              {value}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Botón agregar al carrito */}
-      <button
-        onClick={handleAddToCart}
-        disabled={!selectedVariant.available || selectedVariant.inventory === 0}
-        className="w-full px-6 py-4 bg-[#8B6CFF] text-white rounded-lg hover:bg-[#7a5ce6] transition-colors font-semibold text-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-[#8B6CFF] focus:ring-offset-2"
-      >
-        <ShoppingCart className="w-5 h-5" />
-        {selectedVariant.available && selectedVariant.inventory > 0
-          ? "Agregar al carrito"
-          : "Agotado"}
-      </button>
-
-      {/* Info adicional */}
-      <div className="space-y-3 pt-4 border-t border-border">
-        <div className="flex items-center gap-3 text-sm text-subtext">
-          <Truck className="w-5 h-5" />
-          <span>Envío gratis en compras sobre $50.000</span>
+      {option2Values.length > 0 && (
+        <div>
+          <label className="block text-sm font-semibold text-text mb-2">
+            Tamaño
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {option2Values.map((value) => (
+              <button
+                key={value}
+                onClick={() =>
+                  handleVariantChange(selectedVariant.option1, value)
+                }
+                className={`px-4 py-2 rounded-lg border-2 transition-all ${selectedVariant.option2 === value
+                    ? "border-[#8B6CFF] bg-[#8B6CFF]/10 text-[#8B6CFF] font-semibold"
+                    : "border-border hover:border-[#8B6CFF]/50 text-text"
+                  }`}
+              >
+                {value}
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="flex items-center gap-3 text-sm text-subtext">
-          <Package className="w-5 h-5" />
-          <span>Devoluciones dentro de 30 días</span>
-        </div>
-      </div>
+      )}
     </div>
+  )
+}
+
+{/* Cantidad */ }
+<div>
+  <label className="block text-sm font-semibold text-text mb-2">
+    Cantidad
+  </label>
+  <div className="flex items-center gap-3">
+    <button
+      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+      className="w-10 h-10 flex items-center justify-center border border-border rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+      aria-label="Reducir cantidad"
+    >
+      -
+    </button>
+    <span className="w-12 text-center font-semibold text-text">{quantity}</span>
+    <button
+      onClick={() =>
+        setQuantity(Math.min(selectedVariant.inventory, quantity + 1))
+      }
+      className="w-10 h-10 flex items-center justify-center border border-border rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+      aria-label="Aumentar cantidad"
+    >
+      +
+    </button>
+    <span className="text-sm text-subtext">
+      {selectedVariant.inventory} disponibles
+    </span>
+  </div>
+</div>
+
+{/* Botón agregar al carrito */ }
+<button
+  onClick={handleAddToCart}
+  disabled={!selectedVariant.available || selectedVariant.inventory === 0}
+  className="w-full px-6 py-4 bg-[#8B6CFF] text-white rounded-lg hover:bg-[#7a5ce6] transition-colors font-semibold text-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-[#8B6CFF] focus:ring-offset-2"
+>
+  <ShoppingCart className="w-5 h-5" />
+  {selectedVariant.available && selectedVariant.inventory > 0
+    ? "Agregar al carrito"
+    : "Agotado"}
+</button>
+
+{/* Info adicional */ }
+<div className="space-y-3 pt-4 border-t border-border">
+  <div className="flex items-center gap-3 text-sm text-subtext">
+    <Truck className="w-5 h-5" />
+    <span>Envío gratis en compras sobre $50.000</span>
+  </div>
+  <div className="flex items-center gap-3 text-sm text-subtext">
+    <Package className="w-5 h-5" />
+    <span>Devoluciones dentro de 30 días</span>
+  </div>
+</div>
+    </div >
   );
 }
+*/
 

@@ -7,6 +7,11 @@ export default {
   darkMode: 'class',
   theme: {
     extend: {
+      fontFamily: {
+        sans: ["var(--font-mona-sans)", "var(--font-inter)", "system-ui", "sans-serif"],
+        display: ["var(--font-hubot-sans)", "var(--font-mona-sans)", "system-ui", "sans-serif"],
+        mono: ["var(--font-inter)", "monospace"],
+      },
       colors: {
         // Brand accents for gradients and CTAs
         brand: {

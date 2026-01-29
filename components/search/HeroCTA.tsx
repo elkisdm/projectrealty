@@ -1,11 +1,13 @@
 "use client";
 
 import { Search } from "lucide-react";
+import type { RefObject } from "react";
 
 interface HeroCTAProps {
   isSubmitting?: boolean;
   onMoreFiltersClick: () => void;
   className?: string;
+  moreFiltersButtonRef?: RefObject<HTMLButtonElement | null>;
 }
 
 /**
@@ -16,6 +18,7 @@ export function HeroCTA({
   isSubmitting = false,
   onMoreFiltersClick,
   className = "",
+  moreFiltersButtonRef,
 }: HeroCTAProps) {
   return (
     <div className={`space-y-3 mt-6 ${className}`}>
@@ -32,6 +35,7 @@ export function HeroCTA({
 
       {/* Secondary link - Más filtros */}
       <button
+        ref={moreFiltersButtonRef}
         type="button"
         onClick={onMoreFiltersClick}
         className="w-full text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary rounded-lg py-2"

@@ -12,6 +12,8 @@ interface UniversalSearchInputProps {
   onParsedData?: (data: ParsedSearchData) => void;
   placeholder?: string;
   className?: string;
+  "aria-invalid"?: boolean;
+  "aria-describedby"?: string;
 }
 
 export interface ParsedSearchData {
@@ -37,6 +39,8 @@ export function UniversalSearchInput({
   onParsedData,
   placeholder = "Comuna, barrio o metro…",
   className = "",
+  "aria-invalid": ariaInvalid,
+  "aria-describedby": ariaDescribedBy,
 }: UniversalSearchInputProps) {
   const [isMobile, setIsMobile] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -168,6 +172,8 @@ export function UniversalSearchInput({
           placeholder={placeholder}
           className="w-full h-[52px] px-4 pr-12 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
           aria-label="Buscar por ubicación"
+          aria-invalid={ariaInvalid}
+          aria-describedby={ariaDescribedBy}
           readOnly={isMobile}
         />
         <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
@@ -236,6 +242,8 @@ export function UniversalSearchInput({
                 autoFocus
                 className="w-full h-[56px] px-4 pr-12 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary text-lg"
                 aria-label="Buscar por ubicación"
+                aria-invalid={ariaInvalid}
+                aria-describedby={ariaDescribedBy}
               />
               <div className="absolute right-3 top-1/2 -translate-y-1/2">
                 {value ? (

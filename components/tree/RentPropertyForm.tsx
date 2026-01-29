@@ -1,19 +1,21 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ChevronLeft, ChevronRight, Loader2, CheckCircle, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, CheckCircle, X, Home } from "lucide-react";
 import { z } from "zod";
 import { track, ANALYTICS_EVENTS } from "@lib/analytics";
 import { buildWhatsAppUrl } from "@lib/whatsapp";
 import { normalizeWhatsApp } from "@lib/utils/whatsapp";
 import { WhatsAppInput } from "./WhatsAppInput";
 import { useFormPersistence, loadFormData, clearFormData } from "@lib/utils/form-persistence";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { cn } from "@/lib/utils";
 
 const RentPropertySchema = z.object({
@@ -72,6 +74,7 @@ export function RentPropertyForm() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showRecoveryBanner, setShowRecoveryBanner] = useState(false);
+  const prefersReducedMotion = useReducedMotion();
 
   // Persistencia mejorada
   const { hasSavedData } = useFormPersistence("rent-property", formData, currentStep);
@@ -256,9 +259,9 @@ export function RentPropertyForm() {
           <Card className="rounded-2xl border-border bg-card">
             <CardContent className="pt-6 sm:pt-8">
               <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
+                initial={prefersReducedMotion ? false : { opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.3 }}
+                transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.3 }}
                 className="flex flex-col items-center justify-center text-center space-y-4 sm:space-y-6 py-6 sm:py-8"
               >
                 <div className="rounded-full bg-accent-success/10 dark:bg-accent-success/20 p-3 sm:p-4">
@@ -284,6 +287,12 @@ export function RentPropertyForm() {
                     Contactar por WhatsApp
                   </Button>
                 )}
+                <Link
+                  href="/tree"
+                  className="mt-4 text-sm text-subtext hover:text-text underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-violet focus-visible:ring-offset-2 focus-visible:rounded"
+                >
+                  Volver al inicio
+                </Link>
               </motion.div>
             </CardContent>
           </Card>
@@ -298,8 +307,9 @@ export function RentPropertyForm() {
         {/* Banner de recuperación */}
         {showRecoveryBanner && Object.keys(formData).length > 0 && (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
+            initial={prefersReducedMotion ? false : { opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
+            transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.3 }}
             className="mb-4 p-3 sm:p-4 rounded-xl bg-brand-violet/10 dark:bg-brand-violet/20 border border-brand-violet/20 flex items-center justify-between gap-3"
           >
             <div className="flex items-center gap-2">
@@ -317,6 +327,17 @@ export function RentPropertyForm() {
             </button>
           </motion.div>
         )}
+
+        {/* Botón volver al inicio */}
+        <div className="mb-3 sm:mb-4">
+          <Link
+            href="/tree"
+            className="inline-flex items-center gap-2 text-xs sm:text-sm text-subtext hover:text-text transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-violet focus-visible:ring-offset-2 focus-visible:rounded"
+          >
+            <Home className="w-3 h-3 sm:w-4 sm:h-4" />
+            <span>Volver al inicio</span>
+          </Link>
+        </div>
 
         {/* Barra de progreso */}
         <div className="mb-4 sm:mb-6">
@@ -343,7 +364,7 @@ export function RentPropertyForm() {
                 className="bg-brand-violet h-full rounded-full shadow-sm"
                 initial={{ width: 0 }}
                 animate={{ width: `${progress}%` }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
+                transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.3, ease: "easeOut" }}
               />
             </div>
             <div className="absolute top-0 left-0 right-0 h-2 sm:h-2.5 flex justify-between items-center pointer-events-none">
@@ -369,8 +390,9 @@ export function RentPropertyForm() {
 
           {progress >= 30 && progress < 100 && (
             <motion.p
-              initial={{ opacity: 0 }}
+              initial={prefersReducedMotion ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
+              transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.3 }}
               className="text-xs text-subtext text-center"
             >
               ¡Ya completaste el {Math.round(progress)}%!
@@ -401,10 +423,10 @@ export function RentPropertyForm() {
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentStep}
-                initial={{ opacity: 0, x: 20 }}
+                initial={prefersReducedMotion ? false : { opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
+                exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, x: -20 }}
+                transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.3, ease: "easeOut" }}
                 className="space-y-4 sm:space-y-6"
               >
                 {currentStep === 1 && (
@@ -555,8 +577,9 @@ export function RentPropertyForm() {
 
                 {error && (
                   <motion.div
-                    initial={{ opacity: 0, y: -10 }}
+                    initial={prefersReducedMotion ? false : { opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
+                    transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.3 }}
                     className="rounded-xl bg-accent-error/10 dark:bg-accent-error/20 border border-accent-error/20 p-3 sm:p-4 text-sm sm:text-base text-accent-error"
                     role="alert"
                   >

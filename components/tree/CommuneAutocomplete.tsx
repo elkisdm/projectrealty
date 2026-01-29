@@ -143,7 +143,7 @@ export function CommuneAutocomplete({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const hasError = error || (localValue.length >= 2 && isValid === false);
+  const hasError = Boolean(error || (localValue.length >= 2 && isValid === false));
 
   return (
     <div ref={containerRef} className={cn("relative", className)}>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,6 +16,7 @@ import { HeroCTA } from "./HeroCTA";
 import { FilterBottomSheet } from "./FilterBottomSheet";
 import MotionWrapper from "@/components/ui/MotionWrapper";
 import { formatPrice } from "@/lib/utils";
+import { ErrorMessage } from "@/components/ui/ErrorMessage";
 
 interface HeroSearchPanelProps {
   availableCount?: number;
@@ -36,10 +37,11 @@ export default function HeroSearchPanel({
   const router = useRouter();
   const { formState: contextFormState, updateFormState } = useSearchFormContext();
   const [showFiltersSheet, setShowFiltersSheet] = useState(false);
+  const moreFiltersButtonRef = useRef<HTMLButtonElement>(null);
 
   const {
     handleSubmit,
-    formState: { isSubmitting },
+    formState: { isSubmitting, errors },
     setValue,
     watch,
   } = useForm<SearchFormInput>({
@@ -151,6 +153,13 @@ export default function HeroSearchPanel({
                     onChange={(value) => setValue("q", value)}
                     onParsedData={handleParsedData}
                     placeholder="Comuna, barrio o metro…"
+                    aria-invalid={!!errors.q}
+                    aria-describedby={errors.q ? "q-error" : undefined}
+                  />
+                  <ErrorMessage
+                    error={errors.q}
+                    id="q-error"
+                    className="mt-1"
                   />
                 </div>
 
@@ -171,11 +180,35 @@ export default function HeroSearchPanel({
                   onPriceMaxChange={(value) => setValue("priceMax", value)}
                   onMoveInChange={(value) => setValue("moveIn", value as SearchFormInput["moveIn"])}
                 />
+                {errors.priceMax && (
+                  <ErrorMessage
+                    error={errors.priceMax}
+                    id="priceMax-error"
+                    className="mt-1"
+                  />
+                )}
+
+                {/* Error banner general */}
+                {Object.keys(errors).length > 0 && (
+                  <div
+                    className="rounded-xl bg-accent-error/10 dark:bg-red-900/20 border border-accent-error/20 p-3 text-sm text-accent-error"
+                    role="alert"
+                  >
+                    Por favor corrige los errores antes de continuar
+                  </div>
+                )}
 
                 {/* CTA - Primary action */}
                 <HeroCTA
                   isSubmitting={isSubmitting}
-                  onMoreFiltersClick={() => setShowFiltersSheet(true)}
+                  onMoreFiltersClick={() => {
+                    // Guardar elemento activo antes de abrir sheet para focus return
+                    if (document.activeElement instanceof HTMLElement) {
+                      moreFiltersButtonRef.current = document.activeElement as HTMLButtonElement;
+                    }
+                    setShowFiltersSheet(true);
+                  }}
+                  moreFiltersButtonRef={moreFiltersButtonRef}
                 />
               </form>
             </div>
@@ -215,6 +248,7 @@ export default function HeroSearchPanel({
       <FilterBottomSheet
         isOpen={showFiltersSheet}
         onClose={() => setShowFiltersSheet(false)}
+        triggerRef={moreFiltersButtonRef}
         filters={{
           precioMin: watch("precioMin") ? Number(watch("precioMin")) : undefined,
           precioMax: priceMax ? Number(priceMax) : undefined,

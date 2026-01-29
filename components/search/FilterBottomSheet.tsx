@@ -65,6 +65,7 @@ export const FilterBottomSheet = memo(function FilterBottomSheet({
   onBedsChange,
   onPriceMaxChange,
   onMoveInChange,
+  triggerRef,
 }: FilterBottomSheetProps) {
   const [pendingFilters, setPendingFilters] = useState<SearchFilters>(filters);
 
@@ -161,6 +162,7 @@ export const FilterBottomSheet = memo(function FilterBottomSheet({
       onClose={onClose}
       title="Ajusta tu búsqueda"
       maxHeight="85vh"
+      triggerRef={triggerRef}
     >
       <div className="space-y-6 pb-24">
         {/* Tipología (beds) - NEW */}

@@ -43,6 +43,9 @@
       "@types": [
         "types/index.ts"
       ],
+      "@stores/*": [
+        "stores/*"
+      ],
       "@workspace/scripts/*": [
         "scripts/tools/*"
       ],
@@ -73,6 +76,11 @@
     "arriendo-zero/**",
     "tests/**",
     "**/* 2.tsx",
-    "**/* 2.ts"
+    "**/* 2.ts",
+    "components/product/ProductCard.tsx",
+    "components/product/ProductInfo.tsx",
+    "lib/ecommerce/**",
+    "lib/shopify/**",
+    "stores/productPageStore.ts"
   ]
 }

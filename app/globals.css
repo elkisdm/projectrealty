@@ -2,6 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Font variables */
+:root {
+  --font-inter: var(--font-inter);
+  --font-mona-sans: var(--font-mona-sans);
+  --font-hubot-sans: var(--font-hubot-sans);
+}
+
 /* Safe area utilities for mobile devices */
 .safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom);

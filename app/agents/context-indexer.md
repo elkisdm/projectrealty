@@ -1424,5 +1424,5 @@ Output esperado:
 ---
 
 **Version:** 1.0  
-**Last updated:** 2026-01-24  
+**Last updated:** 2026-01-28  
 **Status:** Active

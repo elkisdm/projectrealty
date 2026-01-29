@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Mona_Sans, Hubot_Sans } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@lib/theme-context";
 import { Header } from "@components/marketing/Header";
@@ -21,6 +21,23 @@ const inter = Inter({
   subsets: ["latin"],
   display: 'swap',
   preload: true,
+  variable: "--font-inter",
+});
+
+const monaSans = Mona_Sans({
+  subsets: ["latin"],
+  display: 'swap',
+  preload: true,
+  variable: "--font-mona-sans",
+  weight: ["200", "300", "400", "500", "600", "700", "800"],
+});
+
+const hubotSans = Hubot_Sans({
+  subsets: ["latin"],
+  display: 'swap',
+  preload: true,
+  variable: "--font-hubot-sans",
+  weight: ["200", "300", "400", "500", "600", "700", "800"],
 });
 
 // Script para prevenir parpadeo inicial - aplica el tema guardado consistentemente
@@ -49,7 +66,11 @@ const themeScript = `
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es" className={inter.className} suppressHydrationWarning>
+    <html
+      lang="es"
+      className={`${inter.variable} ${monaSans.variable} ${hubotSans.variable} ${inter.className}`}
+      suppressHydrationWarning
+    >
       <head>
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
