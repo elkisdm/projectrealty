@@ -2,10 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import { track, ANALYTICS_EVENTS } from "@lib/analytics";
 import { useEffect, useState } from "react";
-import { Home, TrendingUp, Building2, DollarSign } from "lucide-react";
+import { IconifyIcon } from "./IconifyIcon";
 import { buildWhatsAppUrl } from "@lib/whatsapp";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { UFIndicator } from "./UFIndicator";
@@ -94,7 +95,11 @@ export function TreeLanding() {
   ];
 
   return (
-    <main id="main-content" role="main" className="min-h-screen bg-bg dark:bg-bg safe-area-bottom transition-colors duration-300">
+    <main id="main-content" role="main" className={cn(
+      "min-h-screen bg-bg dark:bg-bg",
+      "dark:bg-gradient-to-br dark:from-gray-900 dark:via-gray-900 dark:to-gray-800",
+      "safe-area-bottom transition-colors duration-300"
+    )}>
       {/* Navigation Loader */}
       <NavigationLoader isNavigating={isNavigating} />
 
@@ -108,7 +113,7 @@ export function TreeLanding() {
       >
         Saltar al contenido principal
       </a>
-      <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-sm">
+      <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-sm lg:max-w-md">
         <header className="text-center mb-6 sm:mb-8" role="banner">
           <motion.div
             initial={prefersReducedMotion ? false : { opacity: 0, y: -20 }}
@@ -116,18 +121,47 @@ export function TreeLanding() {
             transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.3 }}
             className="mb-4"
           >
-            {/* Avatar más pequeño y minimalista con animación anime.js */}
-            <AnimatedAvatar className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-3 rounded-full bg-gradient-to-br from-brand-violet/20 via-brand-violet/30 to-brand-aqua/20 dark:from-brand-violet/30 dark:via-brand-violet/40 dark:to-brand-aqua/30 flex items-center justify-center ring-1 ring-brand-violet/10 dark:ring-brand-violet/20 transition-colors duration-300">
-              <span className="text-xl sm:text-2xl font-bold text-brand-violet dark:text-brand-aqua">ED</span>
-            </AnimatedAvatar>
-            <h1 className="text-xl sm:text-2xl font-bold text-text mb-2 transition-colors duration-300 font-display">
+            {/* Avatar con imagen de perfil y animación anime.js */}
+            <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-3 relative">
+              <AnimatedAvatar className={cn(
+                "w-full h-full rounded-full",
+                "bg-gradient-to-br from-brand-violet/20 via-brand-violet/30 to-brand-aqua/20",
+                "dark:from-brand-violet/30 dark:via-brand-violet/40 dark:to-brand-aqua/30",
+                "ring-2 ring-brand-violet/20 dark:ring-brand-violet/40",
+                "dark:shadow-lg dark:shadow-brand-violet/20",
+                "transition-all duration-300 overflow-hidden relative"
+              )}>
+                <Image
+                  src="/avatars/profile.png"
+                  alt={`${urlParams.name || "Elkis Daza"} - Realtor`}
+                  fill
+                  className="object-cover rounded-full"
+                  sizes="(max-width: 640px) 64px, 80px"
+                  priority
+                />
+              </AnimatedAvatar>
+            </div>
+            <h1 className={cn(
+              "text-xl sm:text-2xl font-bold text-text mb-2",
+              "font-display tracking-tight",
+              "transition-colors duration-300"
+            )}>
               {urlParams.name || "Elkis Daza"}
             </h1>
-            <p className="text-sm sm:text-base text-text-secondary mb-2 transition-colors duration-300">Realtor · Encuentra tu próximo hogar</p>
+            <p className={cn(
+              "text-sm sm:text-base text-text-secondary mb-2",
+              "font-medium",
+              "transition-colors duration-300"
+            )}>
+              Realtor · Encuentra tu próximo hogar
+            </p>
             {/* Badge de gamificación */}
             {gamificationHydrated && currentBadge && (
               <div className="mb-2 flex justify-center">
-                <GamificationBadge badge={currentBadge} />
+                <GamificationBadge
+                  badge={currentBadge}
+                  className="shadow-md shadow-brand-violet/20 dark:shadow-brand-violet/30"
+                />
               </div>
             )}
             <UFIndicator />
@@ -154,21 +188,41 @@ export function TreeLanding() {
               <Card
                 data-card
                 className={cn(
-                  "rounded-xl border transition-all duration-200 cursor-pointer group bg-card hover:shadow-xl active:scale-[0.98] motion-reduce:active:scale-100",
+                  "rounded-xl border transition-all duration-200 cursor-pointer group",
+                  "bg-card dark:bg-card/80 dark:backdrop-blur-sm",
+                  "border-border dark:border-white/10",
+                  "shadow-sm hover:shadow-2xl hover:shadow-brand-violet/10 dark:hover:shadow-brand-violet/20",
+                  "dark:shadow-xl dark:shadow-black/20",
+                  "hover:-translate-y-1 active:translate-y-0",
                   urlParams.highlight === "rent"
-                    ? "border-brand-violet dark:border-brand-violet ring-2 ring-brand-violet/20 dark:ring-brand-violet/30"
+                    ? "border-brand-violet dark:border-brand-violet ring-2 ring-brand-violet/20 dark:ring-brand-violet/30 shadow-md shadow-brand-violet/5"
                     : "border-border hover:border-brand-violet/50 dark:hover:border-brand-violet/40"
                 )}
               >
-                <CardContent className="p-4 sm:p-5">
+                <CardContent className="p-4 sm:p-5 lg:p-6">
                   <button
                     onClick={() => handleCTAClick("rent")}
                     className="w-full text-left min-h-[44px] focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-violet focus-visible:ring-offset-2 focus-visible:rounded-lg"
                     aria-label="Quiero arrendar - Encuentra tu próximo hogar"
                   >
                     <div className="flex items-center gap-2 sm:gap-3">
-                      <div className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-brand-violet/10 dark:bg-brand-violet/20 flex items-center justify-center group-hover:bg-brand-violet/20 dark:group-hover:bg-brand-violet/30 transition-colors">
-                        <Home className="w-4 h-4 sm:w-5 sm:h-5 text-brand-violet" aria-hidden="true" />
+                      <div className={cn(
+                        "flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-lg",
+                        "bg-brand-violet/10 dark:bg-brand-violet/20",
+                        "flex items-center justify-center",
+                        "group-hover:bg-brand-violet/20 dark:group-hover:bg-brand-violet/30",
+                        "group-hover:scale-110",
+                        "transition-all duration-200"
+                      )}>
+                        <IconifyIcon
+                          icon="tabler:home"
+                          className={cn(
+                            "w-4 h-4 sm:w-5 sm:h-5 text-brand-violet",
+                            "group-hover:scale-110",
+                            "transition-transform duration-200"
+                          )}
+                          aria-hidden={true}
+                        />
                       </div>
                       <div className="flex-1 min-w-0">
                         <h2 id="rent-title" className="text-sm sm:text-base font-semibold text-text leading-relaxed font-display">Quiero arrendar</h2>
@@ -199,21 +253,41 @@ export function TreeLanding() {
               <Card
                 data-card
                 className={cn(
-                  "rounded-xl border transition-all duration-200 cursor-pointer group bg-card hover:shadow-xl active:scale-[0.98] motion-reduce:active:scale-100",
+                  "rounded-xl border transition-all duration-200 cursor-pointer group",
+                  "bg-card dark:bg-card/80 dark:backdrop-blur-sm",
+                  "border-border dark:border-white/10",
+                  "shadow-sm hover:shadow-2xl hover:shadow-brand-aqua/10 dark:hover:shadow-brand-aqua/20",
+                  "dark:shadow-xl dark:shadow-black/20",
+                  "hover:-translate-y-1 active:translate-y-0",
                   urlParams.highlight === "buy"
-                    ? "border-brand-aqua dark:border-brand-aqua ring-2 ring-brand-aqua/20 dark:ring-brand-aqua/30"
+                    ? "border-brand-aqua dark:border-brand-aqua ring-2 ring-brand-aqua/20 dark:ring-brand-aqua/30 shadow-md shadow-brand-aqua/5"
                     : "border-border hover:border-brand-aqua/50 dark:hover:border-brand-aqua/40"
                 )}
               >
-                <CardContent className="p-4 sm:p-5">
+                <CardContent className="p-4 sm:p-5 lg:p-6">
                   <button
                     onClick={() => handleCTAClick("buy")}
                     className="w-full text-left min-h-[44px] focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-aqua focus-visible:ring-offset-2 focus-visible:rounded-lg"
                     aria-label="Quiero comprar - Invierte en tu futuro con la mejor asesoría"
                   >
                     <div className="flex items-center gap-2 sm:gap-3">
-                      <div className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-brand-aqua/10 dark:bg-brand-aqua/20 flex items-center justify-center group-hover:bg-brand-aqua/20 dark:group-hover:bg-brand-aqua/30 transition-colors">
-                        <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-brand-aqua" aria-hidden="true" />
+                      <div className={cn(
+                        "flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-lg",
+                        "bg-brand-aqua/10 dark:bg-brand-aqua/20",
+                        "flex items-center justify-center",
+                        "group-hover:bg-brand-aqua/20 dark:group-hover:bg-brand-aqua/30",
+                        "group-hover:scale-110",
+                        "transition-all duration-200"
+                      )}>
+                        <IconifyIcon
+                          icon="tabler:trending-up"
+                          className={cn(
+                            "w-4 h-4 sm:w-5 sm:h-5 text-brand-aqua",
+                            "group-hover:scale-110",
+                            "transition-transform duration-200"
+                          )}
+                          aria-hidden={true}
+                        />
                       </div>
                       <div className="flex-1 min-w-0">
                         <h2 id="buy-title" className="text-sm sm:text-base font-semibold text-text leading-relaxed font-display">Quiero comprar</h2>
@@ -244,21 +318,41 @@ export function TreeLanding() {
               <Card
                 data-card
                 className={cn(
-                  "rounded-xl border transition-all duration-200 cursor-pointer group bg-card hover:shadow-xl active:scale-[0.98] motion-reduce:active:scale-100",
+                  "rounded-xl border transition-all duration-200 cursor-pointer group",
+                  "bg-card dark:bg-card/80 dark:backdrop-blur-sm",
+                  "border-border dark:border-white/10",
+                  "shadow-sm hover:shadow-2xl hover:shadow-brand-violet/10 dark:hover:shadow-brand-violet/20",
+                  "dark:shadow-xl dark:shadow-black/20",
+                  "hover:-translate-y-1 active:translate-y-0",
                   urlParams.highlight === "rent-property"
-                    ? "border-brand-violet dark:border-brand-violet ring-2 ring-brand-violet/20 dark:ring-brand-violet/30"
+                    ? "border-brand-violet dark:border-brand-violet ring-2 ring-brand-violet/20 dark:ring-brand-violet/30 shadow-md shadow-brand-violet/5"
                     : "border-border hover:border-brand-violet/50 dark:hover:border-brand-violet/40"
                 )}
               >
-                <CardContent className="p-4 sm:p-5">
+                <CardContent className="p-4 sm:p-5 lg:p-6">
                   <button
                     onClick={() => handleCTAClick("rent-property")}
                     className="w-full text-left min-h-[44px] focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-violet focus-visible:ring-offset-2 focus-visible:rounded-lg"
                     aria-label="Tengo una propiedad y la quiero arrendar - Publica tu propiedad"
                   >
                     <div className="flex items-center gap-2 sm:gap-3">
-                      <div className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-brand-violet/10 dark:bg-brand-violet/20 flex items-center justify-center group-hover:bg-brand-violet/20 dark:group-hover:bg-brand-violet/30 transition-colors">
-                        <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-brand-violet" aria-hidden="true" />
+                      <div className={cn(
+                        "flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-lg",
+                        "bg-brand-violet/10 dark:bg-brand-violet/20",
+                        "flex items-center justify-center",
+                        "group-hover:bg-brand-violet/20 dark:group-hover:bg-brand-violet/30",
+                        "group-hover:scale-110",
+                        "transition-all duration-200"
+                      )}>
+                        <IconifyIcon
+                          icon="tabler:building"
+                          className={cn(
+                            "w-4 h-4 sm:w-5 sm:h-5 text-brand-violet",
+                            "group-hover:scale-110",
+                            "transition-transform duration-200"
+                          )}
+                          aria-hidden={true}
+                        />
                       </div>
                       <div className="flex-1 min-w-0">
                         <h2 id="rent-property-title" className="text-sm sm:text-base font-semibold text-text leading-relaxed font-display">Tengo una propiedad y la quiero arrendar</h2>
@@ -289,21 +383,41 @@ export function TreeLanding() {
               <Card
                 data-card
                 className={cn(
-                  "rounded-xl border transition-all duration-200 cursor-pointer group bg-card hover:shadow-xl active:scale-[0.98] motion-reduce:active:scale-100",
+                  "rounded-xl border transition-all duration-200 cursor-pointer group",
+                  "bg-card dark:bg-card/80 dark:backdrop-blur-sm",
+                  "border-border dark:border-white/10",
+                  "shadow-sm hover:shadow-2xl hover:shadow-brand-aqua/10 dark:hover:shadow-brand-aqua/20",
+                  "dark:shadow-xl dark:shadow-black/20",
+                  "hover:-translate-y-1 active:translate-y-0",
                   urlParams.highlight === "sell-property"
-                    ? "border-brand-aqua dark:border-brand-aqua ring-2 ring-brand-aqua/20 dark:ring-brand-aqua/30"
+                    ? "border-brand-aqua dark:border-brand-aqua ring-2 ring-brand-aqua/20 dark:ring-brand-aqua/30 shadow-md shadow-brand-aqua/5"
                     : "border-border hover:border-brand-aqua/50 dark:hover:border-brand-aqua/40"
                 )}
               >
-                <CardContent className="p-4 sm:p-5">
+                <CardContent className="p-4 sm:p-5 lg:p-6">
                   <button
                     onClick={() => handleCTAClick("sell-property")}
                     className="w-full text-left min-h-[44px] focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-aqua focus-visible:ring-offset-2 focus-visible:rounded-lg"
                     aria-label="Quiero vender mi propiedad - Asesoría para venta de propiedades"
                   >
                     <div className="flex items-center gap-2 sm:gap-3">
-                      <div className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-brand-aqua/10 dark:bg-brand-aqua/20 flex items-center justify-center group-hover:bg-brand-aqua/20 dark:group-hover:bg-brand-aqua/30 transition-colors">
-                        <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-brand-aqua" aria-hidden="true" />
+                      <div className={cn(
+                        "flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-lg",
+                        "bg-brand-aqua/10 dark:bg-brand-aqua/20",
+                        "flex items-center justify-center",
+                        "group-hover:bg-brand-aqua/20 dark:group-hover:bg-brand-aqua/30",
+                        "group-hover:scale-110",
+                        "transition-all duration-200"
+                      )}>
+                        <IconifyIcon
+                          icon="tabler:currency-dollar"
+                          className={cn(
+                            "w-4 h-4 sm:w-5 sm:h-5 text-brand-aqua",
+                            "group-hover:scale-110",
+                            "transition-transform duration-200"
+                          )}
+                          aria-hidden={true}
+                        />
                       </div>
                       <div className="flex-1 min-w-0">
                         <h2 id="sell-title" className="text-sm sm:text-base font-semibold text-text leading-relaxed font-display">Quiero vender mi propiedad</h2>
@@ -334,7 +448,22 @@ export function TreeLanding() {
                 href={social.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 motion-reduce:hover:scale-100 motion-reduce:active:scale-100 ${social.color} bg-surface dark:bg-surface border border-border hover:border-current focus:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 shadow-sm hover:shadow-md transition-colors duration-300`}
+                className={cn(
+                  "w-12 h-12 sm:w-14 sm:h-14 rounded-xl",
+                  "flex items-center justify-center",
+                  "transition-all duration-200",
+                  "hover:scale-110 active:scale-95",
+                  "motion-reduce:hover:scale-100 motion-reduce:active:scale-100",
+                  social.color,
+                  "bg-surface dark:bg-surface border border-border",
+                  "hover:border-current",
+                  "focus:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2",
+                  "shadow-sm hover:shadow-lg",
+                  social.label === "WhatsApp" && "hover:shadow-emerald-500/30",
+                  social.label === "Instagram" && "hover:shadow-pink-500/30",
+                  social.label === "LinkedIn" && "hover:shadow-blue-500/30",
+                  "transition-colors duration-300"
+                )}
                 aria-label={`${social.label} - Abre en nueva ventana`}
                 role="listitem"
                 onClick={() => {

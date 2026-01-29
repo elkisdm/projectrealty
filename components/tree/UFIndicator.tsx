@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { TrendingUp, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
+import { cn } from "@/lib/utils";
 
 interface UFData {
   codigo: string;
@@ -69,7 +70,14 @@ export function UFIndicator() {
       initial={prefersReducedMotion ? false : { opacity: 0, y: -5 }}
       animate={{ opacity: 1, y: 0 }}
       transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.3, delay: 0.5 }}
-      className="flex items-center justify-center gap-2 text-xs sm:text-sm text-subtext mb-3 min-h-[24px] sm:min-h-[28px]"
+      className={cn(
+        "inline-flex items-center gap-2 px-3 py-1.5 rounded-lg",
+        "bg-surface/50 dark:bg-surface/30",
+        "border border-border/50",
+        "backdrop-blur-sm",
+        "shadow-sm",
+        "text-xs sm:text-sm text-subtext mb-3 min-h-[24px] sm:min-h-[28px]"
+      )}
       aria-live="polite"
       aria-atomic="true"
     >
