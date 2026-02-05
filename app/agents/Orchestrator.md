@@ -581,7 +581,103 @@ WP3: UI Builder agrega guard + placeholder image
 
 ---
 
-## M) Quality Gates
+## M) Assigned Tasks: Post-Auditoría 2026-01
+
+> **Origen:** `docs/PLAN_RESOLUCION_AUDITORIA_2026-01-31.md`  
+> **Referencia:** `AUDITORIA_COMPLETA_2026-01-28.md`
+
+### Tabla de Asignación por Workpack
+
+| ID | Título | Prioridad | Agent(s) | Current Step | Status |
+|----|--------|-----------|----------|--------------|--------|
+| WP-A | Tests (29 suites fallando → 0) | 🔴 Alta | QA Gatekeeper + Orchestrator | A1 Discovery | PENDING |
+| WP-B | Content-Security-Policy | 🔴 Alta | Data/Backend | B1 Spec | PENDING |
+| WP-C | Migración ESLint (.eslintignore → ignores) | 🟡 Media | Orchestrator | C1 Migrar | PENDING |
+| WP-D | Vulnerabilidades (3 CVEs) | 🟡 Media | Data/Backend | D1 Audit | PENDING |
+| WP-E | Limpieza warnings ESLint | 🟡 Baja | UI Builder + Orchestrator | E1 Console→logger | PENDING |
+| WP-F | Rate limiting Redis | 🟡 Media (largo plazo) | Data/Backend | F1 Evaluar | BACKLOG |
+| WP-G | Backlog (sesiones admin, bundle, logging) | 🟢 Baja | Various | - | BACKLOG |
+
+---
+
+### WP-A: Tests — Asignación Detallada
+
+| Step | Agent | Task | Files | Output |
+|------|-------|------|-------|--------|
+| A1 | **Orchestrator** | Discovery: ejecutar `pnpm test`, capturar 29 suites fallando | - | Lista de suites + clasificación |
+| A2 | **Orchestrator** | Clasificar: críticos (API, auth, visits) vs obsoletos vs low-value | - | Matriz prioridad |
+| A3 | **QA Gatekeeper** | Corregir tests críticos (imports, mocks, assertions) | `tests/api/*`, `tests/integration/visit*` | Suites críticas PASS |
+| A4 | **QA Gatekeeper** | Actualizar/eliminar tests obsoletos (ej. landing-v2 → HeroV2) | `tests/unit/landing-v2*` | Sin falsos negativos |
+| A5 | **QA Gatekeeper** | Decidir: eliminar o deshabilitar tests low-value | `tests/unit/*.test.tsx` | `pnpm test` → 0 failed |
+
+**Delegar a QA Gatekeeper:**
+```markdown
+@QA Gatekeeper
+
+**Workpack**: WP-A - Resolver 29 suites de tests fallando
+**Spec**: docs/PLAN_RESOLUCION_AUDITORIA_2026-01-31.md § WP-A
+**Prioridad**: Críticos (API, visits) > Obsoletos > Low-value
+**Quality Gates**: G1, G4, G5
+```
+
+---
+
+### WP-B: Content-Security-Policy — Asignación Detallada
+
+| Step | Agent | Task | Files | Output |
+|------|-------|------|-------|--------|
+| B1 | **Data/Backend** | Definir política base (report-only en staging primero) | `next.config.mjs` | CSP header presente |
+| B2-B4 | **Data/Backend** | Configurar directivas, dominios, activar enforcement | `next.config.mjs` | CSP activo en prod |
+
+**Delegar a Data/Backend:**
+```markdown
+@Data/Backend
+
+**Workpack**: WP-B - Implementar Content-Security-Policy
+**Spec**: docs/PLAN_RESOLUCION_AUDITORIA_2026-01-31.md § WP-B
+**Archivo**: next.config.mjs (headers())
+**Dominios a incluir**: Supabase, gtag, fbq, Next inline scripts
+**Quality Gates**: G1, G2, G5
+```
+
+---
+
+### WP-C: Migración ESLint — Asignación Detallada
+
+| Step | Agent | Task | Files | Output |
+|------|-------|------|-------|--------|
+| C1 | **Orchestrator** | Agregar ignores de `.eslintignore` a `eslint.config.mjs` | `eslint.config.mjs` | Mismos paths ignorados |
+| C2 | **Orchestrator** | Eliminar `.eslintignore` | `.eslintignore` | Archivo eliminado |
+
+---
+
+### WP-D: Vulnerabilidades — Asignación Detallada
+
+| Step | Agent | Task | Files | Output |
+|------|-------|------|-------|--------|
+| D1-D4 | **Data/Backend** | `pnpm audit` → `pnpm audit fix` → overrides si necesario | `package.json`, `pnpm-lock.yaml` | `pnpm audit` = 0 |
+
+---
+
+### WP-E: Limpieza Warnings — Asignación Detallada
+
+| Step | Agent | Task | Files | Output |
+|------|-------|------|-------|--------|
+| E1 | **UI Builder** | Migrar console statements a `logger` en app/ | DownloadPDFButton, page.tsx, sitemap, etc. | 0 console.* (excepto error boundaries) |
+| E2 | **UI Builder** | Prefijar variables no usadas con `_` | ~15 archivos | 0 no-unused-vars |
+| E3 | **UI Builder** | Revisar react-hooks/exhaustive-deps | 2 archivos | Dependencies correctas |
+
+---
+
+### Orden de Ejecución Recomendado (Semanas 1–3)
+
+1. **Semana 1:** WP-A (Orchestrator A1–A2 → QA Gatekeeper A3–A5), WP-C (Orchestrator), WP-D (Data/Backend)
+2. **Semana 2:** WP-B (Data/Backend), WP-E.1 (UI Builder)
+3. **Semana 3:** WP-E.2–E.3 (UI Builder)
+
+---
+
+## N) Quality Gates
 
 ### Gates que Orchestrator valida:
 
@@ -603,7 +699,7 @@ WP3: UI Builder agrega guard + placeholder image
 
 ---
 
-## N) Failure Modes
+## O) Failure Modes
 
 ### FM1: WP1 saltado
 **Sintoma**: Agente inventa tipos o APIs que ya existen  
@@ -623,7 +719,13 @@ WP3: UI Builder agrega guard + placeholder image
 
 ---
 
-## O) Changelog
+## P) Changelog
+
+### v2.2 (2026-01-31)
+- Agregada sección **M) Assigned Tasks: Post-Auditoría 2026-01**
+- Mapeo WP-A a WP-G a agentes (QA Gatekeeper, Data/Backend, UI Builder, Orchestrator)
+- Prompts de delegación listos para copiar/pegar
+- Orden de ejecución recomendado (Semanas 1–3)
 
 ### v2.1 (2026-01-25)
 - Regenerado con contenido completo

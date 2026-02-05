@@ -64,13 +64,16 @@ describe('Landing V2 - Smoke Tests', () => {
 
     it('la página landing-v2 debe importar todos los componentes', () => {
       const pagePath = path.join(projectRoot, 'app/(marketing)/landing-v2/page.tsx');
-      const content = fs.readFileSync(pagePath, 'utf-8');
+      const clientPath = path.join(projectRoot, 'app/(marketing)/landing-v2/LandingV2Client.tsx');
+      const pageContent = fs.readFileSync(pagePath, 'utf-8');
+      const clientContent = fs.existsSync(clientPath) ? fs.readFileSync(clientPath, 'utf-8') : pageContent;
 
-      expect(content).toContain('HeroV2');
-      expect(content).toContain('FeaturedGrid');
-      expect(content).toContain('HowItWorks');
-      expect(content).toContain('Trust');
-      expect(content).toContain('export default async function LandingV2Page');
+      expect(pageContent).toContain('LandingV2Client');
+      expect(pageContent).toContain('export default async function LandingV2Page');
+      expect(clientContent).toContain('HeroV2');
+      expect(clientContent).toContain('FeaturedGrid');
+      expect(clientContent).toContain('HowItWorks');
+      expect(clientContent).toContain('Trust');
     });
   });
 });

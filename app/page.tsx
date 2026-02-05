@@ -9,8 +9,18 @@ import { HomePageTracker } from "./HomePageTracker";
 import { getAllBuildings } from "@/lib/data";
 import { getAvailableUnitsCount } from "@/lib/hooks/useFeaturedUnits";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 export const revalidate = 3600;
+
+const DATA_FETCH_TIMEOUT_MS = 10_000;
+
+/** Timeout para que la home no quede colgada si Supabase/red tarda */
+function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms)),
+  ]);
+}
 
 export const metadata: Metadata = generateBaseMetadata({
   title: "Elkis Realtor · 0% Comisión",
@@ -19,11 +29,16 @@ export const metadata: Metadata = generateBaseMetadata({
 });
 
 export default async function Home() {
-  // Obtener datos para Hero
-  const [allBuildings, availableCount] = await Promise.all([
+  const dataPromise = Promise.all([
     getAllBuildings(),
     getAvailableUnitsCount(),
   ]);
+  const fallback: [Awaited<ReturnType<typeof getAllBuildings>>, number] = [[], 0];
+  const [allBuildings, availableCount] = await withTimeout(
+    dataPromise,
+    DATA_FETCH_TIMEOUT_MS,
+    fallback
+  );
 
   // Calcular precio mínimo de todas las unidades disponibles
   const allAvailableUnits = allBuildings.flatMap(building =>

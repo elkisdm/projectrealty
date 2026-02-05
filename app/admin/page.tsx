@@ -237,8 +237,14 @@ export default function AdminDashboardPage() {
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Link
-            href="/admin/buildings"
+            href="/admin/listar-propiedad"
             className="px-4 py-3 rounded-lg bg-brand-violet text-white font-medium hover:bg-brand-violet/90 transition-colors text-center focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--soft)]"
+          >
+            Listar propiedad nueva
+          </Link>
+          <Link
+            href="/admin/buildings"
+            className="px-4 py-3 rounded-lg bg-[var(--soft)] text-[var(--text)] font-medium hover:bg-[var(--soft)]/80 transition-colors text-center ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--soft)]"
           >
             Gestionar Edificios
           </Link>

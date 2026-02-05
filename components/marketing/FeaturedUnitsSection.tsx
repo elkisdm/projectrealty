@@ -2,21 +2,24 @@ import { getFeaturedUnits } from '@lib/hooks/useFeaturedUnits';
 import { FeaturedUnitsGridClient } from './FeaturedUnitsGridClient';
 import type { UnitWithBuilding } from '@lib/hooks/useFeaturedUnits';
 
+const FEATURED_FETCH_TIMEOUT_MS = 8_000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms)),
+  ]);
+}
+
 /**
  * Server Component que contiene múltiples grids de unidades destacadas
  * Cada grid muestra unidades según diferentes filtros (comuna, dormitorios, precio, featured)
  */
 export async function FeaturedUnitsSection() {
-  // Obtener unidades para cada grid en paralelo
-  const [
-    nunoaUnits,
-    lasCondesUnits,
-    providenciaUnits,
-    dorm1Units,
-    dorm2Units,
-    economicUnits,
-    featuredUnits,
-  ] = await Promise.all([
+  const empty: UnitWithBuilding[] = [];
+  const fallback: [UnitWithBuilding[], UnitWithBuilding[], UnitWithBuilding[], UnitWithBuilding[], UnitWithBuilding[], UnitWithBuilding[], UnitWithBuilding[]] = [empty, empty, empty, empty, empty, empty, empty];
+
+  const dataPromise = Promise.all([
     getFeaturedUnits({ type: 'comuna', value: 'Ñuñoa' }, 6),
     getFeaturedUnits({ type: 'comuna', value: 'Las Condes' }, 6),
     getFeaturedUnits({ type: 'comuna', value: 'Providencia' }, 6),
@@ -25,6 +28,16 @@ export async function FeaturedUnitsSection() {
     getFeaturedUnits({ type: 'precio', value: 800000 }, 6),
     getFeaturedUnits({ type: 'featured', value: 'featured' }, 6),
   ]);
+
+  const [
+    nunoaUnits,
+    lasCondesUnits,
+    providenciaUnits,
+    dorm1Units,
+    dorm2Units,
+    economicUnits,
+    featuredUnits,
+  ] = await withTimeout(dataPromise, FEATURED_FETCH_TIMEOUT_MS, fallback);
 
   // Debug: Log para verificar qué se está obteniendo
   console.log('[FeaturedUnitsSection] Unidades encontradas:', {
