@@ -32,8 +32,17 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Obtener amenidades
-    const amenities = await getNearbyAmenitiesByBuildingId(buildingId);
+    // Obtener amenidades (si falla la tabla/query, devolver 200 con data null para no romper la UI)
+    let amenities = null;
+    try {
+      amenities = await getNearbyAmenitiesByBuildingId(buildingId);
+    } catch (err) {
+      logger.error('[API /nearby-amenities] Error fetching amenities:', err);
+      return NextResponse.json(
+        { data: null, message: 'No se encontraron amenidades para este edificio' },
+        { status: 200 }
+      );
+    }
 
     if (!amenities) {
       return NextResponse.json(
@@ -45,17 +54,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ data: amenities }, { status: 200 });
   } catch (error) {
     logger.error('[API /nearby-amenities] Error:', error);
-    
-    if (error instanceof Error) {
-      return NextResponse.json(
-        { error: 'Error al obtener amenidades', message: error.message },
-        { status: 500 }
-      );
-    }
-
     return NextResponse.json(
-      { error: 'Error interno del servidor' },
-      { status: 500 }
+      { data: null, message: 'No se encontraron amenidades para este edificio' },
+      { status: 200 }
     );
   }
 }

@@ -696,14 +696,16 @@ class SupabaseDataProcessor {
       const gastoComun = rowWithFields.gastos_comunes || 0;
 
       // Obtener imágenes (usar gallery del edificio si no hay imágenes específicas)
-      // Siempre asegurar al menos una imagen para cumplir con el schema
+      // Fallback por comuna usa imágenes que existen en /public/images
+      const buildingGallery = building.gallery && building.gallery.length > 0 ? building.gallery : this.getGallery(building.comuna);
+      const buildingCoverImage = building.cover_image || this.getCoverImage(building.comuna);
       let images: string[] = [];
       if (building.gallery && building.gallery.length > 0) {
-        images = building.gallery.slice(0, 5); // Máximo 5 imágenes
+        images = building.gallery.slice(0, 5);
       } else if (building.cover_image) {
         images = [building.cover_image];
       } else {
-        images = ['/images/default-unit.jpg']; // Fallback obligatorio
+        images = [buildingCoverImage];
       }
       
       return {
@@ -748,13 +750,15 @@ class SupabaseDataProcessor {
         estacionamiento: unitRow.estacionamiento,
         bodega: unitRow.bodega,
         estado: rowWithFields.status === 'available' ? 'Disponible' : undefined,
-        // Información del edificio (contexto)
+        // Información del edificio (contexto; incluir gallery/coverImage para UnitCard)
         building: {
           id: building.id,
           name: building.name,
           slug: building.slug || building.id,
           comuna: building.comuna,
           address: building.address,
+          gallery: buildingGallery,
+          coverImage: buildingCoverImage,
           metroCercano: building.metro_cercano_nombre ? {
             nombre: building.metro_cercano_nombre,
             distancia: building.metro_cercano_distancia,
@@ -1032,12 +1036,14 @@ class SupabaseDataProcessor {
     const garantia = foundUnit.price ? foundUnit.price : 0;
     const gastoComun = foundUnit.gc || foundUnit.gastos_comunes || 0;
 
-    // Priorizar imágenes de la unidad sobre las del edificio
+    // Priorizar imágenes de la unidad sobre las del edificio; fallback por comuna si no hay en DB
+    const buildingGalleryForUnit = building.gallery && building.gallery.length > 0 ? building.gallery : this.getGallery(building.comuna);
+    const buildingCoverForUnit = building.cover_image || this.getCoverImage(building.comuna);
     const images = (foundUnit.images && foundUnit.images.length > 0)
       ? foundUnit.images
       : (building.gallery && building.gallery.length > 0 
         ? building.gallery.slice(0, 5) 
-        : (building.cover_image ? [building.cover_image] : ['/images/default-unit.jpg']));
+        : (building.cover_image ? [building.cover_image] : [buildingCoverForUnit]));
 
     const unit = {
       id: foundUnit.id,
@@ -1085,6 +1091,8 @@ class SupabaseDataProcessor {
         slug: building.slug || building.id,
         comuna: building.comuna,
         address: building.address,
+        gallery: buildingGalleryForUnit,
+        coverImage: buildingCoverForUnit,
         metroCercano: building.metro_cercano_nombre ? {
           nombre: building.metro_cercano_nombre,
           distancia: building.metro_cercano_distancia,
@@ -1118,7 +1126,7 @@ class SupabaseDataProcessor {
 
         const uImages = uBuilding.gallery && uBuilding.gallery.length > 0 
           ? uBuilding.gallery.slice(0, 1)
-          : (uBuilding.cover_image ? [uBuilding.cover_image] : ['/images/default-unit.jpg']);
+          : (uBuilding.cover_image ? [uBuilding.cover_image] : [this.getCoverImage(uBuilding.comuna)]);
 
         const uGarantia = u.price || 0;
         return {
@@ -1155,7 +1163,8 @@ class SupabaseDataProcessor {
         comuna: building.comuna,
         address: building.address,
         amenities: Array.isArray(building.amenities) ? building.amenities : [],
-        gallery: Array.isArray(building.gallery) ? building.gallery : (building.cover_image ? [building.cover_image] : []),
+        gallery: buildingGalleryForUnit,
+        coverImage: buildingCoverForUnit,
         metroCercano,
         terminaciones: Array.isArray(buildingRow.terminaciones) ? buildingRow.terminaciones : [],
         equipamiento: Array.isArray(buildingRow.equipamiento) ? buildingRow.equipamiento : [],
@@ -1165,7 +1174,7 @@ class SupabaseDataProcessor {
   }
 
   private getCoverImage(comuna: string): string {
-    // Mapear comunas a imágenes de portada
+    // Mapear comunas a imágenes de portada (todas deben existir en /public/images)
     const comunaImages: Record<string, string> = {
       'Las Condes': '/images/lascondes-cover.jpg',
       'Providencia': '/images/providencia-cover.jpg',
@@ -1175,13 +1184,14 @@ class SupabaseDataProcessor {
       'Estación Central': '/images/estacioncentral-cover.jpg',
       'San Miguel': '/images/sanmiguel-cover.jpg',
       'Independencia': '/images/independencia-cover.jpg',
+      'Macul': '/images/parque-mackenna-305/IMG_4922.jpg',
     };
 
-    return comunaImages[comuna] || '/images/lascondes-cover.jpg';
+    return comunaImages[comuna] || '/images/nunoa-cover.jpg';
   }
 
   private getGallery(comuna: string): string[] {
-    // Galería de imágenes por comuna
+    // Galería de imágenes por comuna (todas deben existir en /public/images)
     const comunaGalleries: Record<string, string[]> = {
       'Las Condes': [
         '/images/lascondes-1.jpg',
@@ -1198,12 +1208,17 @@ class SupabaseDataProcessor {
         '/images/nunoa-2.jpg',
         '/images/nunoa-3.jpg',
       ],
+      'Macul': [
+        '/images/parque-mackenna-305/IMG_4922.jpg',
+        '/images/parque-mackenna-305/IMG_4923.jpg',
+        '/images/parque-mackenna-305/IMG_4924.jpg',
+      ],
     };
 
     return comunaGalleries[comuna] || [
-      '/images/lascondes-1.jpg',
-      '/images/lascondes-2.jpg',
-      '/images/lascondes-3.jpg',
+      '/images/nunoa-1.jpg',
+      '/images/nunoa-2.jpg',
+      '/images/nunoa-3.jpg',
     ];
   }
 }

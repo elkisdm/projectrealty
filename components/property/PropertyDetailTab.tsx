@@ -135,7 +135,7 @@ export function PropertyDetailTab({ unit, building }: PropertyDetailTabProps) {
                 <Ruler className="w-5 h-5 text-[#8B6CFF]" />
               </div>
               <div>
-                <div className="text-sm text-subtext">Superficie Total</div>
+                <div className="text-sm text-subtext">Superficie Interior</div>
                 <div className="text-base font-semibold text-text">{superficie} m²</div>
               </div>
             </div>

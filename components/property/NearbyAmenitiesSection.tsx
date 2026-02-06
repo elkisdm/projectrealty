@@ -224,15 +224,15 @@ export function NearbyAmenitiesSection({
 
     fetch(`/api/nearby-amenities?buildingId=${encodeURIComponent(building.id)}`)
       .then(async (res) => {
+        const data = await res.json().catch(() => ({}));
         if (!res.ok) {
-          const errorData = await res.json().catch(() => ({}));
-          throw new Error(errorData.message || `Error ${res.status}`);
+          logger.warn('[NearbyAmenitiesSection] API non-ok:', res.status, data);
+          setAmenities(null);
+          setLoading(false);
+          return;
         }
-        return res.json();
-      })
-      .then((response) => {
-        if (response.data) {
-          setAmenities(response.data);
+        if (data.data) {
+          setAmenities(data.data);
         } else {
           setAmenities(null);
         }
@@ -240,7 +240,7 @@ export function NearbyAmenitiesSection({
       })
       .catch((err) => {
         logger.error('[NearbyAmenitiesSection] Error loading amenities:', err);
-                    setError(err.message || 'Error al cargar los puntos de interés');
+        setAmenities(null);
         setLoading(false);
       });
   }, [building.id]);
@@ -387,15 +387,32 @@ export function NearbyAmenitiesSection({
     );
   }
 
-  // Empty state
+  // Empty state (API ok pero sin datos, o API falló y se trató como sin datos)
   if (!amenities) {
+    const retryLoad = () => {
+      setLoading(true);
+      fetch(`/api/nearby-amenities?buildingId=${encodeURIComponent(building.id)}`)
+        .then(async (res) => {
+          const data = await res.json().catch(() => ({}));
+          if (res.ok && data.data) setAmenities(data.data);
+          setLoading(false);
+        })
+        .catch(() => setLoading(false));
+    };
     return (
       <section className={`${className || ''}`}>
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
           <div className="text-center py-4">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
               No hay puntos de interés disponibles
             </p>
+            <button
+              type="button"
+              onClick={retryLoad}
+              className="text-sm text-blue-600 dark:text-blue-400 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 rounded"
+            >
+              Reintentar
+            </button>
           </div>
         </div>
       </section>
