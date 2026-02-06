@@ -854,6 +854,7 @@ class SupabaseDataProcessor {
       address: string;
       amenities: string[];
       gallery: string[];
+      coverImage: string;
       metroCercano?: {
         nombre: string;
         distancia?: number;
