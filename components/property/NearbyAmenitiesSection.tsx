@@ -16,6 +16,7 @@ import {
   Footprints,
   ChevronRight,
 } from "lucide-react";
+import Image from "next/image";
 import type { Building } from "@schemas/models";
 import type { GroupedAmenities } from "@/lib/api/nearby-amenities";
 import { logger } from "@/lib/logger";
@@ -131,11 +132,47 @@ function CollapsibleCategory({
   );
 }
 
+const METRO_ICON = "/icons/metro-santiago.png";
+const RED_METROPOLITANA_LOGO = "/icons/red-metropolitana-movilidad.png";
+
+function TransportIcon({ subcategory }: { subcategory: string }) {
+  if (subcategory === "metro") {
+    return (
+      <Image
+        src={METRO_ICON}
+        alt=""
+        width={16}
+        height={16}
+        className="shrink-0 object-contain"
+        aria-hidden
+      />
+    );
+  }
+  if (subcategory === "paraderos") {
+    return (
+      <Image
+        src={RED_METROPOLITANA_LOGO}
+        alt=""
+        width={16}
+        height={16}
+        className="shrink-0 object-contain"
+        aria-hidden
+      />
+    );
+  }
+  return (
+    <Footprints
+      className="w-4 h-4 text-gray-400 dark:text-gray-500 shrink-0"
+      aria-hidden
+    />
+  );
+}
+
 function AmenityItem({ amenity, subcategory }: { amenity: any; subcategory: string }) {
   return (
     <div className="flex items-start gap-3 py-2.5 border-b border-gray-100 dark:border-gray-700 last:border-b-0">
-      <div className="flex-shrink-0 mt-0.5">
-        <Footprints className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+      <div className="flex-shrink-0 w-4 h-4 flex items-start justify-center mt-0.5">
+        <TransportIcon subcategory={subcategory} />
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm text-gray-900 dark:text-white font-medium">

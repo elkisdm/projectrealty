@@ -3,6 +3,7 @@ import { createClient as createSupabaseClient, type SupabaseClient } from '@supa
 import { createMockSupabaseClient } from './supabase.mock';
 import { getTremendoUnitsProcessor, type TremendoUnitsProcessor } from './tremendo-units-processor';
 import { logger } from './logger';
+import { normalizePmqId, pmqIdEquals, isPmqSlug } from './constants/pmq-ids';
 
 /**
  * Función helper para crear cliente Supabase (real o mock según disponibilidad)
@@ -190,35 +191,38 @@ class SupabaseDataProcessor {
       const { data: units, error } = await this.supabase
         .from('units')
         .select(`
-          id,
-          building_id,
-          tipologia,
-          m2,
-          price,
-          gc,
-          total_mensual,
-          orientacion,
-          m2_terraza,
-          descuento_porcentaje,
-          meses_descuento,
-          garantia_meses,
-          garantia_cuotas,
-          rentas_necesarias,
-          pet_friendly,
-          reajuste_meses,
-          link_listing,
-          disponible,
-          estacionamiento,
-          bodega,
-          parking_optional,
-          storage_optional,
-          bedrooms,
-          bathrooms,
-          images_tipologia,
-          images_areas_comunes,
-          images,
-          videos,
-          buildings!inner (
+        id,
+        building_id,
+        unidad,
+        id_pmq,
+        tipologia,
+        m2,
+        price,
+        gc,
+        total_mensual,
+        orientacion,
+        m2_terraza,
+        descuento_porcentaje,
+        meses_descuento,
+        garantia_meses,
+        garantia_cuotas,
+        rentas_necesarias,
+        pet_friendly,
+        reajuste_meses,
+        link_listing,
+        disponible,
+        estacionamiento,
+        bodega,
+        parking_optional,
+        storage_optional,
+        conexion_lavadora,
+        bedrooms,
+        bathrooms,
+        images_tipologia,
+        images_areas_comunes,
+        images,
+        videos,
+        buildings!inner (
             id,
             name,
             slug,
@@ -229,7 +233,9 @@ class SupabaseDataProcessor {
             cover_image,
             metro_cercano_nombre,
             metro_cercano_distancia,
-            metro_cercano_tiempo
+            metro_cercano_tiempo,
+            terminaciones,
+            equipamiento
           )
         `)
         .order('price', { ascending: true });
@@ -484,6 +490,8 @@ class SupabaseDataProcessor {
       .select(`
         id,
         building_id,
+        unidad,
+        id_pmq,
         tipologia,
         bedrooms,
         bathrooms,
@@ -492,6 +500,7 @@ class SupabaseDataProcessor {
         disponible,
         estacionamiento,
         bodega,
+        conexion_lavadora,
         images_tipologia,
         images_areas_comunes,
         images,
@@ -506,7 +515,9 @@ class SupabaseDataProcessor {
           cover_image,
           metro_cercano_nombre,
           metro_cercano_distancia,
-          metro_cercano_tiempo
+          metro_cercano_tiempo,
+          terminaciones,
+          equipamiento
         )
       `, { count: 'exact' })
       .eq('disponible', true); // Solo unidades disponibles
@@ -637,6 +648,7 @@ class SupabaseDataProcessor {
     // Type assertion: Supabase puede retornar más campos de los definidos en el tipo
     type UnitRowWithFields = SupabaseUnitRow & {
       unidad?: string;
+      id_pmq?: string | null;
       gastos_comunes?: number;
       area_interior_m2?: number;
       piso?: number;
@@ -672,12 +684,12 @@ class SupabaseDataProcessor {
       .map((unitRow) => {
       const building = unitRow.buildings!; // Safe porque ya filtramos arriba
 
-      // Generar slug de unidad: building-slug-codigoUnidad (usar código de unidad si está disponible)
+      // Slug: id_pmq (PMQD305C) si existe, sino building-slug-codigoUnidad
       const rowWithFields = unitRow as UnitRowWithFields;
       const codigoUnidad = rowWithFields.unidad || unitRow.id.substring(0, 8);
-      const unitSlug = building.slug 
-        ? `${building.slug}-${codigoUnidad}`
-        : `${building.id}-${codigoUnidad}`;
+      const unitSlug = rowWithFields.id_pmq
+        ? normalizePmqId(rowWithFields.id_pmq)
+        : (building.slug ? `${building.slug}-${codigoUnidad}` : `${building.id}-${codigoUnidad}`);
 
       // Calcular garantía (por defecto 1 mes de arriendo)
       const garantia = unitRow.price ? unitRow.price : 0;
@@ -726,6 +738,7 @@ class SupabaseDataProcessor {
         link_listing: unitRow.link_listing,
         parking_opcional: unitRow.parking_optional,
         storage_opcional: unitRow.storage_optional,
+        conexion_lavadora: (unitRow as { conexion_lavadora?: boolean }).conexion_lavadora,
 
         // Campos opcionales legacy
         piso: rowWithFields.piso,
@@ -842,6 +855,8 @@ class SupabaseDataProcessor {
         distancia?: number;
         tiempoCaminando?: number;
       };
+      terminaciones?: string[];
+      equipamiento?: string[];
     };
     similarUnits?: Array<{
       id: string;
@@ -874,6 +889,8 @@ class SupabaseDataProcessor {
       .select(`
         id,
         building_id,
+        unidad,
+        id_pmq,
         tipologia,
         bedrooms,
         bathrooms,
@@ -896,6 +913,7 @@ class SupabaseDataProcessor {
         bodega,
         parking_optional,
         storage_optional,
+        conexion_lavadora,
         images_tipologia,
         images_areas_comunes,
         images,
@@ -911,7 +929,9 @@ class SupabaseDataProcessor {
           amenities,
           metro_cercano_nombre,
           metro_cercano_distancia,
-          metro_cercano_tiempo
+          metro_cercano_tiempo,
+          terminaciones,
+          equipamiento
         )
       `)
       .eq('disponible', true);
@@ -924,6 +944,7 @@ class SupabaseDataProcessor {
     // Type assertion para campos extendidos
     type UnitRowWithFields = SupabaseUnitRow & {
       unidad?: string;
+      id_pmq?: string | null;
       gastos_comunes?: number;
       area_interior_m2?: number;
       piso?: number;
@@ -942,41 +963,51 @@ class SupabaseDataProcessor {
     // Buscar la unidad que coincida con el slug
     let foundUnit: typeof units[0] | null = null;
 
-    for (const unitRow of units) {
-      const building = unitRow.buildings;
-      if (!building) continue;
-
-      // Generar slug de unidad de la misma forma que en getUnits
-      const generatedSlug = building.slug 
-        ? `${building.slug}-${unitRow.id.substring(0, 8)}`
-        : `${building.id}-${unitRow.id.substring(0, 8)}`;
-
-      if (generatedSlug === unitSlug) {
-        foundUnit = unitRow;
-        break;
-      }
-
-      // Buscar por código de unidad si el slug lo contiene (formato: building-slug-codigoUnidad)
-      const unitRowWithFields = unitRow as UnitRowWithFields;
-      const codigoUnidad = unitRowWithFields.unidad || unitRow.id.substring(0, 8);
-      if (codigoUnidad) {
-        // Verificar si el slug termina con el código de unidad
-        const slugEndsWithCodigo = unitSlug.endsWith(codigoUnidad) || unitSlug.includes(`-${codigoUnidad}`);
-        if (slugEndsWithCodigo) {
-          // Verificar que el building slug también coincida (al inicio)
-          const buildingSlugMatch = building.slug && (unitSlug.startsWith(building.slug) || unitSlug.includes(building.slug));
-          const buildingIdMatch = !building.slug && (unitSlug.startsWith(building.id) || unitSlug.includes(building.id));
-          if (buildingSlugMatch || buildingIdMatch) {
-            foundUnit = unitRow;
-            break;
-          }
+    // Resolver por id_pmq (PMQD305C) case-insensitive primero
+    if (isPmqSlug(unitSlug)) {
+      for (const unitRow of units) {
+        const rowWithFields = unitRow as UnitRowWithFields;
+        if (pmqIdEquals(rowWithFields.id_pmq, unitSlug)) {
+          foundUnit = unitRow;
+          break;
         }
       }
+    }
 
-      // También buscar por ID directo como fallback
-      if (unitRow.id === unitSlug || unitSlug.endsWith(unitRow.id.substring(0, 8))) {
-        foundUnit = unitRow;
-        break;
+    if (!foundUnit) {
+      for (const unitRow of units) {
+        const building = unitRow.buildings;
+        if (!building) continue;
+
+        // Slug generado (id_pmq o building-slug-codigoUnidad)
+        const rowWithFields = unitRow as UnitRowWithFields;
+        const codigoUnidad = rowWithFields.unidad || unitRow.id.substring(0, 8);
+        const generatedSlug = rowWithFields.id_pmq
+          ? normalizePmqId(rowWithFields.id_pmq)
+          : (building.slug ? `${building.slug}-${codigoUnidad}` : `${building.id}-${codigoUnidad}`);
+
+        if (generatedSlug === unitSlug) {
+          foundUnit = unitRow;
+          break;
+        }
+
+        // Buscar por código de unidad si el slug lo contiene (formato: building-slug-codigoUnidad)
+        if (codigoUnidad) {
+          const slugEndsWithCodigo = unitSlug.endsWith(codigoUnidad) || unitSlug.includes(`-${codigoUnidad}`);
+          if (slugEndsWithCodigo) {
+            const buildingSlugMatch = building.slug && (unitSlug.startsWith(building.slug) || unitSlug.includes(building.slug));
+            const buildingIdMatch = !building.slug && (unitSlug.startsWith(building.id) || unitSlug.includes(building.id));
+            if (buildingSlugMatch || buildingIdMatch) {
+              foundUnit = unitRow;
+              break;
+            }
+          }
+        }
+
+        if (unitRow.id === unitSlug || unitSlug.endsWith(unitRow.id.substring(0, 8))) {
+          foundUnit = unitRow;
+          break;
+        }
       }
     }
 
@@ -993,10 +1024,10 @@ class SupabaseDataProcessor {
     const foundUnitWithFields = foundUnit as UnitRowWithFields;
     const codigoUnidad = foundUnitWithFields.unidad || foundUnit.id.substring(0, 8);
 
-    // Generar slug usando código de unidad (formato: building-slug-codigoUnidad)
-    const finalUnitSlug = building.slug 
-      ? `${building.slug}-${codigoUnidad}`
-      : `${building.id}-${codigoUnidad}`;
+    // Slug público: id_pmq (PMQD305C) si existe, sino building-slug-codigoUnidad
+    const finalUnitSlug = foundUnitWithFields.id_pmq
+      ? normalizePmqId(foundUnitWithFields.id_pmq)
+      : (building.slug ? `${building.slug}-${codigoUnidad}` : `${building.id}-${codigoUnidad}`);
 
     const garantia = foundUnit.price ? foundUnit.price : 0;
     const gastoComun = foundUnit.gc || foundUnit.gastos_comunes || 0;
@@ -1047,6 +1078,7 @@ class SupabaseDataProcessor {
       link_listing: foundUnit.link_listing,
       parking_opcional: foundUnit.parking_optional,
       storage_opcional: foundUnit.storage_optional,
+      conexion_lavadora: (foundUnit as { conexion_lavadora?: boolean }).conexion_lavadora,
       building: {
         id: building.id,
         name: building.name,
@@ -1078,17 +1110,15 @@ class SupabaseDataProcessor {
       .slice(0, 6)
       .map(u => {
         const uBuilding = u.buildings!;
-        const uSlug = uBuilding.slug 
-          ? `${uBuilding.slug}-${u.id.substring(0, 8)}`
-          : `${uBuilding.id}-${u.id.substring(0, 8)}`;
+        const uWithFields = u as UnitRowWithFields;
+        const uCodigoUnidad = uWithFields.unidad || u.id.substring(0, 8);
+        const uSlug = uWithFields.id_pmq
+          ? normalizePmqId(uWithFields.id_pmq)
+          : (uBuilding.slug ? `${uBuilding.slug}-${uCodigoUnidad}` : `${uBuilding.id}-${uCodigoUnidad}`);
 
         const uImages = uBuilding.gallery && uBuilding.gallery.length > 0 
           ? uBuilding.gallery.slice(0, 1)
           : (uBuilding.cover_image ? [uBuilding.cover_image] : ['/images/default-unit.jpg']);
-
-        // Generar codigoUnidad: usar campo 'unidad' si existe, sino usar ID truncado
-        const uWithFields = u as UnitRowWithFields;
-        const uCodigoUnidad = uWithFields.unidad || u.id.substring(0, 8);
 
         const uGarantia = u.price || 0;
         return {
@@ -1115,6 +1145,7 @@ class SupabaseDataProcessor {
       tiempoCaminando: building.metro_cercano_tiempo,
     } : undefined;
 
+    const buildingRow = building as { terminaciones?: string[]; equipamiento?: string[] };
     return {
       unit,
       building: {
@@ -1126,6 +1157,8 @@ class SupabaseDataProcessor {
         amenities: Array.isArray(building.amenities) ? building.amenities : [],
         gallery: Array.isArray(building.gallery) ? building.gallery : (building.cover_image ? [building.cover_image] : []),
         metroCercano,
+        terminaciones: Array.isArray(buildingRow.terminaciones) ? buildingRow.terminaciones : [],
+        equipamiento: Array.isArray(buildingRow.equipamiento) ? buildingRow.equipamiento : [],
       },
       similarUnits: similarUnits.length > 0 ? similarUnits : undefined,
     };

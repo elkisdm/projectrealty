@@ -1,15 +1,29 @@
 'use client';
 
 import { memo } from 'react';
-import { PawPrint, Car, Package, Palmtree } from 'lucide-react';
+import Image from 'next/image';
+import { PawPrint, Car, Package } from 'lucide-react';
 import type { CardChipsProps, ChipType } from '../types';
 import { CHIP_COLORS } from '../constants';
+
+function BalconIcon({ className }: { className?: string }) {
+  return (
+    <Image
+      src="/icons/balcon.svg"
+      alt=""
+      width={12}
+      height={12}
+      className={className ?? 'w-3 h-3 shrink-0 object-contain'}
+      aria-hidden
+    />
+  );
+}
 
 const CHIP_ICONS: Record<ChipType, React.ComponentType<{ className?: string }>> = {
   pet: PawPrint,
   parking: Car,
   storage: Package,
-  terrace: Palmtree,
+  terrace: BalconIcon,
 };
 
 const CHIP_LABELS: Record<ChipType, string> = {

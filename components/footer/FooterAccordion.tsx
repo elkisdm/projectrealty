@@ -39,19 +39,19 @@ export function FooterAccordion({
   };
 
   return (
-    <div className="border-b border-white/10">
+    <div className="border-b border-slate-200 dark:border-white/10">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-between w-full py-4 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 rounded-lg"
+        className="flex items-center justify-between w-full py-4 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-white/50 rounded-lg"
         aria-expanded={isOpen}
       >
-        <span className="font-semibold text-white">{title}</span>
+        <span className="font-semibold text-slate-900 dark:text-white">{title}</span>
         <motion.div
           animate={{ rotate: isOpen ? 180 : 0 }}
           transition={{ duration: prefersReducedMotion ? 0 : 0.2 }}
         >
           <ChevronDown
-            className="w-5 h-5 text-white/60"
+            className="w-5 h-5 text-slate-600 dark:text-white/60"
             aria-hidden="true"
           />
         </motion.div>
@@ -73,7 +73,7 @@ export function FooterAccordion({
                   <Link
                     href={link.href}
                     onClick={() => handleLinkClick(link.label)}
-                    className="block py-1 text-white/70 hover:text-white transition-colors text-sm"
+                    className="block py-1 text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white transition-colors text-sm"
                     {...(link.external && {
                       target: "_blank",
                       rel: "noopener noreferrer",

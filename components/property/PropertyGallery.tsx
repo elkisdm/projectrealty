@@ -77,7 +77,8 @@ function getAllImages(unit?: Unit, building?: Building, images?: string[]): stri
         result.push(building.coverImage);
     }
 
-    return result;
+    // Excluir imagen de edificio que no debe aparecer en galería de unidad (parque-mackenna.jpg como 14.ª)
+    return result.filter((url) => !url.includes("parque-mackenna.jpg"));
 }
 
 export function PropertyGallery({

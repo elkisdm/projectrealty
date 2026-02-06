@@ -34,7 +34,7 @@ export function FooterTrustBar() {
       initial="hidden"
       whileInView="visible"
       viewport={{ once: true }}
-      className="border-t border-white/10 pt-8"
+      className="border-t border-slate-200 dark:border-white/10 pt-8"
     >
       {/* Desktop: flex row */}
       <div className="hidden md:flex md:items-center md:justify-center md:gap-8 lg:gap-12">
@@ -42,7 +42,7 @@ export function FooterTrustBar() {
           <motion.div
             key={index}
             variants={itemVariants}
-            className="flex items-center gap-2 text-white/60"
+            className="flex items-center gap-2 text-slate-600 dark:text-white/60"
           >
             <badge.icon className="w-5 h-5 text-emerald-400" aria-hidden="true" />
             <span className="text-sm font-medium">{badge.label}</span>
@@ -56,7 +56,7 @@ export function FooterTrustBar() {
           <motion.div
             key={index}
             variants={itemVariants}
-            className="flex items-center gap-2 text-white/60"
+            className="flex items-center gap-2 text-slate-600 dark:text-white/60"
           >
             <badge.icon className="w-4 h-4 text-emerald-400 flex-shrink-0" aria-hidden="true" />
             <span className="text-xs font-medium">{badge.label}</span>

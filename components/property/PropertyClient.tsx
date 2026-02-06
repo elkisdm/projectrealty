@@ -13,7 +13,6 @@ import { usePropertyUnit } from "@hooks/usePropertyUnit";
 
 // Componentes de propiedad
 import { PropertyAboveFoldMobile } from "./PropertyAboveFoldMobile";
-import { PropertyBreadcrumb } from "./PropertyBreadcrumb";
 import { PropertySidebar } from "./PropertySidebar";
 import { PropertyBookingCard } from "./PropertyBookingCard";
 import { PropertyTabs } from "./PropertyTabs";
@@ -317,7 +316,6 @@ export function PropertyClient({
             <ErrorBoundary>
                 <div className="min-h-screen bg-bg">
                     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 lg:py-8">
-                        <PropertyBreadcrumb building={building} unit={selectedUnit || building.units[0] || undefined} variant={variant} />
                         <div className="mt-6">
                             <a
                                 href={`/property/${building.slug}`}
@@ -340,10 +338,7 @@ export function PropertyClient({
     return (
         <ErrorBoundary>
             <div className="min-h-screen bg-bg">
-                <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 lg:py-8">
-                    {/* Breadcrumb accesible */}
-                    <PropertyBreadcrumb building={building} unit={selectedUnit || undefined} variant={variant} />
-
+                <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 lg:py-8 overflow-x-hidden">
                     {/* Layout principal: 3 columnas */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
                         {/* Columna principal (2/3) */}

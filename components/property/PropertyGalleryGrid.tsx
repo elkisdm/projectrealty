@@ -90,7 +90,8 @@ export function PropertyGalleryGrid({ unit, building, className = "" }: Property
       images.push(building.coverImage);
     }
 
-    return images;
+    // Excluir imagen de edificio que no debe aparecer en galería de unidad (parque-mackenna.jpg como 14.ª)
+    return images.filter((url) => !url.includes("parque-mackenna.jpg"));
   };
 
   const allImages = getAllImages();

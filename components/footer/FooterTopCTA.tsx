@@ -29,14 +29,14 @@ export function FooterTopCTA() {
       transition={{ duration: prefersReducedMotion ? 0 : 0.5 }}
       className="w-full"
     >
-      <div className="rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 p-6 md:p-8">
+      <div className="rounded-2xl bg-slate-200/50 dark:bg-white/5 backdrop-blur-md border border-slate-200 dark:border-white/10 p-6 md:p-8">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
           {/* Copy */}
           <div className="text-center md:text-left">
-            <h3 className="text-lg md:text-xl font-semibold text-white">
+            <h3 className="text-lg md:text-xl font-semibold text-slate-900 dark:text-white">
               {footerCTA.headline}
             </h3>
-            <p className="text-white/70 mt-1">{footerCTA.subheadline}</p>
+            <p className="text-slate-600 dark:text-white/70 mt-1">{footerCTA.subheadline}</p>
           </div>
 
           {/* CTAs */}
@@ -47,7 +47,7 @@ export function FooterTopCTA() {
               target="_blank"
               rel="noopener noreferrer"
               onClick={handleWhatsAppClick}
-              className="inline-flex items-center justify-center gap-2 h-12 px-6 rounded-xl bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+              className="inline-flex items-center justify-center gap-2 h-12 px-6 rounded-xl bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-100 dark:focus-visible:ring-offset-slate-950"
               aria-label="Contactar por WhatsApp"
             >
               <MessageCircle className="w-5 h-5" aria-hidden="true" />
@@ -58,7 +58,7 @@ export function FooterTopCTA() {
             <Link
               href={footerCTA.secondaryCTA.href}
               onClick={handleAgendarClick}
-              className="inline-flex items-center justify-center gap-2 h-12 px-6 rounded-xl bg-white/10 text-white font-medium hover:bg-white/20 transition-colors border border-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+              className="inline-flex items-center justify-center gap-2 h-12 px-6 rounded-xl bg-slate-300 dark:bg-white/10 text-slate-900 dark:text-white font-medium hover:bg-slate-400 dark:hover:bg-white/20 transition-colors border border-slate-300 dark:border-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-100 dark:focus-visible:ring-offset-slate-950"
             >
               <Calendar className="w-5 h-5" aria-hidden="true" />
               <span>{footerCTA.secondaryCTA.label}</span>

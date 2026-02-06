@@ -123,6 +123,8 @@ export const UnitSchema = z.object({
   guarantee_months: z.number().int().min(0).max(2).optional(),
   renta_minima: z.number().positive().optional(),
   gastosComunes: z.number().int().nonnegative().optional(), // Alias de gastoComun
+  /** Conexión a lavadora en esta unidad: true = Sí, false = No, undefined = puede variar (texto del edificio). */
+  conexion_lavadora: z.boolean().optional(),
 });
 
 // Schemas para campos extendidos de Building
@@ -232,6 +234,8 @@ export const BuildingSchema = z.object({
   requisitosArriendo: RequisitosArriendoSchema,
   infoContrato: InfoContratoSchema,
   ocupacion: OcupacionSchema,
+  terminaciones: z.array(z.string().min(1)).optional(),
+  equipamiento: z.array(z.string().min(1)).optional(),
   // Extended fields (backward compatibility)
   badges: z.array(PromotionBadgeSchema).optional(),
   serviceLevel: z.enum(["pro", "standard"]).optional(),

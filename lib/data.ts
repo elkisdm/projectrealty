@@ -2,6 +2,7 @@ import { BuildingSchema } from "@schemas/models";
 import type { Building, Unit, TypologySummary, PromotionBadge } from "@schemas/models";
 import { logger } from "./logger";
 import { normalizeUnit } from "./utils/unit";
+import { normalizePmqId } from "./constants/pmq-ids";
 import { MOCK_BUILDINGS } from "@data/buildings.mock";
 
 type ListFilters = {
@@ -15,6 +16,20 @@ function calculatePrecioDesde(units: Unit[]): number | null {
   const disponibles = units.filter((u) => u.disponible);
   if (disponibles.length === 0) return null;
   return Math.min(...disponibles.map((u) => u.price));
+}
+
+/** Normaliza terminaciones/equipamiento desde Supabase (array, JSON string o null). */
+function parseStringArray(val: unknown): string[] {
+  if (Array.isArray(val)) return val.filter((x): x is string => typeof x === "string");
+  if (typeof val === "string") {
+    try {
+      const parsed = JSON.parse(val) as unknown;
+      return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === "string") : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
 }
 
 function validateBuilding(raw: unknown): Building {
@@ -65,8 +80,12 @@ async function readFromSupabase(): Promise<Building[]> {
             metro_cercano_nombre,
             metro_cercano_distancia,
             metro_cercano_tiempo,
+            terminaciones,
+            equipamiento,
             units!left (
               id,
+              unidad,
+              id_pmq,
               tipologia,
               m2,
               price,
@@ -280,9 +299,13 @@ async function readFromSupabase(): Promise<Building[]> {
         gc_mode: (b.gc_mode === 'MF' || b.gc_mode === 'variable') ? b.gc_mode : undefined,
         featured: false,
         metroCercano: buildingMetroCercano,
+        terminaciones: parseStringArray((b as Record<string, unknown>).terminaciones),
+        equipamiento: parseStringArray((b as Record<string, unknown>).equipamiento),
         units: validUnits.map((unit: unknown) => {
           const u = unit as {
             id: string;
+            unidad?: string | null;
+            id_pmq?: string | null;
             tipologia?: string;
             m2?: number;
             price?: number;
@@ -304,10 +327,16 @@ async function readFromSupabase(): Promise<Building[]> {
           fetch('http://127.0.0.1:7242/ingest/bf5372fb-b70d-4713-b992-51094d7d9401',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/data.ts:258',message:'Normalizing tipologia',data:{originalTipologia:u.tipologia,normalizedTipologia},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
           // #endregion
           
+          // codigoUnidad: desde DB (unidad) o derivado del id
+          const codigoUnidad = (u.unidad && u.unidad.trim()) ? u.unidad.trim() : (u.id?.split("-").pop() ?? u.id?.substring(0, 8) ?? u.id);
+          // slug: id_pmq (PMQD305C) si existe, sino lo genera normalizeUnit
+          const slugFromPmq = (u.id_pmq && String(u.id_pmq).trim()) ? normalizePmqId(u.id_pmq) : undefined;
           // Usar helper para crear Unit completo
           return normalizeUnit(
             {
               id: u.id,
+              codigoUnidad,
+              ...(slugFromPmq && { slug: slugFromPmq }),
               tipologia: normalizedTipologia, // Usar tipología normalizada
               m2: u.m2,
               price: u.price!, // Ya validado arriba que price > 0
@@ -651,8 +680,12 @@ export async function getBuildingBySlug(slug: string): Promise<(Building & { pre
             metro_cercano_nombre,
             metro_cercano_distancia,
             metro_cercano_tiempo,
+            terminaciones,
+            equipamiento,
             units!left (
               id,
+              unidad,
+              id_pmq,
               tipologia,
               m2,
               price,
@@ -695,10 +728,16 @@ export async function getBuildingBySlug(slug: string): Promise<(Building & { pre
             badges: Array.isArray(b.badges) ? b.badges : [],
             serviceLevel: b.service_level as 'pro' | 'standard' | undefined,
             metroCercano: buildingMetroCercanoGetBySlug,
+            terminaciones: parseStringArray(b.terminaciones),
+            equipamiento: parseStringArray(b.equipamiento),
             units: (b.units || []).map((u: any) => {
+              const codigoUnidad = (u.unidad && String(u.unidad).trim()) ? String(u.unidad).trim() : (u.id?.split("-").pop() ?? u.id?.substring(0, 8) ?? u.id);
+              const slugFromPmq = (u.id_pmq && String(u.id_pmq).trim()) ? normalizePmqId(u.id_pmq) : undefined;
               return normalizeUnit(
                 {
                   id: u.id,
+                  codigoUnidad,
+                  ...(slugFromPmq && { slug: slugFromPmq }),
                   tipologia: u.tipologia || 'Studio',
                   m2: u.m2,
                   price: u.price || 0,

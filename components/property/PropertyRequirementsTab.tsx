@@ -21,20 +21,17 @@ export function PropertyRequirementsTab({ unit, building }: PropertyRequirements
   const documentacionDependiente = requisitosArriendo?.documentacion?.dependiente || [
     "RUT vigente",
     "3 últimas liquidaciones de sueldo",
-    "Certificado de trabajo",
-    "Certificado de antecedentes"
+    "Cotizaciones AFP"
   ];
   const documentacionIndependiente = requisitosArriendo?.documentacion?.independiente || [
     "RUT vigente",
     "Últimos 6 meses de boletas de honorarios",
-    "Declaración de renta",
-    "Certificado de antecedentes"
+    "Declaración de renta"
   ];
   const documentacionExtranjeros = requisitosArriendo?.documentacion?.extranjeros || [
     "Pasaporte vigente",
     "Visa de trabajo o residencia",
-    "Comprobantes de ingresos",
-    "Certificado de antecedentes (país de origen)"
+    "Contrato de trabajo"
   ];
 
   // Condiciones financieras
@@ -47,7 +44,7 @@ export function PropertyRequirementsTab({ unit, building }: PropertyRequirements
   const duracionContrato = infoContrato?.duracionAnos ? `${infoContrato.duracionAnos} año${infoContrato.duracionAnos > 1 ? 's' : ''}` : "12 meses";
   const condicionesSalida = infoContrato?.despuesDelAno?.salidaLibre
     ? "Salida libre después del año"
-    : (infoContrato?.despuesDelAno?.avisoPrevio ? "Aviso previo requerido" : "Aviso con 30 días de anticipación");
+    : (infoContrato?.despuesDelAno?.avisoPrevio ? "Aviso previo requerido" : "Aviso con 60 días de anticipación");
 
   return (
     <div className="space-y-6">

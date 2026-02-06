@@ -11,7 +11,6 @@ import { UnitSelectorModal } from "@components/property/UnitSelectorModal";
 
 // Componentes de propiedad
 import { PropertyAboveFoldMobile } from "@components/property/PropertyAboveFoldMobile";
-import { PropertyBreadcrumb } from "@components/property/PropertyBreadcrumb";
 import { PropertySidebar } from "@components/property/PropertySidebar";
 import { PropertyBookingCard } from "@components/property/PropertyBookingCard";
 import { PropertyTabs } from "@components/property/PropertyTabs";
@@ -96,21 +95,15 @@ export function UnitDetailClient({
     ? building.allUnits 
     : [unit];
 
-  // Convertir building reducido a Building completo para componentes que lo requieren
-  // Usar todas las unidades obtenidas, no solo la unidad actual
+  // Building completo para tabs/características: preservar terminaciones, equipamiento y todo lo que venga del server
   const fullBuilding: Building = {
-    id: building.id,
-    name: building.name,
-    slug: building.slug,
-    address: building.address,
-    comuna: building.comuna,
-    amenities: building.amenities.length > 0 ? building.amenities : ['Áreas comunes'],
-    gallery: building.gallery.length > 0 ? building.gallery : ["/images/default-building.jpg"],
-    coverImage: building.gallery[0] || "/images/default-building.jpg",
-    precio_desde: unit.price,
-    units: allBuildingUnits, // TODAS las unidades del edificio
-    // Incluir metroCercano si está disponible en el building
-    metroCercano: (building as any).metroCercano,
+    ...(building as Building),
+    amenities: building.amenities?.length ? building.amenities : ['Áreas comunes'],
+    gallery: building.gallery?.length ? building.gallery : ["/images/default-building.jpg"],
+    coverImage: building.gallery?.[0] || (building as Building).coverImage || "/images/default-building.jpg",
+    units: allBuildingUnits,
+    terminaciones: (building as Building).terminaciones ?? [],
+    equipamiento: (building as Building).equipamiento ?? [],
   };
 
   // Handler para abrir modal de selector de unidades
@@ -212,9 +205,6 @@ export function UnitDetailClient({
     <ErrorBoundary>
       <div className="min-h-screen bg-bg">
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 lg:py-8">
-          {/* Breadcrumb */}
-          <PropertyBreadcrumb building={fullBuilding} unit={unit} variant="catalog" />
-
           {/* Layout principal: 3 columnas */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
             {/* Columna principal (2/3) */}

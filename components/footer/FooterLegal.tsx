@@ -21,11 +21,11 @@ export function FooterLegal() {
       whileInView={{ opacity: 1 }}
       viewport={{ once: true }}
       transition={{ duration: prefersReducedMotion ? 0 : 0.5 }}
-      className="border-t border-white/10 pt-6 mt-8"
+      className="border-t border-slate-200 dark:border-white/10 pt-6 mt-8"
     >
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         {/* Copyright */}
-        <p className="text-white/50 text-sm text-center md:text-left">
+        <p className="text-slate-500 dark:text-white/50 text-sm text-center md:text-left">
           © {currentYear} Elkis Realtor. Todos los derechos reservados.
         </p>
 
@@ -37,7 +37,7 @@ export function FooterLegal() {
                 <Link
                   href={link.href}
                   onClick={() => handleLinkClick(link.label)}
-                  className="text-white/50 hover:text-white/80 transition-colors text-sm"
+                  className="text-slate-500 dark:text-white/50 hover:text-slate-900 dark:hover:text-white/80 transition-colors text-sm"
                 >
                   {link.label}
                 </Link>

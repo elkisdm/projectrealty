@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useRef } from "react";
 import Image from "next/image";
-import { Share2, Heart, ArrowLeft, MapPin, ChevronLeft, ChevronRight } from "lucide-react";
+import { Share2, Heart, ArrowLeft, MapPin, ChevronLeft, ChevronRight, Star, Square } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { Building, Unit } from "@schemas/models";
 import { StickyCtaBar } from "@components/ui/StickyCtaBar";
@@ -58,7 +58,8 @@ function getAllImages(unit?: Unit, building?: Building): string[] {
         images.push(building.coverImage);
     }
 
-    return images;
+    // Excluir imagen de edificio que no debe aparecer en galería de unidad (parque-mackenna.jpg como 14.ª)
+    return images.filter((url) => !url.includes("parque-mackenna.jpg"));
 }
 
 interface PropertyAboveFoldMobileProps {
@@ -158,6 +159,7 @@ export function PropertyAboveFoldMobile({
     // Datos para overlay informativo (desde Supabase)
     const tipologia = selectedUnit?.tipologia || "2D";
     const m2 = selectedUnit?.area_interior_m2 || selectedUnit?.m2;
+    const m2Balcon = selectedUnit?.m2_terraza ?? selectedUnit?.area_exterior_m2;
     const dormitorios = selectedUnit?.dormitorios || selectedUnit?.bedrooms || 0;
     const estacionamiento = selectedUnit?.estacionamiento ? 1 : (selectedUnit?.parkingOptions?.length || 0);
     const petFriendly = selectedUnit?.petFriendly ?? selectedUnit?.pet_friendly;
@@ -166,9 +168,8 @@ export function PropertyAboveFoldMobile({
     const nombreMetro = building.metroCercano?.nombre;
     const stock = building.units?.filter(u => u.disponible).length;
     const totalUnitsCount = building.units?.length || 0;
-    // Mostrar botón si hay unidades en el edificio (mostrar TODAS las unidades en el modal, no solo disponibles)
-    // Esto es importante porque hay 1 edificio con 111 departamentos
-    const shouldShowChangeButton = onSelectOtherUnit && totalUnitsCount > 0;
+    // Mostrar botón "Cambiar" solo si hay más de una unidad en el edificio
+    const shouldShowChangeButton = onSelectOtherUnit && totalUnitsCount > 1;
 
     // Formatear texto informativo
     const getInfoText = () => {
@@ -195,9 +196,11 @@ export function PropertyAboveFoldMobile({
     };
 
     return (
+        <>
         <section aria-labelledby="af-title" className="relative">
-            {/* Hero Image con Overlay (60-70vh) */}
-            <div className="relative min-h-[60vh] max-h-[70vh] h-[65vh] w-full overflow-hidden rounded-2xl">
+            {/* Hero Image con Overlay (60-70vh) - anchura completa, bordes cuadrados, imagen hasta el top */}
+            <div className="w-screen relative left-1/2 -translate-x-1/2 -mt-4 lg:-mt-8">
+                <div className="relative min-h-[60vh] max-h-[70vh] h-[65vh] w-full overflow-hidden">
                 {/* Slider de imágenes */}
                 <div
                     ref={scrollRef}
@@ -341,6 +344,7 @@ export function PropertyAboveFoldMobile({
                         </button>
                     </>
                 )}
+                </div>
             </div>
 
             {/* Breadcrumb y título (debajo del hero) */}
@@ -351,9 +355,26 @@ export function PropertyAboveFoldMobile({
                     <span className="text-gray-700 dark:text-slate-300">{building.name}</span>
                 </nav>
                 <div className="flex items-start justify-between gap-4">
-                    <h1 id="af-title" className="text-xl font-semibold leading-tight text-gray-900 dark:text-white flex-1">
-                        {tipologia} luminoso en {building.comuna}
-                    </h1>
+                    <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#8B6CFF]/15 text-[#8B6CFF] border border-[#8B6CFF]/30">
+                                <Star className="w-3.5 h-3.5 shrink-0" aria-hidden />
+                                Destacado
+                            </span>
+                            {stock === 1 && (
+                                <span className="px-2 py-1 rounded-full text-xs font-medium bg-amber-50 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/40 shadow-sm">
+                                    Última unidad disponible
+                                </span>
+                            )}
+                        </div>
+                        <h1 id="af-title" className="text-xl font-semibold leading-tight text-gray-900 dark:text-white">
+                            Departamento {selectedUnit?.codigoUnidad ?? selectedUnit?.id?.split("-").pop() ?? "—"}
+                        </h1>
+                        <p className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-slate-400 mt-0.5">
+                            <MapPin className="w-3.5 h-3.5 shrink-0 text-[#8B6CFF]" aria-hidden />
+                            <span>{building.address}</span>
+                        </p>
+                    </div>
                     {shouldShowChangeButton && (
                         <button
                             onClick={onSelectOtherUnit}
@@ -401,8 +422,15 @@ export function PropertyAboveFoldMobile({
                 {/* Badges clave */}
                 <div className="mt-4 flex flex-wrap items-center gap-2">
                     {m2 && (
-                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 shadow-sm">
+                        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 shadow-sm">
+                            <Square className="w-3.5 h-3.5 shrink-0 text-[#8B6CFF]" aria-hidden />
                             {m2} m²
+                        </span>
+                    )}
+                    {m2Balcon != null && m2Balcon > 0 && (
+                        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 shadow-sm">
+                            <Image src="/icons/balcon.svg" alt="" width={14} height={14} className="shrink-0 object-contain" aria-hidden />
+                            {m2Balcon} m²
                         </span>
                     )}
                     {petFriendly !== undefined && (
@@ -410,15 +438,16 @@ export function PropertyAboveFoldMobile({
                             {petFriendly ? 'Pet-friendly' : 'No mascotas'}
                         </span>
                     )}
-                    {/* Badge de metro: siempre mostrar si hay datos del edificio */}
-                    {building.metroCercano && minutosMetro && (
-                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 shadow-sm">
-                            {nombreMetro ? `${nombreMetro} ${minutosMetro}'` : `Metro ${minutosMetro}'`}
+                    {/* Badge de metro: logo + estación + tiempo */}
+                    {building.metroCercano && minutosMetro != null && (
+                        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 shadow-sm">
+                            <Image src="/icons/metro-santiago.png" alt="" width={16} height={16} className="shrink-0 object-contain" aria-hidden />
+                            {nombreMetro ? `${nombreMetro} ${minutosMetro} min` : `${minutosMetro} min`}
                         </span>
                     )}
 
-                    {/* Badge de urgencia si stock bajo */}
-                    {stock !== undefined && stock > 0 && stock <= 3 && (
+                    {/* Badge de urgencia si stock bajo (2 o 3 unidades; "Última unidad disponible" va junto a Destacado) */}
+                    {stock !== undefined && stock > 1 && stock <= 3 && (
                         <span className="px-2 py-1 rounded-full text-xs font-medium bg-amber-50 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/40 shadow-sm">
                             Quedan {stock}
                         </span>
@@ -445,5 +474,6 @@ export function PropertyAboveFoldMobile({
                 />
             )}
         </section>
+        </>
     );
 }

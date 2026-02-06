@@ -24,11 +24,7 @@ SET
     'https://lytgdrbdyvmvziypvumy.supabase.co/storage/v1/object/public/unit-media/bld-condominio-parque-mackenna/bld-condominio-parque-mackenna-305/images/IMG_4934.jpg'
   ],
   videos = ARRAY[
-    -- ⚠️ Si ya subiste el video, reemplaza esta URL con la URL real del video
-    -- Para obtenerla: Ve a Storage > unit-media > bld-condominio-parque-mackenna > bld-condominio-parque-mackenna-305 > videos
-    -- Haz clic en el archivo de video > "Get URL" y copia la URL completa
-    'https://lytgdrbdyvmvziypvumy.supabase.co/storage/v1/object/public/unit-media/bld-condominio-parque-mackenna/bld-condominio-parque-mackenna-305/videos/tour-virtual.mp4'
-    -- Si aún no has subido el video, puedes dejar este array vacío: videos = ARRAY[]::TEXT[]
+    'https://lytgdrbdyvmvziypvumy.supabase.co/storage/v1/object/public/unit-media/bld-condominio-parque-mackenna/bld-condominio-parque-mackenna-305/videos/PQMK305.mp4'
   ]
 WHERE id = 'bld-condominio-parque-mackenna-305';
 
