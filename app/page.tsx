@@ -12,7 +12,7 @@ import { getAvailableUnitsCount } from "@/lib/hooks/useFeaturedUnits";
 export const dynamic = "force-dynamic";
 export const revalidate = 3600;
 
-const DATA_FETCH_TIMEOUT_MS = 10_000;
+const DATA_FETCH_TIMEOUT_MS = 3_000;
 
 /** Timeout para que la home no quede colgada si Supabase/red tarda */
 function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {

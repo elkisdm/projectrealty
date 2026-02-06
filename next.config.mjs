@@ -14,6 +14,11 @@ const nextConfig = {
         hostname: 'lytgdrbdyvmvziypvumy.supabase.co',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'keyluynuhmfuqydnmbfh.supabase.co',
+        pathname: '/**',
+      },
     ],
   },
   experimental: {

@@ -16,8 +16,7 @@ import { PropertySidebar } from "@components/property/PropertySidebar";
 import { PropertyBookingCard } from "@components/property/PropertyBookingCard";
 import { PropertyTabs } from "@components/property/PropertyTabs";
 import { PropertySimilarUnits } from "@components/property/PropertySimilarUnits";
-import { CommuneLifeSection } from "@components/property/CommuneLifeSection";
-import { PropertyFAQ } from "@components/property/PropertyFAQ";
+import { NearbyAmenitiesSection } from "@components/property/NearbyAmenitiesSection";
 import { UnitCard } from "@components/ui/UnitCard";
 
 // Error Boundary Component
@@ -88,6 +87,9 @@ export function UnitDetailClient({
 }: UnitDetailClientProps) {
   const [isVisitModalOpen, setIsVisitModalOpen] = useState(false);
   const [isUnitSelectorModalOpen, setIsUnitSelectorModalOpen] = useState(false);
+  
+  // Solo mostrar modal de amenidades para Parque Mackenna
+  const showNearbyAmenities = building.id === 'bld-condominio-parque-mackenna';
 
   // Usar todas las unidades del edificio si están disponibles, sino solo la unidad actual
   const allBuildingUnits = building.allUnits && building.allUnits.length > 0 
@@ -107,6 +109,8 @@ export function UnitDetailClient({
     coverImage: building.gallery[0] || "/images/default-building.jpg",
     precio_desde: unit.price,
     units: allBuildingUnits, // TODAS las unidades del edificio
+    // Incluir metroCercano si está disponible en el building
+    metroCercano: (building as any).metroCercano,
   };
 
   // Handler para abrir modal de selector de unidades
@@ -234,6 +238,11 @@ export function UnitDetailClient({
               {/* Tabs de contenido */}
               <PropertyTabs unit={unit} building={fullBuilding} />
 
+              {/* Sección de Amenidades Cercanas (solo Parque Mackenna) */}
+              {showNearbyAmenities && (
+                <NearbyAmenitiesSection building={fullBuilding} />
+              )}
+
               {/* Unidades similares */}
               {similarUnits && similarUnits.length > 0 ? (
                 <section className="py-8">
@@ -259,11 +268,6 @@ export function UnitDetailClient({
                 />
               )}
 
-              {/* Cómo es vivir en la comuna */}
-              <CommuneLifeSection building={fullBuilding} variant="catalog" />
-
-              {/* Preguntas frecuentes */}
-              <PropertyFAQ building={fullBuilding} variant="catalog" />
             </div>
 
             {/* Sidebar sticky (1/3) - Booking Card */}
@@ -306,6 +310,7 @@ export function UnitDetailClient({
           building={fullBuilding}
           currentUnitId={unit.id}
         />
+
       </div>
     </ErrorBoundary>
   );

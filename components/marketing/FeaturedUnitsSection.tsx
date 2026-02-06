@@ -2,7 +2,7 @@ import { getFeaturedUnits } from '@lib/hooks/useFeaturedUnits';
 import { FeaturedUnitsGridClient } from './FeaturedUnitsGridClient';
 import type { UnitWithBuilding } from '@lib/hooks/useFeaturedUnits';
 
-const FEATURED_FETCH_TIMEOUT_MS = 8_000;
+const FEATURED_FETCH_TIMEOUT_MS = 3_000;
 
 function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
   return Promise.race([

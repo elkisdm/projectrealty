@@ -19,7 +19,6 @@ import { PropertyBookingCard } from "./PropertyBookingCard";
 import { PropertyTabs } from "./PropertyTabs";
 import { PropertySimilarUnits } from "./PropertySimilarUnits";
 import { CommuneLifeSection } from "./CommuneLifeSection";
-import { PropertyFAQ } from "./PropertyFAQ";
 import { UnitSelectorModal } from "./UnitSelectorModal";
 
 // Import directo para evitar problemas de lazy loading
@@ -428,9 +427,6 @@ export function PropertyClient({
                                     <RelatedList buildings={relatedBuildings as (Building & { precioDesde: number | null })[]} />
                                 </Suspense>
                             </section>
-
-                            {/* Preguntas frecuentes */}
-                            <PropertyFAQ building={building} variant={variant} />
 
                             {/* Sticky Mobile CTA ya est? integrado en PropertyAboveFoldMobile */}
                         </div>

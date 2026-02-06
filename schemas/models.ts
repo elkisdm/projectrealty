@@ -101,6 +101,7 @@ export const UnitSchema = z.object({
   bodega: z.boolean().optional(),
   imagesTipologia: z.array(z.string().min(1)).optional(),
   imagesAreasComunes: z.array(z.string().min(1)).optional(),
+  videos: z.array(z.string().min(1)).optional(),
   codigoInterno: z.string().min(1).optional(),
   bedrooms: z.number().int().nonnegative().optional(), // Alias de dormitorios
   bathrooms: z.number().int().positive().optional(), // Alias de banos
@@ -371,5 +372,21 @@ export type BuildingV2 = Building & {
   precio_hasta?: number;
   featured?: boolean;
 };
+
+// Nearby Amenities Schema
+export const NearbyAmenitySchema = z.object({
+  id: z.string().uuid(),
+  buildingId: z.string().min(1),
+  category: z.enum(['transporte', 'educacion', 'areas_verdes', 'comercios', 'salud']),
+  subcategory: z.string().optional(),
+  name: z.string().min(1),
+  walkingTimeMinutes: z.number().int().nonnegative(),
+  distanceMeters: z.number().int().nonnegative(),
+  icon: z.string().optional(),
+  metadata: z.record(z.unknown()).optional(),
+  displayOrder: z.number().int().nonnegative().default(0),
+});
+
+export type NearbyAmenity = z.infer<typeof NearbyAmenitySchema>;
 
 

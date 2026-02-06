@@ -5,6 +5,7 @@ import { Share2, Heart, ArrowLeft, MapPin, ChevronLeft, ChevronRight } from "luc
 import { useRouter } from "next/navigation";
 import type { Building, Unit } from "@schemas/models";
 import { StickyCtaBar } from "@components/ui/StickyCtaBar";
+import { PropertyVideoModal } from "@components/property/PropertyVideoModal";
 
 const DEFAULT_BLUR = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q==";
 
@@ -24,33 +25,32 @@ function getAllImages(unit?: Unit, building?: Building): string[] {
         });
     };
 
-    // Prioridad 1: Imágenes de tipología
+    // Prioridad 1: Imágenes de la unidad (interior) - mayor prioridad para imágenes específicas de la unidad
+    if (unit?.images && Array.isArray(unit.images) && unit.images.length > 0) {
+        addImages(unit.images);
+    }
+
+    // Prioridad 2: Imágenes de tipología
     if (unit?.imagesTipologia && Array.isArray(unit.imagesTipologia) && unit.imagesTipologia.length > 0) {
         addImages(unit.imagesTipologia);
     }
 
-    // Prioridad 2: Imágenes de áreas comunes del edificio
+    // Prioridad 3: Imágenes de áreas comunes del edificio
     if (unit?.imagesAreasComunes && Array.isArray(unit.imagesAreasComunes) && unit.imagesAreasComunes.length > 0) {
         addImages(unit.imagesAreasComunes);
     }
 
-    // Prioridad 3: Imágenes del edificio (galería) - solo si NO hay imagesAreasComunes
-    // (porque imagesAreasComunes ya contiene las imágenes del edificio)
-    if (!unit?.imagesAreasComunes || unit.imagesAreasComunes.length === 0) {
+    // Prioridad 4: Imágenes del edificio (galería) - solo si NO hay imágenes de la unidad
+    if (!unit?.images || unit.images.length === 0) {
         if (building?.gallery && Array.isArray(building.gallery) && building.gallery.length > 0) {
             addImages(building.gallery);
         }
     }
 
-    // Prioridad 4: CoverImage del edificio (solo si no está ya incluida)
+    // Prioridad 5: CoverImage del edificio (solo si no está ya incluida)
     if (building?.coverImage && !seen.has(building.coverImage)) {
         images.push(building.coverImage);
         seen.add(building.coverImage);
-    }
-
-    // Prioridad 5: Imágenes de la unidad (interior) - solo si no hay imágenes del edificio
-    if (unit?.images && Array.isArray(unit.images) && unit.images.length > 0) {
-        addImages(unit.images);
     }
 
     // Fallback: si no hay imágenes, usar coverImage del edificio
@@ -84,8 +84,12 @@ export function PropertyAboveFoldMobile({
 }: PropertyAboveFoldMobileProps) {
     const [isSaved, setIsSaved] = useState(false);
     const [activeImageIndex, setActiveImageIndex] = useState(0);
+    const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
     const router = useRouter();
+
+    const firstVideoUrl = selectedUnit?.videos?.[0];
+    const hasVideo = Boolean(firstVideoUrl);
 
     // Obtener todas las imágenes
     const allImages = getAllImages(selectedUnit, building);
@@ -148,17 +152,19 @@ export function PropertyAboveFoldMobile({
 
     // Calcular precio total por mes (arriendo + GGCC)
     const arriendo = selectedUnit?.price || building.precio_desde || 290000;
-    const ggcc = selectedUnit?.gastoComun || 45000;
+    const ggcc = selectedUnit?.gastoComun || selectedUnit?.gc || selectedUnit?.gastosComunes || 0;
     const precioTotalMes = arriendo + ggcc;
 
-    // Datos para overlay informativo
+    // Datos para overlay informativo (desde Supabase)
     const tipologia = selectedUnit?.tipologia || "2D";
-    const m2 = selectedUnit?.area_interior_m2 || selectedUnit?.m2 || 48;
+    const m2 = selectedUnit?.area_interior_m2 || selectedUnit?.m2;
     const dormitorios = selectedUnit?.dormitorios || selectedUnit?.bedrooms || 0;
     const estacionamiento = selectedUnit?.estacionamiento ? 1 : (selectedUnit?.parkingOptions?.length || 0);
-    const petFriendly = selectedUnit?.petFriendly ?? true;
-    const minutosMetro = 6;
-    const stock = building.units?.filter(u => u.disponible).length || 7;
+    const petFriendly = selectedUnit?.petFriendly ?? selectedUnit?.pet_friendly;
+    // Metro: siempre usar el metro más cercano del edificio si está disponible
+    const minutosMetro = building.metroCercano?.tiempoCaminando;
+    const nombreMetro = building.metroCercano?.nombre;
+    const stock = building.units?.filter(u => u.disponible).length;
     const totalUnitsCount = building.units?.length || 0;
     // Mostrar botón si hay unidades en el edificio (mostrar TODAS las unidades en el modal, no solo disponibles)
     // Esto es importante porque hay 1 edificio con 111 departamentos
@@ -273,6 +279,15 @@ export function PropertyAboveFoldMobile({
                         >
                             {totalImages} {totalImages === 1 ? 'Foto' : 'Fotos'}
                         </button>
+                        {hasVideo && (
+                            <button
+                                onClick={() => setIsVideoModalOpen(true)}
+                                className="px-3 sm:px-4 py-1.5 sm:py-2 bg-white/25 backdrop-blur-md hover:bg-white/35 text-white text-xs sm:text-sm font-semibold rounded-full border border-white/40 shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white/70"
+                                aria-label="Ver video"
+                            >
+                                Ver video
+                            </button>
+                        )}
                         <button
                             onClick={handleMapClick}
                             className="px-3 sm:px-4 py-1.5 sm:py-2 bg-white/25 backdrop-blur-md hover:bg-white/35 text-white text-xs sm:text-sm font-semibold rounded-full border border-white/40 shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white/70 flex items-center gap-1.5"
@@ -361,12 +376,14 @@ export function PropertyAboveFoldMobile({
                                 / mes
                             </span>
                         </p>
-                        <p className="text-lg font-medium text-gray-700 dark:text-gray-300">
-                            + ${ggcc.toLocaleString('es-CL')}
-                            <span className="text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">
-                                (GGCC)
-                            </span>
-                        </p>
+                        {ggcc > 0 && (
+                            <p className="text-lg font-medium text-gray-700 dark:text-gray-300">
+                                + ${ggcc.toLocaleString('es-CL')}
+                                <span className="text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">
+                                    (GGCC)
+                                </span>
+                            </p>
+                        )}
                     </div>
 
                     <div className="flex flex-col items-end shrink-0 pb-1">
@@ -374,33 +391,34 @@ export function PropertyAboveFoldMobile({
                             Operado por
                         </span>
                         <div className="flex items-center">
-                            <div className="relative w-24 h-6">
-                                <Image
-                                    src="/images/assetplan-logo.svg"
-                                    alt="AssetPlan"
-                                    fill
-                                    className="object-contain object-right dark:invert"
-                                    priority
-                                />
-                            </div>
+                            <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                                Elkis Realtor
+                            </span>
                         </div>
                     </div>
                 </div>
 
                 {/* Badges clave */}
                 <div className="mt-4 flex flex-wrap items-center gap-2">
-                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 shadow-sm">
-                        {m2} m²
-                    </span>
-                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 shadow-sm">
-                        {petFriendly ? 'Pet-friendly' : 'No mascotas'}
-                    </span>
-                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 shadow-sm">
-                        Metro {minutosMetro}'
-                    </span>
+                    {m2 && (
+                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 shadow-sm">
+                            {m2} m²
+                        </span>
+                    )}
+                    {petFriendly !== undefined && (
+                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 shadow-sm">
+                            {petFriendly ? 'Pet-friendly' : 'No mascotas'}
+                        </span>
+                    )}
+                    {/* Badge de metro: siempre mostrar si hay datos del edificio */}
+                    {building.metroCercano && minutosMetro && (
+                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 shadow-sm">
+                            {nombreMetro ? `${nombreMetro} ${minutosMetro}'` : `Metro ${minutosMetro}'`}
+                        </span>
+                    )}
 
                     {/* Badge de urgencia si stock bajo */}
-                    {stock <= 3 && (
+                    {stock !== undefined && stock > 0 && stock <= 3 && (
                         <span className="px-2 py-1 rounded-full text-xs font-medium bg-amber-50 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/40 shadow-sm">
                             Quedan {stock}
                         </span>
@@ -418,6 +436,14 @@ export function PropertyAboveFoldMobile({
                 unit={selectedUnit}
                 buildingId={building.id}
             />
+
+            {hasVideo && (
+                <PropertyVideoModal
+                    isOpen={isVideoModalOpen}
+                    onClose={() => setIsVideoModalOpen(false)}
+                    videoUrl={firstVideoUrl!}
+                />
+            )}
         </section>
     );
 }

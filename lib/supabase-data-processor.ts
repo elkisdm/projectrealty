@@ -140,6 +140,7 @@ export interface SupabaseUnitRow {
   images_tipologia?: string[];
   images_areas_comunes?: string[];
   images?: string[];
+  videos?: string[];
   buildings: {
     id: string;
     name: string;
@@ -149,6 +150,9 @@ export interface SupabaseUnitRow {
     amenities?: string[];
     gallery?: string[];
     cover_image?: string;
+    metro_cercano_nombre?: string;
+    metro_cercano_distancia?: number;
+    metro_cercano_tiempo?: number;
   } | null;
 }
 
@@ -213,6 +217,7 @@ class SupabaseDataProcessor {
           images_tipologia,
           images_areas_comunes,
           images,
+          videos,
           buildings!inner (
             id,
             name,
@@ -221,7 +226,10 @@ class SupabaseDataProcessor {
             address,
             amenities,
             gallery,
-            cover_image
+            cover_image,
+            metro_cercano_nombre,
+            metro_cercano_distancia,
+            metro_cercano_tiempo
           )
         `)
         .order('price', { ascending: true });
@@ -487,6 +495,7 @@ class SupabaseDataProcessor {
         images_tipologia,
         images_areas_comunes,
         images,
+        videos,
         buildings!inner (
           id,
           name,
@@ -494,7 +503,10 @@ class SupabaseDataProcessor {
           comuna,
           address,
           gallery,
-          cover_image
+          cover_image,
+          metro_cercano_nombre,
+          metro_cercano_distancia,
+          metro_cercano_tiempo
         )
       `, { count: 'exact' })
       .eq('disponible', true); // Solo unidades disponibles
@@ -542,7 +554,7 @@ class SupabaseDataProcessor {
       };
     }
 
-    let filteredData = (allData || []) as Array<UnitRowWithFields & { buildings: { id: string; name: string; slug?: string; comuna: string; address: string; gallery?: string[]; cover_image?: string } | null }>;
+    let filteredData = (allData || []) as Array<UnitRowWithFields & { buildings: { id: string; name: string; slug?: string; comuna: string; address: string; gallery?: string[]; cover_image?: string; metro_cercano_nombre?: string; metro_cercano_distancia?: number; metro_cercano_tiempo?: number } | null }>;
 
     // Filtrar por comuna en memoria (soporta multiselección con OR)
     if (filters.comuna) {
@@ -635,6 +647,7 @@ class SupabaseDataProcessor {
       images_tipologia?: string[];
       images_areas_comunes?: string[];
       images?: string[];
+      videos?: string[];
     };
     
     const units = paginatedData;
@@ -699,6 +712,7 @@ class SupabaseDataProcessor {
         // Campos de imágenes
         imagesTipologia: rowWithFields.images_tipologia || [],
         imagesAreasComunes: rowWithFields.images_areas_comunes || [],
+        videos: rowWithFields.videos,
         // Campos opcionales nuevos
         orientacion: unitRow.orientacion || rowWithFields.orientacion,
         m2_terraza: unitRow.m2_terraza,
@@ -728,6 +742,11 @@ class SupabaseDataProcessor {
           slug: building.slug || building.id,
           comuna: building.comuna,
           address: building.address,
+          metroCercano: building.metro_cercano_nombre ? {
+            nombre: building.metro_cercano_nombre,
+            distancia: building.metro_cercano_distancia,
+            tiempoCaminando: building.metro_cercano_tiempo,
+          } : undefined,
         },
       };
     });
@@ -802,6 +821,11 @@ class SupabaseDataProcessor {
         slug: string;
         comuna: string;
         address: string;
+        metroCercano?: {
+          nombre: string;
+          distancia?: number;
+          tiempoCaminando?: number;
+        };
       };
       [key: string]: unknown;
     };
@@ -813,6 +837,11 @@ class SupabaseDataProcessor {
       address: string;
       amenities: string[];
       gallery: string[];
+      metroCercano?: {
+        nombre: string;
+        distancia?: number;
+        tiempoCaminando?: number;
+      };
     };
     similarUnits?: Array<{
       id: string;
@@ -870,6 +899,7 @@ class SupabaseDataProcessor {
         images_tipologia,
         images_areas_comunes,
         images,
+        videos,
         buildings!inner (
           id,
           name,
@@ -878,7 +908,10 @@ class SupabaseDataProcessor {
           address,
           gallery,
           cover_image,
-          amenities
+          amenities,
+          metro_cercano_nombre,
+          metro_cercano_distancia,
+          metro_cercano_tiempo
         )
       `)
       .eq('disponible', true);
@@ -901,9 +934,10 @@ class SupabaseDataProcessor {
       images_tipologia?: string[];
       images_areas_comunes?: string[];
       images?: string[];
+      videos?: string[];
     };
     
-    const units = (allUnits as Array<UnitRowWithFields & { buildings: { id: string; name: string; slug?: string; comuna: string; address: string; gallery?: string[]; cover_image?: string; amenities?: string[] } | null }>) || [];
+    const units = (allUnits as Array<UnitRowWithFields & { buildings: { id: string; name: string; slug?: string; comuna: string; address: string; gallery?: string[]; cover_image?: string; amenities?: string[]; metro_cercano_nombre?: string; metro_cercano_distancia?: number; metro_cercano_tiempo?: number } | null }>) || [];
 
     // Buscar la unidad que coincida con el slug
     let foundUnit: typeof units[0] | null = null;
@@ -965,11 +999,14 @@ class SupabaseDataProcessor {
       : `${building.id}-${codigoUnidad}`;
 
     const garantia = foundUnit.price ? foundUnit.price : 0;
-    const gastoComun = foundUnit.gastos_comunes || 0;
+    const gastoComun = foundUnit.gc || foundUnit.gastos_comunes || 0;
 
-    const images = building.gallery && building.gallery.length > 0 
-      ? building.gallery.slice(0, 5) 
-      : (building.cover_image ? [building.cover_image] : ['/images/default-unit.jpg']);
+    // Priorizar imágenes de la unidad sobre las del edificio
+    const images = (foundUnit.images && foundUnit.images.length > 0)
+      ? foundUnit.images
+      : (building.gallery && building.gallery.length > 0 
+        ? building.gallery.slice(0, 5) 
+        : (building.cover_image ? [building.cover_image] : ['/images/default-unit.jpg']));
 
     const unit = {
       id: foundUnit.id,
@@ -988,6 +1025,7 @@ class SupabaseDataProcessor {
       images,
       imagesTipologia: foundUnit.images_tipologia || [],
       imagesAreasComunes: foundUnit.images_areas_comunes || [],
+      videos: foundUnit.videos,
       piso: foundUnit.piso,
       vista: foundUnit.orientacion,
       amoblado: foundUnit.amoblado,
@@ -1015,6 +1053,11 @@ class SupabaseDataProcessor {
         slug: building.slug || building.id,
         comuna: building.comuna,
         address: building.address,
+        metroCercano: building.metro_cercano_nombre ? {
+          nombre: building.metro_cercano_nombre,
+          distancia: building.metro_cercano_distancia,
+          tiempoCaminando: building.metro_cercano_tiempo,
+        } : undefined,
       },
     };
 
@@ -1065,6 +1108,13 @@ class SupabaseDataProcessor {
         };
       });
 
+    // Construir objeto metroCercano si hay datos
+    const metroCercano = building.metro_cercano_nombre ? {
+      nombre: building.metro_cercano_nombre,
+      distancia: building.metro_cercano_distancia,
+      tiempoCaminando: building.metro_cercano_tiempo,
+    } : undefined;
+
     return {
       unit,
       building: {
@@ -1075,6 +1125,7 @@ class SupabaseDataProcessor {
         address: building.address,
         amenities: Array.isArray(building.amenities) ? building.amenities : [],
         gallery: Array.isArray(building.gallery) ? building.gallery : (building.cover_image ? [building.cover_image] : []),
+        metroCercano,
       },
       similarUnits: similarUnits.length > 0 ? similarUnits : undefined,
     };

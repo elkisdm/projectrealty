@@ -222,7 +222,7 @@ export default function ListarPropiedadPage() {
           </p>
           <FichaCondominio
             initialData={condominioData ?? undefined}
-            onSubmit={(data) => {
+            onSubmit={async (data) => {
               setCondominioData(data);
               setSelectedBuildingId(data.id);
               setStep("propiedad");

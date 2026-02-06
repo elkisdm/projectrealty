@@ -1,4 +1,4 @@
-> Last updated: 2026-01-25
+> Last updated: 2026-02-06
 > NOTA: Este archivo debe ser validado en WP1 (Discovery) de cada feature
 
 # Contracts - Source of Truth
@@ -81,6 +81,23 @@ Este archivo documenta todos los tipos, schemas Zod y contratos de API del proye
   url: string;
   alt?: string;
   order?: number;
+}
+```
+
+#### NearbyAmenitySchema
+```typescript
+// Amenidad cercana a un edificio
+{
+  id: string; // UUID
+  buildingId: string;
+  category: "transporte" | "educacion" | "areas_verdes" | "comercios" | "salud";
+  subcategory?: string; // ej: 'metro', 'paraderos', 'jardines_infantiles', 'colegios', 'universidades', 'plazas', 'farmacias', 'clinicas'
+  name: string;
+  walkingTimeMinutes: number; // >= 0
+  distanceMeters: number; // >= 0
+  icon?: string; // nombre del icono de lucide-react
+  metadata?: Record<string, unknown>; // datos adicionales
+  displayOrder: number; // >= 0, default 0
 }
 ```
 

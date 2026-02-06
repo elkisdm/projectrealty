@@ -135,6 +135,7 @@ export function createCompleteUnit(
     ...(partial.imagesTipologia !== undefined && { imagesTipologia: partial.imagesTipologia }),
     // Preservar imagesAreasComunes incluso si es array vacío
     ...(partial.imagesAreasComunes !== undefined && { imagesAreasComunes: partial.imagesAreasComunes }),
+    ...(partial.videos !== undefined && { videos: partial.videos }),
     ...(partial.codigoInterno !== undefined && { codigoInterno: partial.codigoInterno }),
     ...(partial.bedrooms !== undefined && { bedrooms: partial.bedrooms }),
     ...(partial.bathrooms !== undefined && { bathrooms: partial.bathrooms }),

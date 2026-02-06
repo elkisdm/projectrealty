@@ -3,10 +3,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import type { Unit, Building } from "@schemas/models";
 import { PropertyDetailTab } from "./PropertyDetailTab";
-import { PropertyLocationTab } from "./PropertyLocationTab";
 import { PropertyAmenitiesTab } from "./PropertyAmenitiesTab";
 import { PropertyRequirementsTab } from "./PropertyRequirementsTab";
-import { PropertyFAQTab } from "./PropertyFAQTab";
 
 interface PropertyTabsProps {
   unit: Unit;
@@ -14,7 +12,7 @@ interface PropertyTabsProps {
   className?: string;
 }
 
-type TabId = "detalle" | "caracteristicas" | "requisitos" | "faq";
+type TabId = "detalle" | "caracteristicas" | "requisitos";
 
 interface Tab {
   id: TabId;
@@ -57,11 +55,6 @@ export function PropertyTabs({ unit, building, className = "" }: PropertyTabsPro
       id: "requisitos",
       label: "Requisitos",
       component: <PropertyRequirementsTab unit={unit} building={building} />
-    },
-    {
-      id: "faq",
-      label: "Preguntas Frecuentes",
-      component: <PropertyFAQTab unit={unit} building={building} />
     }
   ];
 

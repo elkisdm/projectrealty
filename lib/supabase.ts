@@ -19,8 +19,8 @@ function createClient(
   key?: string, 
   options?: { auth: { persistSession: boolean } }
 ): SupabaseClientType {
-  // Si no hay configuración, usar mock
-  if (!supabaseUrl || !supabaseAnonKey || !url || !key) {
+  // Si no hay configuración en los parámetros, usar mock
+  if (!url || !key) {
     if (!supabaseUrl || !supabaseAnonKey) {
       logger.warn('⚠️  Supabase no configurado, usando mock');
     }

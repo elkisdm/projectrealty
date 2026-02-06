@@ -48,38 +48,42 @@ async function readFromSupabase(): Promise<Building[]> {
     
     // Obtener edificios con sus unidades usando la relación correcta
     // Usar left join para incluir edificios aunque no tengan unidades cargadas
-    const { data: buildingsData, error: buildingsError } = await client
-      .from('buildings')
-      .select(`
-        id,
-        slug,
-        name,
-        comuna,
-        address,
-        amenities,
-        gallery,
-        cover_image,
-        badges,
-        service_level,
-        gc_mode,
-        units!left (
-          id,
-          tipologia,
-          m2,
-          price,
-          disponible,
-          estacionamiento,
-          bodega,
-          bedrooms,
-          bathrooms,
-          pet_friendly,
-          images_tipologia,
-          images_areas_comunes,
-          images
-        )
-      `)
-      .order('name')
-      .limit(100);
+        const { data: buildingsData, error: buildingsError } = await client
+          .from('buildings')
+          .select(`
+            id,
+            slug,
+            name,
+            comuna,
+            address,
+            amenities,
+            gallery,
+            cover_image,
+            badges,
+            service_level,
+            gc_mode,
+            metro_cercano_nombre,
+            metro_cercano_distancia,
+            metro_cercano_tiempo,
+            units!left (
+              id,
+              tipologia,
+              m2,
+              price,
+              disponible,
+              estacionamiento,
+              bodega,
+              bedrooms,
+              bathrooms,
+              pet_friendly,
+              images_tipologia,
+              images_areas_comunes,
+              images,
+              videos
+            )
+          `)
+          .order('name')
+          .limit(100);
 
     if (buildingsError) {
       logger.error(`[readFromSupabase] Supabase query error:`, {
@@ -253,6 +257,13 @@ async function readFromSupabase(): Promise<Building[]> {
           : ['/images/default-building.jpg'];
       }
       
+      // Construir objeto metroCercano si hay datos
+      const buildingMetroCercano = (b as any).metro_cercano_nombre ? {
+        nombre: (b as any).metro_cercano_nombre,
+        distancia: (b as any).metro_cercano_distancia,
+        tiempoCaminando: (b as any).metro_cercano_tiempo,
+      } : undefined;
+
       const buildingResult = {
         id: b.id,
         slug: b.slug || `edificio-${b.id}`,
@@ -268,6 +279,7 @@ async function readFromSupabase(): Promise<Building[]> {
         precio_hasta,
         gc_mode: (b.gc_mode === 'MF' || b.gc_mode === 'variable') ? b.gc_mode : undefined,
         featured: false,
+        metroCercano: buildingMetroCercano,
         units: validUnits.map((unit: unknown) => {
           const u = unit as {
             id: string;
@@ -283,6 +295,7 @@ async function readFromSupabase(): Promise<Building[]> {
             images_tipologia?: string[]; // Campo desde Supabase (snake_case)
             images_areas_comunes?: string[]; // Campo desde Supabase (snake_case)
             images?: string[];
+            videos?: string[];
           };
           
           // Normalizar tipología antes de crear la unidad
@@ -307,6 +320,7 @@ async function readFromSupabase(): Promise<Building[]> {
               imagesTipologia: u.images_tipologia, // Mapear desde snake_case a camelCase
               imagesAreasComunes: u.images_areas_comunes, // Mapear desde snake_case a camelCase
               images: u.images,
+              videos: u.videos,
             },
             b.id,
             b.slug || `edificio-${b.id}`
@@ -532,6 +546,15 @@ async function readFromMock(): Promise<Building[]> {
   }
 }
 
+const READ_SUPABASE_TIMEOUT_MS = 5_000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms)),
+  ]);
+}
+
 export async function readAll(): Promise<Building[]> {
   const USE_SUPABASE = process.env.USE_SUPABASE === "true";
   
@@ -539,7 +562,14 @@ export async function readAll(): Promise<Building[]> {
   
   if (USE_SUPABASE) {
     try {
-      const buildings = await readFromSupabase();
+      const buildings = await withTimeout(
+        readFromSupabase(),
+        READ_SUPABASE_TIMEOUT_MS,
+        [] as Building[]
+      );
+      if (buildings.length === 0 && logger) {
+        logger.warn(`[readAll] Supabase sin datos o timeout (${READ_SUPABASE_TIMEOUT_MS}ms), retornando vacío`);
+      }
       logger.log(`[readAll] Edificios desde Supabase: ${buildings.length}`);
       if (buildings.length > 0) {
         logger.log(`[readAll] Primer edificio: ${buildings[0].name}, unidades: ${buildings[0].units.length}`);
@@ -618,6 +648,9 @@ export async function getBuildingBySlug(slug: string): Promise<(Building & { pre
             cover_image,
             badges,
             service_level,
+            metro_cercano_nombre,
+            metro_cercano_distancia,
+            metro_cercano_tiempo,
             units!left (
               id,
               tipologia,
@@ -631,7 +664,8 @@ export async function getBuildingBySlug(slug: string): Promise<(Building & { pre
               pet_friendly,
               images_tipologia,
               images_areas_comunes,
-              images
+              images,
+              videos
             )
           `)
           .eq('slug', slug)
@@ -642,6 +676,13 @@ export async function getBuildingBySlug(slug: string): Promise<(Building & { pre
           const availableUnits = (b.units || []).filter((u: any) => u.disponible);
           const prices = availableUnits.map((u: any) => u.price || 0).filter((p: number) => p > 0);
           
+          // Construir objeto metroCercano si hay datos
+          const buildingMetroCercanoGetBySlug = (b as any).metro_cercano_nombre ? {
+            nombre: (b as any).metro_cercano_nombre,
+            distancia: (b as any).metro_cercano_distancia,
+            tiempoCaminando: (b as any).metro_cercano_tiempo,
+          } : undefined;
+
           const building: Building = {
             id: b.id,
             slug: b.slug || `edificio-${b.id}`,
@@ -653,6 +694,7 @@ export async function getBuildingBySlug(slug: string): Promise<(Building & { pre
             coverImage: b.cover_image || (Array.isArray(b.gallery) && b.gallery.length > 0 ? b.gallery[0] : undefined),
             badges: Array.isArray(b.badges) ? b.badges : [],
             serviceLevel: b.service_level as 'pro' | 'standard' | undefined,
+            metroCercano: buildingMetroCercanoGetBySlug,
             units: (b.units || []).map((u: any) => {
               return normalizeUnit(
                 {
@@ -669,6 +711,7 @@ export async function getBuildingBySlug(slug: string): Promise<(Building & { pre
                   imagesTipologia: u.images_tipologia,
                   imagesAreasComunes: u.images_areas_comunes,
                   images: u.images,
+                  videos: u.videos,
                 },
                 b.id,
                 b.slug || `edificio-${b.id}`
