@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useRef } from "react";
 import Image from "next/image";
-import { Share2, Heart, ArrowLeft, MapPin, ChevronLeft, ChevronRight, Star, Square } from "lucide-react";
+import { Share2, Heart, ArrowLeft, MapPin, ChevronLeft, ChevronRight, Star, Square, Sun, Play, PawPrint } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { Building, Unit } from "@schemas/models";
 import { StickyCtaBar } from "@components/ui/StickyCtaBar";
@@ -58,7 +58,7 @@ function getAllImages(unit?: Unit, building?: Building): string[] {
         images.push(building.coverImage);
     }
 
-    // Excluir imagen de edificio que no debe aparecer en galería de unidad (parque-mackenna.jpg como 14.ª)
+    // Excluir parque-mackenna.jpg (no existe en public)
     return images.filter((url) => !url.includes("parque-mackenna.jpg"));
 }
 
@@ -108,46 +108,81 @@ export function PropertyAboveFoldMobile({
         });
     }
     
-    const finalImages = allImages.length > 0
+    // Fallback: parque-mackenna.jpg no existe en public; usar IMG_4922.jpg
+    const safeCoverImage = building.coverImage?.includes("parque-mackenna.jpg")
+        ? "/images/parque-mackenna-305/IMG_4922.jpg"
+        : building.coverImage;
+    const baseImages = allImages.length > 0
         ? allImages
-        : building.coverImage
-            ? [building.coverImage]
+        : safeCoverImage
+            ? [safeCoverImage]
             : ['/images/lascondes-cover.jpg'];
 
-    const totalImages = finalImages.length;
+    // Scroll infinito: duplicar imágenes para loop seamless (clone última al inicio, primera al final)
+    const finalImages = baseImages.length > 1
+        ? [baseImages[baseImages.length - 1], ...baseImages, baseImages[0]]
+        : baseImages;
 
-    // Manejar scroll del slider
+    const totalImages = baseImages.length;
+
+    const isInfinite = finalImages.length > baseImages.length;
+
+    // Manejar scroll del slider (incluye lógica de loop infinito)
     const handleScroll = () => {
-        if (scrollRef.current) {
-            const { scrollLeft, clientWidth } = scrollRef.current;
-            const newIndex = Math.round(scrollLeft / clientWidth);
-            if (newIndex !== activeImageIndex && newIndex >= 0 && newIndex < finalImages.length) {
-                setActiveImageIndex(newIndex);
+        if (!scrollRef.current || !isInfinite) {
+            if (scrollRef.current && baseImages.length > 0) {
+                const { scrollLeft, clientWidth } = scrollRef.current;
+                const newIndex = Math.round(scrollLeft / clientWidth);
+                if (newIndex !== activeImageIndex && newIndex >= 0 && newIndex < baseImages.length) {
+                    setActiveImageIndex(newIndex);
+                }
             }
+            return;
+        }
+        const { scrollLeft, clientWidth } = scrollRef.current;
+        const totalWidth = clientWidth * finalImages.length;
+        // Al llegar al clone del final (primera imagen duplicada al final), saltar a la real
+        if (scrollLeft >= totalWidth - clientWidth * 0.5) {
+            scrollRef.current.scrollLeft = clientWidth;
+            setActiveImageIndex(0);
+            return;
+        }
+        // Al llegar al clone del inicio (última imagen duplicada al inicio), saltar a la real
+        if (scrollLeft <= clientWidth * 0.5) {
+            scrollRef.current.scrollLeft = totalWidth - clientWidth * 2;
+            setActiveImageIndex(baseImages.length - 1);
+            return;
+        }
+        const newIndex = Math.round((scrollLeft - clientWidth) / clientWidth);
+        if (newIndex !== activeImageIndex && newIndex >= 0 && newIndex < baseImages.length) {
+            setActiveImageIndex(newIndex);
         }
     };
 
+    // Inicializar scroll en posición correcta para loop infinito (mostrar primera imagen real)
+    React.useEffect(() => {
+        if (scrollRef.current && isInfinite && baseImages.length > 1) {
+            scrollRef.current.scrollLeft = scrollRef.current.clientWidth;
+        }
+    }, [isInfinite, baseImages.length]);
+
     // Navegar a imagen anterior
     const goToPrevious = () => {
-        if (scrollRef.current && activeImageIndex > 0) {
-            const newIndex = activeImageIndex - 1;
-            scrollRef.current.scrollTo({
-                left: newIndex * scrollRef.current.clientWidth,
-                behavior: 'smooth'
-            });
-            setActiveImageIndex(newIndex);
+        if (scrollRef.current) {
+            const idx = isInfinite ? (activeImageIndex === 0 ? baseImages.length - 1 : activeImageIndex - 1) : Math.max(0, activeImageIndex - 1);
+            const scrollPos = isInfinite ? (idx + 1) * scrollRef.current.clientWidth : idx * scrollRef.current.clientWidth;
+            scrollRef.current.scrollTo({ left: scrollPos, behavior: 'smooth' });
+            setActiveImageIndex(idx);
         }
     };
 
     // Navegar a imagen siguiente
     const goToNext = () => {
-        if (scrollRef.current && activeImageIndex < finalImages.length - 1) {
-            const newIndex = activeImageIndex + 1;
-            scrollRef.current.scrollTo({
-                left: newIndex * scrollRef.current.clientWidth,
-                behavior: 'smooth'
-            });
-            setActiveImageIndex(newIndex);
+        if (scrollRef.current) {
+            const idx = isInfinite ? (activeImageIndex === baseImages.length - 1 ? 0 : activeImageIndex + 1) : Math.min(baseImages.length - 1, activeImageIndex + 1);
+            const scrollPos = isInfinite ? (idx + 1) * scrollRef.current.clientWidth : idx * scrollRef.current.clientWidth;
+            scrollRef.current.scrollTo({ left: scrollPos, behavior: 'smooth' });
+            setActiveImageIndex(idx);
         }
     };
 
@@ -269,35 +304,23 @@ export function PropertyAboveFoldMobile({
                 <div className="absolute bottom-0 left-0 right-0 z-20 p-4 pb-6 bg-gradient-to-t from-black/90 via-black/75 to-black/40">
                     {/* Pills de navegación */}
                     <div className="flex gap-2 mb-4">
-                        <button
-                            onClick={() => {
-                                // Scroll a galería completa o abrir lightbox
-                                const gallerySection = document.querySelector('[role="region"][aria-label*="galería"]');
-                                if (gallerySection) {
-                                    gallerySection.scrollIntoView({ behavior: 'smooth' });
-                                }
-                            }}
-                            className="px-3 sm:px-4 py-1.5 sm:py-2 bg-white/25 backdrop-blur-md hover:bg-white/35 text-white text-xs sm:text-sm font-semibold rounded-full border border-white/40 shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white/70"
-                            aria-label={`Ver ${totalImages} fotos`}
-                        >
-                            {totalImages} {totalImages === 1 ? 'Foto' : 'Fotos'}
-                        </button>
                         {hasVideo && (
                             <button
                                 onClick={() => setIsVideoModalOpen(true)}
-                                className="px-3 sm:px-4 py-1.5 sm:py-2 bg-white/25 backdrop-blur-md hover:bg-white/35 text-white text-xs sm:text-sm font-semibold rounded-full border border-white/40 shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white/70"
+                                className="px-3 sm:px-4 py-1.5 sm:py-2 bg-white/25 backdrop-blur-md hover:bg-white/35 text-white text-xs sm:text-sm font-semibold rounded-full border border-white/40 shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white/70 flex items-center gap-1.5"
                                 aria-label="Ver video"
                             >
+                                <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current shrink-0" aria-hidden />
                                 Ver video
                             </button>
                         )}
                         <button
                             onClick={handleMapClick}
                             className="px-3 sm:px-4 py-1.5 sm:py-2 bg-white/25 backdrop-blur-md hover:bg-white/35 text-white text-xs sm:text-sm font-semibold rounded-full border border-white/40 shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white/70 flex items-center gap-1.5"
-                            aria-label="Ver mapa"
+                            aria-label="Ver ubicación"
                         >
                             <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                            <span>Mapa</span>
+                            <span>Ver ubicación</span>
                         </button>
                     </div>
 
@@ -308,14 +331,14 @@ export function PropertyAboveFoldMobile({
                 </div>
 
                 {/* Indicador de imagen activa (si hay más de una) */}
-                {finalImages.length > 1 && (
+                {totalImages > 1 && (
                     <div className="absolute top-20 right-4 z-20 bg-black/50 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-xs font-medium">
                         {activeImageIndex + 1} / {totalImages}
                     </div>
                 )}
 
                 {/* Flechas de navegación interactivas */}
-                {finalImages.length > 1 && (
+                {totalImages > 1 && (
                     <>
                         {/* Flecha izquierda */}
                         <button
@@ -323,7 +346,7 @@ export function PropertyAboveFoldMobile({
                                 e.stopPropagation();
                                 goToPrevious();
                             }}
-                            disabled={activeImageIndex === 0}
+                            disabled={!isInfinite && activeImageIndex === 0}
                             className="absolute left-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center bg-black/60 hover:bg-black/80 backdrop-blur-sm text-white rounded-full transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-white/50 shadow-lg"
                             aria-label="Imagen anterior"
                         >
@@ -336,7 +359,7 @@ export function PropertyAboveFoldMobile({
                                 e.stopPropagation();
                                 goToNext();
                             }}
-                            disabled={activeImageIndex === finalImages.length - 1}
+                            disabled={!isInfinite && activeImageIndex === totalImages - 1}
                             className="absolute right-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center bg-black/60 hover:bg-black/80 backdrop-blur-sm text-white rounded-full transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-white/50 shadow-lg"
                             aria-label="Imagen siguiente"
                         >
@@ -429,12 +452,13 @@ export function PropertyAboveFoldMobile({
                     )}
                     {m2Balcon != null && m2Balcon > 0 && (
                         <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 shadow-sm">
-                            <Image src="/icons/balcon.svg" alt="" width={14} height={14} className="shrink-0 object-contain" aria-hidden />
+                            <Sun className="w-3.5 h-3.5 shrink-0 text-[#8B6CFF]" aria-hidden />
                             {m2Balcon} m²
                         </span>
                     )}
                     {petFriendly !== undefined && (
-                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 shadow-sm">
+                        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 shadow-sm">
+                            <PawPrint className="w-3.5 h-3.5 shrink-0 text-[#8B6CFF]" aria-hidden />
                             {petFriendly ? 'Pet-friendly' : 'No mascotas'}
                         </span>
                     )}
@@ -455,9 +479,9 @@ export function PropertyAboveFoldMobile({
                 </div>
             </div>
 
-            {/* Sticky CTA Bar - aparece después de scroll > 120px */}
+            {/* Sticky CTA Bar - aparece después de scroll > 120px (solo arriendo, sin gasto común) */}
             <StickyCtaBar
-                priceMonthly={precioTotalMes}
+                priceMonthly={arriendo}
                 onBook={onScheduleVisit}
                 onWhatsApp={onWhatsApp || (() => {})}
                 propertyId={selectedUnit?.id}

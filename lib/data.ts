@@ -716,6 +716,16 @@ export async function getBuildingBySlug(slug: string): Promise<(Building & { pre
             tiempoCaminando: (b as any).metro_cercano_tiempo,
           } : undefined;
 
+          // Fallback para gallery/coverImage (alineado con readFromSupabase)
+          const rawGallery = Array.isArray(b.gallery) && b.gallery.length > 0 ? b.gallery : [];
+          const rawCover = b.cover_image || (rawGallery.length > 0 ? rawGallery[0] : undefined);
+          const firstUnitImage = (b.units || []).find((u: { images?: string[] }) => Array.isArray(u?.images) && u.images.length > 0)?.images?.[0];
+          // parque-mackenna.jpg no existe en public; usar IMG_4922.jpg como fallback
+          const replaceInvalidCover = (url: string) => (url?.includes('parque-mackenna.jpg') ? '/images/parque-mackenna-305/IMG_4922.jpg' : url);
+          const galleryRaw = rawGallery.length > 0 ? rawGallery : (rawCover ? [rawCover] : (firstUnitImage ? [firstUnitImage] : ['/images/lascondes-cover.jpg']));
+          const gallery = galleryRaw.map(replaceInvalidCover);
+          const coverImage = replaceInvalidCover(rawCover || gallery[0] || '/images/lascondes-cover.jpg');
+
           const building: Building = {
             id: b.id,
             slug: b.slug || `edificio-${b.id}`,
@@ -723,8 +733,8 @@ export async function getBuildingBySlug(slug: string): Promise<(Building & { pre
             comuna: b.comuna,
             address: b.address || 'Dirección no disponible',
             amenities: Array.isArray(b.amenities) && b.amenities.length > 0 ? b.amenities : [],
-            gallery: Array.isArray(b.gallery) && b.gallery.length > 0 ? b.gallery : [],
-            coverImage: b.cover_image || (Array.isArray(b.gallery) && b.gallery.length > 0 ? b.gallery[0] : undefined),
+            gallery,
+            coverImage,
             badges: Array.isArray(b.badges) ? b.badges : [],
             serviceLevel: b.service_level as 'pro' | 'standard' | undefined,
             metroCercano: buildingMetroCercanoGetBySlug,
