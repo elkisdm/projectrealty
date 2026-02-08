@@ -130,29 +130,78 @@ export function FichaCondominio({
     const currentBuildingId = (formData.id || `bld-${generateSlug(formData.name || "edificio")}`).toString();
 
     const uploadOne = async (file: File): Promise<string> => {
-      const payload = new FormData();
-      payload.append("file", file);
-      payload.append("buildingId", currentBuildingId);
-      payload.append("scope", "building");
-      payload.append("mediaType", "image");
-
-      const response = await fetch("/api/admin/media/upload", {
+      const signedResponse = await fetch("/api/admin/media/upload-url", {
         method: "POST",
-        body: payload,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          buildingId: currentBuildingId,
+          scope: "building",
+          mediaType: "image",
+          fileName: file.name,
+          mimeType: file.type,
+          size: file.size,
+          isCover: mode === "cover",
+        }),
       });
 
-      const result = (await response.json()) as {
+      const signedResult = (await signedResponse.json()) as {
         success?: boolean;
-        data?: { url?: string };
-        error?: string;
-        message?: string;
+        data?: {
+          bucket?: string;
+          path?: string;
+          token?: string;
+        };
+        error?: { message?: string } | string;
       };
 
-      if (!response.ok || !result.success || !result.data?.url) {
-        throw new Error(result.message || result.error || "Error subiendo imagen");
+      if (
+        !signedResponse.ok ||
+        !signedResult.success ||
+        !signedResult.data?.bucket ||
+        !signedResult.data?.path ||
+        !signedResult.data?.token
+      ) {
+        const errorMessage =
+          typeof signedResult.error === "string"
+            ? signedResult.error
+            : signedResult.error?.message;
+        throw new Error(errorMessage || "Error generando URL de carga");
       }
 
-      return result.data.url;
+      const confirmPayload = new FormData();
+      confirmPayload.append("file", file);
+      confirmPayload.append("buildingId", currentBuildingId);
+      confirmPayload.append("scope", "building");
+      confirmPayload.append("mediaType", "image");
+      confirmPayload.append("bucket", signedResult.data.bucket);
+      confirmPayload.append("path", signedResult.data.path);
+      confirmPayload.append("token", signedResult.data.token);
+      confirmPayload.append("mimeType", file.type);
+      confirmPayload.append("size", String(file.size));
+      confirmPayload.append("isCover", String(mode === "cover"));
+
+      const confirmResponse = await fetch("/api/admin/media/confirm", {
+        method: "POST",
+        body: confirmPayload,
+      });
+
+      const confirmResult = (await confirmResponse.json()) as {
+        success?: boolean;
+        data?: { public_url?: string; url?: string };
+        error?: { message?: string } | string;
+      };
+
+      const finalUrl = confirmResult.data?.public_url || confirmResult.data?.url;
+
+      if (!confirmResponse.ok || !confirmResult.success || !finalUrl) {
+        const errorMessage =
+          typeof confirmResult.error === "string"
+            ? confirmResult.error
+            : confirmResult.error?.message;
+        throw new Error(errorMessage || "Error confirmando carga");
+      }
+
+      return finalUrl;
     };
 
     if (mode === "gallery") setUploadingGallery(true);

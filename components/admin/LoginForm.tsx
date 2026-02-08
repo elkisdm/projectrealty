@@ -82,14 +82,13 @@ export default function LoginForm() {
         try {
             await login(formData.email, formData.password);
 
-            // Redirigir después de login exitoso (validado para prevenir open redirect)
+            // Dar tiempo al navegador a persistir las cookies antes del redirect
             const redirectParam = searchParams.get('redirect');
             const redirectTo = validateAdminRedirect(redirectParam, '/admin');
-            router.push(redirectTo);
-            router.refresh();
+            await new Promise((r) => setTimeout(r, 150));
+            window.location.replace(redirectTo);
         } catch {
-            // El error ya está manejado en el hook
-            // Solo necesitamos asegurarnos de que se muestre
+            // El error ya está manejado en el hook (toast)
         }
     };
 

@@ -1,83 +1,108 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { z } from "zod";
 import { createRateLimiter } from "@lib/rate-limit";
 import {
-  createBuilding,
-  updateBuilding,
-  deleteBuilding,
-  createUnit,
-  updateUnit,
-  deleteUnit,
-} from "@lib/admin/data";
-import { BuildingSchema, UnitSchema } from "@schemas/models";
-import type { Building, Unit } from "@schemas/models";
+  AdminBuildingCreateSchema,
+  AdminBuildingUpdateSchema,
+  AdminUnitCreateSchema,
+  AdminUnitUpdateSchema,
+  adminError,
+  adminOk,
+} from "@lib/admin/contracts";
+import {
+  createAdminBuilding,
+  deleteAdminBuilding,
+  updateAdminBuilding,
+} from "@lib/admin/repositories/buildings.repository";
+import {
+  createAdminUnit,
+  deleteAdminUnit,
+  updateAdminUnit,
+} from "@lib/admin/repositories/units.repository";
+import { requireAdminSession } from "@lib/admin/guards";
+import { logAdminActivity } from "@lib/admin/repositories/activity.repository";
 
-// Force dynamic rendering
 export const dynamic = "force-dynamic";
 
-// Rate limiting for admin endpoints (más restrictivo para operaciones en lote)
 const limiter = createRateLimiter({ windowMs: 60_000, max: 10 });
 
 const BulkOperationSchema = z.object({
   operation: z.enum(["create", "update", "delete", "import"]),
   entity: z.enum(["buildings", "units"]),
-  ids: z.array(z.string()).optional(),
+  ids: z.array(z.string().min(1)).optional(),
   data: z.array(z.unknown()).optional(),
 });
 
+function extractBuildingId(raw: Record<string, unknown>) {
+  if (typeof raw.buildingId === "string" && raw.buildingId) {
+    return raw.buildingId;
+  }
+
+  if (typeof raw.building_id === "string" && raw.building_id) {
+    return raw.building_id;
+  }
+
+  return "";
+}
+
 export async function POST(request: NextRequest) {
   try {
-    // Rate limiting
     const ipHeader = request.headers.get("x-forwarded-for");
     const ip = ipHeader ? ipHeader.split(",")[0].trim() : "unknown";
 
     const rateLimitResult = await limiter.check(ip);
     if (!rateLimitResult.ok) {
-      return NextResponse.json(
-        { error: "rate_limited" },
-        {
-          status: 429,
-          headers: { "Retry-After": String(rateLimitResult.retryAfter ?? 60) },
-        }
-      );
+      return adminError("rate_limited", "Demasiadas solicitudes", {
+        status: 429,
+        details: { retryAfter: rateLimitResult.retryAfter ?? 60 },
+      });
     }
 
-    // Parsear y validar body
-    const body = await request.json();
-    const validation = BulkOperationSchema.safeParse(body);
+    const rawBody = await request.json();
+    const parsed = BulkOperationSchema.safeParse(rawBody);
 
-    if (!validation.success) {
-      return NextResponse.json(
-        {
-          error: "validation_error",
-          details: validation.error.errors,
-        },
-        { status: 400 }
-      );
+    if (!parsed.success) {
+      return adminError("validation_error", "Payload inválido para operación bulk", {
+        status: 400,
+        details: parsed.error.errors,
+      });
     }
 
-    const { operation, entity, ids, data } = validation.data;
+    const requiresAdmin = parsed.data.operation === "delete";
+    const auth = await requireAdminSession(request, requiresAdmin ? "admin" : "editor");
+    if (auth.response) {
+      return auth.response;
+    }
 
-    // Operaciones de eliminación
+    const { operation, entity, ids, data } = parsed.data;
+
     if (operation === "delete") {
       if (!ids || ids.length === 0) {
-        return NextResponse.json(
-          { error: "validation_error", message: "ids es requerido para delete" },
-          { status: 400 }
-        );
+        return adminError("validation_error", "ids es requerido para delete", {
+          status: 400,
+        });
       }
 
-      const results = [];
-      const errors = [];
+      const results: Array<{ id: string; success: boolean }> = [];
+      const errors: Array<{ id: string; error: string }> = [];
 
       for (const id of ids) {
         try {
           if (entity === "buildings") {
-            await deleteBuilding(id);
+            await deleteAdminBuilding(id);
           } else {
-            await deleteUnit(id);
+            await deleteAdminUnit(id);
           }
           results.push({ id, success: true });
+
+          await logAdminActivity({
+            actorId: auth.session.user.id,
+            actorEmail: auth.session.user.email,
+            actorRole: auth.session.user.role,
+            action: `${entity.slice(0, -1)}.delete`,
+            entity: entity.slice(0, -1),
+            entityId: id,
+          });
         } catch (error) {
           errors.push({
             id,
@@ -86,10 +111,9 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      return NextResponse.json({
-        success: true,
+      return adminOk({
         results,
-        errors: errors.length > 0 ? errors : undefined,
+        errors,
         summary: {
           total: ids.length,
           success: results.length,
@@ -98,169 +122,125 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Operaciones de actualización
-    if (operation === "update") {
-      if (!data || data.length === 0) {
-        return NextResponse.json(
-          { error: "validation_error", message: "data es requerido para update" },
-          { status: 400 }
-        );
-      }
+    if (!data || data.length === 0) {
+      return adminError("validation_error", "data es requerido", {
+        status: 400,
+      });
+    }
 
-      const results = [];
-      const errors = [];
+    const results: Array<{ id: string; success: boolean; data?: unknown }> = [];
+    const errors: Array<{ item: unknown; error: string }> = [];
 
-      for (const item of data) {
-        try {
-          const itemData = item as { id: string } & Partial<Building | Unit>;
-          if (!itemData.id) {
-            errors.push({ item, error: "id es requerido" });
-            continue;
-          }
+    for (const item of data) {
+      const itemRecord = (item || {}) as Record<string, unknown>;
 
-          if (entity === "buildings") {
-            const validation = BuildingSchema.partial().safeParse(itemData);
-            if (!validation.success) {
-              errors.push({
-                id: itemData.id,
-                error: validation.error.errors[0]?.message || "Error de validación",
-              });
-              continue;
+      try {
+        if (entity === "buildings") {
+          if (operation === "update") {
+            const id = typeof itemRecord.id === "string" ? itemRecord.id : "";
+            if (!id) {
+              throw new Error("validation_error: id es requerido para update");
             }
-            const updated = await updateBuilding(itemData.id, validation.data);
-            results.push({ id: itemData.id, success: true, data: updated });
+
+            const payload = AdminBuildingUpdateSchema.parse(itemRecord);
+            const updated = await updateAdminBuilding(id, payload);
+            results.push({ id, success: true, data: updated });
+
+            await logAdminActivity({
+              actorId: auth.session.user.id,
+              actorEmail: auth.session.user.email,
+              actorRole: auth.session.user.role,
+              action: "building.update",
+              entity: "building",
+              entityId: id,
+            });
           } else {
-            const validation = UnitSchema.partial().safeParse(itemData);
-            if (!validation.success) {
-              errors.push({
-                id: itemData.id,
-                error: validation.error.errors[0]?.message || "Error de validación",
-              });
-              continue;
-            }
-            const updated = await updateUnit(itemData.id, validation.data);
-            results.push({ id: itemData.id, success: true, data: updated });
-          }
-        } catch (error) {
-          errors.push({
-            item,
-            error: error instanceof Error ? error.message : "Error desconocido",
-          });
-        }
-      }
+            const payload = AdminBuildingCreateSchema.parse(itemRecord);
+            const { units, ...buildingInput } = payload;
+            const created = await createAdminBuilding({ ...buildingInput, units });
+            results.push({ id: created.id, success: true, data: created });
 
-      return NextResponse.json({
-        success: true,
+            await logAdminActivity({
+              actorId: auth.session.user.id,
+              actorEmail: auth.session.user.email,
+              actorRole: auth.session.user.role,
+              action: "building.create",
+              entity: "building",
+              entityId: created.id,
+              metadata: {
+                via: "bulk",
+              },
+            });
+          }
+        } else {
+          if (operation === "update") {
+            const id = typeof itemRecord.id === "string" ? itemRecord.id : "";
+            if (!id) {
+              throw new Error("validation_error: id es requerido para update");
+            }
+
+            const payload = AdminUnitUpdateSchema.parse(itemRecord);
+            const updated = await updateAdminUnit(id, payload);
+            results.push({ id, success: true, data: updated });
+
+            await logAdminActivity({
+              actorId: auth.session.user.id,
+              actorEmail: auth.session.user.email,
+              actorRole: auth.session.user.role,
+              action: "unit.update",
+              entity: "unit",
+              entityId: id,
+              metadata: {
+                via: "bulk",
+              },
+            });
+          } else {
+            const buildingId = extractBuildingId(itemRecord);
+            if (!buildingId) {
+              throw new Error("validation_error: buildingId es requerido para crear unidad");
+            }
+
+            const payload = AdminUnitCreateSchema.parse(itemRecord);
+            const created = await createAdminUnit(payload, buildingId);
+            results.push({ id: created.id, success: true, data: created });
+
+            await logAdminActivity({
+              actorId: auth.session.user.id,
+              actorEmail: auth.session.user.email,
+              actorRole: auth.session.user.role,
+              action: "unit.create",
+              entity: "unit",
+              entityId: created.id,
+              metadata: {
+                via: "bulk",
+                buildingId,
+              },
+            });
+          }
+        }
+      } catch (error) {
+        errors.push({
+          item,
+          error: error instanceof Error ? error.message : "Error desconocido",
+        });
+      }
+    }
+
+    return adminOk(
+      {
         results,
-        errors: errors.length > 0 ? errors : undefined,
+        errors,
         summary: {
           total: data.length,
           success: results.length,
           failed: errors.length,
         },
-      });
-    }
-
-    // Operaciones de creación/importación
-    if (operation === "create" || operation === "import") {
-      if (!data || data.length === 0) {
-        return NextResponse.json(
-          {
-            error: "validation_error",
-            message: "data es requerido para create/import",
-          },
-          { status: 400 }
-        );
-      }
-
-      const results = [];
-      const errors = [];
-
-      for (const item of data) {
-        try {
-          if (entity === "buildings") {
-            const validation = BuildingSchema.safeParse(item);
-            if (!validation.success) {
-              errors.push({
-                item,
-                error: validation.error.errors[0]?.message || "Error de validación",
-              });
-              continue;
-            }
-            const created = await createBuilding(validation.data);
-            results.push({ id: created.id, success: true, data: created });
-          } else {
-            const itemData = item as Unit & { buildingId: string };
-            if (!itemData.buildingId) {
-              errors.push({
-                item,
-                error: "buildingId es requerido para unidades",
-              });
-              continue;
-            }
-
-            const { buildingId, ...unitData } = itemData;
-            const validation = UnitSchema.safeParse(unitData);
-            if (!validation.success) {
-              errors.push({
-                item,
-                error: validation.error.errors[0]?.message || "Error de validación",
-              });
-              continue;
-            }
-            const created = await createUnit(validation.data, buildingId);
-            results.push({ id: created.id, success: true, data: created });
-          }
-        } catch (error) {
-          errors.push({
-            item,
-            error: error instanceof Error ? error.message : "Error desconocido",
-          });
-        }
-      }
-
-      return NextResponse.json(
-        {
-          success: true,
-          results,
-          errors: errors.length > 0 ? errors : undefined,
-          summary: {
-            total: data.length,
-            success: results.length,
-            failed: errors.length,
-          },
-        },
-        { status: 201 }
-      );
-    }
-
-    return NextResponse.json(
-      { error: "invalid_operation", message: "Operación no soportada" },
-      { status: 400 }
+      },
+      { status: operation === "update" ? 200 : 201 }
     );
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: "internal_error",
-        message:
-          error instanceof Error ? error.message : "Error interno del servidor",
-      },
-      { status: 500 }
-    );
+    return adminError("internal_error", error instanceof Error ? error.message : "Error interno del servidor", {
+      status: 500,
+    });
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

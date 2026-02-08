@@ -40,6 +40,7 @@ const defaultValues: Partial<Unit> = {
   estacionamiento: false,
   bodega: false,
   pet_friendly: false,
+  publicationStatus: "draft",
 };
 
 export function FichaPropiedad({
@@ -159,30 +160,78 @@ export function FichaPropiedad({
     const unitKey = (formData.id || formData.codigoUnidad || "sin-unidad").toString();
 
     const uploadOne = async (file: File): Promise<string> => {
-      const payload = new FormData();
-      payload.append("file", file);
-      payload.append("buildingId", selectedBuildingId);
-      payload.append("unitId", unitKey);
-      payload.append("scope", "unit");
-      payload.append("mediaType", mediaType);
-
-      const response = await fetch("/api/admin/media/upload", {
+      const signedResponse = await fetch("/api/admin/media/upload-url", {
         method: "POST",
-        body: payload,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          buildingId: selectedBuildingId,
+          unitId: unitKey,
+          scope: "unit",
+          mediaType,
+          fileName: file.name,
+          mimeType: file.type,
+          size: file.size,
+        }),
       });
 
-      const result = (await response.json()) as {
+      const signedResult = (await signedResponse.json()) as {
         success?: boolean;
-        data?: { url?: string };
-        error?: string;
-        message?: string;
+        data?: {
+          bucket?: string;
+          path?: string;
+          token?: string;
+        };
+        error?: { message?: string } | string;
       };
 
-      if (!response.ok || !result.success || !result.data?.url) {
-        throw new Error(result.message || result.error || "Error subiendo archivo");
+      if (
+        !signedResponse.ok ||
+        !signedResult.success ||
+        !signedResult.data?.bucket ||
+        !signedResult.data?.path ||
+        !signedResult.data?.token
+      ) {
+        const errorMessage =
+          typeof signedResult.error === "string"
+            ? signedResult.error
+            : signedResult.error?.message;
+        throw new Error(errorMessage || "Error generando URL de carga");
       }
 
-      return result.data.url;
+      const confirmPayload = new FormData();
+      confirmPayload.append("file", file);
+      confirmPayload.append("buildingId", selectedBuildingId);
+      confirmPayload.append("unitId", unitKey);
+      confirmPayload.append("scope", "unit");
+      confirmPayload.append("mediaType", mediaType);
+      confirmPayload.append("bucket", signedResult.data.bucket);
+      confirmPayload.append("path", signedResult.data.path);
+      confirmPayload.append("token", signedResult.data.token);
+      confirmPayload.append("mimeType", file.type);
+      confirmPayload.append("size", String(file.size));
+
+      const confirmResponse = await fetch("/api/admin/media/confirm", {
+        method: "POST",
+        body: confirmPayload,
+      });
+
+      const confirmResult = (await confirmResponse.json()) as {
+        success?: boolean;
+        data?: { public_url?: string; url?: string };
+        error?: { message?: string } | string;
+      };
+
+      const finalUrl = confirmResult.data?.public_url || confirmResult.data?.url;
+
+      if (!confirmResponse.ok || !confirmResult.success || !finalUrl) {
+        const errorMessage =
+          typeof confirmResult.error === "string"
+            ? confirmResult.error
+            : confirmResult.error?.message;
+        throw new Error(errorMessage || "Error confirmando carga");
+      }
+
+      return finalUrl;
     };
 
     if (mediaType === "image") setUploadingImages(true);
@@ -559,7 +608,7 @@ export function FichaPropiedad({
               disabled={uploadingImages || !selectedBuildingId}
             />
             <p className="mt-1 text-xs text-[var(--subtext)]">
-              JPG, PNG, WEBP, GIF. Máx 15 MB por imagen.
+              JPG, PNG, WEBP. Máx 10 MB por imagen.
             </p>
           </div>
           <div>
@@ -581,7 +630,7 @@ export function FichaPropiedad({
               disabled={uploadingVideos || !selectedBuildingId}
             />
             <p className="mt-1 text-xs text-[var(--subtext)]">
-              MP4, WEBM, MOV, AVI. Máx 150 MB por video.
+              MP4, WEBM. Máx 200 MB por video.
             </p>
           </div>
         </div>
@@ -612,6 +661,28 @@ export function FichaPropiedad({
           />
         </div>
         <div className="flex flex-wrap gap-4 pt-2">
+          <div className="w-full md:w-72">
+            <label htmlFor="propiedad-publicacion" className="block text-sm font-medium text-[var(--text)] mb-2">
+              Estado de publicación
+            </label>
+            <select
+              id="propiedad-publicacion"
+              value={String(formData.publicationStatus ?? formData.publication_status ?? "draft")}
+              onChange={(e) => {
+                const value = e.target.value as "draft" | "published" | "archived";
+                handleChange("publicationStatus", value);
+                handleChange("publication_status", value);
+              }}
+              className={inputClass("publicationStatus")}
+            >
+              <option value="draft">Draft</option>
+              <option value="published">Published</option>
+              <option value="archived">Archived</option>
+            </select>
+            <p className="mt-1 text-xs text-[var(--subtext)]">
+              Solo se puede publicar con ficha completa e imágenes cargadas.
+            </p>
+          </div>
           <label className="flex items-center gap-2 cursor-pointer min-h-[44px]">
             <input
               type="checkbox"

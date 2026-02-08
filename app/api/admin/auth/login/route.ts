@@ -74,7 +74,14 @@ export async function POST(request: NextRequest) {
     // Logging exitoso (sin password)
     logger.log(`[AUTH] Login exitoso para: ${email} (${session.user.role})`);
 
-    // Crear respuesta con cookies
+    if (!session.access_token || !session.refresh_token) {
+      logger.error('[AUTH] Sesión sin tokens:', { hasAccess: !!session.access_token, hasRefresh: !!session.refresh_token });
+      return NextResponse.json(
+        { error: 'internal_error', message: 'Error al crear sesión. Reintenta.' },
+        { status: 500 }
+      );
+    }
+
     const response = NextResponse.json(
       {
         success: true,
@@ -87,15 +94,16 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     );
 
-    // Establecer cookies de sesión
-    return setSupabaseCookies(response, session);
+    setSupabaseCookies(response, session);
+    return response;
   } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
     logger.error('[AUTH] Error inesperado en login:', error);
-    
+
     return NextResponse.json(
-      { 
-        error: 'internal_error', 
-        message: 'Error interno del servidor',
+      {
+        error: 'internal_error',
+        message: process.env.NODE_ENV === 'development' ? message : 'Error interno del servidor',
       },
       { status: 500 }
     );

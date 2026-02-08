@@ -12,10 +12,12 @@ import { ImportDialog } from "@components/admin/ImportDialog";
 import { ExportDialog } from "@components/admin/ExportDialog";
 import { unitsToCSV, validateUnitsFromCSV, downloadCSV } from "@lib/admin/csv";
 import { logger } from "@lib/logger";
+import { useAdminAuth } from "@hooks/useAdminAuth";
 
 interface UnitWithBuilding extends Unit {
   buildingId: string;
   buildingName: string;
+  publicationStatus?: "draft" | "published" | "archived";
 }
 
 interface PaginationInfo {
@@ -28,6 +30,7 @@ interface PaginationInfo {
 }
 
 export default function UnitsAdminPage() {
+  const { user } = useAdminAuth();
   const [units, setUnits] = useState<UnitWithBuilding[]>([]);
   const [buildings, setBuildings] = useState<Building[]>([]);
   const [loading, setLoading] = useState(true);
@@ -68,15 +71,16 @@ export default function UnitsAdminPage() {
 
       const params = new URLSearchParams({
         page: String(pagination.page),
-        limit: String(pagination.limit),
+        page_size: String(pagination.limit),
         ...(search && { search }),
-        ...(filters.buildingId && { buildingId: String(filters.buildingId) }),
-        ...(filters.tipologia && { tipologia: String(filters.tipologia) }),
+        ...(filters.buildingId && { building_id: String(filters.buildingId) }),
+        ...(filters.tipologia && { typology: String(filters.tipologia) }),
         ...(filters.disponible !== undefined && {
           disponible: String(filters.disponible),
         }),
-        ...(filters.minPrice && { minPrice: String(filters.minPrice) }),
-        ...(filters.maxPrice && { maxPrice: String(filters.maxPrice) }),
+        ...(filters.price_min && { price_min: String(filters.price_min) }),
+        ...(filters.price_max && { price_max: String(filters.price_max) }),
+        ...(filters.status && { status: String(filters.status) }),
       });
 
       const response = await fetch(`/api/admin/units?${params}`);
@@ -110,6 +114,11 @@ export default function UnitsAdminPage() {
   };
 
   const handleDelete = async (unit: UnitWithBuilding) => {
+    if (user?.role !== "admin") {
+      toast.error("Solo administradores pueden eliminar unidades");
+      return;
+    }
+
     if (!confirm(`¿Estás seguro de eliminar la unidad "${unit.id}"?`)) {
       return;
     }
@@ -169,6 +178,11 @@ export default function UnitsAdminPage() {
   };
 
   const handleBulkDelete = async () => {
+    if (user?.role !== "admin") {
+      toast.error("Solo administradores pueden eliminar unidades");
+      return;
+    }
+
     if (!confirm(`¿Estás seguro de eliminar ${selected.length} unidades?`)) {
       return;
     }
@@ -323,6 +337,16 @@ export default function UnitsAdminPage() {
       type: "checkbox",
     },
     {
+      key: "status",
+      label: "Publicación",
+      type: "select",
+      options: [
+        { label: "Draft", value: "draft" },
+        { label: "Published", value: "published" },
+        { label: "Archived", value: "archived" },
+      ],
+    },
+    {
       key: "price",
       label: "Precio",
       type: "range",
@@ -362,6 +386,26 @@ export default function UnitsAdminPage() {
           {value ? "✓" : "✗"}
         </span>
       ),
+    },
+    {
+      key: "publicationStatus",
+      label: "Publicación",
+      sortable: true,
+      render: (value) => {
+        const status = String(value || "draft");
+        const classes =
+          status === "published"
+            ? "bg-emerald-500/15 text-emerald-300 ring-emerald-500/30"
+            : status === "archived"
+            ? "bg-zinc-500/15 text-zinc-300 ring-zinc-500/30"
+            : "bg-amber-500/15 text-amber-300 ring-amber-500/30";
+
+        return (
+          <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs ring-1 ${classes}`}>
+            {status}
+          </span>
+        );
+      },
     },
   ];
 
@@ -503,7 +547,7 @@ export default function UnitsAdminPage() {
       {/* Bulk Actions */}
       <BulkActions
         selected={selected}
-        onBulkDelete={handleBulkDelete}
+        onBulkDelete={user?.role === "admin" ? handleBulkDelete : undefined}
         onExport={() => setShowExport(true)}
         onClearSelection={() => setSelected([])}
       />

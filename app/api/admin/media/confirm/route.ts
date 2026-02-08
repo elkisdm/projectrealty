@@ -1,25 +1,13 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import { createRateLimiter } from "@lib/rate-limit";
-import { adminError, adminOk } from "@lib/admin/contracts";
-import {
-  confirmMediaUpload,
-  createMediaUploadUrl,
-} from "@lib/admin/repositories/media.repository";
+import { AdminMediaConfirmSchema, adminError, adminOk } from "@lib/admin/contracts";
+import { confirmMediaUpload } from "@lib/admin/repositories/media.repository";
 import { requireAdminSession } from "@lib/admin/guards";
 
 export const dynamic = "force-dynamic";
 
 const limiter = createRateLimiter({ windowMs: 60_000, max: 60 });
-
-const UploadMetaSchema = z.object({
-  buildingId: z.string().min(1),
-  unitId: z.string().optional(),
-  scope: z.enum(["unit", "building"]).default("unit"),
-  mediaType: z.enum(["image", "video"]),
-  isCover: z.boolean().optional(),
-  sortOrder: z.number().int().nonnegative().optional(),
-});
 
 export async function POST(request: NextRequest) {
   try {
@@ -46,53 +34,41 @@ export async function POST(request: NextRequest) {
       return adminError("validation_error", "El archivo es requerido", { status: 400 });
     }
 
-    const parsed = UploadMetaSchema.safeParse({
+    const parsed = AdminMediaConfirmSchema.safeParse({
       buildingId: formData.get("buildingId"),
       unitId: formData.get("unitId") || undefined,
-      scope: formData.get("scope") || "unit",
+      scope: formData.get("scope"),
       mediaType: formData.get("mediaType"),
+      bucket: formData.get("bucket"),
+      path: formData.get("path"),
+      token: formData.get("token"),
+      mimeType: formData.get("mimeType") || file.type,
+      size: Number(formData.get("size") || file.size),
       isCover: formData.get("isCover") === "true",
       sortOrder: formData.get("sortOrder") ? Number(formData.get("sortOrder")) : undefined,
     });
 
     if (!parsed.success) {
-      return adminError("validation_error", "Payload inválido", {
+      return adminError("validation_error", "Payload inválido para confirmación", {
         status: 400,
         details: parsed.error.errors,
       });
     }
 
-    const upload = await createMediaUploadUrl({
-      ...parsed.data,
-      fileName: file.name,
-      mimeType: file.type,
-      size: file.size,
-    });
-
     const media = await confirmMediaUpload({
       ...parsed.data,
-      mimeType: file.type,
-      size: file.size,
-      bucket: upload.bucket,
-      path: upload.path,
-      token: upload.token,
       file,
     });
 
-    return adminOk(
-      {
-        id: media.id,
-        bucket: media.bucket,
-        path: media.path,
-        url: media.public_url,
-        mediaType: media.media_type,
-        size: media.size,
-        sortOrder: media.sort_order,
-        isCover: media.is_cover,
-      },
-      { status: 201 }
-    );
+    return adminOk(media, { status: 201 });
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return adminError("validation_error", "Payload inválido", {
+        status: 400,
+        details: error.errors,
+      });
+    }
+
     const message = error instanceof Error ? error.message : "Error interno del servidor";
 
     if (message.startsWith("validation_error:")) {

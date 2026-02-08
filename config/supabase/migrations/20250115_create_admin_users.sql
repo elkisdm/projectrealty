@@ -15,22 +15,24 @@ CREATE TABLE IF NOT EXISTS public.admin_users (
 CREATE INDEX IF NOT EXISTS idx_admin_users_email ON public.admin_users(email);
 CREATE INDEX IF NOT EXISTS idx_admin_users_role ON public.admin_users(role);
 
--- Trigger para actualizar updated_at automáticamente
-CREATE TRIGGER update_admin_users_updated_at 
-    BEFORE UPDATE ON public.admin_users 
+-- Trigger para actualizar updated_at automáticamente (idempotente)
+DROP TRIGGER IF EXISTS update_admin_users_updated_at ON public.admin_users;
+CREATE TRIGGER update_admin_users_updated_at
+    BEFORE UPDATE ON public.admin_users
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Configurar RLS (Row Level Security)
 ALTER TABLE public.admin_users ENABLE ROW LEVEL SECURITY;
 
--- Política: Usuarios autenticados pueden ver su propio registro
+-- Políticas (idempotentes: eliminar si existen antes de crear)
+DROP POLICY IF EXISTS "Users can view their own admin record" ON public.admin_users;
 CREATE POLICY "Users can view their own admin record" ON public.admin_users
-    FOR SELECT 
+    FOR SELECT
     USING (auth.uid() = id);
 
--- Política: Solo service_role puede insertar, actualizar o eliminar
+DROP POLICY IF EXISTS "Service role has full access to admin_users" ON public.admin_users;
 CREATE POLICY "Service role has full access to admin_users" ON public.admin_users
-    FOR ALL 
+    FOR ALL
     USING (auth.role() = 'service_role')
     WITH CHECK (auth.role() = 'service_role');
 

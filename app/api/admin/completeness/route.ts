@@ -1,22 +1,23 @@
-import { NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { createRateLimiter } from "@lib/rate-limit";
-import { createSupabaseClient } from "@lib/supabase.mock";
+import { adminError, adminOk } from "@lib/admin/contracts";
+import { requireAdminSession } from "@lib/admin/guards";
+import { getAdminDbClient } from "@lib/admin/repositories/client";
+import { getAllAdminBuildingsSnapshot } from "@lib/admin/repositories/buildings.repository";
 
-// Force dynamic rendering
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
-// Rate limiting for admin endpoints
-const limiter = createRateLimiter({ windowMs: 60_000, max: 10 });
+const limiter = createRateLimiter({ windowMs: 60_000, max: 20 });
 
 interface CompletenessStats {
   totalBuildings: number;
   averageCompleteness: number;
   buildingsWithIssues: number;
   completenessDistribution: {
-    excellent: number; // 90-100%
-    good: number;     // 70-89%
-    fair: number;     // 50-69%
-    poor: number;     // 0-49%
+    excellent: number;
+    good: number;
+    fair: number;
+    poor: number;
   };
   topIssues: Array<{
     field: string;
@@ -25,46 +26,73 @@ interface CompletenessStats {
   }>;
 }
 
-function calculateCompletenessStats(buildings: unknown[]): CompletenessStats {
-  if (!buildings || buildings.length === 0) {
+type CompletenessRow = {
+  id: string;
+  slug: string;
+  name: string;
+  comuna: string;
+  address: string;
+  completeness_percentage: number;
+  cover_image_status: "✅" | "❌";
+  badges_status: "✅" | "❌";
+  service_level_status: "✅" | "❌";
+  amenities_status: "✅" | "❌";
+  gallery_status: "✅" | "❌";
+  updated_at: string;
+};
+
+function calculateCompletenessStats(buildings: CompletenessRow[]): CompletenessStats {
+  if (buildings.length === 0) {
     return {
       totalBuildings: 0,
       averageCompleteness: 0,
       buildingsWithIssues: 0,
-      completenessDistribution: { excellent: 0, good: 0, fair: 0, poor: 0 },
-      topIssues: []
+      completenessDistribution: {
+        excellent: 0,
+        good: 0,
+        fair: 0,
+        poor: 0,
+      },
+      topIssues: [],
     };
   }
 
   const totalBuildings = buildings.length;
-  const averageCompleteness = buildings.reduce((sum: number, b: unknown) => sum + (b as { completeness_percentage: number }).completeness_percentage, 0) / totalBuildings;
-  
-  const buildingsWithIssues = buildings.filter((b: unknown) => (b as { completeness_percentage: number }).completeness_percentage < 100).length;
-  
-  const distribution = buildings.reduce((acc: { excellent: number; good: number; fair: number; poor: number }, b: unknown) => {
-    const percentage = (b as { completeness_percentage: number }).completeness_percentage;
-    if (percentage >= 90) acc.excellent++;
-    else if (percentage >= 70) acc.good++;
-    else if (percentage >= 50) acc.fair++;
-    else acc.poor++;
-    return acc;
-  }, { excellent: 0, good: 0, fair: 0, poor: 0 });
+  const averageCompleteness =
+    buildings.reduce((acc, row) => acc + row.completeness_percentage, 0) / totalBuildings;
 
-  // Calculate top issues
-  const fieldIssues = {
-    'cover_image': buildings.filter((b: unknown) => (b as { cover_image_status: string }).cover_image_status === '❌').length,
-    'badges': buildings.filter((b: unknown) => (b as { badges_status: string }).badges_status === '❌').length,
-    'service_level': buildings.filter((b: unknown) => (b as { service_level_status: string }).service_level_status === '❌').length,
-    'amenities': buildings.filter((b: unknown) => (b as { amenities_status: string }).amenities_status === '❌').length,
-    'gallery': buildings.filter((b: unknown) => (b as { gallery_status: string }).gallery_status === '❌').length,
+  const buildingsWithIssues = buildings.filter((row) => row.completeness_percentage < 100).length;
+
+  const completenessDistribution = buildings.reduce(
+    (acc, row) => {
+      if (row.completeness_percentage >= 90) acc.excellent += 1;
+      else if (row.completeness_percentage >= 70) acc.good += 1;
+      else if (row.completeness_percentage >= 50) acc.fair += 1;
+      else acc.poor += 1;
+      return acc;
+    },
+    {
+      excellent: 0,
+      good: 0,
+      fair: 0,
+      poor: 0,
+    }
+  );
+
+  const issueCounters = {
+    cover_image: buildings.filter((row) => row.cover_image_status === "❌").length,
+    badges: buildings.filter((row) => row.badges_status === "❌").length,
+    service_level: buildings.filter((row) => row.service_level_status === "❌").length,
+    amenities: buildings.filter((row) => row.amenities_status === "❌").length,
+    gallery: buildings.filter((row) => row.gallery_status === "❌").length,
   };
 
-  const topIssues = Object.entries(fieldIssues)
-    .filter(([_, count]) => count > 0)
+  const topIssues = Object.entries(issueCounters)
+    .filter(([, count]) => count > 0)
     .map(([field, count]) => ({
       field,
       count,
-      percentage: Math.round((count / totalBuildings) * 100)
+      percentage: Math.round((count / totalBuildings) * 100),
     }))
     .sort((a, b) => b.count - a.count)
     .slice(0, 5);
@@ -73,61 +101,87 @@ function calculateCompletenessStats(buildings: unknown[]): CompletenessStats {
     totalBuildings,
     averageCompleteness: Math.round(averageCompleteness * 10) / 10,
     buildingsWithIssues,
-    completenessDistribution: distribution,
-    topIssues
+    completenessDistribution,
+    topIssues,
   };
 }
 
-export async function GET(request: Request) {
-  try {
-    // console.log("🔍 Admin completeness endpoint called");
+function toCompletenessRowsFromSnapshot(
+  buildings: Awaited<ReturnType<typeof getAllAdminBuildingsSnapshot>>
+): CompletenessRow[] {
+  return buildings.map((building) => {
+    const checks = {
+      cover_image_status: building.coverImage ? "✅" : "❌",
+      badges_status: Array.isArray(building.badges) && building.badges.length > 0 ? "✅" : "❌",
+      service_level_status: building.serviceLevel ? "✅" : "❌",
+      amenities_status: Array.isArray(building.amenities) && building.amenities.length > 0 ? "✅" : "❌",
+      gallery_status: Array.isArray(building.gallery) && building.gallery.length > 0 ? "✅" : "❌",
+    } as const;
 
-    // Rate limiting
+    const totalChecks = Object.keys(checks).length;
+    const passed = Object.values(checks).filter((value) => value === "✅").length;
+
+    return {
+      id: building.id,
+      slug: building.slug,
+      name: building.name,
+      comuna: building.comuna,
+      address: building.address,
+      completeness_percentage: Math.round((passed / totalChecks) * 1000) / 10,
+      ...checks,
+      updated_at: new Date().toISOString(),
+    };
+  });
+}
+
+async function fetchCompletenessRows(): Promise<CompletenessRow[]> {
+  const client = getAdminDbClient();
+  const { data, error } = await client
+    .from("v_building_completeness")
+    .select("*")
+    .order("completeness_percentage", { ascending: true });
+
+  if (error) {
+    const snapshot = await getAllAdminBuildingsSnapshot();
+    return toCompletenessRowsFromSnapshot(snapshot);
+  }
+
+  return ((data || []) as CompletenessRow[]).map((row) => ({
+    ...row,
+    name: (row as CompletenessRow & { nombre?: string }).name ||
+      (row as CompletenessRow & { nombre?: string }).nombre ||
+      row.slug,
+  }));
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    const auth = await requireAdminSession(request, "viewer");
+    if (auth.response) {
+      return auth.response;
+    }
+
     const ipHeader = request.headers.get("x-forwarded-for");
     const ip = ipHeader ? ipHeader.split(",")[0].trim() : "unknown";
-    
+
     const rateLimitResult = await limiter.check(ip);
     if (!rateLimitResult.ok) {
-      // console.warn(`Rate limit exceeded for IP: ${ip}`);
-      return NextResponse.json(
-        { error: "rate_limited" },
-        { status: 429, headers: { "Retry-After": String(rateLimitResult.retryAfter ?? 60) } }
-      );
+      return adminError("rate_limited", "Demasiadas solicitudes", {
+        status: 429,
+        details: { retryAfter: rateLimitResult.retryAfter ?? 60 },
+      });
     }
 
-    // TODO(BLUEPRINT): mocks solo dev
-    // Fetch data from the completeness view
-    const supabaseAdmin = createSupabaseClient();
-    const { data: buildings, error } = await supabaseAdmin
-      .from('v_building_completeness')
-      .select('*')
-      .order('completeness_percentage', { ascending: true });
-
-    if (error) {
-      // console.error('Error fetching completeness data:', error);
-      return NextResponse.json(
-        { error: "database_error", details: error.message },
-        { status: 500 }
-      );
-    }
-
-    // Calculate statistics
+    const buildings = await fetchCompletenessRows();
     const stats = calculateCompletenessStats(buildings);
 
-    // console.log(`📊 Completeness data fetched: ${buildings?.length || 0} buildings`);
-
-    return NextResponse.json({
-      success: true,
-      buildings: buildings || [],
+    return adminOk({
+      buildings,
       stats,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
-
-  } catch {
-    // console.error("API Error");
-    return NextResponse.json(
-      { error: "internal_error", message: "Error interno del servidor" },
-      { status: 500 }
-    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Error interno del servidor";
+    return adminError("internal_error", message, { status: 500 });
   }
 }

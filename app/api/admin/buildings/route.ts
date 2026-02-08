@@ -1,144 +1,156 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { z } from "zod";
 import { createRateLimiter } from "@lib/rate-limit";
-import { getAdminBuildingsOptimized } from "@lib/admin/data-optimized";
-import { createBuilding } from "@lib/admin/data";
-import { BuildingSchema } from "@schemas/models";
+import {
+  AdminBuildingCreateSchema,
+  adminError,
+  adminOk,
+  parseAdminBuildingsQuery,
+} from "@lib/admin/contracts";
+import {
+  createAdminBuilding,
+  deleteAdminBuilding,
+  listAdminBuildings,
+} from "@lib/admin/repositories/buildings.repository";
+import { createAdminUnit } from "@lib/admin/repositories/units.repository";
+import { requireAdminSession } from "@lib/admin/guards";
+import { logAdminActivity } from "@lib/admin/repositories/activity.repository";
 
-// Force dynamic rendering
 export const dynamic = "force-dynamic";
 
-// Rate limiting for admin endpoints
-const limiter = createRateLimiter({ windowMs: 60_000, max: 20 });
-
-// Schema para query params de filtrado
-const QuerySchema = z.object({
-  page: z.string().optional().transform((val) => (val ? parseInt(val, 10) : 1)),
-  limit: z
-    .string()
-    .optional()
-    .transform((val) => (val ? parseInt(val, 10) : 50)),
-  search: z.string().optional(),
-  comuna: z.string().optional(),
-});
+const limiter = createRateLimiter({ windowMs: 60_000, max: 30 });
 
 export async function GET(request: NextRequest) {
   try {
-    // Rate limiting
+    const auth = await requireAdminSession(request, "viewer");
+    if (auth.response) {
+      return auth.response;
+    }
+
     const ipHeader = request.headers.get("x-forwarded-for");
     const ip = ipHeader ? ipHeader.split(",")[0].trim() : "unknown";
 
     const rateLimitResult = await limiter.check(ip);
     if (!rateLimitResult.ok) {
-      return NextResponse.json(
-        { error: "rate_limited" },
-        {
-          status: 429,
-          headers: { "Retry-After": String(rateLimitResult.retryAfter ?? 60) },
-        }
-      );
+      return adminError("rate_limited", "Demasiadas solicitudes", {
+        status: 429,
+        details: { retryAfter: rateLimitResult.retryAfter ?? 60 },
+      });
     }
 
-    // Parsear query params
-    const searchParams = request.nextUrl.searchParams;
-    const query = QuerySchema.parse({
-      page: searchParams.get("page"),
-      limit: searchParams.get("limit"),
-      search: searchParams.get("search"),
-      comuna: searchParams.get("comuna"),
-    });
+    const parsedQuery = parseAdminBuildingsQuery(request.nextUrl.searchParams);
+    if (!parsedQuery.success) {
+      return adminError("invalid_query", "Parámetros de búsqueda inválidos", {
+        status: 400,
+        details: parsedQuery.error.errors,
+      });
+    }
 
-    // Obtener edificios con filtrado optimizado a nivel de base de datos
-    const { buildings: paginatedBuildings, total } = await getAdminBuildingsOptimized({
-      page: query.page,
-      limit: query.limit,
-      search: query.search,
-      comuna: query.comuna,
-    });
-
-    const totalPages = Math.ceil(total / query.limit);
-
-    return NextResponse.json({
-      success: true,
-      data: paginatedBuildings,
-      pagination: {
-        page: query.page,
-        limit: query.limit,
-        total,
-        totalPages,
-        hasNextPage: query.page < totalPages,
-        hasPrevPage: query.page > 1,
-      },
-    });
+    const { items, meta } = await listAdminBuildings(parsedQuery.data);
+    return adminOk(items, { meta });
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "invalid_query", details: error.errors },
-        { status: 400 }
-      );
-    }
-
-    return NextResponse.json(
-      {
-        error: "internal_error",
-        message:
-          error instanceof Error ? error.message : "Error interno del servidor",
-      },
-      { status: 500 }
-    );
+    return adminError("internal_error", error instanceof Error ? error.message : "Error interno del servidor", {
+      status: 500,
+    });
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    // Rate limiting
+    const auth = await requireAdminSession(request, "editor");
+    if (auth.response) {
+      return auth.response;
+    }
+
     const ipHeader = request.headers.get("x-forwarded-for");
     const ip = ipHeader ? ipHeader.split(",")[0].trim() : "unknown";
 
     const rateLimitResult = await limiter.check(ip);
     if (!rateLimitResult.ok) {
-      return NextResponse.json(
-        { error: "rate_limited" },
-        {
-          status: 429,
-          headers: { "Retry-After": String(rateLimitResult.retryAfter ?? 60) },
-        }
-      );
+      return adminError("rate_limited", "Demasiadas solicitudes", {
+        status: 429,
+        details: { retryAfter: rateLimitResult.retryAfter ?? 60 },
+      });
     }
 
-    // Parsear y validar body
     const body = await request.json();
-    const validation = BuildingSchema.safeParse(body);
+    const parsed = AdminBuildingCreateSchema.safeParse(body);
 
-    if (!validation.success) {
-      return NextResponse.json(
-        {
-          error: "validation_error",
-          details: validation.error.errors,
-        },
-        { status: 400 }
-      );
+    if (!parsed.success) {
+      return adminError("validation_error", "Payload inválido para edificio", {
+        status: 400,
+        details: parsed.error.errors,
+      });
     }
 
-    // Crear edificio
-    const building = await createBuilding(validation.data);
+    const { units, ...buildingInput } = parsed.data;
 
-    return NextResponse.json(
+    const createdBuilding = await createAdminBuilding({
+      ...buildingInput,
+      units,
+    });
+
+    const createdUnits = [];
+
+    try {
+      if (Array.isArray(units) && units.length > 0) {
+        for (const unit of units) {
+          const createdUnit = await createAdminUnit(
+            {
+              ...unit,
+              buildingId: createdBuilding.id,
+            },
+            createdBuilding.id
+          );
+          createdUnits.push(createdUnit);
+        }
+      }
+    } catch (error) {
+      await deleteAdminBuilding(createdBuilding.id);
+      throw error;
+    }
+
+    await logAdminActivity({
+      actorId: auth.session.user.id,
+      actorEmail: auth.session.user.email,
+      actorRole: auth.session.user.role,
+      action: "building.create",
+      entity: "building",
+      entityId: createdBuilding.id,
+      metadata: {
+        unitsCreated: createdUnits.length,
+      },
+    });
+
+    return adminOk(
       {
-        success: true,
-        data: building,
+        ...createdBuilding,
+        units: createdUnits,
       },
       { status: 201 }
     );
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: "internal_error",
-        message:
-          error instanceof Error ? error.message : "Error interno del servidor",
-      },
-      { status: 500 }
-    );
+    if (error instanceof z.ZodError) {
+      return adminError("validation_error", "Payload inválido", {
+        status: 400,
+        details: error.errors,
+      });
+    }
+
+    const message = error instanceof Error ? error.message : "Error interno del servidor";
+
+    if (message.startsWith("validation_error:")) {
+      return adminError("validation_error", message.replace("validation_error:", "").trim(), {
+        status: 400,
+      });
+    }
+
+    if (message.startsWith("database_error:")) {
+      return adminError("database_error", message.replace("database_error:", "").trim(), {
+        status: 500,
+      });
+    }
+
+    return adminError("internal_error", message, { status: 500 });
   }
 }
-

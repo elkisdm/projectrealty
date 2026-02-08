@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Suspense, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Toaster } from "sonner";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { createOptimizedQueryClient } from "@lib/react-query";
@@ -12,12 +12,18 @@ import { logger } from "@lib/logger";
 import React from "react";
 
 const navItems = [
-    { href: "/admin", label: "Dashboard", icon: "📊" },
-    { href: "/admin/buildings", label: "Edificios", icon: "🏢" },
-    { href: "/admin/units", label: "Unidades", icon: "🏠" },
-    { href: "/admin/flags", label: "Feature Flags", icon: "🚩" },
-    { href: "/admin/completeness", label: "Completitud", icon: "✅" },
+    { href: "/admin", label: "Dashboard", icon: "📊", minRole: "viewer" as const },
+    { href: "/admin/buildings", label: "Edificios", icon: "🏢", minRole: "viewer" as const },
+    { href: "/admin/units", label: "Unidades", icon: "🏠", minRole: "viewer" as const },
+    { href: "/admin/flags", label: "Feature Flags", icon: "🚩", minRole: "admin" as const },
+    { href: "/admin/completeness", label: "Completitud", icon: "✅", minRole: "viewer" as const },
 ];
+
+const roleLevel = {
+    viewer: 1,
+    editor: 2,
+    admin: 3,
+} as const;
 
 function LoadingFallback() {
     return (
@@ -33,12 +39,19 @@ function LoadingFallback() {
 function AuthGuard({ children }: { children: React.ReactNode }) {
     const { isAuthenticated, isLoadingSession } = useAdminAuth();
     const router = useRouter();
+    const pathname = usePathname();
+    const isLoginPage = pathname === "/admin/login";
 
     useEffect(() => {
-        if (!isLoadingSession && !isAuthenticated) {
-            router.push('/admin/login');
+        if (!isLoginPage && !isLoadingSession && !isAuthenticated) {
+            router.push("/admin/login");
         }
-    }, [isAuthenticated, isLoadingSession, router]);
+    }, [isLoginPage, isAuthenticated, isLoadingSession, router]);
+
+    // Siempre mostrar la página de login sin requerir sesión
+    if (isLoginPage) {
+        return <>{children}</>;
+    }
 
     if (isLoadingSession) {
         return (
@@ -52,7 +65,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     }
 
     if (!isAuthenticated) {
-        return null; // El redirect se maneja en el useEffect
+        return null;
     }
 
     return <>{children}</>;
@@ -60,6 +73,10 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 
 function NavBar() {
     const { user, logout, isLoggingOut } = useAdminAuth();
+    const currentRole = user?.role ?? "viewer";
+    const visibleNavItems = navItems.filter(
+        (item) => roleLevel[currentRole] >= roleLevel[item.minRole]
+    );
 
     return (
         <nav className="border-b border-white/10 bg-[var(--soft)]/50 backdrop-blur-sm sticky top-0 z-50">
@@ -69,7 +86,7 @@ function NavBar() {
                         <h1 className="text-xl font-bold text-[var(--text)]">Panel de Control</h1>
                     </div>
                     <div className="flex items-center gap-1">
-                        {navItems.map((item) => (
+                        {visibleNavItems.map((item) => (
                             <Link
                                 key={item.href}
                                 href={item.href}
@@ -81,6 +98,9 @@ function NavBar() {
                         ))}
                         {user && (
                             <div className="ml-4 flex items-center gap-3 border-l border-white/10 pl-4">
+                                <span className="px-2 py-1 rounded-full text-xs bg-[var(--bg)] ring-1 ring-white/10 text-[var(--subtext)] uppercase tracking-wide">
+                                    {user.role}
+                                </span>
                                 <span className="text-sm text-[var(--subtext)] hidden sm:inline">
                                     {user.email}
                                 </span>
@@ -108,13 +128,12 @@ function NavBar() {
 
 export default function AdminLayoutClient({ children }: { children: React.ReactNode }) {
     const [queryClient] = React.useState(() => createOptimizedQueryClient());
+    const pathname = usePathname();
+    const isLoginPage = pathname === "/admin/login";
 
-    return (
-        <QueryClientProvider client={queryClient}>
-            <div className="min-h-screen bg-[var(--bg)] -mt-16 -mb-16">
-                {/* Ocultar Header y Footer del layout raíz usando CSS */}
-                <style dangerouslySetInnerHTML={{
-                    __html: `
+    const hideRootShell = (
+        <style dangerouslySetInnerHTML={{
+            __html: `
           header,
           footer {
             display: none !important;
@@ -124,11 +143,38 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
             margin: 0 !important;
           }
         `}} />
-                <AuthGuard>
-                    {/* Navigation */}
-                    <NavBar />
+    );
 
-                    {/* Main Content */}
+    // En login: solo el formulario, sin barra de navegación ni AuthGuard
+    if (isLoginPage) {
+        return (
+            <QueryClientProvider client={queryClient}>
+                <div className="min-h-screen bg-[var(--bg)] -mt-16 -mb-16">
+                    {hideRootShell}
+                    {children}
+                </div>
+                <Toaster
+                    position="top-right"
+                    richColors
+                    closeButton
+                    toastOptions={{
+                        style: {
+                            background: "var(--soft)",
+                            border: "1px solid rgba(255, 255, 255, 0.1)",
+                            color: "var(--text)",
+                        },
+                    }}
+                />
+            </QueryClientProvider>
+        );
+    }
+
+    return (
+        <QueryClientProvider client={queryClient}>
+            <div className="min-h-screen bg-[var(--bg)] -mt-16 -mb-16">
+                {hideRootShell}
+                <AuthGuard>
+                    <NavBar />
                     <div className="min-h-[calc(100vh-4rem)]">
                         <ErrorBoundary>
                             <Suspense fallback={<LoadingFallback />}>{children}</Suspense>
@@ -136,7 +182,6 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
                     </div>
                 </AuthGuard>
 
-                {/* Toast Notifications */}
                 <Toaster
                     position="top-right"
                     richColors
@@ -153,4 +198,3 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
         </QueryClientProvider>
     );
 }
-

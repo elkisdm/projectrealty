@@ -24,8 +24,15 @@ interface DashboardStats {
 
 interface AdminStatsResponse {
   success: boolean;
-  stats: DashboardStats;
-  timestamp: string;
+  data: {
+    stats: DashboardStats;
+    timestamp: string;
+  } | null;
+  error?: {
+    code: string;
+    message: string;
+    details?: unknown;
+  } | null;
 }
 
 async function fetchAdminStats(): Promise<DashboardStats> {
@@ -44,11 +51,11 @@ async function fetchAdminStats(): Promise<DashboardStats> {
 
   const data = (await response.json()) as AdminStatsResponse;
   
-  if (!data.success || !data.stats) {
-    throw new Error("Respuesta inválida del servidor");
+  if (!data.success || !data.data?.stats) {
+    throw new Error(data.error?.message || "Respuesta inválida del servidor");
   }
 
-  return data.stats;
+  return data.data.stats;
 }
 
 export function useAdminStats() {
@@ -61,4 +68,3 @@ export function useAdminStats() {
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 }
-

@@ -36,10 +36,16 @@ interface CompletenessStats {
 
 interface CompletenessResponse {
   success: boolean;
-  buildings: CompletenessBuilding[];
-  stats: CompletenessStats;
-  timestamp: string;
-  error?: string;
+  data: {
+    buildings: CompletenessBuilding[];
+    stats: CompletenessStats;
+    timestamp: string;
+  } | null;
+  error?: {
+    code: string;
+    message: string;
+    details?: unknown;
+  } | string;
   message?: string;
 }
 
@@ -108,8 +114,12 @@ export default function CompletenessAdminPage() {
 
       const result = (await response.json()) as CompletenessResponse;
 
-      if (!response.ok || !result.success) {
-        throw new Error(result.message || result.error || "Error al cargar datos de completitud");
+      if (!response.ok || !result.success || !result.data) {
+        const errorMessage =
+          typeof result.error === "string"
+            ? result.error
+            : result.error?.message || result.message;
+        throw new Error(errorMessage || "Error al cargar datos de completitud");
       }
 
       setData(result);
@@ -124,8 +134,8 @@ export default function CompletenessAdminPage() {
     fetchCompleteness();
   }, [fetchCompleteness]);
 
-  const buildings = data?.buildings ?? [];
-  const stats = data?.stats;
+  const buildings = data?.data?.buildings ?? [];
+  const stats = data?.data?.stats;
 
   const lowCompletenessCount = useMemo(
     () => buildings.filter((b) => b.completeness_percentage < 70).length,
@@ -176,9 +186,9 @@ export default function CompletenessAdminPage() {
           <p className="text-[var(--subtext)]">
             Detecta edificios con información faltante para priorizar carga de contenido.
           </p>
-          {data?.timestamp && (
+          {data?.data?.timestamp && (
             <p className="text-xs text-[var(--subtext)]/80 mt-2">
-              Última actualización: {formatLastUpdate(data.timestamp)}
+              Última actualización: {formatLastUpdate(data.data.timestamp)}
             </p>
           )}
         </div>

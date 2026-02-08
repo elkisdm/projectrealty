@@ -28,10 +28,12 @@ interface LogoutResponse {
   error?: string;
 }
 
-// Función para obtener sesión
+// Función para obtener sesión (credentials para enviar cookies)
 async function fetchSession(): Promise<SessionResponse> {
-  const response = await fetch('/api/admin/auth/session');
-  
+  const response = await fetch('/api/admin/auth/session', {
+    credentials: 'include',
+  });
+
   if (!response.ok) {
     return { authenticated: false };
   }
@@ -40,10 +42,11 @@ async function fetchSession(): Promise<SessionResponse> {
   return data;
 }
 
-// Función para login
+// Función para login (credentials para recibir Set-Cookie)
 async function loginUser(email: string, password: string): Promise<LoginResponse> {
   const response = await fetch('/api/admin/auth/login', {
     method: 'POST',
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
     },

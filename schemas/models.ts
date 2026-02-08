@@ -112,6 +112,8 @@ export const UnitSchema = z.object({
   parkingOptions: z.array(z.string().min(1)).optional(),
   storageOptions: z.array(z.string().min(1)).optional(),
   status: z.enum(["available", "reserved", "rented"]).optional(),
+  publicationStatus: z.enum(["draft", "published", "archived"]).optional(),
+  publication_status: z.enum(["draft", "published", "archived"]).optional(),
   promotions: z.array(PromotionBadgeSchema).optional(),
   
   // New v2 fields
@@ -392,5 +394,4 @@ export const NearbyAmenitySchema = z.object({
 });
 
 export type NearbyAmenity = z.infer<typeof NearbyAmenitySchema>;
-
 

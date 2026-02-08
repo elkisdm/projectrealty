@@ -15,6 +15,7 @@ import { ConfirmDialog } from "@components/admin/ConfirmDialog";
 import { buildingsToCSV, validateBuildingsFromCSV, downloadCSV } from "@lib/admin/csv";
 import { validateAssetPlanCSV } from "@lib/admin/assetplan-csv";
 import { logger } from "@lib/logger";
+import { useAdminAuth } from "@hooks/useAdminAuth";
 
 interface PaginationInfo {
   page: number;
@@ -26,6 +27,7 @@ interface PaginationInfo {
 }
 
 export default function BuildingsAdminPage() {
+  const { user } = useAdminAuth();
   const [buildings, setBuildings] = useState<Building[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -57,9 +59,12 @@ export default function BuildingsAdminPage() {
 
       const params = new URLSearchParams({
         page: String(pagination.page),
-        limit: String(pagination.limit),
+        page_size: String(pagination.limit),
         ...(search && { search }),
-        ...(filters.comuna && { comuna: String(filters.comuna) }),
+        ...(filters.comuna && { city: String(filters.comuna) }),
+        ...(filters.is_active !== undefined && {
+          is_active: String(filters.is_active),
+        }),
       });
 
       const response = await fetch(`/api/admin/buildings?${params}`);
@@ -88,6 +93,10 @@ export default function BuildingsAdminPage() {
   };
 
   const handleDelete = (building: Building) => {
+    if (user?.role !== "admin") {
+      toast.error("Solo administradores pueden eliminar edificios");
+      return;
+    }
     setDeleteConfirm({ building, isBulk: false });
   };
 
@@ -146,6 +155,10 @@ export default function BuildingsAdminPage() {
   };
 
   const handleBulkDelete = () => {
+    if (user?.role !== "admin") {
+      toast.error("Solo administradores pueden eliminar edificios");
+      return;
+    }
     if (selected.length === 0) return;
     setDeleteConfirm({ building: null, isBulk: true });
   };
@@ -295,6 +308,11 @@ export default function BuildingsAdminPage() {
         (comuna) => ({ label: comuna, value: comuna })
       ),
     },
+    {
+      key: "is_active",
+      label: "Activo",
+      type: "checkbox",
+    },
   ];
 
   const columns: Column<Building>[] = [
@@ -302,6 +320,12 @@ export default function BuildingsAdminPage() {
     { key: "slug", label: "Slug", sortable: true },
     { key: "comuna", label: "Comuna", sortable: true },
     { key: "address", label: "Dirección", sortable: false },
+    {
+      key: "isActive",
+      label: "Activo",
+      sortable: true,
+      render: (value) => (value ? "✓" : "✗"),
+    },
     {
       key: "units",
       label: "Unidades",
@@ -448,7 +472,7 @@ export default function BuildingsAdminPage() {
       {/* Bulk Actions */}
       <BulkActions
         selected={selected}
-        onBulkDelete={handleBulkDelete}
+        onBulkDelete={user?.role === "admin" ? handleBulkDelete : undefined}
         onExport={() => setShowExport(true)}
         onClearSelection={() => setSelected([])}
       />
