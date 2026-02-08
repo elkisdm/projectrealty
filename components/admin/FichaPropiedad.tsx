@@ -5,6 +5,7 @@ import { UnitSchema, type Unit } from "@schemas/models";
 import { z } from "zod";
 import type { Building } from "@schemas/models";
 import { generateSlug } from "@lib/utils/slug";
+import { toast } from "sonner";
 
 const TIPOLOGIAS = ["Studio", "Estudio", "1D1B", "2D1B", "2D2B", "3D2B"] as const;
 const ORIENTACIONES = ["Norte", "Sur", "Este", "Oeste", "NE", "NO", "SE", "SO"];
@@ -34,6 +35,7 @@ const defaultValues: Partial<Unit> = {
   piso: undefined,
   vista: undefined,
   images: [],
+  videos: [],
   amoblado: false,
   estacionamiento: false,
   bodega: false,
@@ -54,6 +56,8 @@ export function FichaPropiedad({
   const [selectedBuildingId, setSelectedBuildingId] = useState(buildingId);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [uploadingImages, setUploadingImages] = useState(false);
+  const [uploadingVideos, setUploadingVideos] = useState(false);
 
   useEffect(() => {
     setSelectedBuildingId(buildingId);
@@ -143,6 +147,66 @@ export function FichaPropiedad({
       await onSubmit(result.data);
     } catch {
       // Error manejado por el padre
+    }
+  };
+
+  const appendUniqueUrls = (current: string[] | undefined, incoming: string[]): string[] => {
+    const set = new Set<string>([...(current ?? []), ...incoming]);
+    return Array.from(set);
+  };
+
+  const uploadFiles = async (files: FileList, mediaType: "image" | "video") => {
+    const unitKey = (formData.id || formData.codigoUnidad || "sin-unidad").toString();
+
+    const uploadOne = async (file: File): Promise<string> => {
+      const payload = new FormData();
+      payload.append("file", file);
+      payload.append("buildingId", selectedBuildingId);
+      payload.append("unitId", unitKey);
+      payload.append("scope", "unit");
+      payload.append("mediaType", mediaType);
+
+      const response = await fetch("/api/admin/media/upload", {
+        method: "POST",
+        body: payload,
+      });
+
+      const result = (await response.json()) as {
+        success?: boolean;
+        data?: { url?: string };
+        error?: string;
+        message?: string;
+      };
+
+      if (!response.ok || !result.success || !result.data?.url) {
+        throw new Error(result.message || result.error || "Error subiendo archivo");
+      }
+
+      return result.data.url;
+    };
+
+    if (mediaType === "image") setUploadingImages(true);
+    if (mediaType === "video") setUploadingVideos(true);
+
+    try {
+      const uploadedUrls = await Promise.all(Array.from(files).map((f) => uploadOne(f)));
+
+      if (mediaType === "image") {
+        handleChange("images", appendUniqueUrls(formData.images as string[] | undefined, uploadedUrls));
+      } else {
+        handleChange("videos", appendUniqueUrls(formData.videos as string[] | undefined, uploadedUrls));
+      }
+
+      toast.success(
+        mediaType === "image"
+          ? `${uploadedUrls.length} imagen(es) subida(s)`
+          : `${uploadedUrls.length} video(s) subido(s)`
+      );
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Error subiendo archivos");
+    } finally {
+      if (mediaType === "image") setUploadingImages(false);
+      if (mediaType === "video") setUploadingVideos(false);
     }
   };
 
@@ -475,6 +539,78 @@ export function FichaPropiedad({
             placeholder="/images/depto-101-1.jpg"
           />
         </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="propiedad-upload-images" className="block text-sm font-medium text-[var(--text)] mb-2">
+              Subir imágenes
+            </label>
+            <input
+              id="propiedad-upload-images"
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={(e) => {
+                if (e.target.files && e.target.files.length > 0) {
+                  uploadFiles(e.target.files, "image");
+                  e.target.value = "";
+                }
+              }}
+              className="w-full text-sm text-[var(--subtext)] file:mr-3 file:rounded-lg file:border-0 file:bg-brand-violet file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-brand-violet/90"
+              disabled={uploadingImages || !selectedBuildingId}
+            />
+            <p className="mt-1 text-xs text-[var(--subtext)]">
+              JPG, PNG, WEBP, GIF. Máx 15 MB por imagen.
+            </p>
+          </div>
+          <div>
+            <label htmlFor="propiedad-upload-videos" className="block text-sm font-medium text-[var(--text)] mb-2">
+              Subir videos
+            </label>
+            <input
+              id="propiedad-upload-videos"
+              type="file"
+              accept="video/mp4,video/webm,video/quicktime,video/x-msvideo"
+              multiple
+              onChange={(e) => {
+                if (e.target.files && e.target.files.length > 0) {
+                  uploadFiles(e.target.files, "video");
+                  e.target.value = "";
+                }
+              }}
+              className="w-full text-sm text-[var(--subtext)] file:mr-3 file:rounded-lg file:border-0 file:bg-brand-violet file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-brand-violet/90"
+              disabled={uploadingVideos || !selectedBuildingId}
+            />
+            <p className="mt-1 text-xs text-[var(--subtext)]">
+              MP4, WEBM, MOV, AVI. Máx 150 MB por video.
+            </p>
+          </div>
+        </div>
+        {(uploadingImages || uploadingVideos) && (
+          <p className="text-sm text-[var(--subtext)]">
+            {uploadingImages ? "Subiendo imágenes..." : "Subiendo videos..."}
+          </p>
+        )}
+        <div>
+          <label htmlFor="propiedad-videos" className="block text-sm font-medium text-[var(--text)] mb-2">
+            URLs de videos (una por línea o separadas por coma)
+          </label>
+          <textarea
+            id="propiedad-videos"
+            value={Array.isArray(formData.videos) ? formData.videos.join("\n") : ""}
+            onChange={(e) => {
+              const raw = e.target.value;
+              const urls = raw
+                .split(/[\n,]/)
+                .map((s) => s.trim())
+                .filter(Boolean);
+              handleChange("videos", urls);
+            }}
+            onBlur={() => handleBlur("videos")}
+            rows={2}
+            className={inputClass("videos")}
+            placeholder="https://.../video.mp4"
+          />
+        </div>
         <div className="flex flex-wrap gap-4 pt-2">
           <label className="flex items-center gap-2 cursor-pointer min-h-[44px]">
             <input
@@ -542,10 +678,10 @@ export function FichaPropiedad({
         </button>
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || uploadingImages || uploadingVideos}
           className="px-4 py-2 rounded-xl bg-brand-violet text-white hover:bg-brand-violet/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--bg)] min-h-[44px]"
         >
-          {loading ? "Guardando..." : "Guardar propiedad"}
+          {loading ? "Guardando..." : uploadingImages || uploadingVideos ? "Subiendo archivos..." : "Guardar propiedad"}
         </button>
       </div>
     </form>

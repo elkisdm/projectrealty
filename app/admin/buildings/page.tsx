@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
 import type { Building } from "@schemas/models";
 import { DataTable, type Column } from "@components/admin/DataTable";
 import { SearchBar } from "@components/admin/SearchBar";
 import { FilterPanel, type FilterConfig } from "@components/admin/FilterPanel";
-import { BuildingForm } from "@components/admin/BuildingForm";
+import { FichaCondominio } from "@components/admin/FichaCondominio";
 import { BulkActions } from "@components/admin/BulkActions";
 import { ImportDialog } from "@components/admin/ImportDialog";
 import { ExportDialog } from "@components/admin/ExportDialog";
@@ -81,11 +82,6 @@ export default function BuildingsAdminPage() {
     fetchBuildings();
   }, [fetchBuildings]);
 
-  const handleCreate = () => {
-    setEditingBuilding(undefined);
-    setShowForm(true);
-  };
-
   const handleEdit = (building: Building) => {
     setEditingBuilding(building);
     setShowForm(true);
@@ -116,13 +112,16 @@ export default function BuildingsAdminPage() {
     }
   };
 
-  const handleFormSubmit = async (data: Building) => {
+  const handleFormSubmit = async (data: Omit<Building, "units">) => {
+    if (!editingBuilding) {
+      toast.error("La creación de edificio se realiza desde 'Listar propiedad nueva'");
+      return;
+    }
+
     try {
       setFormLoading(true);
-      const url = editingBuilding
-        ? `/api/admin/buildings/${editingBuilding.id}`
-        : "/api/admin/buildings";
-      const method = editingBuilding ? "PUT" : "POST";
+      const url = `/api/admin/buildings/${editingBuilding.id}`;
+      const method = "PUT";
 
       const response = await fetch(url, {
         method,
@@ -137,11 +136,7 @@ export default function BuildingsAdminPage() {
 
       setShowForm(false);
       setEditingBuilding(undefined);
-      toast.success(
-        editingBuilding
-          ? `Edificio "${data.name}" actualizado correctamente`
-          : `Edificio "${data.name}" creado correctamente`
-      );
+      toast.success(`Edificio "${data.name}" actualizado correctamente`);
       fetchBuildings();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Error desconocido al guardar edificio");
@@ -353,12 +348,12 @@ export default function BuildingsAdminPage() {
             >
               Exportar
             </button>
-            <button
-              onClick={handleCreate}
+            <Link
+              href="/admin/listar-propiedad"
               className="px-4 py-2 rounded-lg bg-brand-violet text-white hover:bg-brand-violet/90 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--bg)]"
             >
-              + Nuevo Edificio
-            </button>
+              + Nuevo Edificio/Propiedad
+            </Link>
           </div>
         </div>
 
@@ -392,9 +387,9 @@ export default function BuildingsAdminPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
           <div className="rounded-2xl bg-[var(--soft)] ring-1 ring-white/10 shadow-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6">
             <h2 className="text-2xl font-bold mb-4 text-[var(--text)]">
-              {editingBuilding ? "Editar Edificio" : "Nuevo Edificio"}
+              Editar Edificio
             </h2>
-            <BuildingForm
+            <FichaCondominio
               initialData={editingBuilding}
               onSubmit={handleFormSubmit}
               onCancel={() => {
@@ -490,4 +485,3 @@ export default function BuildingsAdminPage() {
     </div>
   );
 }
-

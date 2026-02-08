@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { BuildingSchema, type Building } from "@schemas/models";
 import { z } from "zod";
 import { generateSlug } from "@lib/utils/slug";
+import { toast } from "sonner";
 
 export interface FichaCondominioProps {
   initialData?: Partial<Building>;
@@ -36,6 +37,8 @@ export function FichaCondominio({
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [uploadingGallery, setUploadingGallery] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
 
   useEffect(() => {
     if (initialData) {
@@ -115,6 +118,61 @@ export function FichaCondominio({
       await onSubmit(buildingData);
     } catch {
       // Error manejado por el padre
+    }
+  };
+
+  const appendUniqueUrls = (current: string[] | undefined, incoming: string[]): string[] => {
+    const set = new Set<string>([...(current ?? []), ...incoming]);
+    return Array.from(set);
+  };
+
+  const uploadBuildingImages = async (files: FileList, mode: "gallery" | "cover") => {
+    const currentBuildingId = (formData.id || `bld-${generateSlug(formData.name || "edificio")}`).toString();
+
+    const uploadOne = async (file: File): Promise<string> => {
+      const payload = new FormData();
+      payload.append("file", file);
+      payload.append("buildingId", currentBuildingId);
+      payload.append("scope", "building");
+      payload.append("mediaType", "image");
+
+      const response = await fetch("/api/admin/media/upload", {
+        method: "POST",
+        body: payload,
+      });
+
+      const result = (await response.json()) as {
+        success?: boolean;
+        data?: { url?: string };
+        error?: string;
+        message?: string;
+      };
+
+      if (!response.ok || !result.success || !result.data?.url) {
+        throw new Error(result.message || result.error || "Error subiendo imagen");
+      }
+
+      return result.data.url;
+    };
+
+    if (mode === "gallery") setUploadingGallery(true);
+    if (mode === "cover") setUploadingCover(true);
+
+    try {
+      const uploadedUrls = await Promise.all(Array.from(files).map((f) => uploadOne(f)));
+
+      if (mode === "gallery") {
+        handleChange("gallery", appendUniqueUrls(formData.gallery as string[] | undefined, uploadedUrls));
+        toast.success(`${uploadedUrls.length} imagen(es) agregada(s) a la galería`);
+      } else {
+        handleChange("coverImage", uploadedUrls[0] ?? "");
+        toast.success("Imagen de portada subida");
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Error subiendo imágenes");
+    } finally {
+      if (mode === "gallery") setUploadingGallery(false);
+      if (mode === "cover") setUploadingCover(false);
     }
   };
 
@@ -314,6 +372,28 @@ export function FichaCondominio({
           {errors.gallery && (
             <p className="mt-1 text-sm text-red-400" role="alert">{errors.gallery}</p>
           )}
+          <div className="mt-3">
+            <label htmlFor="condominio-upload-gallery" className="block text-sm font-medium text-[var(--text)] mb-2">
+              Subir imágenes para galería
+            </label>
+            <input
+              id="condominio-upload-gallery"
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={(e) => {
+                if (e.target.files && e.target.files.length > 0) {
+                  uploadBuildingImages(e.target.files, "gallery");
+                  e.target.value = "";
+                }
+              }}
+              className="w-full text-sm text-[var(--subtext)] file:mr-3 file:rounded-lg file:border-0 file:bg-brand-violet file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-brand-violet/90"
+              disabled={uploadingGallery}
+            />
+            <p className="mt-1 text-xs text-[var(--subtext)]">
+              JPG, PNG, WEBP, GIF. Máx 15 MB por imagen.
+            </p>
+          </div>
         </div>
         <div>
           <label htmlFor="condominio-cover" className="block text-sm font-medium text-[var(--text)] mb-2">
@@ -327,7 +407,30 @@ export function FichaCondominio({
             className={inputClass("coverImage")}
             placeholder="/images/portada.jpg"
           />
+          <div className="mt-3">
+            <label htmlFor="condominio-upload-cover" className="block text-sm font-medium text-[var(--text)] mb-2">
+              Subir imagen de portada
+            </label>
+            <input
+              id="condominio-upload-cover"
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                if (e.target.files && e.target.files.length > 0) {
+                  uploadBuildingImages(e.target.files, "cover");
+                  e.target.value = "";
+                }
+              }}
+              className="w-full text-sm text-[var(--subtext)] file:mr-3 file:rounded-lg file:border-0 file:bg-brand-violet file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-brand-violet/90"
+              disabled={uploadingCover}
+            />
+          </div>
         </div>
+        {(uploadingGallery || uploadingCover) && (
+          <p className="text-sm text-[var(--subtext)]">
+            {uploadingGallery ? "Subiendo galería..." : "Subiendo portada..."}
+          </p>
+        )}
         <div>
           <label htmlFor="condominio-descripcion" className="block text-sm font-medium text-[var(--text)] mb-2">
             Descripción (opcional)
@@ -353,10 +456,14 @@ export function FichaCondominio({
         </button>
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || uploadingGallery || uploadingCover}
           className="px-4 py-2 rounded-xl bg-brand-violet text-white hover:bg-brand-violet/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--bg)] min-h-[44px]"
         >
-          {loading ? "Guardando..." : "Guardar condominio"}
+          {loading
+            ? "Guardando..."
+            : uploadingGallery || uploadingCover
+              ? "Subiendo archivos..."
+              : "Guardar condominio"}
         </button>
       </div>
     </form>

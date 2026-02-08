@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { toast } from "sonner";
 import type { Unit, Building } from "@schemas/models";
 import { DataTable, type Column } from "@components/admin/DataTable";
 import { SearchBar } from "@components/admin/SearchBar";
 import { FilterPanel, type FilterConfig } from "@components/admin/FilterPanel";
-import { UnitForm } from "@components/admin/UnitForm";
+import { FichaPropiedad } from "@components/admin/FichaPropiedad";
 import { BulkActions } from "@components/admin/BulkActions";
 import { ImportDialog } from "@components/admin/ImportDialog";
 import { ExportDialog } from "@components/admin/ExportDialog";
@@ -122,13 +123,14 @@ export default function UnitsAdminPage() {
         throw new Error("Error al eliminar unidad");
       }
 
+      toast.success(`Unidad "${unit.id}" eliminada correctamente`);
       fetchUnits();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Error desconocido");
+      toast.error(err instanceof Error ? err.message : "Error desconocido");
     }
   };
 
-  const handleFormSubmit = async (data: Unit, buildingId: string) => {
+  const handleFormSubmit = async (data: Unit) => {
     try {
       setFormLoading(true);
       const url = editingUnit
@@ -138,7 +140,7 @@ export default function UnitsAdminPage() {
 
       const body = editingUnit
         ? data
-        : { ...data, buildingId };
+        : { ...data, buildingId: data.buildingId };
 
       const response = await fetch(url, {
         method,
@@ -153,9 +155,14 @@ export default function UnitsAdminPage() {
 
       setShowForm(false);
       setEditingUnit(undefined);
+      toast.success(
+        editingUnit
+          ? `Unidad "${data.id}" actualizada correctamente`
+          : `Unidad "${data.id}" creada correctamente`
+      );
       fetchUnits();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Error desconocido");
+      toast.error(err instanceof Error ? err.message : "Error desconocido");
     } finally {
       setFormLoading(false);
     }
@@ -182,9 +189,10 @@ export default function UnitsAdminPage() {
       }
 
       setSelected([]);
+      toast.success(`${selected.length} unidad(es) eliminada(s) correctamente`);
       fetchUnits();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Error desconocido");
+      toast.error(err instanceof Error ? err.message : "Error desconocido");
     }
   };
 
@@ -357,6 +365,16 @@ export default function UnitsAdminPage() {
     },
   ];
 
+  const initialUnitData: Partial<Unit> | undefined = editingUnit
+    ? {
+        ...editingUnit,
+        buildingId: editingUnit.buildingId,
+        dormitorios: editingUnit.dormitorios ?? editingUnit.bedrooms,
+        banos: editingUnit.banos ?? editingUnit.bathrooms,
+        gastoComun: editingUnit.gastoComun ?? editingUnit.gastosComunes,
+      }
+    : undefined;
+
   return (
     <div className="container mx-auto px-4 md:px-6 py-8">
       {/* Header */}
@@ -424,9 +442,10 @@ export default function UnitsAdminPage() {
             <h2 className="text-2xl font-bold mb-4 text-[var(--text)]">
               {editingUnit ? "Editar Unidad" : "Nueva Unidad"}
             </h2>
-            <UnitForm
-              initialData={editingUnit}
+            <FichaPropiedad
+              buildingId={editingUnit?.buildingId ?? ""}
               buildings={buildings}
+              initialData={initialUnitData}
               onSubmit={handleFormSubmit}
               onCancel={() => {
                 setShowForm(false);
@@ -505,4 +524,3 @@ export default function UnitsAdminPage() {
     </div>
   );
 }
-
