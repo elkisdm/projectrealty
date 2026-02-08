@@ -1,38 +1,27 @@
-type ClxInput = string | false | null | undefined | (string | false | null | undefined)[];
-export function clx(...classes: ClxInput[]): string {
-  return classes.flat().filter(Boolean).join(" ");
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
 }
 
-// cn function compatible with classnames library (supports objects)
-export function cn(...inputs: any[]): string {
-  const classes: string[] = [];
-  
-  for (const input of inputs) {
-    if (!input) continue;
-    
-    if (typeof input === 'string') {
-      classes.push(input);
-    } else if (typeof input === 'object' && !Array.isArray(input)) {
-      for (const [key, value] of Object.entries(input)) {
-        if (value) {
-          classes.push(key);
-        }
-      }
-    }
-  }
-  
-  return classes.join(' ');
-}
-export function formatPrice(value?: number) {
+/** Alias for cn - backward compatibility */
+export const clx = cn
+
+/** Format price in Chilean pesos */
+export function formatPrice(price?: number): string {
   return new Intl.NumberFormat("es-CL", {
     style: "currency",
     currency: "CLP",
+    minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(value ?? 0);
+  }).format(price ?? 0)
 }
 
-// Backwards compatibility for existing imports
-export function currency(clp?: number) {
-  return formatPrice(clp);
+/** Alias for formatPrice - backward compatibility */
+export const currency = formatPrice
+
+/** Resolve after specified delay (ms) - for mocks and tests */
+export function fakeDelay(ms = 100): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
 }
-export const fakeDelay = (ms = 800) => new Promise((res) => setTimeout(res, ms));
