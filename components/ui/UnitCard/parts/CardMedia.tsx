@@ -1,14 +1,15 @@
 'use client';
 
 import Image from 'next/image';
-import { useState, memo, useCallback } from 'react';
+import { useState, memo, useCallback, useEffect } from 'react';
 import type { CardMediaProps } from '../types';
 import { DEFAULT_BLUR_DATA_URL, DEFAULT_FALLBACK_IMAGE } from '../constants';
 import { CardFavoriteButton } from './CardFavoriteButton';
 import { CardBadge } from './CardBadge';
 
 /**
- * Card media section with image, badge overlay, and favorite button
+ * Card media section with image, badge overlay, and favorite button.
+ * On image load error, falls back to DEFAULT_FALLBACK_IMAGE so the card never shows a black hole.
  */
 export const CardMedia = memo(function CardMedia({
   imageUrl,
@@ -24,6 +25,12 @@ export const CardMedia = memo(function CardMedia({
   const [currentImageUrl, setCurrentImageUrl] = useState(imageUrl);
   const [hasError, setHasError] = useState(false);
 
+  // Sync when parent passes a new URL (e.g. new unit in list)
+  useEffect(() => {
+    setCurrentImageUrl(imageUrl);
+    setHasError(false);
+  }, [imageUrl]);
+
   const handleImageError = useCallback(() => {
     setHasError(true);
     setCurrentImageUrl(DEFAULT_FALLBACK_IMAGE);
@@ -34,17 +41,6 @@ export const CardMedia = memo(function CardMedia({
 
   return (
     <div className="relative aspect-[4/3] overflow-hidden bg-slate-200 dark:bg-slate-800 rounded-t-2xl">
-      {/* Hidden img for error detection before Next Image renders */}
-      {!hasError && currentImageUrl !== DEFAULT_FALLBACK_IMAGE && (
-        <img
-          src={currentImageUrl}
-          alt=""
-          className="hidden"
-          onError={handleImageError}
-          onLoad={() => setHasError(false)}
-        />
-      )}
-
       <Image
         src={finalImageUrl}
         alt={alt}
@@ -61,6 +57,7 @@ export const CardMedia = memo(function CardMedia({
         loading={priority ? 'eager' : 'lazy'}
         placeholder="blur"
         blurDataURL={DEFAULT_BLUR_DATA_URL}
+        onError={handleImageError}
       />
 
       {/* Badge overlay (top left) */}

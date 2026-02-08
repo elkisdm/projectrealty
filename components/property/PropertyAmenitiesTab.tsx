@@ -1,9 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import Image from "next/image";
 import {
-  Shield, Car, Package, Heart, Star,
+  Shield, Car, Package, Heart, Star, Sun,
   Waves, Dumbbell, Briefcase, ChefHat, Wine, Shirt,
   Bike, Users, Gamepad2, Sparkles,
   ArrowUpFromLine, Film, Flame, ChevronDown, ChevronUp, Check
@@ -25,7 +24,7 @@ const getAmenityIcon = (amenityName: string): LucideIcon => {
   if (lowerAmenity.includes("biciclet") || lowerAmenity.includes("bike")) return Bike;
   if (lowerAmenity.includes("sala de eventos") || lowerAmenity.includes("eventos")) return Users;
   if (lowerAmenity.includes("sala de cine") || lowerAmenity.includes("cine")) return Film;
-  if (lowerAmenity.includes("terraza") || lowerAmenity.includes("terrace")) return Star; // Render: custom balcon icon
+  if (lowerAmenity.includes("terraza") || lowerAmenity.includes("terrace")) return Sun;
   if (lowerAmenity.includes("juegos") || lowerAmenity.includes("games")) return Gamepad2;
   if (lowerAmenity.includes("spa") || lowerAmenity.includes("wellness")) return Sparkles;
   if (lowerAmenity.includes("sauna")) return Flame;
@@ -135,7 +134,10 @@ export function PropertyAmenitiesTab({ unit, building }: PropertyAmenitiesTabPro
   const terminaciones = building.terminaciones ?? [];
   const equipamiento = building.equipamiento ?? [];
 
-  // Aplanar para grid 2 columnas (estilo amenities): "Segmento: detalle" → solo detalle en celda
+  /** Capitaliza categoría para mostrar "Cocina: ...", "Encimera: ..." */
+  const capSegment = (s: string) => (s ? `${s.charAt(0).toUpperCase()}${s.slice(1).toLowerCase()}` : "");
+
+  // "Segmento: detalle" → { segment, label } para mostrar "Categoría: Valor"
   const terminacionesFlat = terminaciones.map((item) => {
     const colonIndex = item.indexOf(": ");
     if (colonIndex >= 0) return { label: item.slice(colonIndex + 2).trim(), segment: item.slice(0, colonIndex).trim() };
@@ -163,21 +165,26 @@ export function PropertyAmenitiesTab({ unit, building }: PropertyAmenitiesTabPro
 
   return (
     <div className="space-y-6">
-      {/* Terminaciones: mismo estilo que amenidades, 2 columnas */}
+      {/* Terminaciones: zona + valor (ej. Pisos baños: Porcelanato) para evitar repeticiones */}
       {terminaciones.length > 0 && (
         <div className="bg-card border border-border rounded-2xl p-6">
-          <h4 className="text-base font-semibold text-text mb-4">Terminaciones</h4>
+          <h4 className="text-sm font-semibold text-text mb-3">Terminaciones</h4>
           <div className="grid grid-cols-2 gap-2">
             {terminacionesFlat.map(({ label, segment }, index) => (
               <div
-                key={`term-${index}-${label}`}
-                className="flex items-center gap-2 rounded-xl border border-border bg-bg/50 dark:bg-bg/30 px-2.5 py-2 min-w-0"
+                key={`term-${index}-${segment}-${label}`}
+                className="flex items-start gap-2 rounded-lg border border-border bg-bg/50 dark:bg-bg/30 px-2.5 py-1.5 min-w-0"
               >
-                <div className="p-1 bg-[#8B6CFF]/10 rounded-lg flex-shrink-0">
-                  <Check className="w-3.5 h-3.5 text-[#8B6CFF]" aria-hidden />
-                </div>
-                <span className="text-xs font-medium text-text break-words line-clamp-2" title={segment ? `${segment}: ${label}` : label}>
-                  {label}
+                <Check className="w-3 h-3 text-[#8B6CFF] flex-shrink-0 mt-0.5" aria-hidden />
+                <span className="text-[11px] leading-tight text-text break-words line-clamp-2 min-w-0">
+                  {segment ? (
+                    <>
+                      <span className="text-subtext font-normal">{capSegment(segment)}:</span>{" "}
+                      <span className="font-medium">{label}</span>
+                    </>
+                  ) : (
+                    label
+                  )}
                 </span>
               </div>
             ))}
@@ -185,20 +192,27 @@ export function PropertyAmenitiesTab({ unit, building }: PropertyAmenitiesTabPro
         </div>
       )}
 
-      {/* Equipamiento: mismo estilo que amenidades, 2 columnas */}
+      {/* Equipamiento: "Categoría: Valor" (ej. Cocina: Cubierta de cuarzo, Encimera: Vitrocerámica) */}
       {equipamiento.length > 0 && (
         <div className="bg-card border border-border rounded-2xl p-6">
-          <h4 className="text-base font-semibold text-text mb-4">Equipamiento</h4>
+          <h4 className="text-sm font-semibold text-text mb-3">Equipamiento</h4>
           <div className="grid grid-cols-2 gap-2">
-            {equipamientoFlat.map(({ label }, index) => (
+            {equipamientoFlat.map(({ label, segment }, index) => (
               <div
-                key={`equip-${index}-${label}`}
-                className="flex items-center gap-2 rounded-xl border border-border bg-bg/50 dark:bg-bg/30 px-2.5 py-2 min-w-0"
+                key={`equip-${index}-${segment}-${label}`}
+                className="flex items-start gap-2 rounded-lg border border-border bg-bg/50 dark:bg-bg/30 px-2.5 py-1.5 min-w-0"
               >
-                <div className="p-1 bg-[#8B6CFF]/10 rounded-lg flex-shrink-0">
-                  <Check className="w-3.5 h-3.5 text-[#8B6CFF]" aria-hidden />
-                </div>
-                <span className="text-xs font-medium text-text break-words line-clamp-2">{label}</span>
+                <Check className="w-3 h-3 text-[#8B6CFF] flex-shrink-0 mt-0.5" aria-hidden />
+                <span className="text-[11px] leading-tight text-text break-words line-clamp-2 min-w-0">
+                  {segment ? (
+                    <>
+                      <span className="text-subtext font-normal">{capSegment(segment)}:</span>{" "}
+                      <span className="font-medium">{label}</span>
+                    </>
+                  ) : (
+                    label
+                  )}
+                </span>
               </div>
             ))}
           </div>
@@ -211,7 +225,6 @@ export function PropertyAmenitiesTab({ unit, building }: PropertyAmenitiesTabPro
           <h4 className="text-base font-semibold text-text mb-4">Amenidades destacadas</h4>
           <div className="grid grid-cols-2 gap-2">
             {visibleAmenities.map((amenity, index) => {
-              const isTerraza = /terraza|terrace/.test(amenity.toLowerCase());
               const IconComponent = getAmenityIcon(amenity);
               return (
                 <div
@@ -219,11 +232,7 @@ export function PropertyAmenitiesTab({ unit, building }: PropertyAmenitiesTabPro
                   className="flex items-center gap-2 rounded-xl border border-border bg-bg/50 dark:bg-bg/30 px-2.5 py-2 min-w-0"
                 >
                   <div className="p-1 bg-[#8B6CFF]/10 rounded-lg flex-shrink-0">
-                    {isTerraza ? (
-                      <Image src="/icons/balcon.svg" alt="" width={14} height={14} className="shrink-0 object-contain" aria-hidden />
-                    ) : (
-                      <IconComponent className="w-3.5 h-3.5 text-[#8B6CFF]" />
-                    )}
+                    <IconComponent className="w-3.5 h-3.5 text-[#8B6CFF]" />
                   </div>
                   <span className="text-xs font-medium text-text break-words line-clamp-2">{amenity}</span>
                 </div>

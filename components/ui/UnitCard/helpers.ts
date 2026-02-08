@@ -48,20 +48,26 @@ export function getUnitImage(unit: Unit, building?: Building): string {
 }
 
 /**
- * Get the unit slug for URL navigation
+ * Get the unit slug for URL navigation.
+ * Must match server logic (getUnitBySlug): id_pmq normalized, or building-slug-codigoUnidad.
  */
 export function getUnitSlug(unit: Unit, building?: Building): string {
-  // Use unit slug if available
+  // Use unit slug if available (e.g. from id_pmq)
   if (unit.slug) {
     return unit.slug;
   }
 
-  // Fallback: generate from building slug + unit id
+  // Same as server: codigoUnidad (unidad) or first 8 chars of id
+  const codigoUnidad = unit.codigoUnidad?.trim() || unit.id.substring(0, 8);
+
   if (building?.slug) {
-    return `${building.slug}-${unit.id.substring(0, 8)}`;
+    return `${building.slug}-${codigoUnidad}`;
   }
 
-  // Last fallback: use unit id
+  if (building?.id) {
+    return `${building.id}-${codigoUnidad}`;
+  }
+
   return unit.id;
 }
 
