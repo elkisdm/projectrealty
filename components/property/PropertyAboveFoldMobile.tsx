@@ -233,9 +233,9 @@ export function PropertyAboveFoldMobile({
     return (
         <>
         <section aria-labelledby="af-title" className="relative">
-            {/* Hero Image con Overlay (60-70vh) - anchura completa, bordes cuadrados, imagen hasta el top */}
-            <div className="w-screen relative left-1/2 -translate-x-1/2 -mt-4 lg:-mt-8">
-                <div className="relative min-h-[60vh] max-h-[70vh] h-[65vh] w-full overflow-hidden">
+            {/* Hero Image: full-bleed en móvil; contenido en columna en desktop para evitar solapamiento con sidebar */}
+            <div className="w-screen relative left-1/2 -translate-x-1/2 -mt-4 lg:w-full lg:left-0 lg:translate-x-0 lg:-mt-6 lg:rounded-2xl lg:overflow-hidden">
+                <div className="relative min-h-[60vh] max-h-[70vh] h-[65vh] lg:min-h-[50vh] lg:h-[55vh] w-full overflow-hidden">
                 {/* Slider de imágenes */}
                 <div
                     ref={scrollRef}
@@ -301,33 +301,35 @@ export function PropertyAboveFoldMobile({
                 </div>
 
                 {/* Overlay inferior: Información clave + Pills navegación */}
-                <div className="absolute bottom-0 left-0 right-0 z-20 p-4 pb-6 bg-gradient-to-t from-black/90 via-black/75 to-black/40">
-                    {/* Pills de navegación */}
-                    <div className="flex gap-2 mb-4">
-                        {hasVideo && (
+                <div className="absolute bottom-0 left-0 right-0 z-20 p-4 pb-6 min-w-0 bg-gradient-to-t from-black/90 via-black/75 to-black/40">
+                    <div className="flex flex-col gap-3 min-w-0">
+                        {/* Pills de navegación */}
+                        <div className="flex flex-wrap gap-2 shrink-0">
+                            {hasVideo && (
+                                <button
+                                    onClick={() => setIsVideoModalOpen(true)}
+                                    className="px-3 sm:px-4 py-1.5 sm:py-2 bg-white/25 backdrop-blur-md hover:bg-white/35 text-white text-xs sm:text-sm font-semibold rounded-full border border-white/40 shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white/70 flex items-center gap-1.5"
+                                    aria-label="Ver video"
+                                >
+                                    <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current shrink-0" aria-hidden />
+                                    Ver video
+                                </button>
+                            )}
                             <button
-                                onClick={() => setIsVideoModalOpen(true)}
-                                className="px-3 sm:px-4 py-1.5 sm:py-2 bg-white/25 backdrop-blur-md hover:bg-white/35 text-white text-xs sm:text-sm font-semibold rounded-full border border-white/40 shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white/70 flex items-center gap-1.5"
-                                aria-label="Ver video"
+                                onClick={handleMapClick}
+                                className="px-3 sm:px-4 py-1.5 sm:py-2 bg-white/25 backdrop-blur-md hover:bg-white/35 text-white text-xs sm:text-sm font-semibold rounded-full border border-white/40 shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white/70 flex items-center gap-1.5 shrink-0"
+                                aria-label="Ver ubicación"
                             >
-                                <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current shrink-0" aria-hidden />
-                                Ver video
+                                <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                <span>Ver ubicación</span>
                             </button>
-                        )}
-                        <button
-                            onClick={handleMapClick}
-                            className="px-3 sm:px-4 py-1.5 sm:py-2 bg-white/25 backdrop-blur-md hover:bg-white/35 text-white text-xs sm:text-sm font-semibold rounded-full border border-white/40 shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white/70 flex items-center gap-1.5"
-                            aria-label="Ver ubicación"
-                        >
-                            <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                            <span>Ver ubicación</span>
-                        </button>
-                    </div>
+                        </div>
 
-                    {/* Texto informativo con mejor contraste */}
-                    <p className="text-white text-base sm:text-lg font-bold leading-tight [text-shadow:_0_2px_8px_rgb(0_0_0_/_80%)]">
-                        {getInfoText()}
-                    </p>
+                        {/* Texto informativo: evita truncado horizontal con min-w-0 y break-words */}
+                        <p className="text-white text-base sm:text-lg font-bold leading-tight break-words min-w-0 [text-shadow:_0_2px_8px_rgb(0_0_0_/_80%)]">
+                            {getInfoText()}
+                        </p>
+                    </div>
                 </div>
 
                 {/* Indicador de imagen activa (si hay más de una) */}
@@ -410,9 +412,10 @@ export function PropertyAboveFoldMobile({
                 </div>
             </div>
 
-            {/* Precio total/mes */}
+            {/* Precio y detalles: en desktop el sidebar muestra precio; aquí solo badges clave */}
             <div className="px-4 py-4 bg-[var(--card)] border-b border-[var(--border)]">
-                <div className="flex items-end justify-between gap-4">
+                {/* Precio/operator: solo móvil (sidebar lo muestra en desktop) */}
+                <div className="flex items-end justify-between gap-4 lg:hidden">
                     <div className="flex flex-col">
                         <p className="text-2xl font-bold text-[var(--text)]">
                             ${arriendo.toLocaleString('es-CL')}
@@ -442,8 +445,8 @@ export function PropertyAboveFoldMobile({
                     </div>
                 </div>
 
-                {/* Badges clave */}
-                <div className="mt-4 flex flex-wrap items-center gap-2">
+                {/* Badges clave: visibles en móvil y desktop */}
+                <div className="flex flex-wrap items-center gap-2 mt-4 lg:mt-0">
                     {m2 && (
                         <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium bg-[var(--card)] text-[var(--text)] border border-[var(--border)] shadow-sm">
                             <Square className="w-3.5 h-3.5 shrink-0 text-[#8B6CFF]" aria-hidden />

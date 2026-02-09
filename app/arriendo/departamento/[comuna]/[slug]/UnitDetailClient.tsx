@@ -205,10 +205,10 @@ export function UnitDetailClient({
     <ErrorBoundary>
       <div className="min-h-screen bg-bg">
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 lg:py-8">
-          {/* Layout principal: 3 columnas */}
+          {/* Layout principal: 3 columnas - hero contenido en columna en desktop */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
             {/* Columna principal (2/3) */}
-            <div className="lg:col-span-2 space-y-6 lg:space-y-8">
+            <div className="lg:col-span-2 min-w-0 space-y-6 lg:space-y-8">
               {/* Above the fold móvil optimizado */}
               <PropertyAboveFoldMobile
                 building={fullBuilding}
