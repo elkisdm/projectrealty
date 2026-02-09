@@ -1,15 +1,6 @@
 "use client";
 
-import { usePathname } from "next/navigation";
-import { Footer } from "@components/footer";
-
+// Footer deshabilitado por ahora
 export function ConditionalFooter() {
-  const pathname = usePathname();
-
-  // Ocultar footer en rutas /tree
-  if (pathname?.startsWith("/tree")) {
-    return null;
-  }
-
-  return <Footer />;
+  return null;
 }

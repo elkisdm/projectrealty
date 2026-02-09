@@ -6,6 +6,9 @@
 export interface SearchFilters {
   q?: string;
   comuna?: string | string[];
+  operation?: "rent";
+  dormitoriosMin?: number;
+  tipos?: string | string[];
   dormitorios?: 'Estudio' | '1' | '2' | '3' | Array<'Estudio' | '1' | '2' | '3'>;
   estacionamiento?: boolean;
   bodega?: boolean;
@@ -30,9 +33,9 @@ export interface SearchBarContainerProps {
 
 export interface QuickFiltersRowProps {
   selectedComuna?: string | string[];
-  selectedDormitorios?: string | string[];
+  selectedDormitoriosMin?: number;
   onComunaChange: (value: string | string[] | undefined) => void;
-  onDormitoriosChange: (value: string | string[] | undefined) => void;
+  onDormitoriosMinChange: (value: number | undefined) => void;
   onMoreFiltersClick: () => void;
   activeFiltersCount: number;
   className?: string;

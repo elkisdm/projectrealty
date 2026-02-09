@@ -6,6 +6,7 @@ import type {
 } from "@lib/admin/contracts";
 import { getAdminDbClient } from "@lib/admin/repositories/client";
 import { getTableColumns, pickKnownColumns } from "@lib/admin/repositories/table-columns";
+import { logger } from "@lib/logger";
 
 const ADMIN_MEDIA_BUCKET = "admin-media";
 const FALLBACK_BUCKETS: Record<AdminMediaScope, string> = {
@@ -18,6 +19,7 @@ const MAX_VIDEO_SIZE = 200 * 1024 * 1024;
 
 const IMAGE_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const VIDEO_MIME_TYPES = new Set(["video/mp4", "video/webm"]);
+const ALLOW_MEDIA_FALLBACK = process.env.NODE_ENV !== "production";
 
 function sanitizePathSegment(value: string): string {
   return value
@@ -136,9 +138,12 @@ async function assertUnitMediaLimit({
     if (!error) {
       count = tableCount || 0;
     }
-  } catch {
-    // Si la tabla no existe aún, no bloqueamos el flujo.
-    return;
+  } catch (error) {
+    if (ALLOW_MEDIA_FALLBACK) {
+      logger.warn("[ADMIN_MEDIA] unit_media no disponible, se omite límite temporalmente", { error });
+      return;
+    }
+    throw new Error("database_error: No se pudo validar límites de media");
   }
 
   if (mediaType === "image" && count >= 20) {
@@ -216,7 +221,17 @@ export async function createMediaUploadUrl({
 
   try {
     return await createSignedUploadInBucket({ bucket: ADMIN_MEDIA_BUCKET, path });
-  } catch {
+  } catch (error) {
+    if (!ALLOW_MEDIA_FALLBACK) {
+      throw new Error(`storage_error: ${(error as Error)?.message || "No se pudo crear URL firmada"}`);
+    }
+
+    logger.warn("[ADMIN_MEDIA] fallback de bucket activado para signed upload", {
+      primaryBucket: ADMIN_MEDIA_BUCKET,
+      fallbackBucket: FALLBACK_BUCKETS[scope],
+      error,
+    });
+
     return createSignedUploadInBucket({
       bucket: FALLBACK_BUCKETS[scope],
       path,
@@ -319,7 +334,18 @@ export async function confirmMediaUpload({
       created_at: String((data as Record<string, unknown>).created_at),
       updated_at: String((data as Record<string, unknown>).updated_at),
     };
-  } catch {
+  } catch (error) {
+    if (!ALLOW_MEDIA_FALLBACK) {
+      throw new Error(`database_error: ${(error as Error)?.message || "Error guardando metadata de media"}`);
+    }
+
+    logger.warn("[ADMIN_MEDIA] fallback metadata activado, devolviendo asset efímero", {
+      table,
+      scope,
+      mediaType,
+      error,
+    });
+
     const now = new Date().toISOString();
 
     return {

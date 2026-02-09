@@ -163,6 +163,20 @@ class SupabaseDataProcessor {
   private isInitialized = false;
   private tremendoProcessor: TremendoUnitsProcessor | null = null;
 
+  private sanitizeImageUrl(url: string | null | undefined): string | undefined {
+    if (!url || typeof url !== 'string') return undefined;
+    // Known invalid placeholder: file does not exist in /public
+    if (url.includes('parque-mackenna.jpg')) return '/images/parque-mackenna-305/IMG_4922.jpg';
+    return url;
+  }
+
+  private sanitizeImageList(urls: unknown): string[] {
+    if (!Array.isArray(urls)) return [];
+    return urls
+      .map((item) => (typeof item === 'string' ? this.sanitizeImageUrl(item) : undefined))
+      .filter((value): value is string => Boolean(value && value.trim()));
+  }
+
   constructor() {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -448,9 +462,16 @@ class SupabaseDataProcessor {
    */
   async getUnits(filters: {
     comuna?: string | string[];
+    operation?: 'rent';
     precioMin?: number;
     precioMax?: number;
+    dormitoriosMin?: number;
+    tipos?: string | string[];
     dormitorios?: number | string | string[];
+    estacionamiento?: boolean;
+    bodega?: boolean;
+    mascotas?: boolean;
+    sort?: string;
     q?: string; // Búsqueda por texto
   }, page: number = 1, limit: number = 12): Promise<{
     units: Array<{
@@ -483,6 +504,14 @@ class SupabaseDataProcessor {
       await this.loadDataFromSupabase();
     }
 
+    if (filters.operation && filters.operation !== 'rent') {
+      return {
+        units: [],
+        total: 0,
+        hasMore: false,
+      };
+    }
+
     // Obtener todas las unidades desde Supabase
     // Usar solo las columnas que realmente existen en la tabla units
     let query = this.supabase
@@ -497,9 +526,23 @@ class SupabaseDataProcessor {
         bathrooms,
         m2,
         price,
+        gc,
+        total_mensual,
+        orientacion,
+        m2_terraza,
+        descuento_porcentaje,
+        meses_descuento,
+        garantia_meses,
+        garantia_cuotas,
+        rentas_necesarias,
+        pet_friendly,
+        reajuste_meses,
+        link_listing,
         disponible,
         estacionamiento,
         bodega,
+        parking_optional,
+        storage_optional,
         conexion_lavadora,
         images_tipologia,
         images_areas_comunes,
@@ -511,6 +554,7 @@ class SupabaseDataProcessor {
           slug,
           comuna,
           address,
+          gc_mode,
           gallery,
           cover_image,
           metro_cercano_nombre,
@@ -543,7 +587,7 @@ class SupabaseDataProcessor {
     // Obtener datos sin paginación primero para poder filtrar por comuna y texto
     // Nota: Para filtros complejos con relaciones anidadas, obtenemos todos los datos
     // y filtramos en memoria (más eficiente que múltiples queries)
-    const { data: allData, error, count: totalCount } = await query;
+    const { data: allData, error } = await query;
 
     if (error) {
       logger.error('Error obteniendo unidades desde Supabase:', error);
@@ -565,7 +609,33 @@ class SupabaseDataProcessor {
       };
     }
 
-    let filteredData = (allData || []) as Array<UnitRowWithFields & { buildings: { id: string; name: string; slug?: string; comuna: string; address: string; gallery?: string[]; cover_image?: string; metro_cercano_nombre?: string; metro_cercano_distancia?: number; metro_cercano_tiempo?: number } | null }>;
+    type UnitRowWithFields = SupabaseUnitRow & {
+      unidad?: string;
+      id_pmq?: string | null;
+      gastos_comunes?: number;
+      area_interior_m2?: number;
+      piso?: number;
+      orientacion?: string;
+      amoblado?: boolean;
+      pet_friendly?: boolean;
+      status?: string;
+      images_tipologia?: string[];
+      images_areas_comunes?: string[];
+      images?: string[];
+      videos?: string[];
+    };
+
+    const normalizeToken = (value: string) => value.trim().toLowerCase();
+    const tipologiaToDormitorios = (tipologia?: string): number | undefined => {
+      if (!tipologia) return undefined;
+      const normalized = normalizeToken(tipologia);
+      if (normalized === 'studio' || normalized === 'estudio') return 0;
+      const match = normalized.match(/^(\d+)d/);
+      if (match) return Number(match[1]);
+      return undefined;
+    };
+
+    let filteredData = (allData || []) as Array<UnitRowWithFields & { buildings: { id: string; name: string; slug?: string; comuna: string; address: string; gc_mode?: string; gallery?: string[]; cover_image?: string; metro_cercano_nombre?: string; metro_cercano_distancia?: number; metro_cercano_tiempo?: number } | null }>;
 
     // Filtrar por comuna en memoria (soporta multiselección con OR)
     if (filters.comuna) {
@@ -580,6 +650,27 @@ class SupabaseDataProcessor {
           )
         );
       }
+    }
+
+    if (filters.tipos) {
+      const tiposArray = Array.isArray(filters.tipos) ? filters.tipos : [filters.tipos];
+      const normalizedTipos = new Set(tiposArray.map(normalizeToken));
+      if (normalizedTipos.size > 0) {
+        filteredData = filteredData.filter((unitRow) =>
+          normalizedTipos.has(normalizeToken(unitRow.tipologia || ''))
+        );
+      }
+    }
+
+    if (typeof filters.dormitoriosMin === 'number') {
+      filteredData = filteredData.filter((unitRow) => {
+        const dormitorios =
+          typeof unitRow.bedrooms === 'number'
+            ? unitRow.bedrooms
+            : tipologiaToDormitorios(unitRow.tipologia);
+
+        return typeof dormitorios === 'number' && dormitorios >= filters.dormitoriosMin!;
+      });
     }
 
     // Filtrar por dormitorios - filtrar SOLO por tipología porque bedrooms suele ser null
@@ -620,6 +711,27 @@ class SupabaseDataProcessor {
       }
     }
 
+    if (filters.estacionamiento !== undefined) {
+      filteredData = filteredData.filter((unitRow) => {
+        if (unitRow.buildings?.gc_mode === 'MF') return true;
+        return (unitRow.estacionamiento ?? false) === filters.estacionamiento;
+      });
+    }
+
+    if (filters.bodega !== undefined) {
+      filteredData = filteredData.filter((unitRow) => {
+        if (unitRow.buildings?.gc_mode === 'MF') return true;
+        return (unitRow.bodega ?? false) === filters.bodega;
+      });
+    }
+
+    if (filters.mascotas !== undefined) {
+      filteredData = filteredData.filter((unitRow) => {
+        const petFriendly = unitRow.pet_friendly ?? false;
+        return petFriendly === filters.mascotas;
+      });
+    }
+
     // Filtrar por búsqueda de texto (si se especifica)
     if (filters.q) {
       const qLower = filters.q.toLowerCase();
@@ -637,46 +749,40 @@ class SupabaseDataProcessor {
       });
     }
 
-    // Ordenar por precio (ascendente)
-    filteredData.sort((a, b) => (a.price || 0) - (b.price || 0));
+    // Ordenamiento
+    switch (filters.sort) {
+      case 'precio-desc':
+        filteredData.sort((a, b) => (b.price || 0) - (a.price || 0));
+        break;
+      case 'comuna-asc':
+      case 'ubicacion':
+        filteredData.sort((a, b) =>
+          (a.buildings?.comuna || '').localeCompare(b.buildings?.comuna || '')
+        );
+        break;
+      case 'precio-asc':
+      case 'precio':
+      case 'default':
+      case 'relevancia':
+      default:
+        filteredData.sort((a, b) => (a.price || 0) - (b.price || 0));
+        break;
+    }
 
     // Paginación
     const offset = (page - 1) * limit;
     const filteredTotal = filteredData.length;
     const paginatedData = filteredData.slice(offset, offset + limit);
 
-    // Type assertion: Supabase puede retornar más campos de los definidos en el tipo
-    type UnitRowWithFields = SupabaseUnitRow & {
-      unidad?: string;
-      id_pmq?: string | null;
-      gastos_comunes?: number;
-      area_interior_m2?: number;
-      piso?: number;
-      orientacion?: string;
-      amoblado?: boolean;
-      pet_friendly?: boolean;
-      status?: string;
-      images_tipologia?: string[];
-      images_areas_comunes?: string[];
-      images?: string[];
-      videos?: string[];
-    };
-    
     const units = paginatedData;
 
     // Mapear a formato Unit, filtrando unidades sin building
     const mappedUnits = units
       .filter((unitRow) => {
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/bf5372fb-b70d-4713-b992-51094d7d9401',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/supabase-data-processor.ts:643',message:'Checking unit building association',data:{unitId:unitRow.id,hasBuilding:!!unitRow.buildings,buildingId:unitRow.buildings?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-        // #endregion
         if (!unitRow.buildings) {
           // En lugar de lanzar error, filtrar silenciosamente unidades sin building
           // Esto puede pasar con datos mock o datos inconsistentes
           console.warn(`[SupabaseDataProcessor] Unidad ${unitRow.id} no tiene building asociado, omitiendo`);
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/bf5372fb-b70d-4713-b992-51094d7d9401',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/supabase-data-processor.ts:648',message:'Unit filtered - no building',data:{unitId:unitRow.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-          // #endregion
           return false;
         }
         return true;
@@ -691,22 +797,20 @@ class SupabaseDataProcessor {
         ? normalizePmqId(rowWithFields.id_pmq)
         : (building.slug ? `${building.slug}-${codigoUnidad}` : `${building.id}-${codigoUnidad}`);
 
-      // Calcular garantía (por defecto 1 mes de arriendo)
-      const garantia = unitRow.price ? unitRow.price : 0;
-      const gastoComun = rowWithFields.gastos_comunes || 0;
-
-      // Obtener imágenes (usar gallery del edificio si no hay imágenes específicas)
+      // Obtener imágenes (priorizar imágenes de la unidad; fallback al edificio; luego fallback por comuna)
       // Fallback por comuna usa imágenes que existen en /public/images
-      const buildingGallery = building.gallery && building.gallery.length > 0 ? building.gallery : this.getGallery(building.comuna);
-      const buildingCoverImage = building.cover_image || this.getCoverImage(building.comuna);
+      const rawBuildingGallery = this.sanitizeImageList(building.gallery);
+      const buildingGallery =
+        rawBuildingGallery.length > 0 ? rawBuildingGallery : this.getGallery(building.comuna);
+      const rawCoverImage = this.sanitizeImageUrl(building.cover_image);
+      const buildingCoverImage = rawCoverImage || this.getCoverImage(building.comuna);
+
+      const unitImages = this.sanitizeImageList(rowWithFields.images ?? (unitRow as { images?: unknown }).images);
       let images: string[] = [];
-      if (building.gallery && building.gallery.length > 0) {
-        images = building.gallery.slice(0, 5);
-      } else if (building.cover_image) {
-        images = [building.cover_image];
-      } else {
-        images = [buildingCoverImage];
-      }
+      if (unitImages.length > 0) images = unitImages;
+      else if (rawBuildingGallery.length > 0) images = rawBuildingGallery.slice(0, 5);
+      else if (rawCoverImage) images = [rawCoverImage];
+      else images = [buildingCoverImage];
       
       return {
         id: unitRow.id,
@@ -1038,13 +1142,23 @@ class SupabaseDataProcessor {
     const gastoComun = foundUnit.gc || foundUnit.gastos_comunes || 0;
 
     // Priorizar imágenes de la unidad sobre las del edificio; fallback por comuna si no hay en DB
-    const buildingGalleryForUnit = building.gallery && building.gallery.length > 0 ? building.gallery : this.getGallery(building.comuna);
-    const buildingCoverForUnit = building.cover_image || this.getCoverImage(building.comuna);
-    const images = (foundUnit.images && foundUnit.images.length > 0)
-      ? foundUnit.images
-      : (building.gallery && building.gallery.length > 0 
-        ? building.gallery.slice(0, 5) 
-        : (building.cover_image ? [building.cover_image] : [buildingCoverForUnit]));
+    const rawBuildingGalleryForUnit = this.sanitizeImageList(building.gallery);
+    const buildingGalleryForUnit =
+      rawBuildingGalleryForUnit.length > 0
+        ? rawBuildingGalleryForUnit
+        : this.getGallery(building.comuna);
+    const rawBuildingCoverForUnit = this.sanitizeImageUrl(building.cover_image);
+    const buildingCoverForUnit = rawBuildingCoverForUnit || this.getCoverImage(building.comuna);
+
+    const unitImagesForUnit = this.sanitizeImageList(foundUnit.images);
+    const images =
+      unitImagesForUnit.length > 0
+        ? unitImagesForUnit
+        : rawBuildingGalleryForUnit.length > 0
+          ? rawBuildingGalleryForUnit.slice(0, 5)
+          : rawBuildingCoverForUnit
+            ? [rawBuildingCoverForUnit]
+            : [buildingCoverForUnit];
 
     const unit = {
       id: foundUnit.id,
@@ -1125,9 +1239,17 @@ class SupabaseDataProcessor {
           ? normalizePmqId(uWithFields.id_pmq)
           : (uBuilding.slug ? `${uBuilding.slug}-${uCodigoUnidad}` : `${uBuilding.id}-${uCodigoUnidad}`);
 
-        const uImages = uBuilding.gallery && uBuilding.gallery.length > 0 
-          ? uBuilding.gallery.slice(0, 1)
-          : (uBuilding.cover_image ? [uBuilding.cover_image] : [this.getCoverImage(uBuilding.comuna)]);
+        const uUnitImages = this.sanitizeImageList((u as { images?: unknown }).images);
+        const uRawGallery = this.sanitizeImageList(uBuilding.gallery);
+        const uRawCover = this.sanitizeImageUrl(uBuilding.cover_image);
+        const uImages =
+          uUnitImages.length > 0
+            ? uUnitImages.slice(0, 1)
+            : uRawGallery.length > 0
+              ? uRawGallery.slice(0, 1)
+              : uRawCover
+                ? [uRawCover]
+                : [this.getCoverImage(uBuilding.comuna)];
 
         const uGarantia = u.price || 0;
         return {
@@ -1235,4 +1357,3 @@ export async function getSupabaseProcessor(): Promise<SupabaseDataProcessor> {
 }
 
 export { SupabaseDataProcessor };
-

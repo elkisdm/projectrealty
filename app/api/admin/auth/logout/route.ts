@@ -1,12 +1,15 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { signOutAdmin } from '@lib/admin/auth-supabase';
 import { clearSupabaseCookies } from '@lib/admin/supabase-cookies';
+import { adminError, adminOk, createAdminMutationMeta } from '@lib/admin/contracts';
 import { logger } from '@lib/logger';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
 
 export async function POST(_request: NextRequest) {
+  const requestMeta = createAdminMutationMeta();
+  const responseHeaders = { "x-request-id": requestMeta.request_id };
   let logoutError: Error | null = null;
 
   try {
@@ -19,20 +22,20 @@ export async function POST(_request: NextRequest) {
 
   // Siempre limpiar cookies, incluso si hubo error en signOutAdmin
   // Esto asegura que el cliente no pueda seguir usando la sesión
-  const response = NextResponse.json(
-    logoutError
-      ? {
-          success: false,
-          error: 'logout_failed',
-          message: 'Error al cerrar sesión en el servidor, pero las cookies fueron limpiadas',
+  const response = logoutError
+    ? adminError(
+        "logout_failed",
+        "Error al cerrar sesión en el servidor, pero las cookies fueron limpiadas",
+        {
+          status: 500,
+          meta: requestMeta,
+          headers: responseHeaders,
         }
-      : {
-          success: true,
-          message: 'Sesión cerrada correctamente',
-        },
-    { status: logoutError ? 500 : 200 }
-  );
+      )
+    : adminOk(
+        { message: "Sesión cerrada correctamente" },
+        { status: 200, meta: requestMeta, headers: responseHeaders }
+      );
 
   return clearSupabaseCookies(response);
 }
-

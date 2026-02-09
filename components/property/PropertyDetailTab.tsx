@@ -1,8 +1,7 @@
 "use client";
 
 import React from "react";
-import Image from "next/image";
-import { Bed, Bath, Square, Building2, Eye, Home, PawPrint, Ruler, Car, Package } from "lucide-react";
+import { Bed, Bath, Square, Building2, Eye, Home, PawPrint, Ruler, Car, Package, Sun } from "lucide-react";
 import type { Unit, Building } from "@schemas/models";
 
 interface PropertyDetailTabProps {
@@ -145,10 +144,10 @@ export function PropertyDetailTab({ unit, building }: PropertyDetailTabProps) {
           <div className="bg-card border border-border rounded-xl p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-[#8B6CFF]/10 rounded-lg">
-                <Image src="/icons/balcon.svg" alt="" width={20} height={20} className="shrink-0 object-contain" aria-hidden />
+                <Sun className="w-5 h-5 text-[#8B6CFF]" />
               </div>
               <div>
-                <div className="text-sm text-subtext">Terraza</div>
+                <div className="text-sm text-subtext">Superficie exterior</div>
                 <div className="text-base font-semibold text-text">{superficieTerraza} m²</div>
               </div>
             </div>

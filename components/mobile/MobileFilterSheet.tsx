@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence, PanInfo, useMotionValue, useTransform } from "framer-motion";
 import { X } from "lucide-react";
 import { bottomSheetVariants, backdropVariants, springConfigs } from "@/lib/animations/mobileAnimations";
+import { ScrollFadeEffect } from "@/components/ncdai/scroll-fade-effect";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
 import type { RefObject } from "react";
@@ -162,9 +163,13 @@ export function MobileFilterSheet({
             </div>
 
             {/* Content */}
-            <div className="overflow-y-auto overscroll-contain" style={{ maxHeight: `calc(${maxHeight} - 120px)` }}>
+            <ScrollFadeEffect
+              orientation="vertical"
+              className="flex-1 overscroll-contain"
+              style={{ maxHeight: `calc(${maxHeight} - 120px)` }}
+            >
               <div className="px-4 py-4 pb-6">{children}</div>
-            </div>
+            </ScrollFadeEffect>
           </motion.div>
         </>
       )}

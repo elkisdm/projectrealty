@@ -1,6 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import { AlertTriangle, CheckCircle2, CircleDashed, Sparkles } from "lucide-react";
+import { ErrorState, PageHeader, StatusBadge } from "@components/admin/ui";
+import { getErrorMessage } from "@lib/admin/client-errors";
+import { Progress } from "@/components/ui/progress";
 
 interface CompletenessBuilding {
   id: string;
@@ -27,11 +32,7 @@ interface CompletenessStats {
     fair: number;
     poor: number;
   };
-  topIssues: Array<{
-    field: string;
-    count: number;
-    percentage: number;
-  }>;
+  topIssues: Array<{ field: string; count: number; percentage: number }>;
 }
 
 interface CompletenessResponse {
@@ -41,11 +42,7 @@ interface CompletenessResponse {
     stats: CompletenessStats;
     timestamp: string;
   } | null;
-  error?: {
-    code: string;
-    message: string;
-    details?: unknown;
-  } | string;
+  error?: { code: string; message: string; details?: unknown } | string;
   message?: string;
 }
 
@@ -56,35 +53,25 @@ type IssueStatusKey =
   | "amenities_status"
   | "gallery_status";
 
-const ISSUE_LABELS: Record<string, string> = {
-  cover_image: "Imagen de portada",
-  badges: "Badges",
-  service_level: "Service level",
-  amenities: "Amenities",
-  gallery: "Galería",
-};
-
 const ISSUE_STATUS_FIELDS: Array<{ key: IssueStatusKey; label: string }> = [
   { key: "cover_image_status", label: "Portada" },
   { key: "badges_status", label: "Badges" },
   { key: "service_level_status", label: "Service level" },
   { key: "amenities_status", label: "Amenities" },
-  { key: "gallery_status", label: "Galería" },
+  { key: "gallery_status", label: "Galeria" },
 ];
 
-function getCompletenessBadgeClass(percentage: number): string {
-  if (percentage >= 90) return "bg-emerald-500/15 text-emerald-300 ring-emerald-500/30";
-  if (percentage >= 70) return "bg-blue-500/15 text-blue-300 ring-blue-500/30";
-  if (percentage >= 50) return "bg-amber-500/15 text-amber-300 ring-amber-500/30";
-  return "bg-rose-500/15 text-rose-300 ring-rose-500/30";
-}
+const ISSUE_LABELS: Record<string, string> = {
+  cover_image: "Imagen de portada",
+  badges: "Badges",
+  service_level: "Service level",
+  amenities: "Amenities",
+  gallery: "Galeria",
+};
 
-function formatLastUpdate(timestamp: string): string {
+function formatLastUpdate(timestamp: string) {
   const date = new Date(timestamp);
-  if (Number.isNaN(date.getTime())) {
-    return "-";
-  }
-
+  if (Number.isNaN(date.getTime())) return "-";
   return new Intl.DateTimeFormat("es-CL", {
     year: "numeric",
     month: "2-digit",
@@ -94,7 +81,7 @@ function formatLastUpdate(timestamp: string): string {
   }).format(date);
 }
 
-function getMissingFields(building: CompletenessBuilding): string[] {
+function getMissingFields(building: CompletenessBuilding) {
   return ISSUE_STATUS_FIELDS.filter((field) => building[field.key] === "❌").map((field) => field.label);
 }
 
@@ -108,18 +95,12 @@ export default function CompletenessAdminPage() {
       setLoading(true);
       setError(null);
 
-      const response = await fetch("/api/admin/completeness", {
-        cache: "no-store",
-      });
-
+      const response = await fetch("/api/admin/completeness", { cache: "no-store" });
       const result = (await response.json()) as CompletenessResponse;
 
       if (!response.ok || !result.success || !result.data) {
-        const errorMessage =
-          typeof result.error === "string"
-            ? result.error
-            : result.error?.message || result.message;
-        throw new Error(errorMessage || "Error al cargar datos de completitud");
+        const errorMessage = getErrorMessage(result.error, result.message || "Error al cargar completitud");
+        throw new Error(errorMessage || "Error al cargar completitud");
       }
 
       setData(result);
@@ -131,30 +112,20 @@ export default function CompletenessAdminPage() {
   }, []);
 
   useEffect(() => {
-    fetchCompleteness();
+    void fetchCompleteness();
   }, [fetchCompleteness]);
 
-  const buildings = data?.data?.buildings ?? [];
+  const buildings = data?.data?.buildings || [];
   const stats = data?.data?.stats;
-
-  const lowCompletenessCount = useMemo(
-    () => buildings.filter((b) => b.completeness_percentage < 70).length,
-    [buildings]
-  );
+  const lowCompletenessCount = buildings.filter((item) => item.completeness_percentage < 70).length;
 
   if (loading && !data) {
     return (
-      <div className="container mx-auto px-4 md:px-6 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2 text-[var(--text)]">Completitud de Datos</h1>
-          <p className="text-[var(--subtext)]">Cargando análisis...</p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="space-y-4">
+        <div className="h-10 w-1/2 animate-pulse rounded-lg bg-[var(--admin-surface-2)]" />
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           {Array.from({ length: 4 }).map((_, idx) => (
-            <div key={idx} className="rounded-2xl bg-[var(--soft)]/90 ring-1 ring-white/10 p-5 animate-pulse">
-              <div className="h-4 bg-gray-600 rounded w-2/3 mb-3" />
-              <div className="h-9 bg-gray-600 rounded w-1/2" />
-            </div>
+            <div key={idx} className="h-28 animate-pulse rounded-2xl bg-[var(--admin-surface-2)]" />
           ))}
         </div>
       </div>
@@ -162,191 +133,160 @@ export default function CompletenessAdminPage() {
   }
 
   if (error && !data) {
-    return (
-      <div className="container mx-auto px-4 md:px-6 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2 text-[var(--text)]">Completitud de Datos</h1>
-          <p className="text-red-400 mb-4">{error}</p>
-          <button
-            onClick={fetchCompleteness}
-            className="px-4 py-2 rounded-lg bg-brand-violet text-white hover:bg-brand-violet/90 transition-colors"
-          >
-            Reintentar
-          </button>
-        </div>
-      </div>
-    );
+    return <ErrorState title="No pudimos cargar la completitud" description={error} onRetry={() => void fetchCompleteness()} />;
   }
 
   return (
-    <div className="container mx-auto px-4 md:px-6 py-8">
-      <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold mb-2 text-[var(--text)]">Completitud de Datos</h1>
-          <p className="text-[var(--subtext)]">
-            Detecta edificios con información faltante para priorizar carga de contenido.
-          </p>
-          {data?.data?.timestamp && (
-            <p className="text-xs text-[var(--subtext)]/80 mt-2">
-              Última actualización: {formatLastUpdate(data.data.timestamp)}
-            </p>
-          )}
-        </div>
-        <button
-          onClick={fetchCompleteness}
-          disabled={loading}
-          className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-[var(--soft)] text-[var(--text)] ring-1 ring-white/10 hover:bg-[var(--soft)]/80 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-        >
-          {loading ? "Actualizando..." : "Actualizar"}
-        </button>
-      </div>
+    <div className="space-y-5">
+      <PageHeader
+        title="Completitud de datos"
+        description="Prioriza edificios criticos, corrige faltantes y acelera la publicacion."
+        breadcrumbs={[
+          { label: "Admin", href: "/admin" },
+          { label: "Completitud" },
+        ]}
+        actions={[
+          {
+            key: "refresh",
+            label: loading ? "Actualizando..." : "Actualizar",
+            variant: "secondary",
+            onClick: () => void fetchCompleteness(),
+            disabled: loading,
+          },
+        ]}
+      />
 
-      {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <div className="rounded-2xl bg-[var(--soft)]/90 ring-1 ring-white/10 p-5">
-            <p className="text-sm text-[var(--subtext)] mb-1">Total edificios</p>
-            <p className="text-3xl font-bold text-[var(--text)]">{stats.totalBuildings}</p>
-          </div>
-          <div className="rounded-2xl bg-[var(--soft)]/90 ring-1 ring-white/10 p-5">
-            <p className="text-sm text-[var(--subtext)] mb-1">Promedio completitud</p>
-            <p className="text-3xl font-bold text-[var(--text)]">{stats.averageCompleteness.toFixed(1)}%</p>
-          </div>
-          <div className="rounded-2xl bg-[var(--soft)]/90 ring-1 ring-white/10 p-5">
-            <p className="text-sm text-[var(--subtext)] mb-1">Con campos faltantes</p>
-            <p className="text-3xl font-bold text-[var(--text)]">{stats.buildingsWithIssues}</p>
-          </div>
-          <div className="rounded-2xl bg-[var(--soft)]/90 ring-1 ring-white/10 p-5">
-            <p className="text-sm text-[var(--subtext)] mb-1">Riesgo (menos de 70%)</p>
-            <p className="text-3xl font-bold text-[var(--text)]">{lowCompletenessCount}</p>
-          </div>
-        </div>
-      )}
+      {data?.data?.timestamp ? (
+        <p className="text-xs text-[var(--subtext)]">Ultima actualizacion: {formatLastUpdate(data.data.timestamp)}</p>
+      ) : null}
 
-      {stats && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <div className="rounded-2xl bg-[var(--soft)]/90 ring-1 ring-white/10 p-6">
-            <h2 className="text-xl font-semibold text-[var(--text)] mb-4">Distribución de completitud</h2>
-            <div className="space-y-3">
+      {stats ? (
+        <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <article className="rounded-2xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-1)] p-4">
+            <p className="text-xs uppercase tracking-wide text-[var(--subtext)]">Total edificios</p>
+            <p className="mt-1 text-2xl font-bold text-[var(--text)]">{stats.totalBuildings}</p>
+          </article>
+          <article className="rounded-2xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-1)] p-4">
+            <p className="text-xs uppercase tracking-wide text-[var(--subtext)]">Promedio completitud</p>
+            <p className="mt-1 text-2xl font-bold text-[var(--text)]">{stats.averageCompleteness.toFixed(1)}%</p>
+          </article>
+          <article className="rounded-2xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-1)] p-4">
+            <p className="text-xs uppercase tracking-wide text-[var(--subtext)]">Con faltantes</p>
+            <p className="mt-1 text-2xl font-bold text-[var(--text)]">{stats.buildingsWithIssues}</p>
+          </article>
+          <article className="rounded-2xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-1)] p-4">
+            <p className="text-xs uppercase tracking-wide text-[var(--subtext)]">Criticos (&lt;70%)</p>
+            <p className="mt-1 text-2xl font-bold text-[var(--text)]">{lowCompletenessCount}</p>
+          </article>
+        </section>
+      ) : null}
+
+      {stats ? (
+        <section className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+          <article className="rounded-2xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-1)] p-5">
+            <h2 className="text-lg font-semibold text-[var(--text)]">Distribucion de completitud</h2>
+            <div className="mt-4 space-y-3">
               {[
-                {
-                  label: "Excelente (90-100%)",
-                  count: stats.completenessDistribution.excellent,
-                  color: "bg-emerald-500",
-                },
-                {
-                  label: "Buena (70-89%)",
-                  count: stats.completenessDistribution.good,
-                  color: "bg-blue-500",
-                },
-                {
-                  label: "Regular (50-69%)",
-                  count: stats.completenessDistribution.fair,
-                  color: "bg-amber-500",
-                },
-                {
-                  label: "Baja (0-49%)",
-                  count: stats.completenessDistribution.poor,
-                  color: "bg-rose-500",
-                },
+                { label: "Excelente", count: stats.completenessDistribution.excellent, color: "bg-emerald-500" },
+                { label: "Buena", count: stats.completenessDistribution.good, color: "bg-sky-500" },
+                { label: "Regular", count: stats.completenessDistribution.fair, color: "bg-amber-500" },
+                { label: "Baja", count: stats.completenessDistribution.poor, color: "bg-rose-500" },
               ].map((item) => {
                 const total = stats.totalBuildings || 1;
-                const percentage = Math.round((item.count / total) * 100);
-
+                const pct = Math.round((item.count / total) * 100);
                 return (
                   <div key={item.label}>
-                    <div className="flex items-center justify-between mb-1">
-                      <p className="text-sm text-[var(--text)]">{item.label}</p>
-                      <p className="text-sm text-[var(--subtext)]">
-                        {item.count} ({percentage}%)
-                      </p>
+                    <div className="mb-1 flex items-center justify-between text-sm">
+                      <span className="text-[var(--text)]">{item.label}</span>
+                      <span className="text-[var(--subtext)]">{item.count} ({pct}%)</span>
                     </div>
-                    <div className="h-2 rounded-full bg-[var(--bg)] overflow-hidden">
-                      <div className={`h-full ${item.color} transition-all`} style={{ width: `${percentage}%` }} />
-                    </div>
+                    <Progress value={pct} className="h-2 bg-[var(--admin-surface-2)]" indicatorClassName={item.color} />
                   </div>
                 );
               })}
             </div>
-          </div>
+          </article>
 
-          <div className="rounded-2xl bg-[var(--soft)]/90 ring-1 ring-white/10 p-6">
-            <h2 className="text-xl font-semibold text-[var(--text)] mb-4">Campos más faltantes</h2>
-            {stats.topIssues.length > 0 ? (
-              <div className="space-y-3">
-                {stats.topIssues.map((issue) => (
-                  <div
-                    key={issue.field}
-                    className="flex items-center justify-between rounded-lg bg-[var(--bg)]/40 ring-1 ring-white/10 px-3 py-2"
-                  >
-                    <p className="text-sm text-[var(--text)]">{ISSUE_LABELS[issue.field] || issue.field}</p>
-                    <p className="text-sm text-[var(--subtext)]">
-                      {issue.count} edificios ({issue.percentage}%)
-                    </p>
+          <article className="rounded-2xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-1)] p-5">
+            <h2 className="text-lg font-semibold text-[var(--text)]">Top faltantes</h2>
+            <div className="mt-4 space-y-2">
+              {stats.topIssues.length === 0 ? (
+                <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-300">
+                  Sin faltantes detectados.
+                </div>
+              ) : (
+                stats.topIssues.map((issue) => (
+                  <div key={issue.field} className="flex items-center justify-between rounded-lg border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-2)] px-3 py-2 text-sm">
+                    <span className="text-[var(--text)]">{ISSUE_LABELS[issue.field] || issue.field}</span>
+                    <span className="text-[var(--subtext)]">{issue.count} ({issue.percentage}%)</span>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-[var(--subtext)]">No hay faltantes detectados.</p>
-            )}
-          </div>
-        </div>
-      )}
+                ))
+              )}
+            </div>
+          </article>
+        </section>
+      ) : null}
 
-      <div className="rounded-2xl bg-[var(--soft)]/90 ring-1 ring-white/10 p-6">
-        <h2 className="text-xl font-semibold text-[var(--text)] mb-4">Detalle por edificio</h2>
+      <section className="rounded-2xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-1)] p-5">
+        <h2 className="mb-4 text-lg font-semibold text-[var(--text)]">Detalle por edificio</h2>
         {buildings.length === 0 ? (
-          <p className="text-sm text-[var(--subtext)]">No hay edificios para analizar.</p>
+          <div className="rounded-lg border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-2)] p-4 text-sm text-[var(--subtext)]">
+            No hay edificios para analizar.
+          </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[840px] text-sm">
+            <table className="w-full min-w-[960px] text-sm">
               <thead>
-                <tr className="text-left border-b border-white/10 text-[var(--subtext)]">
-                  <th className="py-3 pr-3">Edificio</th>
-                  <th className="py-3 pr-3">Comuna</th>
-                  <th className="py-3 pr-3">Completitud</th>
-                  <th className="py-3 pr-3">Campos faltantes</th>
-                  <th className="py-3 pr-3">Actualizado</th>
+                <tr className="border-b border-[var(--admin-border-subtle)] text-left text-xs uppercase tracking-wide text-[var(--subtext)]">
+                  <th className="px-3 py-3">Edificio</th>
+                  <th className="px-3 py-3">Comuna</th>
+                  <th className="px-3 py-3">Completitud</th>
+                  <th className="px-3 py-3">Faltantes</th>
+                  <th className="px-3 py-3">Accion</th>
                 </tr>
               </thead>
               <tbody>
                 {buildings.map((building) => {
                   const missingFields = getMissingFields(building);
-
+                  const isCritical = building.completeness_percentage < 70;
                   return (
-                    <tr key={building.id} className="border-b border-white/5 align-top">
-                      <td className="py-3 pr-3">
+                    <tr key={building.id} className="border-b border-[var(--admin-border-subtle)]/70">
+                      <td className="px-3 py-3">
                         <p className="font-medium text-[var(--text)]">{building.name}</p>
                         <p className="text-xs text-[var(--subtext)]">{building.slug}</p>
                       </td>
-                      <td className="py-3 pr-3 text-[var(--text)]">{building.comuna}</td>
-                      <td className="py-3 pr-3">
-                        <span
-                          className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ring-1 ${getCompletenessBadgeClass(
-                            building.completeness_percentage
-                          )}`}
-                        >
-                          {building.completeness_percentage.toFixed(1)}%
-                        </span>
+                      <td className="px-3 py-3 text-[var(--text)]">{building.comuna}</td>
+                      <td className="px-3 py-3">
+                        <StatusBadge
+                          status={isCritical ? "warning" : "success"}
+                          label={`${building.completeness_percentage}%`}
+                        />
                       </td>
-                      <td className="py-3 pr-3">
+                      <td className="px-3 py-3">
                         {missingFields.length > 0 ? (
-                          <div className="flex flex-wrap gap-1.5">
-                            {missingFields.map((field) => (
-                              <span
-                                key={`${building.id}-${field}`}
-                                className="inline-flex items-center rounded-md px-2 py-1 text-xs bg-rose-500/10 text-rose-300 ring-1 ring-rose-500/20"
-                              >
-                                {field}
+                          <div className="flex flex-wrap gap-1">
+                            {missingFields.map((item) => (
+                              <span key={item} className="rounded-full bg-amber-500/15 px-2 py-0.5 text-xs text-amber-300 ring-1 ring-amber-500/30">
+                                {item}
                               </span>
                             ))}
                           </div>
                         ) : (
-                          <span className="inline-flex items-center rounded-md px-2 py-1 text-xs bg-emerald-500/10 text-emerald-300 ring-1 ring-emerald-500/20">
+                          <span className="inline-flex items-center gap-1 text-emerald-300">
+                            <CheckCircle2 className="h-3.5 w-3.5" />
                             Completo
                           </span>
                         )}
                       </td>
-                      <td className="py-3 pr-3 text-[var(--subtext)]">{formatLastUpdate(building.updated_at)}</td>
+                      <td className="px-3 py-3">
+                        <Link
+                          href="/admin/buildings"
+                          className="inline-flex min-h-[36px] items-center gap-1 rounded-lg bg-[var(--admin-surface-2)] px-3 py-1.5 text-xs font-medium text-[var(--text)] ring-1 ring-[var(--admin-border-subtle)] hover:bg-[var(--admin-surface-2)]/80"
+                        >
+                          {isCritical ? <AlertTriangle className="h-3.5 w-3.5 text-amber-300" /> : <Sparkles className="h-3.5 w-3.5 text-sky-300" />}
+                          Revisar
+                        </Link>
+                      </td>
                     </tr>
                   );
                 })}
@@ -354,7 +294,16 @@ export default function CompletenessAdminPage() {
             </table>
           </div>
         )}
-      </div>
+      </section>
+
+      {error && data ? (
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-300">
+          <span className="inline-flex items-center gap-2">
+            <CircleDashed className="h-4 w-4" />
+            Se detectaron errores parciales al refrescar datos.
+          </span>
+        </div>
+      ) : null}
     </div>
   );
 }

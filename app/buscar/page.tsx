@@ -12,9 +12,15 @@ export async function generateMetadata({
   searchParams: Promise<{
     q?: string;
     comuna?: string;
+    operation?: string;
     precioMin?: string;
     precioMax?: string;
+    dormitoriosMin?: string;
+    tipos?: string;
     dormitorios?: string;
+    intent?: string;
+    beds?: string;
+    priceMax?: string;
   }>;
 }): Promise<Metadata> {
   const resolvedSearchParams = await searchParams;
@@ -22,25 +28,14 @@ export async function generateMetadata({
   return generateSearchMetadata({
     comuna: resolvedSearchParams?.comuna,
     dormitorios: resolvedSearchParams?.dormitorios,
+    dormitoriosMin: resolvedSearchParams?.dormitoriosMin,
     precioMin: resolvedSearchParams?.precioMin,
-    precioMax: resolvedSearchParams?.precioMax,
+    precioMax: resolvedSearchParams?.precioMax || resolvedSearchParams?.priceMax,
     q: resolvedSearchParams?.q,
   });
 }
 
-export default async function SearchResultsPage({
-  searchParams,
-}: {
-  searchParams: Promise<{
-    q?: string;
-    comuna?: string;
-    precioMin?: string;
-    precioMax?: string;
-    dormitorios?: string;
-    sort?: string;
-    page?: string;
-  }>;
-}) {
+export default async function SearchResultsPage() {
   // El componente cliente maneja los searchParams
   return (
     <Suspense fallback={

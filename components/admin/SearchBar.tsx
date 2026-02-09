@@ -7,6 +7,7 @@ export interface SearchBarProps {
   onChange: (value: string) => void;
   placeholder?: string;
   debounceMs?: number;
+  showShortcutHint?: boolean;
 }
 
 export function SearchBar({
@@ -14,6 +15,7 @@ export function SearchBar({
   onChange,
   placeholder = "Buscar...",
   debounceMs = 300,
+  showShortcutHint = true,
 }: SearchBarProps) {
   const [localValue, setLocalValue] = useState(value);
 
@@ -51,10 +53,21 @@ export function SearchBar({
         type="text"
         value={localValue}
         onChange={(e) => setLocalValue(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") {
+            setLocalValue("");
+            onChange("");
+          }
+        }}
         placeholder={placeholder}
-        className="w-full pl-10 pr-4 py-2 rounded-lg bg-[var(--soft)] text-[var(--text)] placeholder-[var(--subtext)] border border-white/10 focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--bg)]"
+        className="w-full min-h-[40px] pl-10 pr-16 py-2 rounded-lg bg-[var(--admin-surface-1)] text-[var(--text)] placeholder-[var(--subtext)] border border-[var(--admin-border-subtle)] focus:outline-none focus:ring-2 focus:ring-[var(--admin-focus)] focus:ring-offset-2 focus:ring-offset-[var(--bg)]"
         aria-label="Barra de búsqueda"
       />
+      {showShortcutHint ? (
+        <kbd className="pointer-events-none absolute inset-y-0 right-9 my-auto hidden h-fit rounded border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-2)] px-1.5 py-0.5 text-[10px] text-[var(--subtext)] md:block">
+          ESC
+        </kbd>
+      ) : null}
       {localValue && (
         <button
           onClick={() => {
@@ -82,7 +95,6 @@ export function SearchBar({
     </div>
   );
 }
-
 
 
 

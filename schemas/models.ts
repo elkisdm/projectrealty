@@ -114,6 +114,24 @@ export const UnitSchema = z.object({
   status: z.enum(["available", "reserved", "rented"]).optional(),
   publicationStatus: z.enum(["draft", "published", "archived"]).optional(),
   publication_status: z.enum(["draft", "published", "archived"]).optional(),
+  operationType: z.enum(["rent"]).optional(),
+  operation_type: z.enum(["rent"]).optional(),
+  publicationTitle: z.string().min(1).optional(),
+  publication_title: z.string().min(1).optional(),
+  publicationDescription: z.string().min(1).optional(),
+  publication_description: z.string().min(1).optional(),
+  unitAmenities: z.array(z.string().min(1)).optional(),
+  unit_amenities: z.array(z.string().min(1)).optional(),
+  draftStep: z.number().int().min(1).max(7).optional(),
+  draft_step: z.number().int().min(1).max(7).optional(),
+  draftCompletedSteps: z.array(z.string().min(1)).optional(),
+  draft_completed_steps: z.array(z.string().min(1)).optional(),
+  draftLastSavedAt: z.string().optional(),
+  draft_last_saved_at: z.string().optional(),
+  publishedAt: z.string().optional(),
+  published_at: z.string().optional(),
+  archivedAt: z.string().optional(),
+  archived_at: z.string().optional(),
   promotions: z.array(PromotionBadgeSchema).optional(),
   
   // New v2 fields
@@ -288,14 +306,17 @@ export const AvailabilityNotificationRequestSchema = z.object({
 export const SearchFiltersSchema = z.object({
   q: z.string().optional(), // Búsqueda por texto
   comuna: z.union([z.string(), z.array(z.string())]).optional(), // Soporta string o array para multiselección
+  operation: z.enum(["rent"]).optional(),
   precioMin: z.number().int().nonnegative().optional(),
   precioMax: z.number().int().nonnegative().optional(),
+  dormitoriosMin: z.number().int().nonnegative().optional(),
+  tipos: z.union([z.string(), z.array(z.string())]).optional(),
   dormitorios: z.union([z.number().int().nonnegative(), z.string(), z.array(z.string())]).optional(), // Soporta número, string o array para multiselección
   // ⚠️ banos NO incluido - No se filtra por baños
   estacionamiento: z.boolean().optional(),
   bodega: z.boolean().optional(),
   mascotas: z.boolean().optional(),
-  sort: z.enum(["precio", "ubicacion", "relevancia"]).optional(),
+  sort: z.enum(["default", "precio-asc", "precio-desc", "comuna-asc", "precio", "ubicacion", "relevancia"]).optional(),
   page: z.number().int().positive().optional().default(1),
   limit: z.number().int().positive().max(100).optional().default(12),
 }).refine((data) => {
@@ -394,4 +415,3 @@ export const NearbyAmenitySchema = z.object({
 });
 
 export type NearbyAmenity = z.infer<typeof NearbyAmenitySchema>;
-

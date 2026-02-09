@@ -155,10 +155,10 @@ export function UnifiedSearchBar({
     // Mobile: Full screen modal
     if (isExpanded && isMobile) {
         return (
-            <div className="fixed inset-0 z-50 bg-white dark:bg-gray-900">
+            <div className="fixed inset-0 z-50 bg-background">
                 <div className="flex flex-col h-full">
                     {/* Header */}
-                    <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
+                    <div className="flex items-center justify-between p-4 border-b border-border">
                         <h2 className="text-lg font-semibold">Buscar Departamentos</h2>
                         <button
                             onClick={() => setIsExpanded(false)}
@@ -177,14 +177,14 @@ export function UnifiedSearchBar({
                                 type="text"
                                 {...register('q')}
                                 placeholder="Comuna, dirección, nombre de edificio..."
-                                className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-[#8B6CFF] transition-colors"
+                                className="w-full px-4 py-3 rounded-xl border border-border bg-card focus:outline-none focus:ring-2 focus:ring-[#8B6CFF] transition-colors"
                                 autoFocus
                             />
                         </div>
 
                         {/* Filtros rápidos: Comuna */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label className="block text-sm font-medium text-foreground mb-2">
                                 Filtros rápidos
                             </label>
                             <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
@@ -197,7 +197,7 @@ export function UnifiedSearchBar({
                                             'flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all',
                                             comuna === c
                                                 ? 'bg-[#8B6CFF] text-white'
-                                                : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                                                : 'bg-muted text-foreground hover:bg-muted'
                                         )}
                                     >
                                         {c}
@@ -207,7 +207,7 @@ export function UnifiedSearchBar({
                                     <button
                                         type="button"
                                         onClick={() => setShowFiltersModal(true)}
-                                        className="flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+                                        className="flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium bg-muted text-foreground hover:bg-muted"
                                     >
                                         +{COMUNAS_PRINCIPALES.length - 3} más
                                     </button>
@@ -219,7 +219,7 @@ export function UnifiedSearchBar({
                         <button
                             type="button"
                             onClick={() => setShowFiltersModal(true)}
-                            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-border bg-card hover:bg-muted/50 transition-colors"
                         >
                             <SlidersHorizontal className="w-4 h-4" />
                             <span>Más filtros</span>
@@ -238,9 +238,9 @@ export function UnifiedSearchBar({
                                     animate={{ y: 0 }}
                                     exit={{ y: '100%' }}
                                     transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-                                    className="fixed inset-x-0 bottom-0 bg-white dark:bg-gray-900 rounded-t-3xl shadow-2xl max-h-[80vh] overflow-y-auto z-[9999]"
+                                    className="fixed inset-x-0 bottom-0 bg-background rounded-t-3xl shadow-2xl max-h-[80vh] overflow-y-auto z-[9999]"
                                 >
-                                    <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 p-4">
+                                    <div className="sticky top-0 bg-background border-b border-gray-200 dark:border-gray-800 p-4">
                                         <div className="flex items-center justify-between">
                                             <h3 className="text-lg font-semibold">Filtros</h3>
                                             <button
@@ -272,7 +272,7 @@ export function UnifiedSearchBar({
                                                     type="number"
                                                     {...register('precioMin')}
                                                     placeholder="$"
-                                                    className="w-full px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-[#8B6CFF]"
+                                                    className="w-full px-4 py-2 rounded-lg border border-border bg-card focus:outline-none focus:ring-2 focus:ring-[#8B6CFF]"
                                                 />
                                             </div>
                                             <div>
@@ -281,7 +281,7 @@ export function UnifiedSearchBar({
                                                     type="number"
                                                     {...register('precioMax')}
                                                     placeholder="$"
-                                                    className="w-full px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-[#8B6CFF]"
+                                                    className="w-full px-4 py-2 rounded-lg border border-border bg-card focus:outline-none focus:ring-2 focus:ring-[#8B6CFF]"
                                                 />
                                             </div>
                                         </div>
@@ -315,7 +315,7 @@ export function UnifiedSearchBar({
                         </AnimatePresence>
 
                         {/* Submit Button (Fixed bottom) */}
-                        <div className="sticky bottom-0 bg-white dark:bg-gray-900 pt-4 pb-2 -mx-4 px-4">
+                        <div className="sticky bottom-0 bg-background pt-4 pb-2 -mx-4 px-4">
                             <button
                                 type="submit"
                                 disabled={isSubmitting}
@@ -339,11 +339,11 @@ export function UnifiedSearchBar({
                     className={clx(
                         'flex items-center gap-3',
                         variant === 'hero' && [
-                            'bg-white/10 dark:bg-gray-800/80 backdrop-blur-md',
-                            'rounded-full border border-white/20 dark:border-gray-700/50',
+'bg-background/10 md:bg-card/80 backdrop-blur-md',
+            'rounded-full border border-border/50',
                             'shadow-lg px-4 py-3',
                         ],
-                        variant === 'inline' && ['bg-white dark:bg-gray-800', 'rounded-xl border border-gray-200 dark:border-gray-700 px-4 py-3']
+                        variant === 'inline' && ['bg-card', 'rounded-xl border border-border px-4 py-3']
                     )}
                 >
                     {/* Search Input */}
@@ -373,7 +373,7 @@ export function UnifiedSearchBar({
                             className={clx(
                                 'hidden md:flex items-center gap-2',
                                 'px-4 py-2 rounded-full',
-                                'border border-gray-200 dark:border-gray-700',
+                                'border border-border',
                                 'hover:bg-gray-100 dark:hover:bg-gray-800',
                                 'transition-colors text-sm font-medium'
                             )}
@@ -431,7 +431,7 @@ export function UnifiedSearchBar({
                                     animate={{ opacity: 1, scale: 1, x: '-50%', y: '-50%' }}
                                     exit={{ opacity: 0, scale: 0.95, x: '-50%', y: '-50%' }}
                                     transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                                    className="fixed w-[calc(100%-2rem)] max-w-2xl bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-h-[80vh] overflow-y-auto"
+                                    className="fixed w-[calc(100%-2rem)] max-w-2xl bg-background rounded-2xl shadow-2xl max-h-[80vh] overflow-y-auto"
                                     style={{
                                         zIndex: 9999,
                                         top: '50%',
@@ -439,7 +439,7 @@ export function UnifiedSearchBar({
                                     }}
                                 >
                                     {/* Header */}
-                                    <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 p-6">
+                                    <div className="sticky top-0 bg-background border-b border-gray-200 dark:border-gray-800 p-6">
                                         <div className="flex items-center justify-between">
                                             <h3 className="text-xl font-semibold">Filtros de Búsqueda</h3>
                                             <button
@@ -460,7 +460,7 @@ export function UnifiedSearchBar({
                                                 type="text"
                                                 {...register('q')}
                                                 placeholder="Comuna, dirección, nombre de edificio..."
-                                                className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-[#8B6CFF] transition-colors"
+                                                className="w-full px-4 py-3 rounded-xl border border-border bg-card focus:outline-none focus:ring-2 focus:ring-[#8B6CFF] transition-colors"
                                             />
                                         </div>
 
@@ -495,7 +495,7 @@ export function UnifiedSearchBar({
                                                         type="number"
                                                         {...register('precioMin')}
                                                         placeholder="Desde $"
-                                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-[#8B6CFF] transition-colors"
+                                                        className="w-full px-4 py-3 rounded-xl border border-border bg-card focus:outline-none focus:ring-2 focus:ring-[#8B6CFF] transition-colors"
                                                     />
                                                 </div>
                                                 <div>
@@ -503,7 +503,7 @@ export function UnifiedSearchBar({
                                                         type="number"
                                                         {...register('precioMax')}
                                                         placeholder="Hasta $"
-                                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-[#8B6CFF] transition-colors"
+                                                        className="w-full px-4 py-3 rounded-xl border border-border bg-card focus:outline-none focus:ring-2 focus:ring-[#8B6CFF] transition-colors"
                                                     />
                                                 </div>
                                             </div>
@@ -511,7 +511,7 @@ export function UnifiedSearchBar({
                                     </div>
 
                                     {/* Footer */}
-                                    <div className="sticky bottom-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 p-6 flex gap-3">
+                                    <div className="sticky bottom-0 bg-background border-t border-gray-200 dark:border-gray-800 p-6 flex gap-3">
                                         <button
                                             type="button"
                                             onClick={clearFilters}

@@ -1,16 +1,26 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Download, Plus, Upload } from "lucide-react";
 import { toast } from "sonner";
 import type { Unit, Building } from "@schemas/models";
-import { DataTable, type Column } from "@components/admin/DataTable";
-import { SearchBar } from "@components/admin/SearchBar";
-import { FilterPanel, type FilterConfig } from "@components/admin/FilterPanel";
 import { FichaPropiedad } from "@components/admin/FichaPropiedad";
 import { BulkActions } from "@components/admin/BulkActions";
 import { ImportDialog } from "@components/admin/ImportDialog";
 import { ExportDialog } from "@components/admin/ExportDialog";
+import { SearchBar } from "@components/admin/SearchBar";
+import {
+  DataGrid,
+  FilterDrawer,
+  PageHeader,
+  ErrorState,
+  PermissionState,
+  StatusBadge,
+} from "@components/admin/ui";
+import type { DataGridColumn, DataGridRowAction, FilterField } from "@/types/admin-ui";
 import { unitsToCSV, validateUnitsFromCSV, downloadCSV } from "@lib/admin/csv";
+import { getErrorMessage } from "@lib/admin/client-errors";
 import { logger } from "@lib/logger";
 import { useAdminAuth } from "@hooks/useAdminAuth";
 
@@ -30,6 +40,7 @@ interface PaginationInfo {
 }
 
 export default function UnitsAdminPage() {
+  const router = useRouter();
   const { user } = useAdminAuth();
   const [units, setUnits] = useState<UnitWithBuilding[]>([]);
   const [buildings, setBuildings] = useState<Building[]>([]);
@@ -52,16 +63,15 @@ export default function UnitsAdminPage() {
   const [showExport, setShowExport] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
 
-  // Cargar edificios para el selector
   useEffect(() => {
-    fetch("/api/admin/buildings?limit=1000")
+    fetch("/api/admin/buildings?page_size=1000")
       .then((res) => res.json())
       .then((data) => {
-        if (data.success) {
+        if (data.success && Array.isArray(data.data)) {
           setBuildings(data.data);
         }
       })
-      .catch((error) => logger.error('Error fetching buildings:', error));
+      .catch((fetchError) => logger.error("Error fetching buildings:", fetchError));
   }, []);
 
   const fetchUnits = useCallback(async () => {
@@ -72,35 +82,41 @@ export default function UnitsAdminPage() {
       const params = new URLSearchParams({
         page: String(pagination.page),
         page_size: String(pagination.limit),
-        ...(search && { search }),
-        ...(filters.buildingId && { building_id: String(filters.buildingId) }),
-        ...(filters.tipologia && { typology: String(filters.tipologia) }),
-        ...(filters.disponible !== undefined && {
-          disponible: String(filters.disponible),
-        }),
-        ...(filters.price_min && { price_min: String(filters.price_min) }),
-        ...(filters.price_max && { price_max: String(filters.price_max) }),
-        ...(filters.status && { status: String(filters.status) }),
+        ...(search ? { search } : {}),
+        ...(filters.buildingId ? { building_id: String(filters.buildingId) } : {}),
+        ...(filters.tipologia ? { typology: String(filters.tipologia) } : {}),
+        ...(filters.disponible !== undefined ? { disponible: String(filters.disponible) } : {}),
+        ...(filters.price_min ? { price_min: String(filters.price_min) } : {}),
+        ...(filters.price_max ? { price_max: String(filters.price_max) } : {}),
+        ...(filters.status ? { status: String(filters.status) } : {}),
       });
 
       const response = await fetch(`/api/admin/units?${params}`);
       const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.error || "Error al cargar unidades");
+      if (!response.ok || !data.success) {
+        throw new Error(getErrorMessage(data.error, "Error al cargar unidades"));
       }
 
-      setUnits(data.data);
-      setPagination(data.pagination);
+      setUnits(data.data || []);
+      const meta = data.pagination || data.meta;
+      setPagination({
+        page: meta?.page || 1,
+        limit: meta?.page_size || pagination.limit,
+        total: meta?.total || 0,
+        totalPages: meta?.total_pages || 1,
+        hasNextPage: Boolean(meta?.has_next_page),
+        hasPrevPage: Boolean(meta?.has_prev_page),
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error desconocido");
     } finally {
       setLoading(false);
     }
-  }, [pagination.page, pagination.limit, search, filters]);
+  }, [filters, pagination.limit, pagination.page, search]);
 
   useEffect(() => {
-    fetchUnits();
+    void fetchUnits();
   }, [fetchUnits]);
 
   const handleCreate = () => {
@@ -119,57 +135,89 @@ export default function UnitsAdminPage() {
       return;
     }
 
-    if (!confirm(`¿Estás seguro de eliminar la unidad "${unit.id}"?`)) {
+    if (!confirm(`Estas seguro de eliminar la unidad "${unit.id}"?`)) {
       return;
     }
 
     try {
-      const response = await fetch(`/api/admin/units/${unit.id}`, {
-        method: "DELETE",
-      });
-
+      const response = await fetch(`/api/admin/units/${unit.id}`, { method: "DELETE" });
       if (!response.ok) {
         throw new Error("Error al eliminar unidad");
       }
-
       toast.success(`Unidad "${unit.id}" eliminada correctamente`);
-      fetchUnits();
+      void fetchUnits();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Error desconocido");
     }
   };
 
+  const handlePublish = async (unit: UnitWithBuilding) => {
+    if (user?.role === "viewer") {
+      toast.error("Tu rol actual no permite publicar");
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/admin/units/${unit.id}/publish`, {
+        method: "POST",
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.error?.message || "No se pudo publicar la unidad");
+      }
+      toast.success("Unidad publicada");
+      void fetchUnits();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Error publicando unidad");
+    }
+  };
+
+  const handleArchive = async (unit: UnitWithBuilding) => {
+    if (user?.role === "viewer") {
+      toast.error("Tu rol actual no permite archivar");
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/admin/units/${unit.id}/archive`, {
+        method: "POST",
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.error?.message || "No se pudo archivar la unidad");
+      }
+      toast.success("Unidad archivada");
+      void fetchUnits();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Error archivando unidad");
+    }
+  };
+
+  const handleContinueDraft = (unit: UnitWithBuilding) => {
+    router.push(`/admin/listar-propiedad?draft=${encodeURIComponent(unit.id)}`);
+  };
+
   const handleFormSubmit = async (data: Unit) => {
     try {
       setFormLoading(true);
-      const url = editingUnit
-        ? `/api/admin/units/${editingUnit.id}`
-        : "/api/admin/units";
+      const url = editingUnit ? `/api/admin/units/${editingUnit.id}` : "/api/admin/units";
       const method = editingUnit ? "PUT" : "POST";
-
-      const body = editingUnit
-        ? data
-        : { ...data, buildingId: data.buildingId };
 
       const response = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify(editingUnit ? data : { ...data, buildingId: data.buildingId }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Error al guardar unidad");
+        throw new Error(getErrorMessage(errorData.error, "Error al guardar unidad"));
       }
 
       setShowForm(false);
       setEditingUnit(undefined);
-      toast.success(
-        editingUnit
-          ? `Unidad "${data.id}" actualizada correctamente`
-          : `Unidad "${data.id}" creada correctamente`
-      );
-      fetchUnits();
+      toast.success(editingUnit ? `Unidad "${data.id}" actualizada` : `Unidad "${data.id}" creada`);
+      void fetchUnits();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Error desconocido");
     } finally {
@@ -183,9 +231,7 @@ export default function UnitsAdminPage() {
       return;
     }
 
-    if (!confirm(`¿Estás seguro de eliminar ${selected.length} unidades?`)) {
-      return;
-    }
+    if (!confirm(`Estas seguro de eliminar ${selected.length} unidades?`)) return;
 
     try {
       const response = await fetch("/api/admin/bulk", {
@@ -194,7 +240,7 @@ export default function UnitsAdminPage() {
         body: JSON.stringify({
           operation: "delete",
           entity: "units",
-          ids: selected.map((u) => u.id),
+          ids: selected.map((item) => item.id),
         }),
       });
 
@@ -203,8 +249,8 @@ export default function UnitsAdminPage() {
       }
 
       setSelected([]);
-      toast.success(`${selected.length} unidad(es) eliminada(s) correctamente`);
-      fetchUnits();
+      toast.success(`${selected.length} unidad(es) eliminada(s)`);
+      void fetchUnits();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Error desconocido");
     }
@@ -212,63 +258,40 @@ export default function UnitsAdminPage() {
 
   const handleImport = async (file: File) => {
     const text = await file.text();
-
-    // Detectar formato: AssetPlan (separado por ;) o formato estándar (separado por ,)
     const isAssetPlanFormat = text.includes(";") && (text.includes("Tipologia") || text.includes("OP"));
 
-    let valid: Unit[] = [];
-    let invalid: Array<{ data: Partial<Unit>; errors: string[] }> = [];
-
     if (isAssetPlanFormat) {
-      // Para AssetPlan, necesitamos importar desde edificios primero
-      // o crear una función específica para unidades AssetPlan
-      alert("Para importar unidades desde CSV de AssetPlan, primero importa los edificios desde la sección de Edificios. Las unidades se crearán automáticamente.");
+      toast.error("Importa primero edificios AssetPlan para crear unidades relacionadas.");
       return;
-    } else {
-      // Formato estándar
-      const result = validateUnitsFromCSV(text);
-      valid = result.valid;
-      invalid = result.invalid;
     }
 
+    const { valid, invalid } = validateUnitsFromCSV(text);
+
     if (invalid.length > 0) {
-      // Mostrar detalles de los errores
-      logger.error("Errores de validación:", invalid);
-      const errorDetails = invalid.slice(0, 5).map((inv, idx) => {
-        const unitId = inv.data.id || `Unidad ${idx + 1}`;
-        const allErrors = inv.errors.join('\n  - ');
-        return `${unitId}:\n  - ${allErrors}`;
-      }).join('\n\n');
-
-      const invalidMsg = `${invalid.length} registro(s) inválido(s).\n${valid.length} registro(s) válido(s) para importar.\n\nDetalles de errores:\n\n${errorDetails}\n\n¿Deseas continuar con la importación de los ${valid.length} registro(s) válido(s)?`;
-
-      if (!confirm(invalidMsg)) {
-        return;
-      }
+      logger.error("Errores de validacion:", invalid);
+      const details = invalid
+        .slice(0, 5)
+        .map((item, idx) => `${item.data.id || `Unidad ${idx + 1}`}: ${item.errors.join(", ")}`)
+        .join("\n");
+      if (!confirm(`${invalid.length} invalidos y ${valid.length} validos.\n\n${details}\n\nContinuar?`)) return;
     }
 
     if (valid.length === 0) {
-      throw new Error("No hay registros válidos para importar. Revisa la consola para ver los detalles de los errores.");
+      throw new Error("No hay registros validos para importar.");
     }
 
-    // Necesitamos buildingId para cada unidad
-    // Parsear el CSV nuevamente para obtener los buildingIds originales
-    const csvLines = text.split('\n').filter(line => line.trim());
-    const headers = csvLines[0]?.split(',').map(h => h.trim().toLowerCase()) || [];
-    const buildingIdIndex = headers.indexOf('buildingid');
+    const csvLines = text.split("\n").filter((line) => line.trim());
+    const headers = csvLines[0]?.split(",").map((header) => header.trim().toLowerCase()) || [];
+    const buildingIdIndex = headers.indexOf("buildingid");
 
     const unitsWithBuildings = valid.map((unit, index) => {
-      // Obtener el buildingId del CSV original
-      const dataLine = csvLines[index + 1]; // +1 porque la primera línea son headers
+      const dataLine = csvLines[index + 1];
       let buildingId = "";
       if (dataLine && buildingIdIndex >= 0) {
-        const values = dataLine.split(',');
-        buildingId = values[buildingIdIndex]?.trim().replace(/^"|"$/g, '') || "";
+        const values = dataLine.split(",");
+        buildingId = values[buildingIdIndex]?.trim().replace(/^"|"$/g, "") || "";
       }
-      return {
-        ...unit,
-        buildingId,
-      };
+      return { ...unit, buildingId };
     });
 
     const response = await fetch("/api/admin/bulk", {
@@ -285,128 +308,97 @@ export default function UnitsAdminPage() {
       throw new Error("Error al importar unidades");
     }
 
-    fetchUnits();
+    void fetchUnits();
   };
 
   const handleExport = async (format: "csv" | "json") => {
-    try {
-      if (format === "csv") {
-        const csv = unitsToCSV(selected.length > 0 ? selected : units);
-        downloadCSV(csv, `units-${new Date().toISOString().split("T")[0]}.csv`);
-      } else {
-        const json = JSON.stringify(
-          selected.length > 0 ? selected : units,
-          null,
-          2
-        );
-        const blob = new Blob([json], { type: "application/json" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `units-${new Date().toISOString().split("T")[0]}.json`;
-        link.click();
-        URL.revokeObjectURL(url);
-      }
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Error al exportar");
+    if (format === "csv") {
+      const csv = unitsToCSV(selected.length > 0 ? selected : units);
+      downloadCSV(csv, `units-${new Date().toISOString().split("T")[0]}.csv`);
+      return;
     }
+
+    const json = JSON.stringify(selected.length > 0 ? selected : units, null, 2);
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `units-${new Date().toISOString().split("T")[0]}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
-  const filterConfigs: FilterConfig[] = [
-    {
-      key: "buildingId",
-      label: "Edificio",
-      type: "select",
-      options: buildings.map((b) => ({ label: b.name, value: b.id })),
-    },
-    {
-      key: "tipologia",
-      label: "Tipología",
-      type: "select",
-      options: [
-        { label: "Studio", value: "Studio" },
-        { label: "1D1B", value: "1D1B" },
-        { label: "2D1B", value: "2D1B" },
-        { label: "2D2B", value: "2D2B" },
-        { label: "3D2B", value: "3D2B" },
-      ],
-    },
-    {
-      key: "disponible",
-      label: "Disponible",
-      type: "checkbox",
-    },
-    {
-      key: "status",
-      label: "Publicación",
-      type: "select",
-      options: [
-        { label: "Draft", value: "draft" },
-        { label: "Published", value: "published" },
-        { label: "Archived", value: "archived" },
-      ],
-    },
-    {
-      key: "price",
-      label: "Precio",
-      type: "range",
-      min: 0,
-      max: 10000000,
-    },
-  ];
+  const filterFields: FilterField[] = useMemo(
+    () => [
+      {
+        key: "buildingId",
+        label: "Edificio",
+        controlType: "select",
+        options: buildings.map((building) => ({ label: building.name, value: building.id })),
+      },
+      {
+        key: "tipologia",
+        label: "Tipologia",
+        controlType: "select",
+        options: [
+          { label: "Studio", value: "Studio" },
+          { label: "1D1B", value: "1D1B" },
+          { label: "2D1B", value: "2D1B" },
+          { label: "2D2B", value: "2D2B" },
+          { label: "3D2B", value: "3D2B" },
+        ],
+      },
+      { key: "status", label: "Publicacion", controlType: "select", options: [{ label: "Draft", value: "draft" }, { label: "Published", value: "published" }, { label: "Archived", value: "archived" }] },
+      { key: "disponible", label: "Solo disponibles", controlType: "checkbox" },
+      { key: "price", label: "Precio", controlType: "range", min: 0, max: 10000000 },
+    ],
+    [buildings]
+  );
 
-  const columns: Column<UnitWithBuilding>[] = [
-    { key: "id", label: "ID", sortable: true },
+  const columns: DataGridColumn<UnitWithBuilding>[] = [
+    { key: "id", label: "ID", sortable: true, width: "w-[180px]" },
     { key: "buildingName", label: "Edificio", sortable: true },
-    { key: "tipologia", label: "Tipología", sortable: true },
+    { key: "tipologia", label: "Tipologia", sortable: true, width: "w-[120px]" },
     {
       key: "price",
       label: "Precio",
       sortable: true,
-      render: (value) => `$${(value as number).toLocaleString("es-CL")}`,
+      align: "right",
+      renderCell: (value) => `$${Number(value || 0).toLocaleString("es-CL")}`,
     },
     {
       key: "gastosComunes",
-      label: "Gastos Comunes",
-      sortable: true,
-      render: (value) => value ? `$${(value as number).toLocaleString("es-CL")}` : "-",
+      label: "Gastos comunes",
+      align: "right",
+      renderCell: (value, row) => {
+        const gc = value || row.gastoComun || row.gc;
+        return gc ? `$${Number(gc).toLocaleString("es-CL")}` : "-";
+      },
     },
     {
       key: "m2",
-      label: "Área (m²)",
-      sortable: true,
-      render: (value) => `${value} m²`,
+      label: "m2",
+      align: "right",
+      renderCell: (value) => (value ? `${value} m2` : "-"),
     },
     {
       key: "disponible",
-      label: "Disponible",
-      sortable: true,
-      render: (value) => (
-        <span className={value ? "text-green-400" : "text-red-400"}>
-          {value ? "✓" : "✗"}
-        </span>
-      ),
+      label: "Disponibilidad",
+      renderCell: (value) => <StatusBadge status={value ? "active" : "inactive"} label={value ? "Disponible" : "No disponible"} />,
     },
     {
       key: "publicationStatus",
-      label: "Publicación",
-      sortable: true,
-      render: (value) => {
-        const status = String(value || "draft");
-        const classes =
-          status === "published"
-            ? "bg-emerald-500/15 text-emerald-300 ring-emerald-500/30"
-            : status === "archived"
-            ? "bg-zinc-500/15 text-zinc-300 ring-zinc-500/30"
-            : "bg-amber-500/15 text-amber-300 ring-amber-500/30";
-
-        return (
-          <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs ring-1 ${classes}`}>
-            {status}
-          </span>
-        );
-      },
+      label: "Publicacion",
+      renderCell: (value) => <StatusBadge status={String(value || "draft")} />,
     },
+  ];
+
+  const rowActions: DataGridRowAction<UnitWithBuilding>[] = [
+    { key: "continue-draft", label: "Continuar borrador", onClick: handleContinueDraft, minRole: "editor" },
+    { key: "publish", label: "Publicar", onClick: handlePublish, minRole: "editor" },
+    { key: "archive", label: "Archivar", onClick: handleArchive, minRole: "editor" },
+    { key: "edit", label: "Editar", onClick: handleEdit, minRole: "editor" },
+    { key: "delete", label: "Eliminar", variant: "danger", onClick: handleDelete, minRole: "admin" },
   ];
 
   const initialUnitData: Partial<Unit> | undefined = editingUnit
@@ -420,72 +412,62 @@ export default function UnitsAdminPage() {
     : undefined;
 
   return (
-    <div className="container mx-auto px-4 md:px-6 py-8">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-3xl font-bold mb-2 text-[var(--text)]">
-              Gestión de Unidades
-            </h1>
-            <p className="text-[var(--subtext)]">
-              Administra las unidades del sistema
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowImport(true)}
-              className="px-4 py-2 rounded-lg bg-[var(--soft)] text-[var(--text)] hover:bg-[var(--soft)]/80 transition-colors ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--bg)]"
-            >
-              Importar
-            </button>
-            <button
-              onClick={() => setShowExport(true)}
-              className="px-4 py-2 rounded-lg bg-[var(--soft)] text-[var(--text)] hover:bg-[var(--soft)]/80 transition-colors ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--bg)]"
-            >
-              Exportar
-            </button>
-            <button
-              onClick={handleCreate}
-              className="px-4 py-2 rounded-lg bg-brand-violet text-white hover:bg-brand-violet/90 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--bg)]"
-            >
-              + Nueva Unidad
-            </button>
-          </div>
-        </div>
+    <div className="space-y-4">
+      <PageHeader
+        title="Gestion de unidades"
+        description="Bandeja de publicaciones: gestiona borradores, publicaciones y archivados."
+        breadcrumbs={[
+          { label: "Admin", href: "/admin" },
+          { label: "Unidades" },
+        ]}
+        role={user?.role || "viewer"}
+        actions={[
+          {
+            key: "import",
+            label: "Importar",
+            icon: <Upload className="h-4 w-4" />,
+            variant: "secondary",
+            minRole: "editor",
+            onClick: () => setShowImport(true),
+          },
+          {
+            key: "export",
+            label: "Exportar",
+            icon: <Download className="h-4 w-4" />,
+            variant: "secondary",
+            onClick: () => setShowExport(true),
+          },
+          {
+            key: "new",
+            label: "Nueva unidad",
+            icon: <Plus className="h-4 w-4" />,
+            minRole: "editor",
+            onClick: handleCreate,
+          },
+        ]}
+      />
 
-        {/* Search and Filters */}
-        <div className="flex items-center gap-4 mb-6">
-          <div className="flex-1">
-            <SearchBar
-              value={search}
-              onChange={setSearch}
-              placeholder="Buscar por tipología, edificio..."
-            />
-          </div>
-          <FilterPanel
-            filters={filterConfigs}
-            values={filters}
-            onChange={(key, value) => setFilters((prev) => ({ ...prev, [key]: value }))}
-            onClear={() => setFilters({})}
-          />
+      <section className="flex flex-col gap-3 rounded-2xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-1)] p-4 lg:flex-row lg:items-center">
+        <div className="flex-1">
+          <SearchBar value={search} onChange={setSearch} placeholder="Buscar por ID, tipologia o edificio..." />
         </div>
-      </div>
+        <FilterDrawer
+          fields={filterFields}
+          values={filters}
+          onChange={(key, value) => setFilters((prev) => ({ ...prev, [key]: value }))}
+          onClear={() => setFilters({})}
+        />
+      </section>
 
-      {/* Error */}
-      {error && (
-        <div className="mb-6 p-4 rounded-lg bg-red-600/20 text-red-400">
-          {error}
-        </div>
-      )}
+      {error ? <ErrorState description={error} onRetry={() => void fetchUnits()} /> : null}
 
-      {/* Form Modal */}
-      {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="rounded-2xl bg-[var(--soft)] ring-1 ring-white/10 shadow-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6">
-            <h2 className="text-2xl font-bold mb-4 text-[var(--text)]">
-              {editingUnit ? "Editar Unidad" : "Nueva Unidad"}
-            </h2>
+      {user?.role === "viewer" && showForm ? (
+        <PermissionState description="Tu rol actual solo permite lectura. Solicita permisos de editor o admin." />
+      ) : null}
+
+      {showForm ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-2xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-1)] p-6">
             <FichaPropiedad
               buildingId={editingUnit?.buildingId ?? ""}
               buildings={buildings}
@@ -499,52 +481,54 @@ export default function UnitsAdminPage() {
             />
           </div>
         </div>
-      )}
+      ) : null}
 
-      {/* Table */}
-      <DataTable
+      <DataGrid
         data={units}
         columns={columns}
-        onRowAction={(action, row) => {
-          if (action === "edit") handleEdit(row);
-          if (action === "delete") handleDelete(row);
-        }}
-        selectable
-        onSelectionChange={setSelected}
         loading={loading}
-        emptyMessage="No hay unidades disponibles"
+        selectable
+        role={user?.role || "viewer"}
+        rowActions={rowActions}
+        onSelectionChange={setSelected}
+        emptyTitle="No hay unidades disponibles"
+        emptyDescription="Ajusta los filtros o crea una nueva unidad para comenzar."
+        emptyAction={
+          user?.role === "viewer" ? null : (
+            <button
+              onClick={handleCreate}
+              className="rounded-lg bg-brand-violet px-3 py-2 text-sm font-medium text-white hover:bg-brand-violet/90"
+            >
+              Crear unidad
+            </button>
+          )
+        }
       />
 
-      {/* Pagination */}
-      {pagination.totalPages > 1 && (
-        <div className="mt-6 flex items-center justify-between">
+      {pagination.totalPages > 1 ? (
+        <div className="flex items-center justify-between rounded-2xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-1)] px-4 py-3">
           <p className="text-sm text-[var(--subtext)]">
-            Página {pagination.page} de {pagination.totalPages} ({pagination.total} total)
+            Pagina {pagination.page} de {pagination.totalPages} ({pagination.total} registros)
           </p>
           <div className="flex items-center gap-2">
             <button
-              onClick={() =>
-                setPagination((prev) => ({ ...prev, page: prev.page - 1 }))
-              }
+              onClick={() => setPagination((prev) => ({ ...prev, page: prev.page - 1 }))}
               disabled={!pagination.hasPrevPage}
-              className="px-4 py-2 rounded-lg bg-[var(--soft)] text-[var(--text)] hover:bg-[var(--soft)]/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--bg)]"
+              className="min-h-[38px] rounded-lg border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-2)] px-3 py-1.5 text-sm text-[var(--text)] disabled:opacity-50"
             >
               Anterior
             </button>
             <button
-              onClick={() =>
-                setPagination((prev) => ({ ...prev, page: prev.page + 1 }))
-              }
+              onClick={() => setPagination((prev) => ({ ...prev, page: prev.page + 1 }))}
               disabled={!pagination.hasNextPage}
-              className="px-4 py-2 rounded-lg bg-[var(--soft)] text-[var(--text)] hover:bg-[var(--soft)]/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--bg)]"
+              className="min-h-[38px] rounded-lg border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-2)] px-3 py-1.5 text-sm text-[var(--text)] disabled:opacity-50"
             >
               Siguiente
             </button>
           </div>
         </div>
-      )}
+      ) : null}
 
-      {/* Bulk Actions */}
       <BulkActions
         selected={selected}
         onBulkDelete={user?.role === "admin" ? handleBulkDelete : undefined}
@@ -552,19 +536,8 @@ export default function UnitsAdminPage() {
         onClearSelection={() => setSelected([])}
       />
 
-      {/* Import Dialog */}
-      <ImportDialog
-        isOpen={showImport}
-        onClose={() => setShowImport(false)}
-        onImport={handleImport}
-      />
-
-      {/* Export Dialog */}
-      <ExportDialog
-        isOpen={showExport}
-        onClose={() => setShowExport(false)}
-        onExport={handleExport}
-      />
+      <ImportDialog isOpen={showImport} onClose={() => setShowImport(false)} onImport={handleImport} />
+      <ExportDialog isOpen={showExport} onClose={() => setShowExport(false)} onExport={handleExport} />
     </div>
   );
 }

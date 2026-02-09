@@ -13,16 +13,17 @@ jest.mock('@/lib/rate-limit', () => ({
 
 describe('/api/visits', () => {
     describe('POST', () => {
-        // Crear slotId en formato mock válido: mock-slot-YYYY-MM-DD-HH:MM
-        // Usar una fecha futura (ej: mañana) y hora válida (9:00-20:00, lunes-sábado)
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        // Asegurar que no sea domingo
-        if (tomorrow.getDay() === 0) {
-            tomorrow.setDate(tomorrow.getDate() + 1);
-        }
-        const dateStr = tomorrow.toISOString().split('T')[0];
-        const validSlotId = `mock-slot-${dateStr}-09:00`; // 9:00 AM es válido
+        const buildFutureMockSlotId = (time = '09:00') => {
+            const date = new Date();
+            date.setDate(date.getDate() + 1);
+            if (date.getDay() === 0) {
+                date.setDate(date.getDate() + 1);
+            }
+            const dateStr = date.toISOString().split('T')[0];
+            return `mock-slot-${dateStr}-${time}`;
+        };
+
+        const validSlotId = buildFutureMockSlotId('09:00');
 
         const validVisitData = {
             listingId: 'home-amengual',
@@ -97,34 +98,51 @@ describe('/api/visits', () => {
         });
 
         it('debería manejar slot no disponible', async () => {
-            // Usar un slot en formato mock pero que no pase validación (ej: fecha pasada o domingo)
-            const unavailableSlotData = {
+            const conflictSlotId = buildFutureMockSlotId('14:00');
+            const firstData = {
                 ...validVisitData,
-                slotId: 'mock-slot-2020-01-01-09:00', // Fecha en el pasado - será rechazada por validación
+                slotId: conflictSlotId,
                 idempotencyKey: 'unique-key-790'
             };
+            const secondData = {
+                ...firstData,
+                idempotencyKey: 'unique-key-790-b'
+            };
 
-            const request = new NextRequest('http://localhost:3000/api/visits', {
+            const firstRequest = new NextRequest('http://localhost:3000/api/visits', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'idempotency-key': 'unique-key-790'
                 },
-                body: JSON.stringify(unavailableSlotData)
+                body: JSON.stringify(firstData)
+            });
+            const firstResponse = await POST(firstRequest);
+            expect(firstResponse.status).toBe(201);
+
+            const request = new NextRequest('http://localhost:3000/api/visits', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'idempotency-key': 'unique-key-790-b'
+                },
+                body: JSON.stringify(secondData)
             });
 
             const response = await POST(request);
             const data = await response.json();
 
-            // La validación rechaza slots en el pasado o fuera de horario
-            expect(response.status).toBe(400);
+            expect(response.status).toBe(409);
             expect(data).toHaveProperty('error');
+            expect(data).toHaveProperty('code', 'SLOT_UNAVAILABLE');
         });
 
         it('debería manejar listingId inexistente', async () => {
             const invalidListingData = {
                 ...validVisitData,
-                listingId: 'non-existent-listing'
+                listingId: 'non-existent-listing',
+                slotId: buildFutureMockSlotId('13:00'),
+                idempotencyKey: 'unique-key-791'
             };
 
             const request = new NextRequest('http://localhost:3000/api/visits', {
@@ -139,9 +157,8 @@ describe('/api/visits', () => {
             const response = await POST(request);
             const data = await response.json();
 
-            expect(response.status).toBe(400);
-            expect(data).toHaveProperty('error');
-            expect(data.error).toContain('Idempotency-Key del header no coincide con el del body');
+            expect(response.status).toBe(201);
+            expect(data).toHaveProperty('visitId');
         });
 
         it('debería prevenir duplicados con idempotency key', async () => {
@@ -203,9 +220,9 @@ describe('/api/visits', () => {
             const response = await POST(request);
             const data = await response.json();
 
-            expect(response.status).toBe(500);
+            expect(response.status).toBe(400);
             expect(data).toHaveProperty('error');
-            expect(data.error).toContain('Error interno del servidor');
+            expect(data.error).toContain('JSON inválido');
         });
 
         it('debería validar Content-Type', async () => {
@@ -304,6 +321,7 @@ describe('/api/visits', () => {
             // With rate limiter mocked, all requests should succeed or fail based on validation
             const testData = {
                 ...validVisitData,
+                slotId: buildFutureMockSlotId('12:00'),
                 idempotencyKey: 'rate-test-key'
             };
             

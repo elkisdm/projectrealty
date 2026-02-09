@@ -279,6 +279,8 @@ export function UnitDetailClient({
           propertyName={building.name}
           propertyAddress={building.address}
           propertyImage={building.gallery[0] || fullBuilding.coverImage}
+          unit={unit}
+          building={fullBuilding}
           onSuccess={(visitData) => {
             logger.log("✅ Visita creada exitosamente:", visitData);
             track(ANALYTICS_EVENTS.VISIT_SCHEDULED, {

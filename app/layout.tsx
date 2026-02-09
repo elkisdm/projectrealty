@@ -11,10 +11,10 @@ import Providers from "./providers";
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseUrl()),
   title: {
-    default: "Elkis Realtor · 0% Comisión",
+    default: "Elkis Realtor · Arriendos en Santiago",
     template: "%s | Elkis Realtor",
   },
-  description: "Arrienda departamentos con 0% de comisión. Compara, agenda visita y arrienda fácil.",
+  description: "Arrienda departamentos en Santiago. Compara precios, agenda visitas y encuentra tu hogar de forma fácil y transparente.",
 };
 
 const inter = Inter({
@@ -24,20 +24,21 @@ const inter = Inter({
   variable: "--font-inter",
 });
 
+// Pesos reducidos para carga inicial más rápida (menos requests a fonts.gstatic)
 const monaSans = Mona_Sans({
   subsets: ["latin"],
-  display: 'swap',
+  display: "swap",
   preload: true,
   variable: "--font-mona-sans",
-  weight: ["200", "300", "400", "500", "600", "700", "800"],
+  weight: ["400", "600", "700"],
 });
 
 const hubotSans = Hubot_Sans({
   subsets: ["latin"],
-  display: 'swap',
+  display: "swap",
   preload: true,
   variable: "--font-hubot-sans",
-  weight: ["200", "300", "400", "500", "600", "700", "800"],
+  weight: ["400", "600", "700"],
 });
 
 // Script para prevenir parpadeo inicial - aplica el tema guardado consistentemente

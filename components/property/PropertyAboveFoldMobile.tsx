@@ -411,19 +411,19 @@ export function PropertyAboveFoldMobile({
             </div>
 
             {/* Precio total/mes */}
-            <div className="px-4 py-4 bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
+            <div className="px-4 py-4 bg-[var(--card)] border-b border-[var(--border)]">
                 <div className="flex items-end justify-between gap-4">
                     <div className="flex flex-col">
-                        <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                        <p className="text-2xl font-bold text-[var(--text)]">
                             ${arriendo.toLocaleString('es-CL')}
-                            <span className="text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">
+                            <span className="text-sm font-normal text-[var(--text-secondary)] ml-2">
                                 / mes
                             </span>
                         </p>
                         {ggcc > 0 && (
-                            <p className="text-lg font-medium text-gray-700 dark:text-gray-300">
+                            <p className="text-lg font-medium text-[var(--text)]">
                                 + ${ggcc.toLocaleString('es-CL')}
-                                <span className="text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">
+                                <span className="text-sm font-normal text-[var(--text-secondary)] ml-2">
                                     (GGCC)
                                 </span>
                             </p>
@@ -431,11 +431,11 @@ export function PropertyAboveFoldMobile({
                     </div>
 
                     <div className="flex flex-col items-end shrink-0 pb-1">
-                        <span className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400 font-medium mb-1">
+                        <span className="text-[10px] uppercase tracking-wider text-[var(--text-secondary)] font-medium mb-1">
                             Operado por
                         </span>
                         <div className="flex items-center">
-                            <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                            <span className="text-sm font-semibold text-[var(--text)]">
                                 Elkis Realtor
                             </span>
                         </div>
@@ -445,26 +445,26 @@ export function PropertyAboveFoldMobile({
                 {/* Badges clave */}
                 <div className="mt-4 flex flex-wrap items-center gap-2">
                     {m2 && (
-                        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 shadow-sm">
+                        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium bg-[var(--card)] text-[var(--text)] border border-[var(--border)] shadow-sm">
                             <Square className="w-3.5 h-3.5 shrink-0 text-[#8B6CFF]" aria-hidden />
                             {m2} m²
                         </span>
                     )}
                     {m2Balcon != null && m2Balcon > 0 && (
-                        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 shadow-sm">
+                        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium bg-[var(--card)] text-[var(--text)] border border-[var(--border)] shadow-sm">
                             <Sun className="w-3.5 h-3.5 shrink-0 text-[#8B6CFF]" aria-hidden />
                             {m2Balcon} m²
                         </span>
                     )}
                     {petFriendly !== undefined && (
-                        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 shadow-sm">
+                        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium bg-[var(--card)] text-[var(--text)] border border-[var(--border)] shadow-sm">
                             <PawPrint className="w-3.5 h-3.5 shrink-0 text-[#8B6CFF]" aria-hidden />
                             {petFriendly ? 'Pet-friendly' : 'No mascotas'}
                         </span>
                     )}
                     {/* Badge de metro: logo + estación + tiempo */}
                     {building.metroCercano && minutosMetro != null && (
-                        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 shadow-sm">
+                        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium bg-[var(--card)] text-[var(--text)] border border-[var(--border)] shadow-sm">
                             <Image src="/icons/metro-santiago.png" alt="" width={16} height={16} className="shrink-0 object-contain" aria-hidden />
                             {nombreMetro ? `${nombreMetro} ${minutosMetro} min` : `${minutosMetro} min`}
                         </span>

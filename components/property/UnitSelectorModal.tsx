@@ -10,6 +10,7 @@ import { formatPrice } from "@lib/utils";
 import { track } from "@lib/analytics";
 import { logger } from "@lib/logger";
 import { normalizeComunaSlug } from "@lib/utils/slug";
+import { ScrollFadeEffect } from "@/components/ncdai/scroll-fade-effect";
 
 interface UnitSelectorModalProps {
   isOpen: boolean;
@@ -605,7 +606,7 @@ function UnitSelectorModalContent({
               </div>
 
               {/* Units List - Scrollable */}
-              <div className="flex-1 overflow-y-auto pr-2 -mr-2 scrollbar-thin">
+              <ScrollFadeEffect orientation="vertical" className="flex-1 pr-2 -mr-2 scrollbar-thin min-h-0">
                 <div className="space-y-3 sm:space-y-4" role="list" aria-label="Lista de unidades disponibles">
                   {sortedTipologias.map(([tipologia, units]) => {
                     const isExpanded = expandedTipologia === tipologia;
@@ -750,7 +751,7 @@ function UnitSelectorModalContent({
                     );
                   })}
                 </div>
-              </div>
+              </ScrollFadeEffect>
             </motion.div>
           </motion.div>
         )}

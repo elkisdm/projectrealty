@@ -34,6 +34,12 @@ const PRICE_OPTIONS = [
   { value: "2000000", label: "$2.000.000" },
 ];
 
+const TIPOLOGIA_OPTIONS = ["Studio", "1D1B", "2D1B", "2D2B", "3D2B"];
+const DORMITORIOS_MIN_OPTIONS = ["1+", "2+", "3+", "4+"];
+const RANGE_MIN = 0;
+const RANGE_MAX = 3000000;
+const RANGE_STEP = 50000;
+
 const MOVE_IN_OPTIONS = ["Ahora", "30 días", "60 días"];
 const MOVE_IN_VALUE_MAP: Record<string, string> = {
   "Ahora": "now",
@@ -91,11 +97,14 @@ export const FilterBottomSheet = memo(function FilterBottomSheet({
   const handleClear = useCallback(() => {
     const clearedFilters: SearchFilters = {
       q: filters.q, // Keep search query
+      operation: filters.operation ?? "rent",
       estacionamiento: undefined,
       bodega: undefined,
       mascotas: undefined,
       precioMin: undefined,
       precioMax: undefined,
+      dormitoriosMin: undefined,
+      tipos: undefined,
       beds: undefined,
       priceMax: undefined,
       moveIn: undefined,
@@ -105,7 +114,7 @@ export const FilterBottomSheet = memo(function FilterBottomSheet({
     onBedsChange?.(undefined);
     onPriceMaxChange?.(undefined);
     onMoveInChange?.(undefined);
-  }, [filters.q, onBedsChange, onPriceMaxChange, onMoveInChange]);
+  }, [filters.operation, filters.q, onBedsChange, onMoveInChange, onPriceMaxChange]);
 
   // Convert beds value to display format
   const bedsDisplay = useMemo(() => {
@@ -149,12 +158,26 @@ export const FilterBottomSheet = memo(function FilterBottomSheet({
     if (pendingFilters.mascotas !== undefined) count++;
     if (pendingFilters.precioMin !== undefined) count++;
     if (pendingFilters.precioMax !== undefined) count++;
+    if (typeof pendingFilters.dormitoriosMin === "number") count++;
+    if (pendingFilters.tipos) count += Array.isArray(pendingFilters.tipos) ? pendingFilters.tipos.length : 1;
     // Count new LEVEL 2 fields
     if (beds && (Array.isArray(beds) ? beds.length > 0 : true)) count++;
     if (priceMax) count++;
     if (moveIn) count++;
     return count;
   }, [pendingFilters, beds, priceMax, moveIn]);
+
+  const selectedDormitoriosMin =
+    typeof pendingFilters.dormitoriosMin === "number"
+      ? `${pendingFilters.dormitoriosMin}+`
+      : undefined;
+  const selectedTipos = pendingFilters.tipos
+    ? Array.isArray(pendingFilters.tipos)
+      ? pendingFilters.tipos
+      : [pendingFilters.tipos]
+    : [];
+  const sliderMin = pendingFilters.precioMin ?? RANGE_MIN;
+  const sliderMax = pendingFilters.precioMax ?? RANGE_MAX;
 
   return (
     <MobileFilterSheet
@@ -173,6 +196,35 @@ export const FilterBottomSheet = memo(function FilterBottomSheet({
             selected={bedsDisplay}
             onSelect={handleBedsChangeInternal}
             multiple={true}
+          />
+        </div>
+
+        {/* Tipos de inmueble (mapeado desde tipologías) */}
+        <div className="space-y-3">
+          <label className="block text-base font-medium text-text">Tipos de inmueble</label>
+          <SearchPills
+            options={TIPOLOGIA_OPTIONS}
+            selected={selectedTipos}
+            onSelect={(value) => handleFilterChange("tipos", value)}
+            multiple={true}
+          />
+        </div>
+
+        {/* Dormitorios mínimos */}
+        <div className="space-y-3">
+          <label className="block text-base font-medium text-text">Dormitorios mínimos</label>
+          <SearchPills
+            options={DORMITORIOS_MIN_OPTIONS}
+            selected={selectedDormitoriosMin}
+            onSelect={(value) => {
+              if (!value || Array.isArray(value)) {
+                handleFilterChange("dormitoriosMin", undefined);
+                return;
+              }
+              const parsed = Number(value.replace("+", ""));
+              handleFilterChange("dormitoriosMin", Number.isFinite(parsed) ? parsed : undefined);
+            }}
+            multiple={false}
           />
         </div>
 
@@ -239,6 +291,38 @@ export const FilterBottomSheet = memo(function FilterBottomSheet({
         {/* Precio Range (detailed) */}
         <div className="space-y-3">
           <label className="block text-base font-medium text-text">Rango de precio</label>
+          <div className="space-y-2 rounded-xl border border-border p-3">
+            <div className="flex items-center justify-between text-xs text-subtext">
+              <span>{RANGE_MIN.toLocaleString("es-CL")}</span>
+              <span>{RANGE_MAX.toLocaleString("es-CL")}</span>
+            </div>
+            <input
+              type="range"
+              min={RANGE_MIN}
+              max={RANGE_MAX}
+              step={RANGE_STEP}
+              value={Math.min(sliderMin, sliderMax)}
+              onChange={(event) => {
+                const value = Number(event.target.value);
+                handleFilterChange("precioMin", Math.min(value, sliderMax));
+              }}
+              className="w-full accent-primary"
+              aria-label="Slider precio mínimo"
+            />
+            <input
+              type="range"
+              min={RANGE_MIN}
+              max={RANGE_MAX}
+              step={RANGE_STEP}
+              value={Math.max(sliderMin, sliderMax)}
+              onChange={(event) => {
+                const value = Number(event.target.value);
+                handleFilterChange("precioMax", Math.max(value, sliderMin));
+              }}
+              className="w-full accent-primary"
+              aria-label="Slider precio máximo"
+            />
+          </div>
           <div className="flex items-center gap-3">
             <NumberInput
               aria-label="Precio mínimo"

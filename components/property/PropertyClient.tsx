@@ -447,6 +447,8 @@ export function PropertyClient({
                     propertyName={building.name}
                     propertyAddress={building.address}
                     propertyImage={building.coverImage}
+                    unit={selectedUnit ?? undefined}
+                    building={building}
                     onSuccess={(visitData) => {
                         logger.log('? Visita creada exitosamente:', visitData);
                         track(ANALYTICS_EVENTS.VISIT_SCHEDULED, {

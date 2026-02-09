@@ -10,40 +10,62 @@ interface AdminUser {
   role: 'admin' | 'editor' | 'viewer';
 }
 
-interface SessionResponse {
+interface SessionData {
   authenticated: boolean;
-  user?: AdminUser;
+  user?: AdminUser | null;
 }
 
-interface LoginResponse {
+interface ApiErrorData {
+  code: string;
+  message: string;
+}
+
+interface AdminApiResponse<T> {
   success: boolean;
-  user?: AdminUser;
-  error?: string;
+  data: T | null;
+  meta: unknown;
+  error: ApiErrorData | null;
+}
+
+interface LogoutData {
   message?: string;
 }
 
-interface LogoutResponse {
-  success: boolean;
-  message?: string;
-  error?: string;
-}
+const SESSION_FETCH_TIMEOUT_MS = 10_000;
 
 // Función para obtener sesión (credentials para enviar cookies)
-async function fetchSession(): Promise<SessionResponse> {
-  const response = await fetch('/api/admin/auth/session', {
-    credentials: 'include',
-  });
+async function fetchSession(): Promise<SessionData> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), SESSION_FETCH_TIMEOUT_MS);
 
-  if (!response.ok) {
-    return { authenticated: false };
+  try {
+    const response = await fetch('/api/admin/auth/session', {
+      credentials: 'include',
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      return { authenticated: false };
+    }
+
+    const payload = (await response.json()) as AdminApiResponse<SessionData>;
+    if (!payload.success || !payload.data) {
+      return { authenticated: false };
+    }
+
+    return payload.data;
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err instanceof Error && err.name === 'AbortError') {
+      throw new Error('La verificación de sesión tardó demasiado. Revisa tu conexión.');
+    }
+    throw err;
   }
-
-  const data = (await response.json()) as SessionResponse;
-  return data;
 }
 
 // Función para login (credentials para recibir Set-Cookie)
-async function loginUser(email: string, password: string): Promise<LoginResponse> {
+async function loginUser(email: string, password: string): Promise<SessionData> {
   const response = await fetch('/api/admin/auth/login', {
     method: 'POST',
     credentials: 'include',
@@ -53,36 +75,44 @@ async function loginUser(email: string, password: string): Promise<LoginResponse
     body: JSON.stringify({ email, password }),
   });
 
-  const data = (await response.json()) as LoginResponse;
+  const payload = (await response.json()) as AdminApiResponse<SessionData>;
 
   if (!response.ok) {
     // Crear un Error con el código de error como propiedad para facilitar la detección
-    const error = new Error(data.message || data.error || 'Error al iniciar sesión');
+    const error = new Error(payload.error?.message || 'Error al iniciar sesión');
     // Agregar el código de error como propiedad para facilitar la detección
-    (error as Error & { code?: string }).code = data.error;
+    (error as Error & { code?: string }).code = payload.error?.code;
     throw error;
   }
 
-  return data;
+  if (!payload.success || !payload.data) {
+    throw new Error('Respuesta inválida de login');
+  }
+
+  return payload.data;
 }
 
 // Función para logout
-async function logoutUser(): Promise<LogoutResponse> {
+async function logoutUser(): Promise<{ success: boolean; message?: string; errorCode?: string }> {
   const response = await fetch('/api/admin/auth/logout', {
     method: 'POST',
   });
 
-  const data = (await response.json()) as LogoutResponse;
+  const payload = (await response.json()) as AdminApiResponse<LogoutData>;
 
   if (!response.ok) {
-    const errorMessage = data.message || data.error || 'Error al cerrar sesión';
+    const errorMessage = payload.error?.message || 'Error al cerrar sesión';
     const error = new Error(errorMessage);
     // Agregar el código de error como propiedad
-    (error as Error & { code?: string }).code = data.error;
+    (error as Error & { code?: string }).code = payload.error?.code;
     throw error;
   }
 
-  return data;
+  return {
+    success: payload.success,
+    message: payload.data?.message,
+    errorCode: payload.error?.code,
+  };
 }
 
 export function useAdminAuth() {
@@ -185,4 +215,3 @@ export function useAdminAuth() {
     isLoggingOut: logoutMutation.isPending,
   };
 }
-

@@ -33,7 +33,7 @@ interface UseVisitSchedulerReturn {
   fetchAvailability: (startDate: Date, endDate: Date) => Promise<void>;
   selectDateTime: (date: string, time: string) => void;
   verifySlotAvailability: (slotId: string) => Promise<boolean>;
-  createVisit: (userData: { name: string; phone: string; email?: string }) => Promise<CreateVisitResponse | null>;
+  createVisit: (userData: { name: string; phone: string; email?: string; rut?: string }) => Promise<CreateVisitResponse | null>;
   clearSelection: () => void;
   clearError: () => void;
 }
@@ -251,7 +251,7 @@ export function useVisitScheduler({
   }, [listingId, selectedDate, selectedTime, timezone]);
 
   // Crear visita con optimistic UI
-  const createVisit = useCallback(async (userData: { name: string; phone: string; email?: string }) => {
+  const createVisit = useCallback(async (userData: { name: string; phone: string; email?: string; rut?: string }) => {
     if (!selectedSlot || !selectedDate || !selectedTime) {
       setError('Debes seleccionar una fecha y hora');
       return null;
@@ -278,7 +278,8 @@ export function useVisitScheduler({
         contactData: {
           name: userData.name,
           phone: userData.phone,
-          email: userData.email
+          email: userData.email,
+          rut: userData.rut
         }
       };
       

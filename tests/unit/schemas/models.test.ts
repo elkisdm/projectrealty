@@ -110,6 +110,7 @@ describe('UnitSchema', () => {
       expect(() => UnitSchema.parse({ ...baseUnit, estado: 'Arrendado' })).not.toThrow();
       expect(() => UnitSchema.parse({ ...baseUnit, estado: 'Otro' })).toThrow();
     });
+
   });
 
   describe('validaciones de tipos', () => {
@@ -118,8 +119,8 @@ describe('UnitSchema', () => {
       expect(() => UnitSchema.parse({ ...baseUnit, price: -1 })).toThrow();
     });
 
-    test('rechaza dormitorios negativos o cero', () => {
-      expect(() => UnitSchema.parse({ ...baseUnit, dormitorios: 0 })).toThrow();
+    test('acepta dormitorios en 0 para estudio y rechaza negativos', () => {
+      expect(() => UnitSchema.parse({ ...baseUnit, dormitorios: 0 })).not.toThrow();
       expect(() => UnitSchema.parse({ ...baseUnit, dormitorios: -1 })).toThrow();
     });
 
@@ -288,9 +289,14 @@ describe('SearchFiltersSchema', () => {
     expect(() => SearchFiltersSchema.parse({ sort: 'otro' })).toThrow();
   });
 
-  test('valida dormitorios debe ser positivo', () => {
+  test('valida operation solo rent', () => {
+    expect(() => SearchFiltersSchema.parse({ operation: 'rent' })).not.toThrow();
+    expect(() => SearchFiltersSchema.parse({ operation: 'buy' })).toThrow();
+  });
+
+  test('valida dormitorios debe ser no negativo', () => {
     expect(() => SearchFiltersSchema.parse({ dormitorios: 1 })).not.toThrow();
-    expect(() => SearchFiltersSchema.parse({ dormitorios: 0 })).toThrow();
+    expect(() => SearchFiltersSchema.parse({ dormitorios: 0 })).not.toThrow();
     expect(() => SearchFiltersSchema.parse({ dormitorios: -1 })).toThrow();
   });
 
@@ -301,7 +307,3 @@ describe('SearchFiltersSchema', () => {
     expect(() => SearchFiltersSchema.parse({ precioMax: -1 })).toThrow();
   });
 });
-
-
-
-

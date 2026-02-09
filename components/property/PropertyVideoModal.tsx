@@ -3,6 +3,7 @@
 import React, { useMemo } from "react";
 import { X } from "lucide-react";
 import { BaseModal } from "@/components/ui/BaseModal";
+import { VideoPlayer } from "@/components/ui/video-player";
 
 function getYouTubeEmbedUrl(url: string): string | null {
   const patterns = [
@@ -68,7 +69,7 @@ export function PropertyVideoModal({ isOpen, onClose, videoUrl }: PropertyVideoM
           <X className="w-5 h-5" />
         </button>
 
-        <div className="aspect-video w-full bg-black">
+        <div className="aspect-video w-full bg-black rounded-b-2xl overflow-hidden [&_.rounded-lg]:rounded-none">
           {type === "youtube" || type === "vimeo" ? (
             <iframe
               src={embedUrl}
@@ -78,15 +79,11 @@ export function PropertyVideoModal({ isOpen, onClose, videoUrl }: PropertyVideoM
               allowFullScreen
             />
           ) : (
-            <video
+            <VideoPlayer
               src={embedUrl}
-              controls
-              autoPlay
-              className="w-full h-full object-contain"
-              aria-label="Video de la propiedad"
-            >
-              Tu navegador no soporta la reproducción de video.
-            </video>
+              title="Video de la propiedad"
+              description="Reproductor de video de la propiedad"
+            />
           )}
         </div>
       </div>

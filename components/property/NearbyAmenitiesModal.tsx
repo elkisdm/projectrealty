@@ -16,6 +16,7 @@ import {
 import type { Building } from "@schemas/models";
 import type { GroupedAmenities } from "@/lib/api/nearby-amenities";
 import { logger } from "@/lib/logger";
+import { ScrollFadeEffect } from "@/components/ncdai/scroll-fade-effect";
 
 interface NearbyAmenitiesModalProps {
   isOpen: boolean;
@@ -400,7 +401,7 @@ export function NearbyAmenitiesModal({
             </div>
 
             {/* Contenido scrollable */}
-            <div className="flex-1 overflow-y-auto pr-2 -mr-2">
+            <ScrollFadeEffect orientation="vertical" className="flex-1 min-h-0 pr-2 -mr-2">
               <div
                 id={`tabpanel-${activeCategory}`}
                 role="tabpanel"
@@ -408,7 +409,7 @@ export function NearbyAmenitiesModal({
               >
                 {renderCategoryContent()}
               </div>
-            </div>
+            </ScrollFadeEffect>
 
             {/* Footer con badge Elkis Realtor */}
             <div className="mt-6 pt-6 border-t border-gray-700 flex-shrink-0">

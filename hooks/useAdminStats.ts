@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { queryKeys } from "@lib/react-query";
+import { getErrorMessage, getResponseErrorMessage } from "@lib/admin/client-errors";
 
 interface DashboardStats {
   totalBuildings: number;
@@ -39,20 +40,14 @@ async function fetchAdminStats(): Promise<DashboardStats> {
   const response = await fetch("/api/admin/stats");
   
   if (!response.ok) {
-    let errorMessage = "Error al cargar estadísticas";
-    try {
-      const errorData = await response.json() as { error?: string; message?: string };
-      errorMessage = errorData.message || errorData.error || errorMessage;
-    } catch {
-      // Si no se puede parsear el error, usar el mensaje por defecto
-    }
+    const errorMessage = await getResponseErrorMessage(response, "Error al cargar estadísticas");
     throw new Error(errorMessage);
   }
 
   const data = (await response.json()) as AdminStatsResponse;
   
   if (!data.success || !data.data?.stats) {
-    throw new Error(data.error?.message || "Respuesta inválida del servidor");
+    throw new Error(getErrorMessage(data.error, "Respuesta inválida del servidor"));
   }
 
   return data.data.stats;

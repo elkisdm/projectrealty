@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { FlagToggle } from '@components/admin/FlagToggle';
-// import { track } from '@lib/analytics';
+import { useEffect, useState } from "react";
+import { Activity, Clock3, RefreshCw, ShieldAlert } from "lucide-react";
+import { FlagToggle } from "@components/admin/FlagToggle";
+import { ErrorState, PageHeader, StatusBadge } from "@components/admin/ui";
+import { getErrorMessage } from "@lib/admin/client-errors";
 
 interface FlagsStatus {
   comingSoon: {
@@ -17,131 +19,122 @@ export function FlagsAdminClient() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch flags status on mount
-  useEffect(() => {
-    fetchFlagsStatus();
-  }, []);
-
   const fetchFlagsStatus = async () => {
     try {
       setLoading(true);
       setError(null);
-
-      const response = await fetch('/api/flags/override');
+      const response = await fetch("/api/flags/override");
       const result = await response.json();
 
-      if (result.success) {
+      if (response.ok && result.success) {
         setFlagsStatus(result.flags);
       } else {
-        setError('Error al cargar flags');
+        setError(getErrorMessage(result.error, "Error al cargar flags"));
       }
     } catch {
-      setError('Error de conexión');
-      // console.error('Error fetching flags status');
+      setError("Error de conexion");
     } finally {
       setLoading(false);
     }
   };
 
-  // const _handleFlagChange = () => {
-  //   // Refetch status after flag change
-  //   fetchFlagsStatus();
-    
-  //   // Track admin action
-  //   track('admin_flag_changed', {
-  //     page: 'admin_flags',
-  //     action: 'flag_toggle'
-  //   });
-  // };
+  useEffect(() => {
+    void fetchFlagsStatus();
+  }, []);
 
-  if (loading) {
+  if (loading && !flagsStatus) {
     return (
-      <div className="container mx-auto px-4 md:px-6 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Feature Flags</h1>
-          <p className="text-[var(--subtext)]">Cargando configuración...</p>
-        </div>
+      <div className="space-y-4">
+        <div className="h-10 w-1/3 animate-pulse rounded-lg bg-[var(--admin-surface-2)]" />
+        {Array.from({ length: 2 }).map((_, idx) => (
+          <div key={idx} className="h-32 animate-pulse rounded-2xl bg-[var(--admin-surface-2)]" />
+        ))}
       </div>
     );
   }
 
-  if (error) {
-    return (
-      <div className="container mx-auto px-4 md:px-6 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Feature Flags</h1>
-          <p className="text-red-400 mb-4">{error}</p>
-          <button
-            onClick={fetchFlagsStatus}
-            className="px-4 py-2 bg-brand-violet text-white rounded-lg hover:bg-brand-violet/90 transition-colors"
-          >
-            Reintentar
-          </button>
-        </div>
-      </div>
-    );
+  if (error && !flagsStatus) {
+    return <ErrorState title="No pudimos cargar feature flags" description={error} onRetry={() => void fetchFlagsStatus()} />;
   }
+
+  const comingSoon = flagsStatus?.comingSoon;
 
   return (
-    <div className="container mx-auto px-4 md:px-6 py-8">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Feature Flags</h1>
-        <p className="text-[var(--subtext)] mb-4">
-          Controla el comportamiento del sitio en tiempo real
-        </p>
-        
-        {/* Refresh button */}
-        <button
-          onClick={fetchFlagsStatus}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--soft)] text-[var(--text)] rounded-lg hover:bg-[var(--soft)]/80 transition-colors ring-1 ring-white/10"
-          aria-label="Actualizar estado de flags"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
-          Actualizar
-        </button>
-      </div>
+    <div className="space-y-5">
+      <PageHeader
+        title="Feature flags"
+        description="Controla comportamientos sensibles del producto en tiempo real."
+        breadcrumbs={[
+          { label: "Admin", href: "/admin" },
+          { label: "Feature Flags" },
+        ]}
+        actions={[
+          {
+            key: "refresh",
+            label: loading ? "Actualizando..." : "Actualizar",
+            icon: <RefreshCw className="h-4 w-4" />,
+            variant: "secondary",
+            onClick: () => void fetchFlagsStatus(),
+            disabled: loading,
+          },
+        ]}
+      />
 
-      {/* Flags Grid */}
-      <div className="space-y-6">
-        {flagsStatus && (
-          <FlagToggle
-            flag="comingSoon"
-            label="Coming Soon"
-            description="Controla si el sitio está en modo coming soon. Cuando está activo, los usuarios son redirigidos a la página de coming soon."
-            initialValue={flagsStatus.comingSoon.value}
-            overridden={flagsStatus.comingSoon.overridden}
-            expiresAt={flagsStatus.comingSoon.expiresAt}
-          />
-        )}
-
-        {/* Placeholder for future flags */}
-        <div className="rounded-2xl bg-[var(--soft)]/50 ring-1 ring-white/5 p-6 border-dashed border-white/10">
-          <div className="text-center">
-            <h3 className="text-lg font-semibold text-[var(--text)] mb-2">
-              Más flags próximamente
-            </h3>
-            <p className="text-sm text-[var(--subtext)]">
-              Aquí aparecerán más opciones de configuración según se necesiten
-            </p>
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <article className="rounded-2xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-1)] p-4">
+          <p className="text-xs uppercase tracking-wide text-[var(--subtext)]">Flags activos</p>
+          <p className="mt-1 text-2xl font-bold text-[var(--text)]">{comingSoon?.value ? 1 : 0}</p>
+        </article>
+        <article className="rounded-2xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-1)] p-4">
+          <p className="text-xs uppercase tracking-wide text-[var(--subtext)]">Overrides vigentes</p>
+          <p className="mt-1 text-2xl font-bold text-[var(--text)]">{comingSoon?.overridden ? 1 : 0}</p>
+        </article>
+        <article className="rounded-2xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-1)] p-4">
+          <p className="text-xs uppercase tracking-wide text-[var(--subtext)]">Estado operativo</p>
+          <div className="mt-2">
+            <StatusBadge status={comingSoon?.value ? "warning" : "success"} label={comingSoon?.value ? "Modo limitado" : "Operacion normal"} />
           </div>
-        </div>
-      </div>
+        </article>
+      </section>
 
-      {/* Footer Info */}
-      <div className="mt-12 p-6 rounded-2xl bg-[var(--soft)]/50 ring-1 ring-white/5">
-        <h3 className="text-lg font-semibold text-[var(--text)] mb-3">
-          Información importante
-        </h3>
-        <ul className="space-y-2 text-sm text-[var(--subtext)]">
-          <li>• Los overrides tienen una duración máxima de 1 hora</li>
-          <li>• Los cambios se aplican inmediatamente en todo el sitio</li>
-          <li>• Los overrides expiran automáticamente</li>
-          <li>• Esta página no está indexada por motores de búsqueda</li>
-        </ul>
-      </div>
+      {comingSoon ? (
+        <FlagToggle
+          flag="comingSoon"
+          label="Coming Soon"
+          description="Activa o desactiva la capa de bloqueo comercial del sitio principal."
+          initialValue={comingSoon.value}
+          overridden={comingSoon.overridden}
+          expiresAt={comingSoon.expiresAt}
+        />
+      ) : null}
+
+      <section className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <article className="rounded-2xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-1)] p-5">
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-[var(--text)]">
+            <ShieldAlert className="h-5 w-5 text-amber-300" />
+            Reglas de seguridad
+          </h2>
+          <ul className="mt-4 space-y-2 text-sm text-[var(--subtext)]">
+            <li>Overrides expiran automaticamente.</li>
+            <li>Los cambios impactan inmediatamente en toda la aplicacion.</li>
+            <li>Las acciones deben ejecutarse por personal autorizado.</li>
+          </ul>
+        </article>
+
+        <article className="rounded-2xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-1)] p-5">
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-[var(--text)]">
+            <Activity className="h-5 w-5 text-sky-300" />
+            Historial reciente
+          </h2>
+          <div className="mt-4 rounded-lg border border-dashed border-[var(--admin-border-strong)] bg-[var(--admin-surface-2)] p-4 text-sm text-[var(--subtext)]">
+            <p className="mb-2 inline-flex items-center gap-2">
+              <Clock3 className="h-4 w-4" />
+              Placeholder listo para integrar logs de overrides.
+            </p>
+            <p>Cuando el backend exponga eventos, esta vista mostrara actor, timestamp e impacto.</p>
+          </div>
+        </article>
+      </section>
     </div>
   );
 }

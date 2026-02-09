@@ -1,17 +1,41 @@
+import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { BuildingSchema, UnitSchema, type Building, type Unit } from "@schemas/models";
+import { UnitSchema, type Building, type Unit } from "@schemas/models";
 
 export type AdminRole = "admin" | "editor" | "viewer";
 export type AdminPublicationStatus = "draft" | "published" | "archived";
 export type AdminMediaScope = "building" | "unit";
 export type AdminMediaType = "image" | "video";
+export type AdminPublicationStep =
+  | "building"
+  | "type"
+  | "media"
+  | "details"
+  | "pricing"
+  | "amenities"
+  | "review";
 
 export interface AdminErrorPayload {
   code: string;
   message: string;
   details?: unknown;
 }
+
+export type AdminErrorCode =
+  | "invalid_query"
+  | "invalid_params"
+  | "validation_error"
+  | "database_error"
+  | "internal_error"
+  | "rate_limited"
+  | "unauthorized"
+  | "forbidden"
+  | "not_found"
+  | "upload_failed"
+  | "storage_error"
+  | "server_misconfigured"
+  | "logout_failed";
 
 export interface AdminListMeta {
   page: number;
@@ -22,7 +46,21 @@ export interface AdminListMeta {
   has_prev_page: boolean;
 }
 
-export interface AdminApiResponse<T, M = AdminListMeta | null> {
+export interface AdminMutationMeta {
+  request_id: string;
+  timestamp: string;
+}
+
+export interface AdminAuthSessionData {
+  authenticated: boolean;
+  user?: {
+    id: string;
+    email: string;
+    role: AdminRole;
+  } | null;
+}
+
+export interface AdminApiResponse<T, M = AdminListMeta | AdminMutationMeta | null> {
   success: boolean;
   data: T | null;
   meta: M;
@@ -128,6 +166,46 @@ export const AdminUnitCreateSchema = UnitSchema.extend({
 
 export const AdminUnitUpdateSchema = AdminUnitCreateSchema.partial();
 
+export const AdminPublicationStepSchema = z.enum([
+  "building",
+  "type",
+  "media",
+  "details",
+  "pricing",
+  "amenities",
+  "review",
+]);
+
+export const AdminUnitDraftCreateSchema = z
+  .object({
+    buildingId: z.string().min(1),
+    step: AdminPublicationStepSchema.optional(),
+    initialData: AdminUnitUpdateSchema.optional(),
+  })
+  .passthrough();
+
+export const AdminUnitDraftPatchSchema = z
+  .object({
+    step: AdminPublicationStepSchema,
+    data: AdminUnitUpdateSchema.optional(),
+    completedSteps: z.array(AdminPublicationStepSchema).optional(),
+  })
+  .refine(
+    (value) =>
+      Boolean(value.data && Object.keys(value.data).length > 0) ||
+      Boolean(value.completedSteps && value.completedSteps.length > 0),
+    {
+      message: "Se requiere data o completedSteps para guardar borrador",
+      path: ["data"],
+    }
+  );
+
+export const AdminUnitPublishSchema = z
+  .object({
+    status: z.enum(["published", "archived"]).optional(),
+  })
+  .passthrough();
+
 export const AdminMediaUploadUrlSchema = z.object({
   buildingId: z.string().min(1),
   unitId: z.string().optional(),
@@ -186,7 +264,7 @@ export function parseAdminUnitsQuery(searchParams: URLSearchParams) {
     building_id: searchParams.get("building_id") ?? searchParams.get("buildingId"),
     typology: searchParams.get("typology") ?? searchParams.get("tipologia"),
     disponible: searchParams.get("disponible"),
-    status: searchParams.get("status"),
+    status: searchParams.get("status") ?? undefined,
     price_min: searchParams.get("price_min") ?? searchParams.get("minPrice"),
     price_max: searchParams.get("price_max") ?? searchParams.get("maxPrice"),
     page: searchParams.get("page"),
@@ -227,14 +305,23 @@ export function createAdminListMeta({
   };
 }
 
+export function createAdminMutationMeta(requestId?: string): AdminMutationMeta {
+  return {
+    request_id: requestId || randomUUID(),
+    timestamp: new Date().toISOString(),
+  };
+}
+
 export function adminOk<T>(
   data: T,
   {
     meta = null,
     status = 200,
+    headers,
   }: {
-    meta?: AdminListMeta | null;
+    meta?: AdminListMeta | AdminMutationMeta | null;
     status?: number;
+    headers?: HeadersInit;
   } = {}
 ) {
   const body: AdminApiResponse<T> = {
@@ -248,24 +335,28 @@ export function adminOk<T>(
     body.pagination = meta;
   }
 
-  return NextResponse.json(body, { status });
+  return NextResponse.json(body, { status, headers });
 }
 
 export function adminError(
-  code: string,
+  code: AdminErrorCode | string,
   message: string,
   {
     status,
     details,
+    meta = null,
+    headers,
   }: {
     status: number;
     details?: unknown;
+    meta?: AdminMutationMeta | null;
+    headers?: HeadersInit;
   }
 ) {
-  const body: AdminApiResponse<null, null> = {
+  const body: AdminApiResponse<null, AdminMutationMeta | null> = {
     success: false,
     data: null,
-    meta: null,
+    meta,
     error: {
       code,
       message,
@@ -273,5 +364,5 @@ export function adminError(
     },
   };
 
-  return NextResponse.json(body, { status });
+  return NextResponse.json(body, { status, headers });
 }

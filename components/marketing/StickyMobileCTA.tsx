@@ -37,7 +37,7 @@ export default function StickyMobileCTA() {
               Tu próximo hogar te espera
             </p>
             <p className="text-xs text-muted-foreground">
-              Sin comisión • Sin aval • Pet friendly
+              Pet friendly • Garantía en cuotas • Proceso digital
             </p>
           </div>
           

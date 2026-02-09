@@ -74,10 +74,10 @@ export function StickySearchBar({
       <div
         className={clx(
           'relative flex items-center gap-3',
-          'bg-white/10 dark:bg-gray-800/80',
+          'bg-background/10 md:bg-card/80',
           'backdrop-blur-md',
           'rounded-full',
-          'border border-white/20 dark:border-gray-700/50',
+          'border border-border/50',
           'shadow-lg',
           'px-4 py-3',
           'transition-all duration-300',

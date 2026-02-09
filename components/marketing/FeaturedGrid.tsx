@@ -61,7 +61,7 @@ export default async function FeaturedGrid(_: FeaturedGridProps) {
             Proyectos destacados
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            Descubre las mejores opciones disponibles con 0% comisión
+            Compara precios y agenda visitas
           </p>
         </div>
 

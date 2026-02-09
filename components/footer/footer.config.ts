@@ -79,7 +79,7 @@ export const footerBrand: FooterBrand = {
   name: "Elkis Realtor",
   tagline: "Arriendos en Santiago, sin vueltas.",
   bullets: [
-    "0% comisión en unidades seleccionadas",
+    "Beneficios en unidades seleccionadas",
     "Requisitos claros desde el inicio",
     "Acompañamiento en visitas y check-in",
   ],
@@ -91,7 +91,7 @@ export const footerBrand: FooterBrand = {
 
 export const exploreLinks: FooterLink[] = [
   { label: "Edificios", href: "/edificios" },
-  { label: "Arriendo sin comisión", href: "/arrienda-sin-comision" },
+  { label: "Departamentos destacados", href: "/buscar" },
   { label: "Proyectos destacados", href: "/proyectos" },
   // Top comunas
   { label: "Providencia", href: "/comuna/providencia" },

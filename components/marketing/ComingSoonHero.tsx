@@ -165,18 +165,18 @@ export function ComingSoonHero() {
               variants={itemVariants}
               className="text-lg md:text-xl text-slate-100 max-w-2xl mx-auto leading-relaxed drop-shadow-sm"
             >
-              Estamos preparando la nueva experiencia de arriendo 0% comisión. Sin letra chica.
+              Estamos preparando la nueva experiencia de arriendo. Sin letra chica.
             </m.p>
 
             {/* Beneficios */}
             <div className="relative bg-white/5 backdrop-blur-sm rounded-3xl p-6 md:p-8 border border-white/10 hover:bg-white/8 transition-colors duration-200">
               <div className="relative z-10">
                 <h2 className="text-xl md:text-2xl font-bold tracking-tight text-slate-100 mb-6 text-center">
-                  🎉 ¡Ahorra hasta $500.000 en comisiones!
+                  Beneficios para tu próximo hogar
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {[
-                    { icon: ShieldCheck, text: "0% comisión de corretaje" },
+                    { icon: ShieldCheck, text: "Proceso transparente" },
                     { icon: Smartphone, text: "Proceso 100% digital" },
                     { icon: Building2, text: "Edificios premium verificados" },
                     { icon: Headphones, text: "Soporte personalizado 24/7" },
@@ -202,7 +202,7 @@ export function ComingSoonHero() {
                 <div className="mt-6 p-4 bg-gradient-to-r from-brand-violet/20 to-brand-aqua/20 rounded-2xl backdrop-blur-sm border border-white/10">
                   <div className="flex items-center justify-center space-x-2 text-slate-100 font-semibold text-center">
                     <DollarSign className="w-5 h-5" />
-                    <span>Ejemplo: Arriendo $500.000 → Ahorras $297.500 en comisión (incluye IVA)</span>
+                    <span>Arriendos desde $210.000. Requisitos y precios claros desde el inicio.</span>
                   </div>
                 </div>
               </div>

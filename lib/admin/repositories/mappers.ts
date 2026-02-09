@@ -150,6 +150,15 @@ export function mapUnitRow(
     return Number.isFinite(value) ? value : undefined;
   })();
 
+  const draftStep = (() => {
+    const value = Number(row.draft_step);
+    if (!Number.isFinite(value)) return undefined;
+    const normalized = Math.max(1, Math.trunc(value));
+    return normalized <= 7 ? normalized : 7;
+  })();
+
+  const draftCompletedSteps = toArrayOfStrings(row.draft_completed_steps);
+
   return {
     id: toStringOr(row.id, ""),
     slug: toStringOr(row.slug, slugFallback),
@@ -181,6 +190,31 @@ export function mapUnitRow(
     bathrooms: banos,
     status,
     publicationStatus: parsePublicationStatus(row.publication_status),
+    publication_status: parsePublicationStatus(row.publication_status),
+    operationType:
+      row.operation_type === "rent" || row.operationType === "rent" ? "rent" : undefined,
+    operation_type:
+      row.operation_type === "rent" || row.operationType === "rent" ? "rent" : undefined,
+    publicationTitle: toNullableString(row.publication_title ?? row.publicationTitle),
+    publication_title: toNullableString(row.publication_title ?? row.publicationTitle),
+    publicationDescription: toNullableString(
+      row.publication_description ?? row.publicationDescription
+    ),
+    publication_description: toNullableString(
+      row.publication_description ?? row.publicationDescription
+    ),
+    unitAmenities: toArrayOfStrings(row.unit_amenities ?? row.unitAmenities),
+    unit_amenities: toArrayOfStrings(row.unit_amenities ?? row.unitAmenities),
+    draftStep,
+    draft_step: draftStep,
+    draftCompletedSteps,
+    draft_completed_steps: draftCompletedSteps,
+    draftLastSavedAt: toNullableString(row.draft_last_saved_at ?? row.draftLastSavedAt),
+    draft_last_saved_at: toNullableString(row.draft_last_saved_at ?? row.draftLastSavedAt),
+    publishedAt: toNullableString(row.published_at ?? row.publishedAt),
+    published_at: toNullableString(row.published_at ?? row.publishedAt),
+    archivedAt: toNullableString(row.archived_at ?? row.archivedAt),
+    archived_at: toNullableString(row.archived_at ?? row.archivedAt),
     buildingName,
     area_interior_m2: Number.isFinite(Number(row.area_interior_m2))
       ? Number(row.area_interior_m2)

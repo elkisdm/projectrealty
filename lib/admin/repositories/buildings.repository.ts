@@ -42,42 +42,26 @@ export type BuildingCreateInput = {
 
 function parseSort(sort: string | undefined) {
   if (!sort) {
-    return { field: "created_at", direction: "desc" as const };
+    return { field: "created_at", ascending: false };
   }
 
   if (sort.includes(":")) {
     const [field, direction] = sort.split(":");
     return {
-      field: field.trim(),
-      direction: direction?.toLowerCase() === "asc" ? "asc" : "desc",
+      field:
+        field.trim() === "city" || field.trim() === "comuna"
+          ? "comuna"
+          : field.trim() === "is_active"
+          ? "is_active"
+          : field.trim(),
+      ascending: direction?.toLowerCase() === "asc",
     };
   }
 
   return {
-    field: sort,
-    direction: "desc" as const,
+    field: sort === "city" ? "comuna" : sort,
+    ascending: false,
   };
-}
-
-function sortBuildings(buildings: AdminBuildingRecord[], sort: string | undefined) {
-  const { field, direction } = parseSort(sort);
-  const dir = direction === "asc" ? 1 : -1;
-
-  return [...buildings].sort((a, b) => {
-    if (field === "name") {
-      return a.name.localeCompare(b.name) * dir;
-    }
-
-    if (field === "city" || field === "comuna") {
-      return a.comuna.localeCompare(b.comuna) * dir;
-    }
-
-    if (field === "is_active") {
-      return (Number(a.isActive) - Number(b.isActive)) * dir;
-    }
-
-    return a.id.localeCompare(b.id) * dir;
-  });
 }
 
 async function fetchUnitsByBuildingIds(buildingIds: string[]) {
@@ -161,42 +145,40 @@ export async function listAdminBuildings(query: AdminBuildingsQuery): Promise<{
   meta: AdminListMeta;
 }> {
   const client = getAdminDbClient();
-  const { data, error } = await client.from("buildings").select("*").limit(5000);
+  const page = query.page;
+  const pageSize = query.page_size;
+  const start = (page - 1) * pageSize;
+  const end = start + pageSize - 1;
+  const columns = await getTableColumns("buildings");
 
-  if (error) {
-    throw new Error(`database_error: ${error.message}`);
-  }
-
-  let buildings = ((data || []) as Array<Record<string, unknown>>).map((row) => mapBuildingRow(row));
+  let buildingsQuery = client.from("buildings").select("*", { count: "exact" });
 
   if (query.search) {
-    const search = query.search.toLowerCase();
-    buildings = buildings.filter(
-      (building) =>
-        building.name.toLowerCase().includes(search) ||
-        building.slug.toLowerCase().includes(search) ||
-        building.comuna.toLowerCase().includes(search) ||
-        building.address.toLowerCase().includes(search)
+    buildingsQuery = buildingsQuery.or(
+      `name.ilike.%${query.search}%,slug.ilike.%${query.search}%,comuna.ilike.%${query.search}%,address.ilike.%${query.search}%`
     );
   }
 
   if (query.city) {
-    const city = query.city.toLowerCase();
-    buildings = buildings.filter((building) => building.comuna.toLowerCase().includes(city));
+    buildingsQuery = buildingsQuery.ilike("comuna", `%${query.city}%`);
   }
 
-  if (query.is_active !== undefined) {
-    buildings = buildings.filter((building) => building.isActive === query.is_active);
+  if (query.is_active !== undefined && columns.has("is_active")) {
+    buildingsQuery = buildingsQuery.eq("is_active", query.is_active);
   }
 
-  buildings = sortBuildings(buildings, query.sort);
+  const parsedSort = parseSort(query.sort);
+  const sortField = columns.has(parsedSort.field) ? parsedSort.field : "created_at";
+  buildingsQuery = buildingsQuery.order(sortField, { ascending: parsedSort.ascending, nullsFirst: false });
+  buildingsQuery = buildingsQuery.range(start, end);
 
-  const total = buildings.length;
-  const page = query.page;
-  const pageSize = query.page_size;
-  const start = (page - 1) * pageSize;
-  const end = start + pageSize;
-  const paginated = buildings.slice(start, end);
+  const { data, error, count } = await buildingsQuery;
+  if (error) {
+    throw new Error(`database_error: ${error.message}`);
+  }
+
+  const paginated = ((data || []) as Array<Record<string, unknown>>).map((row) => mapBuildingRow(row));
+  const total = count ?? 0;
 
   const unitsByBuildingId = await fetchUnitsByBuildingIds(paginated.map((building) => building.id));
   const enriched = paginated.map((building) => ({

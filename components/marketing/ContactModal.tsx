@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { track } from '@lib/analytics';
 import MotionWrapper from '@/components/ui/MotionWrapper';
+import { ScrollFadeEffect } from '@/components/ncdai/scroll-fade-effect';
 
 interface ContactModalProps {
   isOpen: boolean;
@@ -407,7 +408,8 @@ export default function ContactModal({ isOpen, onClose }: ContactModalProps) {
           </motion.div>
 
           {/* Content - Scrollable */}
-          <div className="flex-1 overflow-y-auto p-6">
+          <ScrollFadeEffect orientation="vertical" className="flex-1 min-h-0">
+            <div className="p-6">
             <AnimatePresence mode="wait">
               {isSuccess ? (
                 <motion.div
@@ -795,7 +797,8 @@ export default function ContactModal({ isOpen, onClose }: ContactModalProps) {
                 </motion.form>
               )}
             </AnimatePresence>
-          </div>
+            </div>
+          </ScrollFadeEffect>
         </motion.div>
       </MotionWrapper>
     </div>

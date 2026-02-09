@@ -34,7 +34,7 @@ const benefits = [
   {
     icon: Zap,
     title: "Lo simple debería quedarse simple",
-    description: "Sin comisión oculta, sin sorpresas. Solo transparencia total.",
+    description: "Transparencia total. Requisitos y precios claros desde el inicio.",
     color: "from-purple-500 to-violet-600",
     bgColor: "from-purple-50 to-violet-50",
     darkBgColor: "from-purple-950/30 to-violet-950/30",

@@ -15,32 +15,35 @@ import { formatPrice } from '@lib/utils';
 
 /**
  * Get the best available image for a unit
- * Priority: tipologia > areas comunes > gallery > cover > unit images > fallback
+ * Priority: tipologia > areas comunes > unit images > building gallery > cover > fallback
  */
 export function getUnitImage(unit: Unit, building?: Building): string {
+  const sanitizeUrl = (url: string) =>
+    url.includes('parque-mackenna.jpg') ? '/images/parque-mackenna-305/IMG_4922.jpg' : url;
+
   // Priority 1: Tipology images
   if (unit.imagesTipologia && Array.isArray(unit.imagesTipologia) && unit.imagesTipologia.length > 0) {
-    return unit.imagesTipologia[0];
+    return sanitizeUrl(unit.imagesTipologia[0]);
   }
 
   // Priority 2: Common areas images
   if (unit.imagesAreasComunes && Array.isArray(unit.imagesAreasComunes) && unit.imagesAreasComunes.length > 0) {
-    return unit.imagesAreasComunes[0];
+    return sanitizeUrl(unit.imagesAreasComunes[0]);
   }
 
-  // Priority 3: Building gallery
-  if (building?.gallery && building.gallery.length > 0) {
-    return building.gallery[0];
-  }
-
-  // Priority 4: Building cover image
-  if (building?.coverImage) {
-    return building.coverImage;
-  }
-
-  // Priority 5: Unit images (interior)
+  // Priority 3: Unit images (interior)
   if (unit.images && Array.isArray(unit.images) && unit.images.length > 0) {
-    return unit.images[0];
+    return sanitizeUrl(unit.images[0]);
+  }
+
+  // Priority 4: Building gallery
+  if (building?.gallery && building.gallery.length > 0) {
+    return sanitizeUrl(building.gallery[0]);
+  }
+
+  // Priority 5: Building cover image
+  if (building?.coverImage) {
+    return sanitizeUrl(building.coverImage);
   }
 
   // Fallback
@@ -234,6 +237,16 @@ export function computeUnitData(unit: Unit, building?: Building): ComputedUnitDa
   const gastoComun = unit.gastoComun || unit.gc || 0;
   const dormitorios = unit.dormitorios ?? unit.bedrooms ?? 0;
   const banos = unit.banos ?? unit.bathrooms ?? 1;
+  const totalMensual =
+    typeof unit.total_mensual === 'number' && unit.total_mensual > 0
+      ? unit.total_mensual
+      : gastoComun > 0
+      ? unit.price + gastoComun
+      : unit.price;
+
+  const address = [building?.address, building?.comuna]
+    .filter((part): part is string => Boolean(part && part.trim()))
+    .join(' · ');
 
   return {
     imageUrl: getUnitImage(unit, building),
@@ -242,10 +255,10 @@ export function computeUnitData(unit: Unit, building?: Building): ComputedUnitDa
     statusText: getStatusText(unit),
     buildingName: building?.name || 'Edificio',
     comuna: building?.comuna || '',
-    address: building?.address || '',
+    address,
     floorNumber: extractFloorNumber(unit.codigoUnidad || ''),
     gastoComun,
-    totalMensual: unit.total_mensual || (unit.price + gastoComun),
+    totalMensual,
     tipologiaColor: getTipologiaColor(unit.tipologia),
     badge: computePrimaryBadge(unit, building),
     chips: computeChips(unit),

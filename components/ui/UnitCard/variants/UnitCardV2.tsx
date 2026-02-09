@@ -171,8 +171,11 @@ export const UnitCardV2 = memo(function UnitCardV2({
           price={unit.price}
           gastoComun={data.gastoComun}
           totalMensual={data.totalMensual}
-          showTotal={data.gastoComun > 0}
+          showTotal={typeof data.totalMensual === 'number' && data.totalMensual !== unit.price}
         />
+
+        {/* Building name */}
+        <p className="text-sm font-semibold text-text truncate">{data.buildingName}</p>
 
         {/* Specs (m² · D · B) */}
         <CardSpecs

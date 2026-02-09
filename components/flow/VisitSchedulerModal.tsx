@@ -8,6 +8,7 @@ import {
     FeatureLiquidCapsule,
     BadgeLiquidCapsule
 } from '@components/ui/LiquidCapsule';
+import { ScrollFadeEffect } from '@/components/ncdai/scroll-fade-effect';
 
 interface VisitSchedulerModalProps {
     isOpen: boolean;
@@ -440,7 +441,8 @@ export function VisitSchedulerModal({
                     </div>
 
                     {/* Content */}
-                    <div className="p-6 overflow-y-auto max-h-[50vh]">
+                    <ScrollFadeEffect orientation="vertical" className="max-h-[50vh]">
+                        <div className="p-6">
                         <AnimatePresence mode="wait">
                             {step === 'schedule' && (
                                 <motion.div
@@ -741,7 +743,8 @@ export function VisitSchedulerModal({
                                 </motion.div>
                             )}
                         </AnimatePresence>
-                    </div>
+                        </div>
+                    </ScrollFadeEffect>
 
                     {/* Footer */}
                     <div className="p-6 border-t border-gray-100/50">

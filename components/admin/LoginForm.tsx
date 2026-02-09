@@ -1,209 +1,153 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { z } from 'zod';
-import { useAdminAuth } from '@hooks/useAdminAuth';
-import { validateAdminRedirect } from '@lib/admin/validate-redirect';
+import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Eye, EyeOff, AlertTriangle } from "lucide-react";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { useAdminAuth } from "@hooks/useAdminAuth";
+import { validateAdminRedirect } from "@lib/admin/validate-redirect";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 
-// Schema de validación
 const LoginSchema = z.object({
-    email: z.string().email('Email inválido'),
-    password: z.string().min(1, 'Password requerido'),
+  email: z.string().email("Email invalido"),
+  password: z.string().min(1, "Password requerido"),
 });
 
 type LoginFormData = z.infer<typeof LoginSchema>;
 
 export default function LoginForm() {
-    const router = useRouter();
-    const searchParams = useSearchParams();
-    const { login, isLoading, error } = useAdminAuth();
+  const searchParams = useSearchParams();
+  const { login, isLoading, error } = useAdminAuth();
+  const [showPassword, setShowPassword] = useState(false);
 
-    const [formData, setFormData] = useState<LoginFormData>({
-        email: '',
-        password: '',
-    });
-    const [errors, setErrors] = useState<Record<string, string>>({});
-    const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const form = useForm<LoginFormData>({
+    resolver: zodResolver(LoginSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+    mode: "onBlur",
+  });
 
-    const handleChange = (field: keyof LoginFormData) => (
-        e: React.ChangeEvent<HTMLInputElement>
-    ) => {
-        const value = e.target.value;
-        setFormData((prev) => ({ ...prev, [field]: value }));
+  const errorMessage = useMemo(() => {
+    if (!error) return null;
+    const code = error instanceof Error && "code" in error ? (error as Error & { code?: string }).code : "";
+    const message = error instanceof Error ? error.message : String(error);
 
-        // Validar campo en tiempo real
-        if (touched[field]) {
-            const result = LoginSchema.shape[field].safeParse(value);
-            if (!result.success) {
-                setErrors((prev) => ({
-                    ...prev,
-                    [field]: result.error.errors[0]?.message ?? '',
-                }));
-            } else {
-                setErrors((prev) => ({ ...prev, [field]: '' }));
-            }
-        }
-    };
+    if (code === "invalid_credentials" || message.includes("incorrectos")) {
+      return "Email o password incorrectos.";
+    }
+    if (code === "rate_limited" || message.includes("Demasiados intentos")) {
+      return "Demasiados intentos. Espera un momento e intenta nuevamente.";
+    }
+    return message || "No fue posible iniciar sesion.";
+  }, [error]);
 
-    const handleBlur = (field: keyof LoginFormData) => () => {
-        setTouched((prev) => ({ ...prev, [field]: true }));
-        const result = LoginSchema.shape[field].safeParse(formData[field]);
-        if (!result.success) {
-            setErrors((prev) => ({
-                ...prev,
-                [field]: result.error.errors[0]?.message ?? '',
-            }));
-        }
-    };
+  const onSubmit = async (values: LoginFormData) => {
+    try {
+      await login(values.email, values.password);
+      const redirectParam = searchParams.get("redirect");
+      const redirectTo = validateAdminRedirect(redirectParam, "/admin");
+      await new Promise((resolve) => setTimeout(resolve, 150));
+      window.location.replace(redirectTo);
+    } catch {
+      // Hook already exposes toast/banner state
+    }
+  };
 
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
+  return (
+    <Card className="border-[var(--admin-border-subtle)] bg-[var(--admin-surface-1)] shadow-lg">
+      <CardHeader>
+        <CardTitle>Ingresar al panel</CardTitle>
+        <CardDescription>Acceso restringido para administradores y editores.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5" noValidate>
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="email"
+                      autoComplete="email"
+                      placeholder="admin@empresa.com"
+                      disabled={isLoading}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-        // Marcar todos los campos como touched
-        setTouched({ email: true, password: true });
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Password</FormLabel>
+                  <div className="relative">
+                    <FormControl>
+                      <Input
+                        type={showPassword ? "text" : "password"}
+                        autoComplete="current-password"
+                        placeholder="••••••••"
+                        disabled={isLoading}
+                        className="pr-10"
+                        {...field}
+                      />
+                    </FormControl>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      className="absolute right-0 top-0 h-10 w-10 text-[var(--subtext)]"
+                      aria-label={showPassword ? "Ocultar password" : "Mostrar password"}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-        // Validar formulario completo
-        const result = LoginSchema.safeParse(formData);
-        if (!result.success) {
-            const newErrors: Record<string, string> = {};
-            result.error.errors.forEach((err) => {
-                if (err.path[0]) {
-                    newErrors[err.path[0] as string] = err.message;
-                }
-            });
-            setErrors(newErrors);
-            return;
-        }
+            {errorMessage ? (
+              <Alert variant="destructive" className="border-rose-500/40 bg-rose-500/10 text-rose-200">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Acceso denegado</AlertTitle>
+                <AlertDescription>{errorMessage}</AlertDescription>
+              </Alert>
+            ) : null}
 
-        // Limpiar errores previos
-        setErrors({});
+            <Button type="submit" disabled={isLoading} className="w-full">
+              {isLoading ? "Iniciando sesion..." : "Iniciar sesion"}
+            </Button>
 
-        try {
-            await login(formData.email, formData.password);
-
-            // Dar tiempo al navegador a persistir las cookies antes del redirect
-            const redirectParam = searchParams.get('redirect');
-            const redirectTo = validateAdminRedirect(redirectParam, '/admin');
-            await new Promise((r) => setTimeout(r, 150));
-            window.location.replace(redirectTo);
-        } catch {
-            // El error ya está manejado en el hook (toast)
-        }
-    };
-
-    const getErrorMessage = () => {
-        if (error) {
-            // Verificar el código de error primero (más confiable)
-            const errorCode = error instanceof Error && 'code' in error ? (error as Error & { code?: string }).code : null;
-            const errorMessage = error instanceof Error ? error.message : String(error);
-
-            if (errorCode === 'invalid_credentials' || errorMessage.includes('invalid_credentials') || errorMessage.includes('Email o password incorrectos')) {
-                return 'Email o password incorrectos';
-            }
-            if (errorCode === 'rate_limited' || errorMessage.includes('rate_limited') || errorMessage.includes('Demasiados intentos')) {
-                return 'Demasiados intentos. Por favor intenta más tarde.';
-            }
-            return errorMessage || 'Error al iniciar sesión. Por favor intenta nuevamente.';
-        }
-        return null;
-    };
-
-    return (
-        <form onSubmit={handleSubmit} className="space-y-6" noValidate>
-            <div>
-                <label
-                    htmlFor="email"
-                    className="block text-sm font-medium text-[var(--text)] mb-2"
-                >
-                    Email
-                </label>
-                <input
-                    id="email"
-                    type="email"
-                    autoComplete="email"
-                    value={formData.email}
-                    onChange={handleChange('email')}
-                    onBlur={handleBlur('email')}
-                    aria-invalid={touched.email && !!errors.email}
-                    aria-describedby={touched.email && errors.email ? 'email-error' : undefined}
-                    className={`w-full px-4 py-3 rounded-lg bg-[var(--bg)] border ${touched.email && errors.email
-                        ? 'border-red-500 focus:ring-red-500'
-                        : 'border-white/10 focus:ring-brand-violet'
-                        } text-[var(--text)] placeholder-[var(--subtext)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[var(--soft)] transition-colors`}
-                    placeholder="admin@example.com"
-                    disabled={isLoading}
-                />
-                {touched.email && errors.email && (
-                    <p id="email-error" className="mt-1 text-sm text-red-400" role="alert">
-                        {errors.email}
-                    </p>
-                )}
-            </div>
-
-            <div>
-                <label
-                    htmlFor="password"
-                    className="block text-sm font-medium text-[var(--text)] mb-2"
-                >
-                    Password
-                </label>
-                <input
-                    id="password"
-                    type="password"
-                    autoComplete="current-password"
-                    value={formData.password}
-                    onChange={handleChange('password')}
-                    onBlur={handleBlur('password')}
-                    aria-invalid={touched.password && !!errors.password}
-                    aria-describedby={
-                        touched.password && errors.password ? 'password-error' : undefined
-                    }
-                    className={`w-full px-4 py-3 rounded-lg bg-[var(--bg)] border ${touched.password && errors.password
-                        ? 'border-red-500 focus:ring-red-500'
-                        : 'border-white/10 focus:ring-brand-violet'
-                        } text-[var(--text)] placeholder-[var(--subtext)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[var(--soft)] transition-colors`}
-                    placeholder="••••••••"
-                    disabled={isLoading}
-                />
-                {touched.password && errors.password && (
-                    <p id="password-error" className="mt-1 text-sm text-red-400" role="alert">
-                        {errors.password}
-                    </p>
-                )}
-            </div>
-
-            {getErrorMessage() && (
-                <div
-                    className="p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm"
-                    role="alert"
-                >
-                    {getErrorMessage()}
-                </div>
-            )}
-
-            <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full px-4 py-3 rounded-lg bg-brand-violet text-white font-medium hover:bg-brand-violet/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--soft)]"
-            >
-                {isLoading ? 'Iniciando sesión...' : 'Iniciar sesión'}
-            </button>
-
-            <div className="text-center">
-                <a
-                    href="#"
-                    className="text-sm text-[var(--subtext)] hover:text-[var(--text)] transition-colors"
-                    onClick={(e) => {
-                        e.preventDefault();
-                        // TODO: Implementar recuperación de password
-                        alert('Funcionalidad de recuperación de password próximamente');
-                    }}
-                >
-                    ¿Olvidaste tu contraseña?
-                </a>
-            </div>
-        </form>
-    );
+            <p className="text-center text-xs text-[var(--subtext)]">
+              Si necesitas ayuda, contacta al administrador del sistema.
+            </p>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
+  );
 }
-

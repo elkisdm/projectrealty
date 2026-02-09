@@ -17,6 +17,7 @@ import { FilterBottomSheet } from "./FilterBottomSheet";
 import MotionWrapper from "@/components/ui/MotionWrapper";
 import { formatPrice } from "@/lib/utils";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface HeroSearchPanelProps {
   availableCount?: number;
@@ -24,11 +25,6 @@ interface HeroSearchPanelProps {
   className?: string;
 }
 
-/**
- * Hero Cocktail Search Panel
- * Combines Airbnb (card + pills), Zillow (universal input), QuintoAndar (tabs + progression)
- * Replaces HeroV2 component
- */
 export default function HeroSearchPanel({
   availableCount = 0,
   minPrice,
@@ -49,8 +45,7 @@ export default function HeroSearchPanel({
     defaultValues: contextFormState,
   });
 
-  // Watch form values
-  const intent = watch("intent") || "rent";
+  const intent = watch("intent") === "buy" ? "buy" : "rent";
   const q = watch("q");
   const beds = watch("beds");
   const priceMax = watch("priceMax");
@@ -58,42 +53,39 @@ export default function HeroSearchPanel({
   const petFriendly = watch("petFriendly");
   const parking = watch("parking");
 
-  // Handle smart parsing from UniversalSearchInput
   const handleParsedData = useCallback(
     (parsed: ParsedSearchData) => {
-      if (parsed.comuna) {
-        setValue("comuna", parsed.comuna);
-      }
-      if (parsed.beds) {
-        setValue("beds", parsed.beds);
-      }
-      if (parsed.price) {
-        setValue("priceMax", parsed.price.toString());
-      }
+      if (parsed.comuna) setValue("comuna", parsed.comuna);
+      if (parsed.beds) setValue("beds", parsed.beds);
+      if (parsed.price) setValue("priceMax", parsed.price.toString());
     },
     [setValue]
   );
 
-  // Submit handler
   const onSubmit = useCallback(
     (data: SearchFormInput) => {
-      // Update context for sticky bar sync
       updateFormState(data);
-
-      // Map to query params and navigate
       const params = mapFormToQueryParams(data);
-      const queryString = params.toString();
-      router.push(`/buscar${queryString ? `?${queryString}` : ""}`);
+      router.push(`/buscar${params.toString() ? `?${params.toString()}` : ""}`);
     },
     [router, updateFormState]
   );
+
+  const bedsToDormitoriosMin = (value: SearchFormInput["beds"] | undefined): number | undefined => {
+    if (!value) return undefined;
+    const token = Array.isArray(value) ? value[0] : value;
+    if (token === "studio") return 0;
+    if (token === "1") return 1;
+    if (token === "2") return 2;
+    if (token === "3plus") return 3;
+    return undefined;
+  };
 
   return (
     <section
       id="hero-section"
       className={`relative w-full overflow-hidden min-h-[520px] md:min-h-[600px] ${className}`}
     >
-      {/* Background hero image */}
       <div className="absolute inset-0" aria-hidden="true">
         <Image
           src="/images/lascondes-hero.jpg"
@@ -104,11 +96,9 @@ export default function HeroSearchPanel({
           quality={85}
           className="object-cover"
         />
-        {/* Overlay gradient for text readability */}
         <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent" />
       </div>
 
-      {/* Decorative blobs */}
       <div
         aria-hidden="true"
         className="absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80"
@@ -122,32 +112,27 @@ export default function HeroSearchPanel({
         />
       </div>
 
-      {/* Content container */}
       <div className="relative z-10 container mx-auto px-4 py-12 flex items-center min-h-[520px] md:min-h-[600px]">
-        <div className="w-full md:max-w-[560px]">
+        <div className="w-full md:max-w-[500px]">
           <MotionWrapper direction="up" delay={0.1}>
-            {/* Glass card */}
-            <div className="rounded-3xl bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border border-black/5 dark:border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.18)] p-6 md:p-8">
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                {/* Intent Tabs - reduced visual weight */}
+            <Card className="rounded-2xl border-border/50 bg-card/95 backdrop-blur-md shadow-xl">
+              <CardContent className="p-5 md:p-6">
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
                 <IntentTabs
                   value={intent}
-                  onChange={(value) => setValue("intent", value)}
+                  onChange={(value) => setValue("intent", value as SearchFormInput["intent"])}
                   variant="subtle"
                 />
 
-                {/* Headline - more prominent with extra spacing */}
-                <div className="space-y-3 pt-2">
-                  <h1 className="text-4xl md:text-5xl font-bold tracking-tight leading-[1.05] text-text">
+                <div className="space-y-1">
+                  <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
                     Arriendos. Visitas. Check-in. Listo.
                   </h1>
-                  <p className="text-lg text-text-muted">
+                  <p className="text-sm text-muted-foreground">
                     Dime dónde. Yo me encargo del resto.
                   </p>
                 </div>
-
-                {/* Universal Search Input - dominant element */}
-                <div className="pt-2">
+                <div>
                   <UniversalSearchInput
                     value={q || ""}
                     onChange={(value) => setValue("q", value)}
@@ -163,7 +148,6 @@ export default function HeroSearchPanel({
                   />
                 </div>
 
-                {/* Quick Pills - Tipología + Features (Airbnb-style) */}
                 <HeroQuickPills
                   beds={beds}
                   petFriendly={petFriendly}
@@ -173,7 +157,6 @@ export default function HeroSearchPanel({
                   onParkingChange={(value) => setValue("parking", value as SearchFormInput["parking"])}
                 />
 
-                {/* Compact Row - Presupuesto + Mudanza (QuintoAndar-style) */}
                 <CompactRow
                   priceMax={priceMax}
                   moveIn={moveIn}
@@ -188,7 +171,6 @@ export default function HeroSearchPanel({
                   />
                 )}
 
-                {/* Error banner general */}
                 {Object.keys(errors).length > 0 && (
                   <div
                     className="rounded-xl bg-accent-error/10 dark:bg-red-900/20 border border-accent-error/20 p-3 text-sm text-accent-error"
@@ -198,11 +180,9 @@ export default function HeroSearchPanel({
                   </div>
                 )}
 
-                {/* CTA - Primary action */}
                 <HeroCTA
                   isSubmitting={isSubmitting}
                   onMoreFiltersClick={() => {
-                    // Guardar elemento activo antes de abrir sheet para focus return
                     if (document.activeElement instanceof HTMLElement) {
                       moreFiltersButtonRef.current = document.activeElement as HTMLButtonElement;
                     }
@@ -211,33 +191,25 @@ export default function HeroSearchPanel({
                   moreFiltersButtonRef={moreFiltersButtonRef}
                 />
               </form>
-            </div>
+              </CardContent>
+            </Card>
           </MotionWrapper>
 
-          {/* Value indicators below card */}
           <MotionWrapper direction="up" delay={0.2}>
-            <div className={`mt-6 grid gap-3 ${minPrice ? 'grid-cols-3' : 'grid-cols-2'}`}>
+            <div className={`mt-4 grid gap-2 ${minPrice ? "grid-cols-3" : "grid-cols-2"}`}>
               {minPrice && (
-                <div className="flex flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm p-4 ring-1 ring-orange-200/50 dark:ring-orange-800/50">
-                  <p className="text-xs font-medium text-orange-700/80 dark:text-orange-300/80">
-                    Arriendos desde
-                  </p>
-                  <div className="text-lg font-bold tabular-nums text-orange-600 dark:text-orange-400">
-                    {formatPrice(minPrice).replace(/\s/g, '')}
-                  </div>
+                <div className="rounded-xl bg-card/80 backdrop-blur-sm border border-border/50 p-3 text-center">
+                  <p className="text-xs text-muted-foreground">Desde</p>
+                  <p className="text-sm font-semibold tabular-nums">{formatPrice(minPrice).replace(/\s/g, "")}</p>
                 </div>
               )}
-              <div className="flex flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm p-4 ring-1 ring-blue-200/50 dark:ring-blue-800/50">
-                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">100%</div>
-                <p className="text-xs font-medium text-blue-700/80 dark:text-blue-300/80">Digital</p>
+              <div className="rounded-xl bg-card/80 backdrop-blur-sm border border-border/50 p-3 text-center">
+                <p className="text-sm font-semibold">100%</p>
+                <p className="text-xs text-muted-foreground">Digital</p>
               </div>
-              <div className="flex flex-col items-center justify-center gap-1 rounded-2xl bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm p-4 ring-1 ring-purple-200/50 dark:ring-purple-800/50">
-                <div className="text-2xl font-bold tabular-nums text-purple-600 dark:text-purple-400">
-                  +{availableCount}
-                </div>
-                <p className="text-xs font-medium text-purple-700/80 dark:text-purple-300/80">
-                  Disponibles
-                </p>
+              <div className="rounded-xl bg-card/80 backdrop-blur-sm border border-border/50 p-3 text-center">
+                <p className="text-sm font-semibold tabular-nums">+{availableCount}</p>
+                <p className="text-xs text-muted-foreground">Disponibles</p>
               </div>
             </div>
           </MotionWrapper>
@@ -250,8 +222,10 @@ export default function HeroSearchPanel({
         onClose={() => setShowFiltersSheet(false)}
         triggerRef={moreFiltersButtonRef}
         filters={{
+          operation: "rent",
           precioMin: watch("precioMin") ? Number(watch("precioMin")) : undefined,
           precioMax: priceMax ? Number(priceMax) : undefined,
+          dormitoriosMin: bedsToDormitoriosMin(beds),
           estacionamiento: parking === "true" ? true : parking === "false" ? false : undefined,
           bodega: watch("storage") === "true" ? true : watch("storage") === "false" ? false : undefined,
           mascotas: petFriendly === "true" ? true : petFriendly === "false" ? false : undefined,

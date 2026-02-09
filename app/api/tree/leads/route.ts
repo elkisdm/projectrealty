@@ -8,8 +8,8 @@ import { logger } from '@lib/logger';
 const rateLimiter = createRateLimiter({ windowMs: 60_000, max: 20 });
 
 function getClientIP(request: NextRequest): string {
-  return request.headers.get('x-forwarded-for')?.split(',')[0] || 
-         request.headers.get('x-real-ip') || 
+  return request.headers.get('x-forwarded-for')?.split(',')[0] ||
+         request.headers.get('x-real-ip') ||
          'unknown';
 }
 
@@ -17,7 +17,7 @@ export async function GET() {
   try {
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    
+
     if (process.env.NODE_ENV === 'production') {
       if (!supabaseUrl || !supabaseServiceKey) {
         return NextResponse.json(
@@ -26,7 +26,7 @@ export async function GET() {
         );
       }
     }
-    
+
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json(
@@ -41,16 +41,16 @@ export async function POST(request: NextRequest) {
     // Rate limiting
     const clientIP = getClientIP(request);
     const rateLimitResult = await rateLimiter.check(clientIP);
-    
+
     if (!rateLimitResult.ok) {
       logger.log(`Rate limit exceeded for IP: ${clientIP.substring(0, 8)}...`);
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           error: 'Demasiados intentos, prueba en un minuto',
-          retryAfter: rateLimitResult.retryAfter 
+          retryAfter: rateLimitResult.retryAfter
         },
-        { 
+        {
           status: 429,
           headers: {
             'Retry-After': rateLimitResult.retryAfter?.toString() || '60'
@@ -62,14 +62,14 @@ export async function POST(request: NextRequest) {
     // Validar body
     const json = await request.json();
     const parsed = TreeLeadRequestSchema.safeParse(json);
-    
+
     if (!parsed.success) {
       logger.log(`Validation failed for IP: ${clientIP.substring(0, 8)}...`);
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           error: 'Revisa los datos ingresados',
-          issues: parsed.error.flatten() 
+          issues: parsed.error.flatten()
         },
         { status: 400 }
       );
@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
 
     if (_error) {
       logger.error(`DB insert failed for IP: ${clientIP.substring(0, 8)}..., code: ${_error.code}`);
-      
+
       // Si es un error de constraint, no es crítico pero logueamos
       if (_error.code === '23505') { // unique_violation
         return NextResponse.json(
@@ -122,21 +122,19 @@ export async function POST(request: NextRequest) {
           { status: 200 }
         );
       }
-      
+
       return NextResponse.json(
         { success: false, error: 'Tuvimos un problema, intenta de nuevo' },
         { status: 500 }
       );
     }
 
-    const leadId = leadData && typeof leadData === 'object' && 'id' in leadData ? (leadData.id as string) : undefined;
-    
-    logger.log(`Tree lead insert successful for IP: ${clientIP.substring(0, 8)}..., flow: ${flow}, leadId: ${leadId}`);
+    logger.log(`Tree lead insert successful for IP: ${clientIP.substring(0, 8)}..., flow: ${flow}, leadId: ${leadData?.id}`);
     return NextResponse.json(
-      { 
-        success: true, 
+      {
+        success: true,
         message: '¡Gracias por tu interés! Te contactaremos pronto.',
-        leadId
+        leadId: leadData?.id
       },
       { status: 200 }
     );

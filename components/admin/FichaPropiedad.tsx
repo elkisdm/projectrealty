@@ -6,6 +6,7 @@ import { z } from "zod";
 import type { Building } from "@schemas/models";
 import { generateSlug } from "@lib/utils/slug";
 import { toast } from "sonner";
+import { MediaManager } from "@components/admin/ui";
 
 const TIPOLOGIAS = ["Studio", "Estudio", "1D1B", "2D1B", "2D2B", "3D2B"] as const;
 const ORIENTACIONES = ["Norte", "Sur", "Este", "Oeste", "NE", "NO", "SE", "SO"];
@@ -67,7 +68,7 @@ export function FichaPropiedad({
 
   useEffect(() => {
     if (initialData) {
-      setFormData((prev) => ({ ...defaultValues, ...initialData, buildingId: selectedBuildingId }));
+      setFormData({ ...defaultValues, ...initialData, buildingId: selectedBuildingId });
     }
   }, [initialData, selectedBuildingId]);
 
@@ -567,97 +568,42 @@ export function FichaPropiedad({
             </select>
           </div>
         </div>
-        <div>
-          <label htmlFor="propiedad-images" className="block text-sm font-medium text-[var(--text)] mb-2">
-            URLs de imágenes (una por línea o separadas por coma)
-          </label>
-          <textarea
-            id="propiedad-images"
-            value={Array.isArray(formData.images) ? formData.images.join("\n") : ""}
-            onChange={(e) => {
-              const raw = e.target.value;
-              const urls = raw
-                .split(/[\n,]/)
-                .map((s) => s.trim())
-                .filter(Boolean);
-              handleChange("images", urls);
+        <div className="grid grid-cols-1 gap-4">
+          <MediaManager
+            title="Imagenes de la propiedad"
+            description="Carga y administra imagenes comerciales de la unidad."
+            mediaType="image"
+            urls={Array.isArray(formData.images) ? formData.images : []}
+            uploading={uploadingImages}
+            maxItems={20}
+            accept="image/jpeg,image/png,image/webp"
+            helperText="Formatos permitidos: JPG, PNG, WEBP. Maximo 10 MB por imagen."
+            onUpload={async (files) => {
+              if (!selectedBuildingId) {
+                toast.error("Selecciona un condominio antes de cargar imagenes.");
+                return;
+              }
+              await uploadFiles(files, "image");
             }}
-            onBlur={() => handleBlur("images")}
-            rows={2}
-            className={inputClass("images")}
-            placeholder="/images/depto-101-1.jpg"
+            onChange={(urls) => handleChange("images", urls)}
           />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="propiedad-upload-images" className="block text-sm font-medium text-[var(--text)] mb-2">
-              Subir imágenes
-            </label>
-            <input
-              id="propiedad-upload-images"
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={(e) => {
-                if (e.target.files && e.target.files.length > 0) {
-                  uploadFiles(e.target.files, "image");
-                  e.target.value = "";
-                }
-              }}
-              className="w-full text-sm text-[var(--subtext)] file:mr-3 file:rounded-lg file:border-0 file:bg-brand-violet file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-brand-violet/90"
-              disabled={uploadingImages || !selectedBuildingId}
-            />
-            <p className="mt-1 text-xs text-[var(--subtext)]">
-              JPG, PNG, WEBP. Máx 10 MB por imagen.
-            </p>
-          </div>
-          <div>
-            <label htmlFor="propiedad-upload-videos" className="block text-sm font-medium text-[var(--text)] mb-2">
-              Subir videos
-            </label>
-            <input
-              id="propiedad-upload-videos"
-              type="file"
-              accept="video/mp4,video/webm,video/quicktime,video/x-msvideo"
-              multiple
-              onChange={(e) => {
-                if (e.target.files && e.target.files.length > 0) {
-                  uploadFiles(e.target.files, "video");
-                  e.target.value = "";
-                }
-              }}
-              className="w-full text-sm text-[var(--subtext)] file:mr-3 file:rounded-lg file:border-0 file:bg-brand-violet file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-brand-violet/90"
-              disabled={uploadingVideos || !selectedBuildingId}
-            />
-            <p className="mt-1 text-xs text-[var(--subtext)]">
-              MP4, WEBM. Máx 200 MB por video.
-            </p>
-          </div>
-        </div>
-        {(uploadingImages || uploadingVideos) && (
-          <p className="text-sm text-[var(--subtext)]">
-            {uploadingImages ? "Subiendo imágenes..." : "Subiendo videos..."}
-          </p>
-        )}
-        <div>
-          <label htmlFor="propiedad-videos" className="block text-sm font-medium text-[var(--text)] mb-2">
-            URLs de videos (una por línea o separadas por coma)
-          </label>
-          <textarea
-            id="propiedad-videos"
-            value={Array.isArray(formData.videos) ? formData.videos.join("\n") : ""}
-            onChange={(e) => {
-              const raw = e.target.value;
-              const urls = raw
-                .split(/[\n,]/)
-                .map((s) => s.trim())
-                .filter(Boolean);
-              handleChange("videos", urls);
+          <MediaManager
+            title="Videos de la propiedad"
+            description="Carga videos para reforzar la presentacion comercial."
+            mediaType="video"
+            urls={Array.isArray(formData.videos) ? formData.videos : []}
+            uploading={uploadingVideos}
+            maxItems={3}
+            accept="video/mp4,video/webm"
+            helperText="Formatos permitidos: MP4, WEBM. Maximo 200 MB por video."
+            onUpload={async (files) => {
+              if (!selectedBuildingId) {
+                toast.error("Selecciona un condominio antes de cargar videos.");
+                return;
+              }
+              await uploadFiles(files, "video");
             }}
-            onBlur={() => handleBlur("videos")}
-            rows={2}
-            className={inputClass("videos")}
-            placeholder="https://.../video.mp4"
+            onChange={(urls) => handleChange("videos", urls)}
           />
         </div>
         <div className="flex flex-wrap gap-4 pt-2">

@@ -29,7 +29,7 @@ export const sampleCondominioParqueMackenna: Omit<Building, "units"> = {
     "Circuito cerrado de TV y portón eléctrico",
     "Excelente conectividad y transporte urbano cercano",
   ],
-  gallery: ["/images/parque-mackenna.jpg"],
+  gallery: ["/images/parque-mackenna-305/IMG_4922.jpg"],
   descripcion:
     "Metro Línea 5 – Camino Agrícola: 230 m. Metro Línea 5 – San Joaquín: 700 m. Administración: contactopmk1@admhr.cl. Gastos comunes: transferenciaspmktorre1@gmail.com.",
   seguridadAccesos: ["Accesos controlados", "Conserjería"],

@@ -175,6 +175,23 @@ describe('GET /api/buildings', () => {
       );
     });
 
+    test('filtro legacy priceMax funciona correctamente', async () => {
+      const { getSupabaseProcessor } = await import('@/lib/supabase-data-processor');
+      const processor = await getSupabaseProcessor();
+      const mockGetUnits = (processor as any).getUnits;
+
+      const request = createRequest({ priceMax: '900000' });
+      await GET(request);
+
+      expect(mockGetUnits).toHaveBeenCalledWith(
+        expect.objectContaining({
+          precioMax: 900000,
+        }),
+        expect.any(Number),
+        expect.any(Number)
+      );
+    });
+
     test('filtro precioMin y precioMax funcionan juntos', async () => {
       const { getSupabaseProcessor } = await import('@/lib/supabase-data-processor');
       const processor = await getSupabaseProcessor();
@@ -204,6 +221,75 @@ describe('GET /api/buildings', () => {
       expect(mockGetUnits).toHaveBeenCalledWith(
         expect.objectContaining({
           dormitorios: 2,
+        }),
+        expect.any(Number),
+        expect.any(Number)
+      );
+    });
+
+    test('filtro dormitoriosMin canónico funciona correctamente', async () => {
+      const { getSupabaseProcessor } = await import('@/lib/supabase-data-processor');
+      const processor = await getSupabaseProcessor();
+      const mockGetUnits = (processor as any).getUnits;
+
+      const request = createRequest({ dormitoriosMin: '2' });
+      await GET(request);
+
+      expect(mockGetUnits).toHaveBeenCalledWith(
+        expect.objectContaining({
+          dormitoriosMin: 2,
+        }),
+        expect.any(Number),
+        expect.any(Number)
+      );
+    });
+
+    test('filtro legacy beds mapea a dormitoriosMin', async () => {
+      const { getSupabaseProcessor } = await import('@/lib/supabase-data-processor');
+      const processor = await getSupabaseProcessor();
+      const mockGetUnits = (processor as any).getUnits;
+
+      const request = createRequest({ beds: '3plus' });
+      await GET(request);
+
+      expect(mockGetUnits).toHaveBeenCalledWith(
+        expect.objectContaining({
+          dormitoriosMin: 3,
+        }),
+        expect.any(Number),
+        expect.any(Number)
+      );
+    });
+
+    test('filtro tipos canónico funciona correctamente', async () => {
+      const { getSupabaseProcessor } = await import('@/lib/supabase-data-processor');
+      const processor = await getSupabaseProcessor();
+      const mockGetUnits = (processor as any).getUnits;
+
+      const request = createRequest({ tipos: 'Studio,2D1B' });
+      await GET(request);
+
+      expect(mockGetUnits).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tipos: ['Studio', '2D1B'],
+        }),
+        expect.any(Number),
+        expect.any(Number)
+      );
+    });
+
+    test('operation=rent es aceptado y se propaga', async () => {
+      const { getSupabaseProcessor } = await import('@/lib/supabase-data-processor');
+      const processor = await getSupabaseProcessor();
+      const mockGetUnits = (processor as any).getUnits;
+
+      const request = createRequest({ operation: 'rent' });
+      const response = await GET(request);
+
+      expect(response.status).toBe(200);
+      expect(mockGetUnits).toHaveBeenCalledWith(
+        expect.objectContaining({
+          operation: 'rent',
         }),
         expect.any(Number),
         expect.any(Number)
@@ -300,6 +386,24 @@ describe('GET /api/buildings', () => {
   });
 
   describe('Validación con Zod', () => {
+    test('retorna 400 si operation no es soportada', async () => {
+      const request = createRequest({ operation: 'buy' });
+      const response = await GET(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(data).toHaveProperty('error');
+    });
+
+    test('retorna 400 si intent legacy no es soportado', async () => {
+      const request = createRequest({ intent: 'invest' });
+      const response = await GET(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(data).toHaveProperty('error');
+    });
+
     test('retorna 400 si precioMax < precioMin', async () => {
       const request = createRequest({ precioMin: '1000000', precioMax: '500000' });
       const response = await GET(request);
@@ -405,7 +509,6 @@ describe('GET /api/buildings', () => {
     });
   });
 });
-
 
 
 

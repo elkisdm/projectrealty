@@ -51,7 +51,7 @@ export function FeaturedGridClient({ buildings }: FeaturedGridClientProps) {
             Proyectos destacados
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            Descubre las mejores opciones disponibles con 0% comisión
+            Compara precios y agenda visitas
           </p>
         </div>
 

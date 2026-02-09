@@ -4,7 +4,7 @@ import { memo } from "react";
 import { motion } from "framer-motion";
 import { UnitCard } from "@/components/ui/UnitCard";
 import { MobileLoadingSkeleton } from "./MobileLoadingSkeleton";
-import { listItemVariants, cardVariants } from "@/lib/animations/mobileAnimations";
+import { listItemVariants } from "@/lib/animations/mobileAnimations";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import type { Unit, Building } from "@/types";
 
@@ -56,7 +56,7 @@ export const MobileResultsList = memo(function MobileResultsList({
             unit={item.unit}
             building={item.building}
             priority={index < 4}
-            variant="compact"
+            variant="v2"
             className="w-full"
           />
         </motion.div>
@@ -69,4 +69,3 @@ export const MobileResultsList = memo(function MobileResultsList({
     </div>
   );
 });
-

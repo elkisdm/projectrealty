@@ -11,11 +11,16 @@ import {
   Store,
   Pill,
   HeartPulse,
-  ChevronDown,
-  ChevronUp,
   Footprints,
   ChevronRight,
 } from "lucide-react";
+import {
+  Accordion,
+  AccordionItem,
+  AccordionHeader,
+  AccordionTrigger,
+  AccordionPanel,
+} from "@/components/ui/accordion/accordion";
 import Image from "next/image";
 import type { Building } from "@schemas/models";
 import type { GroupedAmenities } from "@/lib/api/nearby-amenities";
@@ -65,73 +70,6 @@ const SUBCATEGORY_ICONS: Record<string, React.ComponentType<{ className?: string
   clinicas: HeartPulse,
 };
 
-interface CollapsibleCategoryProps {
-  category: CategoryConfig;
-  isOpen: boolean;
-  onToggle: () => void;
-  children: React.ReactNode;
-  hasData: boolean;
-  summary?: string;
-}
-
-function CollapsibleCategory({
-  category,
-  isOpen,
-  onToggle,
-  children,
-  hasData,
-  summary,
-}: CollapsibleCategoryProps) {
-  const Icon = category.icon;
-
-  if (!hasData) return null;
-
-  return (
-    <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 last:border-b-0">
-      <button
-        onClick={onToggle}
-        className="w-full px-4 py-3 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150 flex items-center justify-between text-left group focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-800"
-        aria-expanded={isOpen}
-        aria-controls={`category-${category.id}`}
-      >
-        <div className="flex items-center gap-3 flex-1 min-w-0">
-          <div className="flex-shrink-0">
-            <Icon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-base text-gray-900 dark:text-white mb-0.5">
-              {category.label}
-            </h3>
-            {!isOpen && summary && (
-              <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
-                {summary}
-              </p>
-            )}
-          </div>
-        </div>
-        <div className="flex-shrink-0 ml-2">
-          {isOpen ? (
-            <ChevronUp className="w-5 h-5 text-gray-400 dark:text-gray-500" />
-          ) : (
-            <ChevronDown className="w-5 h-5 text-gray-400 dark:text-gray-500" />
-          )}
-        </div>
-      </button>
-
-      {isOpen && (
-        <div
-          id={`category-${category.id}`}
-          className="overflow-hidden bg-white dark:bg-gray-800"
-        >
-          <div className="px-4 py-3 border-t border-gray-100 dark:border-gray-700">
-            {children}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 const METRO_ICON = "/icons/metro-santiago.png";
 const RED_METROPOLITANA_LOGO = "/icons/red-metropolitana-movilidad.png";
 
@@ -162,7 +100,7 @@ function TransportIcon({ subcategory }: { subcategory: string }) {
   }
   return (
     <Footprints
-      className="w-4 h-4 text-gray-400 dark:text-gray-500 shrink-0"
+      className="w-4 h-4 text-subtext shrink-0"
       aria-hidden
     />
   );
@@ -170,15 +108,15 @@ function TransportIcon({ subcategory }: { subcategory: string }) {
 
 function AmenityItem({ amenity, subcategory }: { amenity: any; subcategory: string }) {
   return (
-    <div className="flex items-start gap-3 py-2.5 border-b border-gray-100 dark:border-gray-700 last:border-b-0">
+    <div className="flex items-start gap-3 py-2.5 border-b border-border last:border-b-0">
       <div className="flex-shrink-0 w-4 h-4 flex items-start justify-center mt-0.5">
         <TransportIcon subcategory={subcategory} />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm text-gray-900 dark:text-white font-medium">
+        <p className="text-sm text-text font-medium">
           {amenity.name}
         </p>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+        <p className="text-xs text-subtext mt-0.5">
           {amenity.walkingTimeMinutes} min - {amenity.distanceMeters} metros
         </p>
       </div>
@@ -211,9 +149,6 @@ export function NearbyAmenitiesSection({
   const [amenities, setAmenities] = useState<GroupedAmenities | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [expandedCategories, setExpandedCategories] = useState<Set<CategoryId>>(
-    new Set() // Todas las categorías plegadas por defecto (incl. Transporte)
-  );
 
   // Cargar amenidades
   useEffect(() => {
@@ -244,18 +179,6 @@ export function NearbyAmenitiesSection({
         setLoading(false);
       });
   }, [building.id]);
-
-  const toggleCategory = (categoryId: CategoryId) => {
-    setExpandedCategories((prev) => {
-      const next = new Set(prev);
-      if (next.has(categoryId)) {
-        next.delete(categoryId);
-      } else {
-        next.add(categoryId);
-      }
-      return next;
-    });
-  };
 
   const hasCategoryData = (categoryId: CategoryId): boolean => {
     if (!amenities) return false;
@@ -324,18 +247,18 @@ export function NearbyAmenitiesSection({
   if (loading) {
     return (
       <section className={`${className || ''}`}>
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+        <div className="bg-card border border-border rounded-lg overflow-hidden">
+          <div className="px-4 py-3 border-b border-border">
             <div className="flex items-center gap-3">
-              <div className="w-5 h-5 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-              <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-40 animate-pulse" />
+              <div className="w-5 h-5 bg-soft rounded animate-pulse" />
+              <div className="h-5 bg-soft rounded w-40 animate-pulse" />
             </div>
           </div>
           <div className="px-4 py-3 space-y-2">
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="h-12 bg-gray-100 dark:bg-gray-700/50 rounded animate-pulse"
+                className="h-12 bg-surface rounded animate-pulse"
               />
             ))}
           </div>
@@ -348,9 +271,9 @@ export function NearbyAmenitiesSection({
   if (error) {
     return (
       <section className={`${className || ''}`}>
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+        <div className="bg-card border border-border rounded-lg p-4">
           <div className="text-center py-4">
-            <p className="text-sm text-red-500 dark:text-red-400 mb-3">{error}</p>
+            <p className="text-sm text-accent-error mb-3">{error}</p>
             <button
               onClick={() => {
                 setLoading(true);
@@ -401,15 +324,15 @@ export function NearbyAmenitiesSection({
     };
     return (
       <section className={`${className || ''}`}>
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+        <div className="bg-card border border-border rounded-lg p-4">
           <div className="text-center py-4">
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
+            <p className="text-sm text-subtext mb-3">
               No hay puntos de interés disponibles
             </p>
             <button
               type="button"
               onClick={retryLoad}
-              className="text-sm text-blue-600 dark:text-blue-400 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 rounded"
+              className="text-sm text-accent-secondary hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded"
             >
               Reintentar
             </button>
@@ -423,45 +346,62 @@ export function NearbyAmenitiesSection({
   return (
     <section className={`${className || ''}`}>
       {/* Main container */}
-      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+      <div className="bg-card border border-border rounded-lg overflow-hidden">
         {/* Header: título con jerarquía visual */}
-        <div className="px-4 py-5 border-b border-gray-200 dark:border-gray-700 text-center">
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white tracking-tight">
+        <div className="px-4 py-5 border-b border-border text-center">
+          <h2 className="text-lg font-bold text-text tracking-tight">
             Puntos de interés
           </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-sm text-subtext mt-1">
             {building.name}
           </p>
         </div>
 
         {/* Categories */}
-        <div>
+        <Accordion className="w-full max-w-none border-0 rounded-none shadow-none">
           {CATEGORIES.map((category) => {
             const hasData = hasCategoryData(category.id);
             if (!hasData) return null;
 
             const summary = getCategorySummary(category.id);
+            const Icon = category.icon;
 
             return (
-              <CollapsibleCategory
-                key={category.id}
-                category={category}
-                isOpen={expandedCategories.has(category.id)}
-                onToggle={() => toggleCategory(category.id)}
-                hasData={hasData}
-                summary={summary}
-              >
-                {renderCategoryContent(category.id)}
-              </CollapsibleCategory>
+              <AccordionItem key={category.id} value={category.id}>
+                <AccordionHeader>
+                  <AccordionTrigger className="flex items-center gap-3 py-3 px-4 text-left">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className="flex-shrink-0">
+                        <Icon className="w-5 h-5 text-accent" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="font-semibold text-base text-text block mb-0.5">
+                          {category.label}
+                        </span>
+                        {summary && (
+                          <span className="text-sm text-subtext truncate block">
+                            {summary}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </AccordionTrigger>
+                </AccordionHeader>
+                <AccordionPanel className="border-t border-border">
+                  <div className="px-4 py-3">
+                    {renderCategoryContent(category.id)}
+                  </div>
+                </AccordionPanel>
+              </AccordionItem>
             );
           })}
-        </div>
+        </Accordion>
 
         {/* Footer badge */}
-        <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+        <div className="px-4 py-3 border-t border-border bg-bg-secondary">
           <div className="text-center">
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              Operado por <span className="font-semibold text-gray-700 dark:text-gray-300">Elkis Realtor</span>
+            <p className="text-xs text-subtext">
+              Operado por <span className="font-semibold text-text-secondary">Elkis Realtor</span>
             </p>
           </div>
         </div>

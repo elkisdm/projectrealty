@@ -1,4 +1,6 @@
 import type { SearchFormInput } from "@/lib/validations/search";
+import type { SearchFilters } from "@/types/search";
+import { buildSearchParams } from "@/lib/search/query-params";
 
 /**
  * Maps Hero Cocktail form fields to URL query parameters
@@ -7,72 +9,48 @@ import type { SearchFormInput } from "@/lib/validations/search";
  * for backwards compatibility with /buscar page
  */
 export function mapFormToQueryParams(data: SearchFormInput): URLSearchParams {
-  const params = new URLSearchParams();
+  const parseNumber = (value?: string): number | undefined => {
+    if (!value || !value.trim()) return undefined;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  };
 
-  // Search query
-  if (data.q && data.q.trim()) {
-    params.set("q", data.q.trim());
-  }
+  const toDormitoriosMin = (value?: string): number | undefined => {
+    if (!value) return undefined;
+    const map: Record<string, number> = {
+      studio: 0,
+      Estudio: 0,
+      "1": 1,
+      "2": 2,
+      "3": 3,
+      "3plus": 3,
+    };
+    return map[value];
+  };
 
-  // Intent (new field)
-  if (data.intent && data.intent !== "rent") {
-    params.set("intent", data.intent);
-  }
+  const dormitoriosMin = toDormitoriosMin(data.beds || data.dormitorios);
+  const filters: SearchFilters = {
+    q: data.q?.trim() || undefined,
+    comuna: data.comuna || undefined,
+    operation: "rent",
+    precioMin: parseNumber(data.precioMin),
+    precioMax: parseNumber(data.priceMax || data.precioMax),
+    dormitoriosMin,
+    estacionamiento: (data.parking || data.estacionamiento) === "true" ? true : undefined,
+    bodega: (data.storage || data.bodega) === "true" ? true : undefined,
+    mascotas: (data.petFriendly || data.mascotas) === "true" ? true : undefined,
+    // Legacy fields that we keep in URL for backward compatibility
+    dormitorios: data.dormitorios,
+    beds: data.beds,
+    priceMax: data.priceMax,
+    moveIn: data.moveIn,
+  };
 
-  // Comuna
-  if (data.comuna) {
-    params.set("comuna", data.comuna);
-  }
-
-  // Beds (prefer new field, fallback to legacy)
-  const bedsValue = data.beds || data.dormitorios;
-  if (bedsValue) {
-    // Convert beds format if needed
-    const bedsParam = Array.isArray(bedsValue) 
-      ? bedsValue.join(",") 
-      : bedsValue;
-    params.set("beds", bedsParam);
-    // Also set dormitorios for backwards compatibility
-    params.set("dormitorios", bedsParam);
-  }
-
-  // Price min
-  if (data.precioMin && data.precioMin.trim()) {
-    params.set("precioMin", data.precioMin.trim());
-  }
-
-  // Price max (prefer new field, fallback to legacy)
-  const priceMaxValue = data.priceMax || data.precioMax;
-  if (priceMaxValue && priceMaxValue.trim()) {
-    params.set("priceMax", priceMaxValue.trim());
-    // Also set precioMax for backwards compatibility
-    params.set("precioMax", priceMaxValue.trim());
-  }
-
-  // Move-in date (new field)
+  const params = buildSearchParams(filters);
   if (data.moveIn) {
     params.set("moveIn", data.moveIn);
-  }
-
-  // Pet friendly (prefer new field, fallback to legacy)
-  const petFriendlyValue = data.petFriendly || data.mascotas;
-  if (petFriendlyValue === "true") {
-    params.set("petFriendly", "1");
-    params.set("mascotas", "true"); // Backwards compatibility
-  }
-
-  // Parking (prefer new field, fallback to legacy)
-  const parkingValue = data.parking || data.estacionamiento;
-  if (parkingValue === "true") {
-    params.set("parking", "1");
-    params.set("estacionamiento", "true"); // Backwards compatibility
-  }
-
-  // Storage (prefer new field, fallback to legacy)
-  const storageValue = data.storage || data.bodega;
-  if (storageValue === "true") {
-    params.set("storage", "1");
-    params.set("bodega", "true"); // Backwards compatibility
+  } else {
+    params.delete("moveIn");
   }
 
   return params;

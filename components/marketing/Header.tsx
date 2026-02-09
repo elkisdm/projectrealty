@@ -157,7 +157,7 @@ export function Header() {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
   return (
-    <header className="sticky top-0 z-40 w-full bg-gray-800:bg-gray-900 border-b border-gray-700:border-gray-700 shadow-lg shadow-black/5">
+    <header className="sticky top-0 z-40 w-full bg-background border-b border-border shadow-lg shadow-black/5">
       <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 py-2 lg:py-4">
         <div className="flex items-center justify-between max-w-none">
           {/* Logo y Branding */}
@@ -177,7 +177,7 @@ export function Header() {
                 <span className="text-lg lg:text-2xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 bg-clip-text text-transparent tracking-tight">
                   Elkis Realtor
                 </span>
-                <span className="text-xs font-medium text-gray-400:text-gray-400 tracking-wider uppercase hidden sm:block">
+                <span className="text-xs font-medium text-muted-foreground tracking-wider uppercase hidden sm:block">
                   Propiedades Premium
                 </span>
               </div>
@@ -190,8 +190,8 @@ export function Header() {
                 className={clx(
                   "text-sm font-semibold transition-colors duration-200 relative group",
                   isActiveLink('/property')
-                    ? "text-blue-600 dark:text-blue-400"
-                    : "text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
+                    ? "text-primary"
+                    : "text-foreground hover:text-primary"
                 )}
               >
                 Propiedades
@@ -201,18 +201,18 @@ export function Header() {
                 )}></span>
               </a>
               <a
-                href="/arrienda-sin-comision"
+                href="/buscar"
                 className={clx(
                   "text-sm font-semibold transition-colors duration-200 relative group",
-                  isActiveLink('/arrienda-sin-comision')
-                    ? "text-blue-600 dark:text-blue-400"
-                    : "text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
+                  isActiveLink('/buscar')
+                    ? "text-primary"
+                    : "text-foreground hover:text-primary"
                 )}
               >
-                Sin Comisión
+                Destacados
                 <span className={clx(
                   "absolute -bottom-1 left-0 h-0.5 bg-gradient-to-r from-blue-600 to-purple-600 transition-all duration-300",
-                  isActiveLink('/arrienda-sin-comision') ? "w-full" : "w-0 group-hover:w-full"
+                  isActiveLink('/buscar') ? "w-full" : "w-0 group-hover:w-full"
                 )}></span>
               </a>
               <a
@@ -220,8 +220,8 @@ export function Header() {
                 className={clx(
                   "text-sm font-semibold transition-colors duration-200 relative group",
                   isActiveLink('/cotizador')
-                    ? "text-blue-600 dark:text-blue-400"
-                    : "text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
+                    ? "text-primary"
+                    : "text-foreground hover:text-primary"
                 )}
               >
                 Cotizador
@@ -235,8 +235,8 @@ export function Header() {
                 className={clx(
                   "text-sm font-semibold transition-colors duration-200 relative group",
                   isActiveLink('/mi-bio')
-                    ? "text-blue-600 dark:text-blue-400"
-                    : "text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
+                    ? "text-primary"
+                    : "text-foreground hover:text-primary"
                 )}
               >
                 Sobre Mí
@@ -321,7 +321,7 @@ export function Header() {
                       {crumb.label}
                     </a>
                   ) : index === breadcrumbs.length - 1 ? (
-                    <span className="text-gray-700 dark:text-gray-300 font-medium truncate">
+                    <span className="text-foreground font-medium truncate">
                       {crumb.label}
                     </span>
                   ) : (
@@ -365,13 +365,13 @@ export function Header() {
                 stiffness: 300,
                 damping: 30
               }}
-              className="fixed top-0 right-0 h-full w-80 max-w-[85vw] bg-gray-800:bg-gray-900 shadow-2xl border-l border-gray-700:border-gray-700 z-[60] lg:hidden"
+              className="fixed top-0 right-0 h-full w-80 max-w-[85vw] bg-background shadow-2xl border-l border-border z-[60] lg:hidden"
               role="dialog"
               aria-modal="true"
               aria-label="Menú de navegación móvil"
             >
               {/* Header del drawer */}
-              <div className="flex items-center justify-between p-4 border-b border-gray-700:border-gray-700">
+              <div className="flex items-center justify-between p-4 border-b border-border">
                 <div className="flex items-center space-x-3">
                   <div className="w-8 h-8 bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 rounded-xl flex items-center justify-center">
                     <span className="text-sm font-black text-white">E</span>
@@ -382,7 +382,7 @@ export function Header() {
                 </div>
                 <button
                   onClick={toggleMobileMenu}
-                  className="p-2 text-gray-300:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-200"
+                  className="p-2 text-muted-foreground hover:text-primary hover:bg-muted rounded-lg transition-all duration-200"
                   aria-label="Cerrar menú"
                 >
                   <X className="w-5 h-5" />
@@ -396,29 +396,29 @@ export function Header() {
                   className={clx(
                     "flex items-center px-4 py-3 rounded-xl transition-all duration-200 font-medium",
                     isActiveLink('/property')
-                      ? "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20"
-                      : "text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                      ? "text-primary bg-primary/10"
+                      : "text-foreground hover:text-primary hover:bg-muted"
                   )}
                   onClick={toggleMobileMenu}
                 >
                   Propiedades
                   {isActiveLink('/property') && (
-                    <div className="ml-auto w-2 h-2 bg-blue-600 rounded-full"></div>
+                    <div className="ml-auto w-2 h-2 bg-primary rounded-full"></div>
                   )}
                 </a>
                 <a
-                  href="/arrienda-sin-comision"
+                  href="/buscar"
                   className={clx(
                     "flex items-center px-4 py-3 rounded-xl transition-all duration-200 font-medium",
-                    isActiveLink('/arrienda-sin-comision')
-                      ? "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20"
-                      : "text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                    isActiveLink('/buscar')
+                      ? "text-primary bg-primary/10"
+                      : "text-foreground hover:text-primary hover:bg-muted"
                   )}
                   onClick={toggleMobileMenu}
                 >
-                  Sin Comisión
-                  {isActiveLink('/arrienda-sin-comision') && (
-                    <div className="ml-auto w-2 h-2 bg-blue-600 rounded-full"></div>
+                  Destacados
+                  {isActiveLink('/buscar') && (
+                    <div className="ml-auto w-2 h-2 bg-primary rounded-full"></div>
                   )}
                 </a>
                 <a
@@ -426,14 +426,14 @@ export function Header() {
                   className={clx(
                     "flex items-center px-4 py-3 rounded-xl transition-all duration-200 font-medium",
                     isActiveLink('/cotizador')
-                      ? "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20"
-                      : "text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                      ? "text-primary bg-primary/10"
+                      : "text-foreground hover:text-primary hover:bg-muted"
                   )}
                   onClick={toggleMobileMenu}
                 >
                   Cotizador
                   {isActiveLink('/cotizador') && (
-                    <div className="ml-auto w-2 h-2 bg-blue-600 rounded-full"></div>
+                    <div className="ml-auto w-2 h-2 bg-primary rounded-full"></div>
                   )}
                 </a>
                 <a
@@ -441,22 +441,22 @@ export function Header() {
                   className={clx(
                     "flex items-center px-4 py-3 rounded-xl transition-all duration-200 font-medium",
                     isActiveLink('/mi-bio')
-                      ? "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20"
-                      : "text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                      ? "text-primary bg-primary/10"
+                      : "text-foreground hover:text-primary hover:bg-muted"
                   )}
                   onClick={toggleMobileMenu}
                 >
                   Sobre Mí
                   {isActiveLink('/mi-bio') && (
-                    <div className="ml-auto w-2 h-2 bg-blue-600 rounded-full"></div>
+                    <div className="ml-auto w-2 h-2 bg-primary rounded-full"></div>
                   )}
                 </a>
               </nav>
 
               {/* Acciones móviles */}
-              <div className="p-4 border-t border-gray-700:border-gray-700 space-y-2">
+              <div className="p-4 border-t border-border space-y-2">
                 <div className="flex items-center justify-between px-4 py-2">
-                  <span className="text-sm font-medium text-gray-300:text-gray-400">Tema</span>
+                  <span className="text-sm font-medium text-muted-foreground">Tema</span>
                   <ThemeToggle />
                 </div>
 

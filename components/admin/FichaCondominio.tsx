@@ -5,6 +5,7 @@ import { BuildingSchema, type Building } from "@schemas/models";
 import { z } from "zod";
 import { generateSlug } from "@lib/utils/slug";
 import { toast } from "sonner";
+import { MediaManager } from "@components/admin/ui";
 
 export interface FichaCondominioProps {
   initialData?: Partial<Building>;
@@ -42,7 +43,7 @@ export function FichaCondominio({
 
   useEffect(() => {
     if (initialData) {
-      setFormData((prev) => ({ ...defaultValues, ...initialData }));
+      setFormData({ ...defaultValues, ...initialData });
     }
   }, [initialData]);
 
@@ -113,7 +114,8 @@ export function FichaCondominio({
       return;
     }
 
-    const { units: _, ...buildingData } = result.data;
+    const { units, ...buildingData } = result.data;
+    void units;
     try {
       await onSubmit(buildingData);
     } catch {
@@ -395,91 +397,37 @@ export function FichaCondominio({
             <p className="mt-1 text-sm text-red-400" role="alert">{errors.amenities}</p>
           )}
         </div>
-        <div>
-          <label htmlFor="condominio-gallery" className="block text-sm font-medium text-[var(--text)] mb-2">
-            Galería (URLs de imágenes, una por línea o separadas por coma) <span className="text-red-400">*</span>
-          </label>
-          <textarea
-            id="condominio-gallery"
-            value={Array.isArray(formData.gallery) ? formData.gallery.join("\n") : ""}
-            onChange={(e) => {
-              const raw = e.target.value;
-              const urls = raw
-                .split(/[\n,]/)
-                .map((s) => s.trim())
-                .filter(Boolean);
-              handleChange("gallery", urls);
-            }}
-            onBlur={() => handleBlur("gallery")}
-            rows={3}
-            className={inputClass("gallery")}
-            placeholder="/images/edificio-1.jpg"
-            required
-            aria-required="true"
-            aria-invalid={!!errors.gallery}
+        <div className="space-y-4">
+          <MediaManager
+            title="Galería del condominio"
+            description="Sube imágenes del edificio. Puedes marcar cualquiera como portada."
+            mediaType="image"
+            urls={Array.isArray(formData.gallery) ? formData.gallery : []}
+            uploading={uploadingGallery}
+            maxItems={20}
+            accept="image/jpeg,image/png,image/webp"
+            helperText="Hasta 20 imágenes, máximo 10MB por archivo."
+            onUpload={(files) => uploadBuildingImages(files, "gallery")}
+            onChange={(urls) => handleChange("gallery", urls)}
+            onSetCover={(url) => handleChange("coverImage", url)}
           />
           {errors.gallery && (
-            <p className="mt-1 text-sm text-red-400" role="alert">{errors.gallery}</p>
+            <p className="text-sm text-red-400" role="alert">{errors.gallery}</p>
           )}
-          <div className="mt-3">
-            <label htmlFor="condominio-upload-gallery" className="block text-sm font-medium text-[var(--text)] mb-2">
-              Subir imágenes para galería
-            </label>
-            <input
-              id="condominio-upload-gallery"
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={(e) => {
-                if (e.target.files && e.target.files.length > 0) {
-                  uploadBuildingImages(e.target.files, "gallery");
-                  e.target.value = "";
-                }
-              }}
-              className="w-full text-sm text-[var(--subtext)] file:mr-3 file:rounded-lg file:border-0 file:bg-brand-violet file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-brand-violet/90"
-              disabled={uploadingGallery}
-            />
-            <p className="mt-1 text-xs text-[var(--subtext)]">
-              JPG, PNG, WEBP, GIF. Máx 15 MB por imagen.
-            </p>
-          </div>
-        </div>
-        <div>
-          <label htmlFor="condominio-cover" className="block text-sm font-medium text-[var(--text)] mb-2">
-            Imagen de portada (URL)
-          </label>
-          <input
-            id="condominio-cover"
-            type="text"
-            value={formData.coverImage ?? ""}
-            onChange={(e) => handleChange("coverImage", e.target.value)}
-            className={inputClass("coverImage")}
-            placeholder="/images/portada.jpg"
+
+          <MediaManager
+            title="Imagen de portada"
+            description="Esta imagen se usa como portada principal del condominio."
+            mediaType="image"
+            urls={formData.coverImage ? [formData.coverImage] : []}
+            uploading={uploadingCover}
+            maxItems={1}
+            accept="image/jpeg,image/png,image/webp"
+            helperText="Sube una única imagen principal."
+            onUpload={(files) => uploadBuildingImages(files, "cover")}
+            onChange={(urls) => handleChange("coverImage", urls[0] || "")}
           />
-          <div className="mt-3">
-            <label htmlFor="condominio-upload-cover" className="block text-sm font-medium text-[var(--text)] mb-2">
-              Subir imagen de portada
-            </label>
-            <input
-              id="condominio-upload-cover"
-              type="file"
-              accept="image/*"
-              onChange={(e) => {
-                if (e.target.files && e.target.files.length > 0) {
-                  uploadBuildingImages(e.target.files, "cover");
-                  e.target.value = "";
-                }
-              }}
-              className="w-full text-sm text-[var(--subtext)] file:mr-3 file:rounded-lg file:border-0 file:bg-brand-violet file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-brand-violet/90"
-              disabled={uploadingCover}
-            />
-          </div>
         </div>
-        {(uploadingGallery || uploadingCover) && (
-          <p className="text-sm text-[var(--subtext)]">
-            {uploadingGallery ? "Subiendo galería..." : "Subiendo portada..."}
-          </p>
-        )}
         <div>
           <label htmlFor="condominio-descripcion" className="block text-sm font-medium text-[var(--text)] mb-2">
             Descripción (opcional)

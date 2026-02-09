@@ -1,6 +1,6 @@
 "use client";
 
-import { SearchPills } from "@/components/marketing/SearchPills";
+import { cn } from "@/lib/utils";
 
 interface HeroQuickPillsProps {
   beds: string | string[] | undefined;
@@ -12,25 +12,22 @@ interface HeroQuickPillsProps {
   className?: string;
 }
 
-const BEDS_OPTIONS = ["Studio", "1D", "2D", "3D+"];
-const BEDS_VALUE_MAP: Record<string, "studio" | "1" | "2" | "3plus"> = {
-  "Studio": "studio",
-  "1D": "1",
-  "2D": "2",
-  "3D+": "3plus",
-};
-const BEDS_DISPLAY_MAP: Record<string, string> = {
-  "studio": "Studio",
-  "1": "1D",
-  "2": "2D",
-  "3plus": "3D+",
-};
+const BEDS_OPTIONS = [
+  { display: "Studio", value: "studio" as const },
+  { display: "1D", value: "1" as const },
+  { display: "2D", value: "2" as const },
+  { display: "3D+", value: "3plus" as const },
+];
 
-/**
- * Quick filter pills for Hero Cocktail
- * Tipología (beds) + Pet friendly + Estacionamiento
- * Airbnb-style quick filters with multi-select support
- */
+function isBedsSelected(
+  beds: string | string[] | undefined,
+  value: string
+): boolean {
+  if (!beds) return false;
+  const arr = Array.isArray(beds) ? beds : [beds];
+  return arr.includes(value);
+}
+
 export function HeroQuickPills({
   beds,
   petFriendly,
@@ -40,74 +37,69 @@ export function HeroQuickPills({
   onParkingChange,
   className = "",
 }: HeroQuickPillsProps) {
-  // Convert beds values to display format
-  const bedsDisplay = Array.isArray(beds)
-    ? beds.map((b) => BEDS_DISPLAY_MAP[b] || b)
-    : beds
-      ? [BEDS_DISPLAY_MAP[beds] || beds]
-      : [];
-
-  const handleBedsChange = (value: string | string[] | undefined) => {
-    if (!value) {
-      onBedsChange(undefined);
-      return;
+  const handleBedsClick = (value: string) => {
+    const arr = Array.isArray(beds) ? [...beds] : beds ? [beds] : [];
+    const idx = arr.indexOf(value);
+    if (idx >= 0) {
+      arr.splice(idx, 1);
+      onBedsChange(arr.length > 0 ? arr : undefined);
+    } else {
+      onBedsChange([...arr, value]);
     }
-
-    // Convert display values back to schema values
-    const values = Array.isArray(value) ? value : [value];
-    const schemaValues = values.map((v) => BEDS_VALUE_MAP[v] || v);
-    onBedsChange(schemaValues.length > 0 ? schemaValues : undefined);
-  };
-
-  const handlePetFriendlyChange = (value: string | string[] | undefined) => {
-    if (!value) {
-      onPetFriendlyChange(undefined);
-      return;
-    }
-    // Single select: convert "Sí" to "true", anything else to undefined
-    const selected = Array.isArray(value) ? value[0] : value;
-    onPetFriendlyChange(selected === "Sí" ? "true" : undefined);
-  };
-
-  const handleParkingChange = (value: string | string[] | undefined) => {
-    if (!value) {
-      onParkingChange(undefined);
-      return;
-    }
-    // Single select: convert "Sí" to "true", anything else to undefined
-    const selected = Array.isArray(value) ? value[0] : value;
-    onParkingChange(selected === "Sí" ? "true" : undefined);
   };
 
   return (
-    <div className={`space-y-3 ${className}`}>
-      {/* Tipología */}
-      <SearchPills
-        options={BEDS_OPTIONS}
-        selected={bedsDisplay}
-        onSelect={handleBedsChange}
-        label="Tipología"
-        multiple={true}
-      />
-
-      {/* Features row */}
-      <div className="flex flex-wrap gap-4">
-        <SearchPills
-          options={["Sí"]}
-          selected={petFriendly === "true" ? "Sí" : undefined}
-          onSelect={handlePetFriendlyChange}
+    <div className={cn("space-y-3", className)}>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm text-muted-foreground shrink-0">Tipología:</span>
+        {BEDS_OPTIONS.map((opt) => (
+          <Pill
+            key={opt.value}
+            label={opt.display}
+            selected={isBedsSelected(beds, opt.value)}
+            onToggle={() => handleBedsClick(opt.value)}
+          />
+        ))}
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <Pill
           label="Pet friendly"
-          multiple={false}
+          selected={petFriendly === "true"}
+          onToggle={() => onPetFriendlyChange(petFriendly === "true" ? undefined : "true")}
         />
-
-        <SearchPills
-          options={["Sí"]}
-          selected={parking === "true" ? "Sí" : undefined}
-          onSelect={handleParkingChange}
+        <Pill
           label="Estacionamiento"
-          multiple={false}
+          selected={parking === "true"}
+          onToggle={() => onParkingChange(parking === "true" ? undefined : "true")}
         />
       </div>
     </div>
+  );
+}
+
+function Pill({
+  label,
+  selected,
+  onToggle,
+}: {
+  label: string;
+  selected: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-pressed={selected}
+      className={cn(
+        "inline-flex items-center rounded-full px-3 py-1.5 text-sm font-medium transition-colors min-h-[36px] min-w-[36px] justify-center",
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        selected
+          ? "bg-primary text-primary-foreground"
+          : "bg-muted text-muted-foreground hover:bg-muted/80"
+      )}
+    >
+      {label}
+    </button>
   );
 }

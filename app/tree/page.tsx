@@ -4,10 +4,10 @@ import { TreeLanding } from "@/components/tree/TreeLanding";
 
 export const metadata: Metadata = {
   title: "Elkis Realtor | Link-in-bio",
-  description: "Encuentra tu próximo hogar sin comisión. Arrienda o compra con Elkis Realtor.",
+  description: "Encuentra tu próximo hogar. Arrienda o compra con Elkis Realtor.",
   openGraph: {
     title: "Elkis Realtor | Link-in-bio",
-    description: "Encuentra tu próximo hogar sin comisión. Arrienda o compra con Elkis Realtor.",
+    description: "Encuentra tu próximo hogar. Arrienda o compra con Elkis Realtor.",
     type: "website",
     locale: "es_CL",
   },

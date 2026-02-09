@@ -5,6 +5,7 @@ import { Search, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { BaseModal } from "@/components/ui/BaseModal";
+import { CHILEAN_COMMUNES_RM } from "@/lib/data/chilean-communes";
 
 interface UniversalSearchInputProps {
   value: string;
@@ -22,11 +23,7 @@ export interface ParsedSearchData {
   price?: number;
 }
 
-const COMUNAS_PRINCIPALES = [
-  'Las Condes', 'Ñuñoa', 'Providencia', 'Santiago', 'Macul',
-  'La Florida', 'San Miguel', 'Maipú', 'La Reina', 'Vitacura',
-  'Lo Barnechea', 'Peñalolén', 'Huechuraba', 'Recoleta', 'Independencia'
-];
+const COMUNAS_PRINCIPALES = [...CHILEAN_COMMUNES_RM];
 
 /**
  * Universal search input with smart parsing (Zillow-style)

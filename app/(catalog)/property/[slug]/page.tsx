@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { getBuildingBySlug, getRelatedBuildings } from "@lib/data";
+import { getSupabaseProcessor } from "@/lib/supabase-data-processor";
 import { PropertyClient } from "./PropertyClient";
 import { safeJsonLd } from "@lib/seo/jsonld";
 import { PROPERTY_PAGE_CONSTANTS } from "@lib/constants/property";
@@ -21,30 +22,19 @@ export default async function PropertyPage({ params, searchParams }: PropertyPag
     throw new Error("Falló carga de propiedad (simulada)");
   }
 
-  // Intentar obtener unidad primero (nueva estructura)
-  // Si el slug es de una unidad, redirigir a la nueva URL
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || "http://localhost:3000";
+  // Resolver unidad por slug en servidor (evita fetch a propia API y timeouts en SSR)
   let redirectUrl: string | null = null;
-
   try {
-    const unitResponse = await fetch(`${baseUrl}/api/buildings/${slug}`, {
-      next: { revalidate: 3600 },
-    });
-
-    if (unitResponse.ok) {
-      const unitData = await unitResponse.json();
-      if (unitData.unit && unitData.building) {
-        // Es una unidad, preparar redirect a la nueva estructura
-        const comunaSlug = normalizeComunaSlug(unitData.building.comuna);
-        redirectUrl = `/arriendo/departamento/${comunaSlug}/${slug}`;
-      }
+    const processor = await getSupabaseProcessor();
+    const unitResult = await processor.getUnitBySlug(slug);
+    if (unitResult?.unit && unitResult?.building) {
+      const comunaSlug = normalizeComunaSlug(unitResult.building.comuna);
+      redirectUrl = `/arriendo/departamento/${comunaSlug}/${slug}`;
     }
-  } catch (error) {
-    // Si falla fetch, continuar con el comportamiento de edificio
-    console.error('Error checking unit:', error);
+  } catch {
+    // Si falla (mock, red, etc.), continuar como edificio
   }
 
-  // Ejecutar redirect fuera del try-catch para que no sea capturado
   if (redirectUrl) {
     redirect(redirectUrl);
   }
@@ -58,7 +48,7 @@ export default async function PropertyPage({ params, searchParams }: PropertyPag
 
   const relatedBuildings = await getRelatedBuildings(slug, PROPERTY_PAGE_CONSTANTS.RELATED_BUILDINGS_LIMIT);
 
-  // Build JSON-LD (Schema.org) for this property
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || "http://localhost:3000";
   const canonicalUrl = `${baseUrl}/property/${slug}`;
   const primaryImage =
     building.media?.images?.[0] ||
@@ -211,18 +201,18 @@ export async function generateMetadata({ params }: PropertyPageProps) {
   }
 
   return {
-    title: `${building.name} - 0% Comisión | Elkis Realtor`,
-    description: `Arrienda ${building.name} en ${building.comuna} sin comisión de corretaje. ${building.amenities.join(", ")}.`,
+    title: `${building.name} | Elkis Realtor`,
+    description: `Arrienda ${building.name} en ${building.comuna}. ${building.amenities.join(", ")}.`,
     alternates: { canonical: `/property/${slug}` },
     openGraph: {
-      title: `${building.name} - 0% Comisión`.replace(/\s+/g, " "),
-      description: `Arrienda ${building.name} en ${building.comuna} sin comisión de corretaje.`,
+      title: `${building.name} | Elkis Realtor`,
+      description: `Arrienda ${building.name} en ${building.comuna}.`,
       type: "website",
       images: [building.coverImage ?? building.gallery?.[0] ?? PROPERTY_PAGE_CONSTANTS.DEFAULT_IMAGE],
     },
     twitter: {
       card: "summary_large_image",
-      title: `${building.name} - 0% Comisión`.replace(/\s+/g, " "),
+      title: `${building.name} | Elkis Realtor`,
       images: [building.coverImage ?? building.gallery?.[0] ?? PROPERTY_PAGE_CONSTANTS.DEFAULT_IMAGE],
     },
   };

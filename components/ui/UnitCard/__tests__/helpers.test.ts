@@ -82,7 +82,21 @@ describe('helpers', () => {
       expect(getUnitImage(unitWithAreas, mockBuilding)).toBe('areas-1.jpg');
     });
 
-    it('usa building gallery si no hay imagenes de tipologia ni areas', () => {
+    it('usa unit images antes que building gallery', () => {
+      const unitWithImages = {
+        ...mockUnit,
+        images: ['interior-1.jpg', 'interior-2.jpg'],
+      };
+      const buildingWithGallery = {
+        ...mockBuilding,
+        gallery: ['gallery-1.jpg', 'gallery-2.jpg'],
+        coverImage: 'cover.jpg',
+      };
+
+      expect(getUnitImage(unitWithImages, buildingWithGallery)).toBe('interior-1.jpg');
+    });
+
+    it('usa building gallery si no hay imagenes de tipologia, areas ni unit images', () => {
       const buildingWithGallery = {
         ...mockBuilding,
         gallery: ['gallery-1.jpg', 'gallery-2.jpg'],
@@ -101,13 +115,22 @@ describe('helpers', () => {
       expect(getUnitImage(mockUnit, buildingWithCover)).toBe('cover.jpg');
     });
 
-    it('usa unit images como ultimo recurso', () => {
+    it('usa unit images cuando no hay imágenes de tipologia/áreas', () => {
       const unitWithImages = {
         ...mockUnit,
         images: ['interior-1.jpg', 'interior-2.jpg'],
       };
 
       expect(getUnitImage(unitWithImages, mockBuilding)).toBe('interior-1.jpg');
+    });
+
+    it('reemplaza parque-mackenna.jpg por una imagen válida', () => {
+      const buildingWithInvalid = {
+        ...mockBuilding,
+        gallery: ['/images/parque-mackenna.jpg'],
+      };
+
+      expect(getUnitImage(mockUnit, buildingWithInvalid)).toBe('/images/parque-mackenna-305/IMG_4922.jpg');
     });
 
     it('retorna fallback cuando no hay imagenes', () => {
@@ -488,7 +511,7 @@ describe('helpers', () => {
       expect(data.statusText).toBe('Disponible');
       expect(data.buildingName).toBe('Edificio Test');
       expect(data.comuna).toBe('Ñuñoa');
-      expect(data.address).toBe('Av. Test 123');
+      expect(data.address).toBe('Av. Test 123 · Ñuñoa');
       expect(data.floorNumber).toBe(12);
       expect(data.gastoComun).toBe(50000);
       expect(data.totalMensual).toBe(550000);

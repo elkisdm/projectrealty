@@ -1,273 +1,134 @@
 "use client";
 
 import Link from "next/link";
+import { AlertTriangle, Building2, CheckCircle2, Home, Layers3 } from "lucide-react";
 import { useAdminStats } from "@hooks/useAdminStats";
+import { ErrorState } from "@components/admin/ui/ErrorState";
+import { KpiCard } from "@components/admin/ui/KpiCard";
+import { PageHeader } from "@components/admin/ui/PageHeader";
+import { EmptyState } from "@components/admin/ui/EmptyState";
 
-function StatCard({
-  title,
-  value,
-  subtitle,
-  icon,
-  href,
-}: {
-  title: string;
-  value: string | number;
-  subtitle?: string;
-  icon: string;
-  href?: string;
-}) {
-  const content = (
-    <div className="rounded-2xl bg-[var(--soft)]/90 ring-1 ring-white/10 p-6 hover:bg-[var(--soft)] transition-colors">
-      <div className="flex items-start justify-between mb-4">
-        <div className="text-3xl">{icon}</div>
-        {href && (
-          <Link
-            href={href}
-            className="text-sm text-[var(--subtext)] hover:text-[var(--text)] transition-colors"
-          >
-            Ver más →
-          </Link>
-        )}
+function loadingSkeleton() {
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, idx) => (
+          <div key={idx} className="h-36 animate-pulse rounded-2xl bg-[var(--admin-surface-2)]" />
+        ))}
       </div>
-      <h3 className="text-sm font-medium text-[var(--subtext)] mb-1">{title}</h3>
-      <p className="text-3xl font-bold text-[var(--text)] mb-1">{value}</p>
-      {subtitle && (
-        <p className="text-sm text-[var(--subtext)]">{subtitle}</p>
-      )}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <div className="h-72 animate-pulse rounded-2xl bg-[var(--admin-surface-2)]" />
+        <div className="h-72 animate-pulse rounded-2xl bg-[var(--admin-surface-2)]" />
+      </div>
     </div>
   );
-
-  if (href) {
-    return <Link href={href}>{content}</Link>;
-  }
-
-  return content;
 }
 
 export default function AdminDashboardPage() {
-  const { data: stats, isLoading: loading, error: queryError } = useAdminStats();
+  const { data: stats, isLoading, error: queryError, refetch } = useAdminStats();
+  const error = queryError instanceof Error ? queryError.message : queryError ? "Error al cargar estadisticas" : null;
 
-  const error = queryError instanceof Error ? queryError.message : queryError ? "Error al cargar estadísticas" : null;
+  if (isLoading) {
+    return loadingSkeleton();
+  }
 
-  if (loading) {
+  if (!stats || error) {
     return (
-      <div className="container mx-auto px-4 md:px-6 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2 text-[var(--text)]">Dashboard</h1>
-          <p className="text-[var(--subtext)]">Cargando métricas...</p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {Array.from({ length: 4 }).map((_, idx) => (
-            <div
-              key={idx}
-              className="rounded-2xl bg-[var(--soft)]/90 ring-1 ring-white/10 p-6 animate-pulse"
-            >
-              <div className="h-8 bg-gray-600 rounded mb-4 w-1/3"></div>
-              <div className="h-12 bg-gray-600 rounded mb-2 w-1/2"></div>
-              <div className="h-4 bg-gray-600 rounded w-2/3"></div>
-            </div>
-          ))}
-        </div>
-      </div>
+      <ErrorState
+        title="No pudimos cargar el dashboard"
+        description={error || "Intenta nuevamente en unos segundos."}
+        onRetry={() => {
+          void refetch();
+        }}
+      />
     );
   }
 
-  if (!stats) {
-    return (
-      <div className="container mx-auto px-4 md:px-6 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2 text-[var(--text)]">Dashboard</h1>
-          <p className="text-red-400">{error || "Error al cargar datos"}</p>
-        </div>
-      </div>
-    );
-  }
-
-  const availabilityPercentage =
-    stats.totalUnits > 0
-      ? Math.round((stats.availableUnits / stats.totalUnits) * 100)
-      : 0;
+  const availabilityPercentage = stats.totalUnits > 0 ? Math.round((stats.availableUnits / stats.totalUnits) * 100) : 0;
+  const riskyBuildings = stats.buildingsWithIncompleteData;
+  const topComuna = stats.distributionByComuna?.[0];
+  const topTipology = stats.typologyDistribution?.[0];
 
   return (
-    <div className="container mx-auto px-4 md:px-6 py-8">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2 text-[var(--text)]">Dashboard</h1>
-        <p className="text-[var(--subtext)]">
-          Vista general del sistema y métricas clave
-        </p>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Dashboard operativo"
+        description="Monitorea inventario, calidad de datos y acciones prioritarias del panel de administracion."
+        breadcrumbs={[{ label: "Admin", href: "/admin" }, { label: "Dashboard" }]}
+      />
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <StatCard
-          title="Total Edificios"
-          value={stats.totalBuildings}
-          icon="🏢"
-          href="/admin/buildings"
-        />
-        <StatCard
-          title="Total Unidades"
-          value={stats.totalUnits}
-          icon="🏠"
-          href="/admin/units"
-        />
-        <StatCard
-          title="Unidades Disponibles"
-          value={stats.availableUnits}
-          subtitle={`${availabilityPercentage}% del total`}
-          icon="✅"
-        />
-        <StatCard
-          title="Datos Incompletos"
-          value={stats.buildingsWithIncompleteData}
-          subtitle="Edificios con información faltante"
-          icon="⚠️"
-        />
-      </div>
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <KpiCard title="Total edificios" value={stats.totalBuildings} icon={<Building2 className="h-5 w-5" />} href="/admin/buildings" />
+        <KpiCard title="Total unidades" value={stats.totalUnits} icon={<Home className="h-5 w-5" />} href="/admin/units" />
+        <KpiCard title="Disponibilidad" value={`${availabilityPercentage}%`} subtitle={`${stats.availableUnits} disponibles`} icon={<CheckCircle2 className="h-5 w-5" />} trend={availabilityPercentage >= 50 ? "up" : "down"} />
+        <KpiCard title="Riesgo de data" value={riskyBuildings} subtitle="Edificios con info faltante" icon={<AlertTriangle className="h-5 w-5" />} trend={riskyBuildings > 0 ? "down" : "up"} href="/admin/completeness" />
+      </section>
 
-      {/* Distribution Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        {/* Distribución por Comuna */}
-        <div className="rounded-2xl bg-[var(--soft)]/90 ring-1 ring-white/10 p-6">
-          <h2 className="text-xl font-bold mb-4 text-[var(--text)]">
-            Distribución por Comuna
-          </h2>
-          <div className="space-y-3">
-            {stats.distributionByComuna && stats.distributionByComuna.length > 0 ? (
-              stats.distributionByComuna.slice(0, 5).map((item) => {
-                const percentage =
-                  stats.totalBuildings > 0
-                    ? Math.round((item.count / stats.totalBuildings) * 100)
-                    : 0;
-                return (
-                  <div key={item.comuna}>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-medium text-[var(--text)]">
-                        {item.comuna}
-                      </span>
-                      <span className="text-sm text-[var(--subtext)]">
-                        {item.count} ({percentage}%)
-                      </span>
-                    </div>
-                    <div className="h-2 bg-[var(--bg)] rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-brand-violet transition-all"
-                        style={{ width: `${percentage}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })
+      <section className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <article className="rounded-2xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-1)] p-5">
+          <h2 className="text-lg font-semibold text-[var(--text)]">Atencion requerida</h2>
+          <div className="mt-4 space-y-2">
+            {riskyBuildings > 0 ? (
+              <Link
+                href="/admin/completeness"
+                className="flex items-start justify-between rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-3 hover:bg-amber-500/15"
+              >
+                <div>
+                  <p className="text-sm font-medium text-amber-300">{riskyBuildings} edificio(s) con completitud baja</p>
+                  <p className="text-xs text-amber-200/80">Revisar portada, amenities y niveles de servicio.</p>
+                </div>
+                <span className="text-xs text-amber-200">Ver</span>
+              </Link>
             ) : (
-              <p className="text-sm text-[var(--subtext)]">No hay datos disponibles</p>
+              <EmptyState title="Sin alertas criticas" description="No hay tareas urgentes en este momento." icon={<CheckCircle2 className="h-5 w-5" />} />
             )}
           </div>
-        </div>
+        </article>
 
-        {/* Distribución por Tipología */}
-        <div className="rounded-2xl bg-[var(--soft)]/90 ring-1 ring-white/10 p-6">
-          <h2 className="text-xl font-bold mb-4 text-[var(--text)]">
-            Distribución por Tipología
-          </h2>
-          <div className="space-y-3">
-            {stats.typologyDistribution && stats.typologyDistribution.length > 0 ? (
-              stats.typologyDistribution.slice(0, 5).map((item) => {
-                const percentage =
-                  stats.totalUnits > 0
-                    ? Math.round((item.count / stats.totalUnits) * 100)
-                    : 0;
-                return (
-                  <div key={item.tipologia}>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-medium text-[var(--text)]">
-                        {item.tipologia}
-                      </span>
-                      <span className="text-sm text-[var(--subtext)]">
-                        {item.count} ({percentage}%)
-                      </span>
-                    </div>
-                    <div className="h-2 bg-[var(--bg)] rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-brand-violet transition-all"
-                        style={{ width: `${percentage}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              <p className="text-sm text-[var(--subtext)]">No hay datos disponibles</p>
-            )}
+        <article className="rounded-2xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-1)] p-5">
+          <h2 className="text-lg font-semibold text-[var(--text)]">Contexto rapido</h2>
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-2)] p-3">
+              <p className="text-xs uppercase tracking-wide text-[var(--subtext)]">Comuna lider</p>
+              <p className="mt-1 text-sm font-semibold text-[var(--text)]">{topComuna ? `${topComuna.comuna} (${topComuna.count})` : "Sin datos"}</p>
+            </div>
+            <div className="rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-2)] p-3">
+              <p className="text-xs uppercase tracking-wide text-[var(--subtext)]">Tipologia lider</p>
+              <p className="mt-1 text-sm font-semibold text-[var(--text)]">{topTipology ? `${topTipology.tipologia} (${topTipology.count})` : "Sin datos"}</p>
+            </div>
+            <div className="rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-2)] p-3">
+              <p className="text-xs uppercase tracking-wide text-[var(--subtext)]">Precio minimo</p>
+              <p className="mt-1 text-sm font-semibold text-[var(--text)]">${stats.priceRange.min.toLocaleString("es-CL")}</p>
+            </div>
+            <div className="rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-2)] p-3">
+              <p className="text-xs uppercase tracking-wide text-[var(--subtext)]">Precio promedio</p>
+              <p className="mt-1 text-sm font-semibold text-[var(--text)]">${stats.priceRange.average.toLocaleString("es-CL")}</p>
+            </div>
           </div>
-        </div>
-      </div>
+        </article>
+      </section>
 
-      {/* Price Range */}
-      <div className="rounded-2xl bg-[var(--soft)]/90 ring-1 ring-white/10 p-6 mb-8">
-        <h2 className="text-xl font-bold mb-4 text-[var(--text)]">
-          Rango de Precios
+      <section className="rounded-2xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-1)] p-5">
+        <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--text)]">
+          <Layers3 className="h-5 w-5 text-[var(--subtext)]" />
+          Acciones rapidas
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <p className="text-sm text-[var(--subtext)] mb-1">Precio Mínimo</p>
-            <p className="text-2xl font-bold text-[var(--text)]">
-              ${stats.priceRange.min.toLocaleString("es-CL")}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm text-[var(--subtext)] mb-1">Precio Promedio</p>
-            <p className="text-2xl font-bold text-[var(--text)]">
-              ${stats.priceRange.average.toLocaleString("es-CL")}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm text-[var(--subtext)] mb-1">Precio Máximo</p>
-            <p className="text-2xl font-bold text-[var(--text)]">
-              ${stats.priceRange.max.toLocaleString("es-CL")}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="rounded-2xl bg-[var(--soft)]/90 ring-1 ring-white/10 p-6">
-        <h2 className="text-xl font-bold mb-4 text-[var(--text)]">
-          Acciones Rápidas
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Link
-            href="/admin/listar-propiedad"
-            className="px-4 py-3 rounded-lg bg-brand-violet text-white font-medium hover:bg-brand-violet/90 transition-colors text-center focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--soft)]"
-          >
-            Listar propiedad nueva
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <Link href="/admin/listar-propiedad" className="rounded-xl bg-brand-violet px-4 py-3 text-center text-sm font-semibold text-white hover:bg-brand-violet/90">
+            Crear nueva propiedad
           </Link>
-          <Link
-            href="/admin/buildings"
-            className="px-4 py-3 rounded-lg bg-[var(--soft)] text-[var(--text)] font-medium hover:bg-[var(--soft)]/80 transition-colors text-center ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--soft)]"
-          >
-            Gestionar Edificios
+          <Link href="/admin/buildings" className="rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-2)] px-4 py-3 text-center text-sm font-medium text-[var(--text)] hover:bg-[var(--admin-surface-2)]/80">
+            Gestionar edificios
           </Link>
-          <Link
-            href="/admin/units"
-            className="px-4 py-3 rounded-lg bg-[var(--soft)] text-[var(--text)] font-medium hover:bg-[var(--soft)]/80 transition-colors text-center ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--soft)]"
-          >
-            Gestionar Unidades
+          <Link href="/admin/units" className="rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-2)] px-4 py-3 text-center text-sm font-medium text-[var(--text)] hover:bg-[var(--admin-surface-2)]/80">
+            Gestionar unidades
           </Link>
-          <Link
-            href="/admin/flags"
-            className="px-4 py-3 rounded-lg bg-[var(--soft)] text-[var(--text)] font-medium hover:bg-[var(--soft)]/80 transition-colors text-center ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--soft)]"
-          >
-            Feature Flags
-          </Link>
-          <Link
-            href="/admin/completeness"
-            className="px-4 py-3 rounded-lg bg-[var(--soft)] text-[var(--text)] font-medium hover:bg-[var(--soft)]/80 transition-colors text-center ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--soft)]"
-          >
-            Completitud de Datos
+          <Link href="/admin/completeness" className="rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-2)] px-4 py-3 text-center text-sm font-medium text-[var(--text)] hover:bg-[var(--admin-surface-2)]/80">
+            Revisar completitud
           </Link>
         </div>
-      </div>
+      </section>
     </div>
   );
 }
+

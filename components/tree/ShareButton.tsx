@@ -16,7 +16,7 @@ export function ShareButton({ className = "" }: ShareButtonProps) {
   const handleShare = async () => {
     const shareData = {
       title: 'Elkis Daza - Realtor',
-      text: 'Encuentra tu próximo hogar sin comisión',
+      text: 'Encuentra tu próximo hogar con Elkis Realtor',
       url: typeof window !== 'undefined' ? window.location.href : '',
     };
 

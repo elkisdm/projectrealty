@@ -1,21 +1,30 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { Download, PlusSquare, Upload } from "lucide-react";
 import { toast } from "sonner";
 import type { Building } from "@schemas/models";
-import { DataTable, type Column } from "@components/admin/DataTable";
-import { SearchBar } from "@components/admin/SearchBar";
-import { FilterPanel, type FilterConfig } from "@components/admin/FilterPanel";
 import { FichaCondominio } from "@components/admin/FichaCondominio";
 import { BulkActions } from "@components/admin/BulkActions";
 import { ImportDialog } from "@components/admin/ImportDialog";
 import { ExportDialog } from "@components/admin/ExportDialog";
 import { ConfirmDialog } from "@components/admin/ConfirmDialog";
+import { SearchBar } from "@components/admin/SearchBar";
 import { buildingsToCSV, validateBuildingsFromCSV, downloadCSV } from "@lib/admin/csv";
 import { validateAssetPlanCSV } from "@lib/admin/assetplan-csv";
+import { getErrorMessage } from "@lib/admin/client-errors";
 import { logger } from "@lib/logger";
 import { useAdminAuth } from "@hooks/useAdminAuth";
+import {
+  DataGrid,
+  FilterDrawer,
+  PageHeader,
+  ErrorState,
+  PermissionState,
+  StatusBadge,
+} from "@components/admin/ui";
+import type { DataGridColumn, DataGridRowAction, FilterField } from "@/types/admin-ui";
 
 interface PaginationInfo {
   page: number;
@@ -60,31 +69,37 @@ export default function BuildingsAdminPage() {
       const params = new URLSearchParams({
         page: String(pagination.page),
         page_size: String(pagination.limit),
-        ...(search && { search }),
-        ...(filters.comuna && { city: String(filters.comuna) }),
-        ...(filters.is_active !== undefined && {
-          is_active: String(filters.is_active),
-        }),
+        ...(search ? { search } : {}),
+        ...(filters.comuna ? { city: String(filters.comuna) } : {}),
+        ...(filters.is_active !== undefined ? { is_active: String(filters.is_active) } : {}),
       });
 
       const response = await fetch(`/api/admin/buildings?${params}`);
       const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.error || "Error al cargar edificios");
+      if (!response.ok || !data.success) {
+        throw new Error(getErrorMessage(data.error, "Error al cargar edificios"));
       }
 
-      setBuildings(data.data);
-      setPagination(data.pagination);
+      setBuildings(data.data || []);
+      const meta = data.pagination || data.meta;
+      setPagination({
+        page: meta?.page || 1,
+        limit: meta?.page_size || pagination.limit,
+        total: meta?.total || 0,
+        totalPages: meta?.total_pages || 1,
+        hasNextPage: Boolean(meta?.has_next_page),
+        hasPrevPage: Boolean(meta?.has_prev_page),
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error desconocido");
     } finally {
       setLoading(false);
     }
-  }, [pagination.page, pagination.limit, search, filters]);
+  }, [filters, pagination.limit, pagination.page, search]);
 
   useEffect(() => {
-    fetchBuildings();
+    void fetchBuildings();
   }, [fetchBuildings]);
 
   const handleEdit = (building: Building) => {
@@ -101,21 +116,15 @@ export default function BuildingsAdminPage() {
   };
 
   const confirmDelete = async () => {
-    const { building } = deleteConfirm;
-    if (!building) return;
-
+    if (!deleteConfirm.building) return;
     try {
-      const response = await fetch(`/api/admin/buildings/${building.id}`, {
-        method: "DELETE",
-      });
-
+      const response = await fetch(`/api/admin/buildings/${deleteConfirm.building.id}`, { method: "DELETE" });
       if (!response.ok) {
         throw new Error("Error al eliminar edificio");
       }
-
-      toast.success(`Edificio "${building.name}" eliminado correctamente`);
+      toast.success(`Edificio "${deleteConfirm.building.name}" eliminado`);
       setDeleteConfirm({ building: null, isBulk: false });
-      fetchBuildings();
+      void fetchBuildings();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Error desconocido al eliminar edificio");
     }
@@ -123,30 +132,27 @@ export default function BuildingsAdminPage() {
 
   const handleFormSubmit = async (data: Omit<Building, "units">) => {
     if (!editingBuilding) {
-      toast.error("La creación de edificio se realiza desde 'Listar propiedad nueva'");
+      toast.error("La creacion de edificios se realiza desde Listar propiedad");
       return;
     }
 
     try {
       setFormLoading(true);
-      const url = `/api/admin/buildings/${editingBuilding.id}`;
-      const method = "PUT";
-
-      const response = await fetch(url, {
-        method,
+      const response = await fetch(`/api/admin/buildings/${editingBuilding.id}`, {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Error al guardar edificio");
+        throw new Error(getErrorMessage(errorData.error, "Error al guardar edificio"));
       }
 
       setShowForm(false);
       setEditingBuilding(undefined);
-      toast.success(`Edificio "${data.name}" actualizado correctamente`);
-      fetchBuildings();
+      toast.success(`Edificio "${data.name}" actualizado`);
+      void fetchBuildings();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Error desconocido al guardar edificio");
     } finally {
@@ -165,7 +171,6 @@ export default function BuildingsAdminPage() {
 
   const confirmBulkDelete = async () => {
     if (selected.length === 0) return;
-
     try {
       const response = await fetch("/api/admin/bulk", {
         method: "POST",
@@ -173,7 +178,7 @@ export default function BuildingsAdminPage() {
         body: JSON.stringify({
           operation: "delete",
           entity: "buildings",
-          ids: selected.map((b) => b.id),
+          ids: selected.map((building) => building.id),
         }),
       });
 
@@ -181,10 +186,10 @@ export default function BuildingsAdminPage() {
         throw new Error("Error al eliminar edificios");
       }
 
-      toast.success(`${selected.length} edificio(s) eliminado(s) correctamente`);
+      toast.success(`${selected.length} edificio(s) eliminado(s)`);
       setSelected([]);
       setDeleteConfirm({ building: null, isBulk: false });
-      fetchBuildings();
+      void fetchBuildings();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Error desconocido al eliminar edificios");
     }
@@ -193,8 +198,6 @@ export default function BuildingsAdminPage() {
   const handleImport = async (file: File) => {
     try {
       const text = await file.text();
-
-      // Detectar formato: AssetPlan (separado por ;) o formato estándar (separado por ,)
       const isAssetPlanFormat = text.includes(";") && text.includes("Condominio");
 
       let valid: Building[] = [];
@@ -202,55 +205,39 @@ export default function BuildingsAdminPage() {
       let parseErrors: Array<{ row: number; error: string }> = [];
 
       if (isAssetPlanFormat) {
-        // Formato AssetPlan
         const result = validateAssetPlanCSV(text);
         valid = result.valid;
         invalid = result.invalid;
         parseErrors = result.parseErrors;
       } else {
-        // Formato estándar
         const result = validateBuildingsFromCSV(text);
         valid = result.valid;
         invalid = result.invalid;
       }
 
-      // Mostrar errores si los hay
       if (parseErrors.length > 0) {
-        const errorMsg = `Errores de parsing: ${parseErrors.length}\n${parseErrors.slice(0, 3).map(e => `Fila ${e.row}: ${e.error}`).join('\n')}`;
-        logger.warn(errorMsg);
+        logger.warn(`Errores de parsing: ${parseErrors.length}`);
       }
 
       if (invalid.length > 0) {
-        // Mostrar detalles de los errores en la consola
-        logger.error("Errores de validación:", invalid);
-        logger.error("Datos inválidos:", invalid.map(inv => inv.data));
-
-        toast.warning(
-          `${invalid.length} edificio(s) con errores de validación. Continuando con ${valid.length} válido(s)...`,
-          { duration: 5000 }
-        );
+        logger.error("Errores de validacion:", invalid);
+        toast.warning(`${invalid.length} edificios invalidos. Se continuara con ${valid.length} validos.`);
       }
 
       if (valid.length === 0) {
-        throw new Error("No hay registros válidos para importar");
+        throw new Error("No hay registros validos para importar");
       }
 
-      // Importar en lotes para evitar timeouts
       const batchSize = 10;
       let imported = 0;
       let failed = 0;
 
-      for (let i = 0; i < valid.length; i += batchSize) {
-        const batch = valid.slice(i, i + batchSize);
-
+      for (let index = 0; index < valid.length; index += batchSize) {
+        const batch = valid.slice(index, index + batchSize);
         const response = await fetch("/api/admin/bulk", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            operation: "import",
-            entity: "buildings",
-            data: batch,
-          }),
+          body: JSON.stringify({ operation: "import", entity: "buildings", data: batch }),
         });
 
         if (response.ok) {
@@ -263,12 +250,12 @@ export default function BuildingsAdminPage() {
       }
 
       if (failed > 0) {
-        toast.warning(`Importación completada: ${imported} edificios importados, ${failed} fallaron.`);
+        toast.warning(`Importacion completada: ${imported} importados, ${failed} fallidos.`);
       } else {
         toast.success(`${imported} edificios importados correctamente.`);
       }
 
-      fetchBuildings();
+      void fetchBuildings();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Error al importar edificios");
       throw err;
@@ -276,143 +263,123 @@ export default function BuildingsAdminPage() {
   };
 
   const handleExport = async (format: "csv" | "json") => {
-    try {
-      if (format === "csv") {
-        const csv = buildingsToCSV(selected.length > 0 ? selected : buildings);
-        downloadCSV(csv, `buildings-${new Date().toISOString().split("T")[0]}.csv`);
-      } else {
-        const json = JSON.stringify(
-          selected.length > 0 ? selected : buildings,
-          null,
-          2
-        );
-        const blob = new Blob([json], { type: "application/json" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `buildings-${new Date().toISOString().split("T")[0]}.json`;
-        link.click();
-        URL.revokeObjectURL(url);
-      }
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Error al exportar");
+    if (format === "csv") {
+      const csv = buildingsToCSV(selected.length > 0 ? selected : buildings);
+      downloadCSV(csv, `buildings-${new Date().toISOString().split("T")[0]}.csv`);
+      return;
     }
+
+    const json = JSON.stringify(selected.length > 0 ? selected : buildings, null, 2);
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `buildings-${new Date().toISOString().split("T")[0]}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
-  const filterConfigs: FilterConfig[] = [
-    {
-      key: "comuna",
-      label: "Comuna",
-      type: "select",
-      options: Array.from(new Set(buildings.map((b) => b.comuna))).map(
-        (comuna) => ({ label: comuna, value: comuna })
-      ),
-    },
-    {
-      key: "is_active",
-      label: "Activo",
-      type: "checkbox",
-    },
-  ];
+  const filterFields: FilterField[] = useMemo(
+    () => [
+      {
+        key: "comuna",
+        label: "Comuna",
+        controlType: "select",
+        options: Array.from(new Set(buildings.map((building) => building.comuna))).map((comuna) => ({
+          label: comuna,
+          value: comuna,
+        })),
+      },
+      { key: "is_active", label: "Solo activos", controlType: "checkbox" },
+    ],
+    [buildings]
+  );
 
-  const columns: Column<Building>[] = [
+  const columns: DataGridColumn<Building>[] = [
     { key: "name", label: "Nombre", sortable: true },
     { key: "slug", label: "Slug", sortable: true },
     { key: "comuna", label: "Comuna", sortable: true },
-    { key: "address", label: "Dirección", sortable: false },
+    { key: "address", label: "Direccion" },
     {
       key: "isActive",
-      label: "Activo",
-      sortable: true,
-      render: (value) => (value ? "✓" : "✗"),
+      label: "Estado",
+      renderCell: (value) => <StatusBadge status={value ? "active" : "inactive"} label={value ? "Activo" : "Inactivo"} />,
     },
     {
       key: "units",
       label: "Unidades",
-      sortable: false,
-      render: (value) => {
-        const units = value as Building["units"];
-        return `${units?.length || 0}`;
-      },
+      align: "right",
+      renderCell: (value) => `${(value as Building["units"])?.length || 0}`,
     },
     {
       key: "amenities",
       label: "Amenities",
-      sortable: false,
-      render: (value) => {
-        const amenities = value as string[];
-        return `${amenities?.length || 0}`;
-      },
+      align: "right",
+      renderCell: (value) => `${(value as string[])?.length || 0}`,
     },
   ];
 
+  const rowActions: DataGridRowAction<Building>[] = [
+    { key: "edit", label: "Editar", minRole: "editor", onClick: handleEdit },
+    { key: "delete", label: "Eliminar", minRole: "admin", variant: "danger", onClick: handleDelete },
+  ];
+
   return (
-    <div className="container mx-auto px-4 md:px-6 py-8">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-3xl font-bold mb-2 text-[var(--text)]">
-              Gestión de Edificios
-            </h1>
-            <p className="text-[var(--subtext)]">
-              Administra los edificios del sistema
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowImport(true)}
-              className="px-4 py-2 rounded-lg bg-[var(--soft)] text-[var(--text)] hover:bg-[var(--soft)]/80 transition-colors ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--bg)]"
-            >
-              Importar
-            </button>
-            <button
-              onClick={() => setShowExport(true)}
-              className="px-4 py-2 rounded-lg bg-[var(--soft)] text-[var(--text)] hover:bg-[var(--soft)]/80 transition-colors ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--bg)]"
-            >
-              Exportar
-            </button>
-            <Link
-              href="/admin/listar-propiedad"
-              className="px-4 py-2 rounded-lg bg-brand-violet text-white hover:bg-brand-violet/90 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--bg)]"
-            >
-              + Nuevo Edificio/Propiedad
-            </Link>
-          </div>
-        </div>
+    <div className="space-y-4">
+      <PageHeader
+        title="Gestion de edificios"
+        description="Administra informacion comercial y operacional de edificios."
+        breadcrumbs={[
+          { label: "Admin", href: "/admin" },
+          { label: "Edificios" },
+        ]}
+        role={user?.role || "viewer"}
+        actions={[
+          {
+            key: "import",
+            label: "Importar",
+            icon: <Upload className="h-4 w-4" />,
+            variant: "secondary",
+            minRole: "editor",
+            onClick: () => setShowImport(true),
+          },
+          {
+            key: "export",
+            label: "Exportar",
+            icon: <Download className="h-4 w-4" />,
+            variant: "secondary",
+            onClick: () => setShowExport(true),
+          },
+          {
+            key: "new",
+            label: "Nuevo edificio/propiedad",
+            icon: <PlusSquare className="h-4 w-4" />,
+            minRole: "editor",
+            href: "/admin/listar-propiedad",
+          },
+        ]}
+      />
 
-        {/* Search and Filters */}
-        <div className="flex items-center gap-4 mb-6">
-          <div className="flex-1">
-            <SearchBar
-              value={search}
-              onChange={setSearch}
-              placeholder="Buscar por nombre, slug, comuna..."
-            />
-          </div>
-          <FilterPanel
-            filters={filterConfigs}
-            values={filters}
-            onChange={(key, value) => setFilters((prev) => ({ ...prev, [key]: value }))}
-            onClear={() => setFilters({})}
-          />
+      <section className="flex flex-col gap-3 rounded-2xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-1)] p-4 lg:flex-row lg:items-center">
+        <div className="flex-1">
+          <SearchBar value={search} onChange={setSearch} placeholder="Buscar por nombre, slug o comuna..." />
         </div>
-      </div>
+        <FilterDrawer
+          fields={filterFields}
+          values={filters}
+          onChange={(key, value) => setFilters((prev) => ({ ...prev, [key]: value }))}
+          onClear={() => setFilters({})}
+        />
+      </section>
 
-      {/* Error */}
-      {error && (
-        <div className="mb-6 p-4 rounded-lg bg-red-600/20 text-red-400">
-          {error}
-        </div>
-      )}
+      {error ? <ErrorState description={error} onRetry={() => void fetchBuildings()} /> : null}
+      {user?.role === "viewer" && showForm ? (
+        <PermissionState description="Tu rol actual solo permite lectura. Solicita permisos de editor o admin." />
+      ) : null}
 
-      {/* Form Modal */}
-      {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="rounded-2xl bg-[var(--soft)] ring-1 ring-white/10 shadow-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6">
-            <h2 className="text-2xl font-bold mb-4 text-[var(--text)]">
-              Editar Edificio
-            </h2>
+      {showForm ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-2xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-1)] p-6">
             <FichaCondominio
               initialData={editingBuilding}
               onSubmit={handleFormSubmit}
@@ -424,52 +391,49 @@ export default function BuildingsAdminPage() {
             />
           </div>
         </div>
-      )}
+      ) : null}
 
-      {/* Table */}
-      <DataTable
+      <DataGrid
         data={buildings}
         columns={columns}
-        onRowAction={(action, row) => {
-          if (action === "edit") handleEdit(row);
-          if (action === "delete") handleDelete(row);
-        }}
-        selectable
-        onSelectionChange={setSelected}
         loading={loading}
-        emptyMessage="No hay edificios disponibles"
+        selectable
+        role={user?.role || "viewer"}
+        rowActions={rowActions}
+        onSelectionChange={setSelected}
+        emptyTitle="No hay edificios disponibles"
+        emptyDescription="Importa data o crea una nueva propiedad para iniciar."
+        emptyAction={
+          <Link href="/admin/listar-propiedad" className="rounded-lg bg-brand-violet px-3 py-2 text-sm font-medium text-white hover:bg-brand-violet/90">
+            Crear desde wizard
+          </Link>
+        }
       />
 
-      {/* Pagination */}
-      {pagination.totalPages > 1 && (
-        <div className="mt-6 flex items-center justify-between">
+      {pagination.totalPages > 1 ? (
+        <div className="flex items-center justify-between rounded-2xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-1)] px-4 py-3">
           <p className="text-sm text-[var(--subtext)]">
-            Página {pagination.page} de {pagination.totalPages} ({pagination.total} total)
+            Pagina {pagination.page} de {pagination.totalPages} ({pagination.total} registros)
           </p>
           <div className="flex items-center gap-2">
             <button
-              onClick={() =>
-                setPagination((prev) => ({ ...prev, page: prev.page - 1 }))
-              }
+              onClick={() => setPagination((prev) => ({ ...prev, page: prev.page - 1 }))}
               disabled={!pagination.hasPrevPage}
-              className="px-4 py-2 rounded-lg bg-[var(--soft)] text-[var(--text)] hover:bg-[var(--soft)]/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--bg)]"
+              className="min-h-[38px] rounded-lg border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-2)] px-3 py-1.5 text-sm text-[var(--text)] disabled:opacity-50"
             >
               Anterior
             </button>
             <button
-              onClick={() =>
-                setPagination((prev) => ({ ...prev, page: prev.page + 1 }))
-              }
+              onClick={() => setPagination((prev) => ({ ...prev, page: prev.page + 1 }))}
               disabled={!pagination.hasNextPage}
-              className="px-4 py-2 rounded-lg bg-[var(--soft)] text-[var(--text)] hover:bg-[var(--soft)]/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--bg)]"
+              className="min-h-[38px] rounded-lg border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-2)] px-3 py-1.5 text-sm text-[var(--text)] disabled:opacity-50"
             >
               Siguiente
             </button>
           </div>
         </div>
-      )}
+      ) : null}
 
-      {/* Bulk Actions */}
       <BulkActions
         selected={selected}
         onBulkDelete={user?.role === "admin" ? handleBulkDelete : undefined}
@@ -477,28 +441,16 @@ export default function BuildingsAdminPage() {
         onClearSelection={() => setSelected([])}
       />
 
-      {/* Import Dialog */}
-      <ImportDialog
-        isOpen={showImport}
-        onClose={() => setShowImport(false)}
-        onImport={handleImport}
-      />
+      <ImportDialog isOpen={showImport} onClose={() => setShowImport(false)} onImport={handleImport} />
+      <ExportDialog isOpen={showExport} onClose={() => setShowExport(false)} onExport={handleExport} />
 
-      {/* Export Dialog */}
-      <ExportDialog
-        isOpen={showExport}
-        onClose={() => setShowExport(false)}
-        onExport={handleExport}
-      />
-
-      {/* Confirm Delete Dialog */}
       <ConfirmDialog
         isOpen={deleteConfirm.building !== null || deleteConfirm.isBulk}
-        title={deleteConfirm.isBulk ? "Eliminar Múltiples Edificios" : "Eliminar Edificio"}
+        title={deleteConfirm.isBulk ? "Eliminar multiples edificios" : "Eliminar edificio"}
         message={
           deleteConfirm.isBulk
-            ? `¿Estás seguro de eliminar ${selected.length} edificio(s)? Esta acción no se puede deshacer.`
-            : `¿Estás seguro de eliminar el edificio "${deleteConfirm.building?.name}"? Esta acción no se puede deshacer.`
+            ? `Estas seguro de eliminar ${selected.length} edificio(s)? Esta accion no se puede deshacer.`
+            : `Estas seguro de eliminar el edificio "${deleteConfirm.building?.name}"? Esta accion no se puede deshacer.`
         }
         confirmText="Eliminar"
         cancelText="Cancelar"
