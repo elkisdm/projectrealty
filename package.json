@@ -42,6 +42,7 @@
     "test:mapping": "node scripts/tools/test-data-mapping.mjs",
     "setup:supabase": "node scripts/tools/setup-supabase.mjs",
     "verify": "node scripts/tools/verify-setup.mjs",
+    "verify:nearby-amenities": "node scripts/tools/verify-nearby-amenities-connection.mjs",
     "coming-soon:on": "node scripts/tools/flags.mjs on",
     "coming-soon:off": "node scripts/tools/flags.mjs off",
     "deploy:staging": "node scripts/tools/deploy-staging.mjs",

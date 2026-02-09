@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getNearbyAmenitiesByBuildingId } from '@/lib/api/nearby-amenities';
+import { isSupabaseConfigured } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
 import { z } from 'zod';
 
@@ -29,6 +30,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         { error: 'buildingId inválido', details: validation.error.errors },
         { status: 400 }
+      );
+    }
+
+    if (!isSupabaseConfigured) {
+      logger.warn('[API /nearby-amenities] SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY no configurados; no se puede consultar building_nearby_amenities');
+      return NextResponse.json(
+        { data: null, message: 'No se encontraron amenidades para este edificio' },
+        { status: 200 }
       );
     }
 

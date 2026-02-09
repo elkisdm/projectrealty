@@ -37,10 +37,12 @@ type VisitCreateResult = {
 
 type VisitCancelResult = {
   visit: Visit;
+  previousStatus: VisitRow['status'];
 };
 
 type VisitStatusUpdateResult = {
   visit: Visit;
+  previousStatus: VisitRow['status'];
 };
 
 type VisitRescheduleResult = {
@@ -346,7 +348,7 @@ class InMemoryVisitRepository implements VisitRepository {
     memoryStore.visits.set(visit.id, updatedVisit);
     memoryStore.slots.set(slot.id, { ...slot, status: 'open' });
 
-    return { visit: updatedVisit };
+    return { visit: updatedVisit, previousStatus: visit.status };
   }
 
   async updateVisitStatus(input: {
@@ -378,7 +380,7 @@ class InMemoryVisitRepository implements VisitRepository {
     };
     memoryStore.visits.set(updatedVisit.id, updatedVisit);
 
-    return { visit: updatedVisit };
+    return { visit: updatedVisit, previousStatus: visit.status };
   }
 
   async rescheduleVisit(input: {
@@ -797,7 +799,7 @@ class SupabaseVisitRepository implements VisitRepository {
         actorId: input.actorId,
       });
 
-      return { visit: mapVisitRow(updatedVisit as VisitRow) };
+      return { visit: mapVisitRow(updatedVisit as VisitRow), previousStatus: visit.status };
     } catch (error) {
       if (error instanceof MissingSchemaError && process.env.NODE_ENV !== 'production') {
         return this.fallbackRepo.cancelVisit(input);
@@ -858,7 +860,7 @@ class SupabaseVisitRepository implements VisitRepository {
         actorId: input.actorId,
       });
 
-      return { visit: mapVisitRow(updatedVisit as VisitRow) };
+      return { visit: mapVisitRow(updatedVisit as VisitRow), previousStatus: visit.status };
     } catch (error) {
       if (error instanceof MissingSchemaError && process.env.NODE_ENV !== 'production') {
         return this.fallbackRepo.updateVisitStatus(input);

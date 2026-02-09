@@ -49,4 +49,7 @@ export const supabaseAdmin = supabaseUrl && supabaseServiceKey
     })
   : createClient(); // Mock si no hay configuración
 
+/** True si la BD está configurada (SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY). Usar para logs/diagnóstico. */
+export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseServiceKey);
+
 export type { SupabaseClientType as SupabaseClient };

@@ -44,6 +44,13 @@ export async function getNearbyAmenitiesByBuildingId(
       .order('display_order');
 
     if (error) {
+      const code = error && typeof error === 'object' && 'code' in error ? String((error as { code?: string }).code) : '';
+      if (code === '42P01') {
+        logger.warn(
+          '[getNearbyAmenitiesByBuildingId] Tabla building_nearby_amenities no existe. ' +
+          'Ejecutar config/supabase/migration-nearby-amenities.sql en Supabase y luego seed-parque-mackenna-amenities.sql si aplica.'
+        );
+      }
       logger.error('[getNearbyAmenitiesByBuildingId] Error fetching amenities:', error);
       throw error;
     }
