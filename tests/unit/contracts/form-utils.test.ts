@@ -174,4 +174,31 @@ describe('contracts/form-utils', () => {
     const invalid = parseContractPayloadJson('{"foo": "bar"}');
     expect(invalid.ok).toBe(false);
   });
+
+  test('normalizes unicode text preserving n with tilde', () => {
+    const payload = buildPayload({
+      arrendatario: {
+        nombre: 'Pen\u0303a Soto',
+      },
+      declaraciones: {
+        fondos_origen_fuente: 'Remuneraciones en Espan\u0303a',
+      },
+    });
+
+    const prepared = prepareContractPayloadForSubmit(payload);
+    expect(prepared.arrendatario.nombre).toBe('Peña Soto');
+    expect(prepared.declaraciones.fondos_origen_fuente).toBe('Remuneraciones en España');
+  });
+
+  test('guards source field when full declaration is pasted by mistake', () => {
+    const payload = buildPayload({
+      declaraciones: {
+        fondos_origen_fuente:
+          'DECLARACION DE ORIGEN DE FONDOS PARA PAGOS ASOCIADOS AL CONTRATO\\nTexto largo accidental',
+      },
+    });
+
+    const prepared = prepareContractPayloadForSubmit(payload);
+    expect(prepared.declaraciones.fondos_origen_fuente).toBe('Remuneraciones por trabajo dependiente');
+  });
 });

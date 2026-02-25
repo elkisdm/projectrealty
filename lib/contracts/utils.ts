@@ -1,5 +1,20 @@
 import { createHash } from 'node:crypto';
 
+const SPANISH_MONTHS = [
+  'enero',
+  'febrero',
+  'marzo',
+  'abril',
+  'mayo',
+  'junio',
+  'julio',
+  'agosto',
+  'septiembre',
+  'octubre',
+  'noviembre',
+  'diciembre',
+];
+
 export function sha256Hex(input: Buffer | string): string {
   return createHash('sha256').update(input).digest('hex');
 }
@@ -61,4 +76,16 @@ export function formatUF(value: number): string {
     maximumFractionDigits: 2,
   }).format(value);
   return `${formatted} UF`;
+}
+
+export function formatDateForContract(value: string): string {
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return value;
+
+  const year = Number(match[1]);
+  const monthIndex = Number(match[2]) - 1;
+  const day = Number(match[3]);
+  if (monthIndex < 0 || monthIndex > 11) return value;
+
+  return `${day} de ${SPANISH_MONTHS[monthIndex]} de ${year}`;
 }

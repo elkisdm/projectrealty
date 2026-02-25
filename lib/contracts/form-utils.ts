@@ -179,7 +179,7 @@ export function createContractWizardDefaultDraft(): ContractPayload {
 
 function trimString(value: unknown): unknown {
   if (typeof value === 'string') {
-    return value.trim();
+    return value.trim().normalize('NFC');
   }
 
   if (Array.isArray(value)) {
@@ -219,6 +219,19 @@ function normalizeRutBodyAndDv(value: string): { body: string; dv: string } | nu
 
 function formatBodyWithDots(body: string): string {
   return body.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
+function normalizeFundsSource(value: string | undefined): string {
+  const fallback = 'Remuneraciones por trabajo dependiente';
+  const source = (value ?? '').trim().normalize('NFC');
+  if (!source) return fallback;
+
+  // Guard against pasting the full declaration text in the source field.
+  if (source.length > 180 || /DECLARACION DE ORIGEN DE FONDOS/i.test(source) || source.includes('\n')) {
+    return fallback;
+  }
+
+  return source.replace(/[.;:\s]+$/, '');
 }
 
 export function formatRutForDisplay(value: string): string {
@@ -288,7 +301,7 @@ function formatSpanishLongDate(dateISO: string): string {
   }
   const [year, month, day] = dateISO.split('-').map((value) => Number(value));
   const monthName = SPANISH_MONTHS[Math.max(0, Math.min(11, month - 1))];
-  return `${day} de ${monthName} ${year}`;
+  return `${day} de ${monthName} de ${year}`;
 }
 
 function resolveUnitLabel(payload: ContractPayload): string {
@@ -406,8 +419,7 @@ export function normalizeContractPayload(input: ContractPayload): ContractPayloa
     },
     declaraciones: {
       ...trimmed.declaraciones,
-      fondos_origen_fuente:
-        trimmed.declaraciones.fondos_origen_fuente?.trim() || 'Remuneraciones por trabajo dependiente',
+      fondos_origen_fuente: normalizeFundsSource(trimmed.declaraciones.fondos_origen_fuente),
     },
   };
 }

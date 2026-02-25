@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { ContractPayload } from '@/schemas/contracts';
 import { ContractError } from './errors';
-import { formatCLP, formatUF } from './utils';
+import { formatCLP, formatDateForContract, formatUF } from './utils';
 
 interface PlaceholderCatalog {
   allowed: string[];
@@ -31,6 +31,34 @@ function getValueFromPath(payload: ContractPayload, path: string): unknown {
   return current;
 }
 
+function getUnidadLabel(payload: ContractPayload): string {
+  const depto = payload.inmueble.numero_depto?.trim();
+  if (depto) return `Departamento ${depto}`;
+
+  const casa = payload.inmueble.numero_casa?.trim();
+  if (casa) return `Casa ${casa}`;
+
+  return 'sin numero de unidad';
+}
+
+function getCuota(payload: ContractPayload, number: 1 | 2) {
+  return payload.garantia.cuotas.find((item) => item.n === number);
+}
+
+function buildPersoneriaDescripcion(payload: ContractPayload): string {
+  const personeria = payload.arrendadora.personeria;
+  const fecha = formatDateForContract(personeria.fecha);
+  const notaria = personeria.notaria?.toLowerCase() ?? '';
+  const notario = personeria.notario_nombre?.toLowerCase() ?? '';
+  const isOnline = notaria.includes('firma online') || notario.includes('firma online');
+
+  if (isOnline) {
+    return `conforme a mandato vigente y proceso de firma electronica avanzada de fecha ${fecha}`;
+  }
+
+  return `en la escritura publica de fecha ${fecha}, otorgada en la notaria ${personeria.notaria} de ${personeria.ciudad}, notario/a ${personeria.notario_nombre}`;
+}
+
 export function buildReplacements(payload: ContractPayload): Record<string, string> {
   const catalog = getCatalog();
   const replacements: Record<string, string> = {};
@@ -39,6 +67,15 @@ export function buildReplacements(payload: ContractPayload): Record<string, stri
     const scoped = placeholder.replace('[[', '').replace(']]', '');
     const lowerPath = scoped.toLowerCase();
     let value = getValueFromPath(payload, lowerPath.replace(/\[(\d+)\]/g, '.$1'));
+
+    if (
+      scoped === 'CONTRATO.FECHA_FIRMA' ||
+      scoped === 'CONTRATO.FECHA_INICIO' ||
+      scoped === 'CONTRATO.FECHA_TERMINO'
+    ) {
+      const raw = value ? String(value) : '';
+      value = raw ? formatDateForContract(raw) : raw;
+    }
 
     if (scoped === 'RENTA.MONTO_CLP' && typeof payload.renta.monto_clp === 'number') {
       value = formatCLP(payload.renta.monto_clp);
@@ -52,11 +89,51 @@ export function buildReplacements(payload: ContractPayload): Record<string, stri
       value = formatCLP(payload.garantia.monto_total_clp);
     }
 
+    if (scoped === 'GARANTIA.PAGO_INICIAL_CLP' && typeof payload.garantia.pago_inicial_clp === 'number') {
+      value = formatCLP(payload.garantia.pago_inicial_clp);
+    }
+
+    if (scoped === 'GARANTIA.CUOTA_1_MONTO_CLP') {
+      const cuota = getCuota(payload, 1);
+      value = cuota ? formatCLP(cuota.monto_clp) : '-';
+    }
+
+    if (scoped === 'GARANTIA.CUOTA_2_MONTO_CLP') {
+      const cuota = getCuota(payload, 2);
+      value = cuota ? formatCLP(cuota.monto_clp) : '-';
+    }
+
+    if (scoped === 'GARANTIA.CUOTA_1_FECHA') {
+      const cuota = getCuota(payload, 1);
+      value = cuota?.fecha ? formatDateForContract(cuota.fecha) : '-';
+    }
+
+    if (scoped === 'GARANTIA.CUOTA_2_FECHA') {
+      const cuota = getCuota(payload, 2);
+      value = cuota?.fecha ? formatDateForContract(cuota.fecha) : '-';
+    }
+
+    if (scoped === 'INMUEBLE.UNIDAD_LABEL') {
+      value = getUnidadLabel(payload);
+    }
+
+    if (scoped === 'ARRENDADORA.PERSONERIA.DESCRIPCION') {
+      value = buildPersoneriaDescripcion(payload);
+    }
+
+    if (scoped === 'DECLARACIONES.FONDOS_ORIGEN_TEXTO') {
+      value = payload.declaraciones.fondos_origen_fuente ?? payload.declaraciones.fondos_origen_texto;
+    }
+
+    if (scoped === 'DECLARACIONES.FONDOS_ORIGEN_DECLARACION') {
+      value = payload.declaraciones.fondos_origen_texto;
+    }
+
     if (value === undefined || value === null) {
       continue;
     }
 
-    replacements[placeholder] = String(value);
+    replacements[placeholder] = String(value).normalize('NFC');
   }
 
   return replacements;
