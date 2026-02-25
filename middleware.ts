@@ -91,6 +91,8 @@ function isMvpRoute(pathname: string): boolean {
   if (pathname.startsWith("/api/buildings")) return true;
   if (pathname.startsWith("/api/availability")) return true;
   if (pathname.startsWith("/api/visits")) return true;
+  if (pathname.startsWith("/api/templates")) return true;
+  if (pathname.startsWith("/api/contracts")) return true;
   
   // APIs admin siempre permitidas (para uso interno)
   if (pathname.startsWith("/api/admin")) return true;

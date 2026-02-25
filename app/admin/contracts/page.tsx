@@ -58,7 +58,10 @@ export default function AdminContractsPage() {
 
   const headers = useMemo(() => {
     const h: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (token.trim()) h.Authorization = `Bearer ${token.trim()}`;
+    if (token.trim()) {
+      h.Authorization = `Bearer ${token.trim()}`;
+      h['x-admin-token'] = token.trim();
+    }
     return h;
   }, [token]);
 
