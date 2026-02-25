@@ -1,10 +1,14 @@
 'use client';
 
-import { AlertTriangle, CheckCircle2, Clock3, FileCheck2, FileDown } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Clock3, FileCheck2, FileDown, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import type { ContractIssueResponse, ContractValidationResponse } from '@/types/contracts';
+import type {
+  ContractDraftResponse,
+  ContractIssueResponse,
+  ContractValidationResponse,
+} from '@/types/contracts';
 
 interface ReviewSection {
   title: string;
@@ -15,12 +19,15 @@ interface ReviewSection {
 interface ContractReviewPanelProps {
   sections: ReviewSection[];
   validation: ContractValidationResponse | null;
+  draftResult: ContractDraftResponse | null;
   issueResult: ContractIssueResponse | null;
   apiError: string | null;
   canIssue: boolean;
   isValidating: boolean;
+  isGeneratingDraft: boolean;
   isIssuing: boolean;
   onValidate: () => void | Promise<void>;
+  onGenerateDraft: () => void | Promise<void>;
   onIssue: () => void | Promise<void>;
 }
 
@@ -37,15 +44,27 @@ function SectionStatusBadge({ section }: { section: ReviewSection }) {
   return <Badge variant="neutral">Pendiente</Badge>;
 }
 
+function renderErrorDetails(details: unknown): string | null {
+  if (!details || typeof details !== 'object') return null;
+  if (!('expectedRut' in details)) return null;
+
+  const expectedRut = (details as { expectedRut?: unknown }).expectedRut;
+  if (typeof expectedRut !== 'string' || !expectedRut.trim()) return null;
+  return `RUT esperado: ${expectedRut}`;
+}
+
 export function ContractReviewPanel({
   sections,
   validation,
+  draftResult,
   issueResult,
   apiError,
   canIssue,
   isValidating,
+  isGeneratingDraft,
   isIssuing,
   onValidate,
+  onGenerateDraft,
   onIssue,
 }: ContractReviewPanelProps) {
   return (
@@ -83,6 +102,16 @@ export function ContractReviewPanel({
             >
               <FileCheck2 className="h-4 w-4" />
               {isValidating ? 'Validando...' : 'Validar contrato'}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onGenerateDraft}
+              disabled={!canIssue || isGeneratingDraft}
+              className="inline-flex items-center gap-2"
+            >
+              <FileText className="h-4 w-4" />
+              {isGeneratingDraft ? 'Generando borrador...' : 'Generar borrador'}
             </Button>
             <Button
               type="button"
@@ -124,15 +153,50 @@ export function ContractReviewPanel({
               </div>
               {validation.errors?.length ? (
                 <ul className="space-y-1 text-xs text-[var(--subtext)]">
-                  {validation.errors.map((error, index) => (
-                    <li key={`${error.code}-${index}`}>
-                      <span className="font-semibold text-[var(--text)]">{error.code}:</span> {error.message}
-                    </li>
-                  ))}
+                  {validation.errors.map((error, index) => {
+                    const errorDetails = renderErrorDetails(error.details);
+                    return (
+                      <li key={`${error.code}-${index}`} className="rounded border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-1)] p-2">
+                        <p>
+                          <span className="font-semibold text-[var(--text)]">{error.code}:</span> {error.message}
+                        </p>
+                        {error.hint ? <p className="mt-1 text-[11px] text-amber-300">{error.hint}</p> : null}
+                        {errorDetails ? (
+                          <p className="mt-1 text-[11px] text-[var(--subtext)]">{errorDetails}</p>
+                        ) : null}
+                      </li>
+                    );
+                  })}
                 </ul>
               ) : (
                 <p className="text-xs text-[var(--subtext)]">No se detectaron errores ni placeholders faltantes.</p>
               )}
+            </div>
+          ) : null}
+
+          {draftResult ? (
+            <div className="rounded-md border border-sky-500/20 bg-sky-500/10 p-3 text-sm">
+              <div className="mb-2 inline-flex items-center gap-2 font-medium text-sky-300">
+                <FileText className="h-4 w-4" />
+                Borrador generado
+              </div>
+              <ul className="space-y-1 text-xs text-[var(--text)]">
+                <li>
+                  <span className="font-semibold">Hash:</span> {draftResult.hash}
+                </li>
+                <li>
+                  <span className="font-semibold">Generado:</span>{' '}
+                  {new Date(draftResult.generatedAt).toLocaleString('es-CL')}
+                </li>
+              </ul>
+              {draftResult.pdfUrl ? (
+                <Button asChild size="sm" className="mt-3" variant="outline">
+                  <a href={draftResult.pdfUrl} target="_blank" rel="noreferrer">
+                    <FileDown className="mr-2 h-4 w-4" />
+                    Descargar borrador PDF
+                  </a>
+                </Button>
+              ) : null}
             </div>
           ) : null}
 

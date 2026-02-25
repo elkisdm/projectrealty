@@ -46,6 +46,17 @@ function transformXmlContent(xml: string, payload: ContractPayload, replacements
   return rendered;
 }
 
+function renderTemplateWithPayload(params: {
+  sourceDocx: Buffer;
+  payload: ContractPayload;
+  replacements: Record<string, string>;
+}) {
+  return renderDocxTemplate({
+    sourceDocxBuffer: params.sourceDocx,
+    transformXml: (xml) => transformXmlContent(xml, params.payload, params.replacements),
+  });
+}
+
 export function validateContractInput(payloadRaw: ContractPayload): ValidationResult {
   try {
     const payload = applyPayloadDefaults(payloadRaw);
@@ -93,9 +104,10 @@ export async function validateContractForTemplate(params: {
     const sourceDocx = await downloadTemplateDocx(template.docx_path);
     const replacements = buildReplacements(payload);
 
-    const rendered = renderDocxTemplate({
-      sourceDocxBuffer: sourceDocx,
-      transformXml: (xml) => transformXmlContent(xml, payload, replacements),
+    const rendered = renderTemplateWithPayload({
+      sourceDocx,
+      payload,
+      replacements,
     });
 
     const missing = findResidualPlaceholders(rendered.mergedXmlContent);
@@ -185,9 +197,10 @@ export async function issueContract(params: {
   const sourceDocx = await downloadTemplateDocx(template.docx_path);
   const replacements = buildReplacements(payload);
 
-  const rendered = renderDocxTemplate({
-    sourceDocxBuffer: sourceDocx,
-    transformXml: (xml) => transformXmlContent(xml, payload, replacements),
+  const rendered = renderTemplateWithPayload({
+    sourceDocx,
+    payload,
+    replacements,
   });
 
   const residual = findResidualPlaceholders(rendered.mergedXmlContent);
@@ -237,5 +250,61 @@ export async function issueContract(params: {
     hash: pdfHash,
     idempotentReused: false,
     contract,
+  };
+}
+
+export async function generateContractDraft(params: {
+  templateId: string;
+  payloadRaw: ContractPayload;
+  createdBy: string;
+}): Promise<{
+  status: 'draft';
+  pdfUrl: string;
+  hash: string;
+  generatedAt: string;
+}> {
+  const payload = applyPayloadDefaults(params.payloadRaw);
+  validateBusinessRules(payload);
+
+  const template = await getTemplateById(params.templateId);
+  if (!template.is_active) {
+    throw new ContractError({
+      code: 'TEMPLATE_NOT_ACTIVE',
+      message: 'Template no está activo',
+      details: { templateId: params.templateId },
+    });
+  }
+
+  const sourceDocx = await downloadTemplateDocx(template.docx_path);
+  const replacements = buildReplacements(payload);
+  const rendered = renderTemplateWithPayload({
+    sourceDocx,
+    payload,
+    replacements,
+  });
+
+  const residual = findResidualPlaceholders(rendered.mergedXmlContent);
+  if (residual.length > 0) {
+    throw new ContractError({
+      code: 'MISSING_PLACEHOLDERS',
+      message: 'Quedaron placeholders sin reemplazar',
+      details: residual,
+    });
+  }
+  assertNoResidualPlaceholders(rendered.mergedXmlContent);
+
+  const pdfBuffer = await convertDocxToPdf(rendered.renderedDocxBuffer);
+  const pdfHash = sha256Hex(pdfBuffer);
+  const generatedAt = new Date().toISOString();
+  const fingerprint = sha256Hex(`${params.templateId}:${canonicalStringify(payload)}:${generatedAt}`);
+  const path = `drafts/${params.createdBy}/${generatedAt.slice(0, 10)}/${fingerprint}.pdf`;
+  await uploadContractPdf(path, pdfBuffer);
+  const pdfUrl = await createContractSignedUrl(path);
+
+  return {
+    status: 'draft',
+    pdfUrl,
+    hash: pdfHash,
+    generatedAt,
   };
 }

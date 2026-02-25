@@ -6,7 +6,7 @@ const payload: any = {
     razon_social: 'A', rut: '12345678-5', domicilio: 'X', email: 'a@a.com',
     cuenta: { banco: 'b', tipo: 'c', numero: '1', email_pago: 'p@a.com' },
     personeria: { fecha: 'x', notaria: 'n', ciudad: 'c', notario_nombre: 'z' },
-    representante: { nombre: 'r', rut: '12345678-5', nacionalidad: 'cl', estado_civil: 's', profesion: 'p' },
+    representante: { nombre: 'r', rut: '11111111-1', nacionalidad: 'cl', estado_civil: 's', profesion: 'p' },
   },
   propietario: { nombre: 'p', rut: '11111111-1' },
   arrendatario: { nombre: 'a', rut: '12345678-5', nacionalidad: 'cl', estado_civil: 's', email: 'u@u.com', domicilio: 'd' },
@@ -14,7 +14,7 @@ const payload: any = {
   renta: { monto_clp: 650000, monto_uf: 16.5, dia_limite_pago: 5, mes_primer_reajuste: 'Marzo' },
   garantia: { monto_total_clp: 650000, pago_inicial_clp: 650000, cuotas: [] },
   flags: { hay_aval: false, mascota_permitida: false, depto_amoblado: false },
-  declaraciones: { fondos_origen_texto: 'ok' },
+  declaraciones: { fondos_origen_texto: 'ok', fondos_origen_fuente: 'Remuneraciones por trabajo dependiente' },
 };
 
 describe('Business validation', () => {
@@ -29,7 +29,7 @@ describe('Business validation', () => {
     expect(() => validateBusinessRules(out)).not.toThrow();
   });
 
-  test('invalid guarantee sum fails', () => {
+  test('auto guarantee total is forced to renta monto', () => {
     const out = applyPayloadDefaults({
       ...payload,
       garantia: {
@@ -38,6 +38,36 @@ describe('Business validation', () => {
         cuotas: [{ monto_clp: 200000, n: 1 }],
       },
     });
+    expect(out.garantia.monto_total_clp).toBe(out.renta.monto_clp);
+    expect(() => validateBusinessRules(out)).not.toThrow();
+  });
+
+  test('invalid renta still fails', () => {
+    const out = applyPayloadDefaults({
+      ...payload,
+      renta: {
+        ...payload.renta,
+        monto_clp: 0,
+      },
+    });
     expect(() => validateBusinessRules(out)).toThrow();
+  });
+
+  test('rejects same company/personal rut even with different format', () => {
+    const out = applyPayloadDefaults({
+      ...payload,
+      arrendadora: {
+        ...payload.arrendadora,
+        rut: '12.345.678-5',
+        representante: {
+          ...payload.arrendadora.representante,
+          rut: '123456785',
+        },
+      },
+    });
+
+    expect(() => validateBusinessRules(out)).toThrow(
+      'RUT de representante legal debe ser personal y distinto al RUT de la arrendadora'
+    );
   });
 });

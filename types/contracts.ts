@@ -35,6 +35,13 @@ export interface ContractIssueResponse {
   durationMs?: number;
 }
 
+export interface ContractDraftResponse {
+  status: 'draft';
+  pdfUrl: string;
+  hash: string;
+  generatedAt: string;
+}
+
 export type ContractStatus = 'issued' | 'void';
 
 export interface ContractHistoryItem {

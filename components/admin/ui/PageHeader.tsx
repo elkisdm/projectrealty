@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Fragment } from "react";
 import type { AdminPageAction, AdminRole } from "@/types/admin-ui";
 import { canAccess } from "@components/admin/ui/role";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 
-interface BreadcrumbItem {
+interface BreadcrumbEntry {
   label: string;
   href?: string;
 }
@@ -21,7 +22,7 @@ interface BreadcrumbItem {
 interface PageHeaderProps {
   title: string;
   description?: string;
-  breadcrumbs?: BreadcrumbItem[];
+  breadcrumbs?: BreadcrumbEntry[];
   actions?: AdminPageAction[];
   role?: AdminRole;
 }
@@ -48,16 +49,18 @@ export function PageHeader({
         <Breadcrumb className="mb-3">
           <BreadcrumbList>
             {breadcrumbs.map((item, index) => (
-              <BreadcrumbItem key={`${item.label}-${index}`}>
-                {item.href ? (
-                  <BreadcrumbLink asChild>
-                    <Link href={item.href}>{item.label}</Link>
-                  </BreadcrumbLink>
-                ) : (
-                  <BreadcrumbPage>{item.label}</BreadcrumbPage>
-                )}
+              <Fragment key={`${item.label}-${index}`}>
+                <BreadcrumbItem>
+                  {item.href ? (
+                    <BreadcrumbLink asChild>
+                      <Link href={item.href}>{item.label}</Link>
+                    </BreadcrumbLink>
+                  ) : (
+                    <BreadcrumbPage>{item.label}</BreadcrumbPage>
+                  )}
+                </BreadcrumbItem>
                 {index < breadcrumbs.length - 1 ? <BreadcrumbSeparator /> : null}
-              </BreadcrumbItem>
+              </Fragment>
             ))}
           </BreadcrumbList>
         </Breadcrumb>

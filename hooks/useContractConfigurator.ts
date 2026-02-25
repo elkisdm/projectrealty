@@ -6,6 +6,7 @@ import type { Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ContractPayloadSchema } from '@/schemas/contracts';
 import type {
+  ContractDraftResponse,
   ContractIssueResponse,
   ContractTemplateItem,
   ContractValidationResponse,
@@ -15,11 +16,15 @@ import type { AdminRole } from '@/types/admin-ui';
 import {
   CONTRACT_WIZARD_STEPS,
   WIZARD_STEP_FIELDS,
+  applyAutomaticContractRules,
+  computeAutomaticGuaranteeSchedule,
+  createContractWizardDefaultDraft,
   formatContractPayloadJson,
+  formatRutForDisplay,
   getDefaultContractEndDate,
   parseContractPayloadJson,
   prepareContractPayloadForSubmit,
-  createContractWizardDefaultDraft,
+  type UnidadTipo,
 } from '@/lib/contracts/form-utils';
 
 type StepState = 'idle' | 'valid' | 'invalid';
@@ -29,6 +34,8 @@ interface StoredDraft {
   values: ContractWizardDraft;
   currentStep: number;
   isEndDateManual: boolean;
+  unidadTipo: UnidadTipo;
+  firmaOnline: boolean;
   savedAt: string;
 }
 
@@ -76,6 +83,47 @@ function getStorageKey(adminUserId?: string): string | null {
   return `contracts:wizard:draft:${adminUserId}`;
 }
 
+function detectUnidadTipo(values: ContractWizardDraft): UnidadTipo {
+  return values.inmueble.numero_casa?.trim() ? 'casa' : 'departamento';
+}
+
+function parseStoredDraft(raw: string): StoredDraft | null {
+  try {
+    const parsed = JSON.parse(raw) as StoredDraft;
+    const validation = ContractPayloadSchema.safeParse(parsed.values);
+    if (!validation.success) return null;
+    return {
+      ...parsed,
+      values: validation.data,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function pickLatestStoredDraft(storage: Storage): StoredDraft | null {
+  const prefix = 'contracts:wizard:draft:';
+  let best: StoredDraft | null = null;
+
+  for (let index = 0; index < storage.length; index += 1) {
+    const key = storage.key(index);
+    if (!key || !key.startsWith(prefix)) continue;
+    const raw = storage.getItem(key);
+    if (!raw) continue;
+
+    const parsed = parseStoredDraft(raw);
+    if (!parsed) continue;
+
+    const bestTime = best?.savedAt ? Date.parse(best.savedAt) : Number.NEGATIVE_INFINITY;
+    const nextTime = parsed.savedAt ? Date.parse(parsed.savedAt) : Number.NEGATIVE_INFINITY;
+    if (!best || nextTime >= bestTime) {
+      best = parsed;
+    }
+  }
+
+  return best;
+}
+
 export function useContractConfigurator(options: UseContractConfiguratorOptions = {}) {
   const { adminUserId, role } = options;
   const canIssue = isEditorRole(role);
@@ -100,10 +148,14 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
     CONTRACT_WIZARD_STEPS.map(() => 'idle')
   );
   const [isEndDateManual, setIsEndDateManual] = useState(false);
+  const [unidadTipo, setUnidadTipo] = useState<UnidadTipo>('departamento');
+  const [firmaOnline, setFirmaOnline] = useState(false);
   const [validationResult, setValidationResult] = useState<ContractValidationResponse | null>(null);
   const [issueResult, setIssueResult] = useState<ContractIssueResponse | null>(null);
+  const [draftResult, setDraftResult] = useState<ContractDraftResponse | null>(null);
   const [isValidatingContract, setIsValidatingContract] = useState(false);
   const [isIssuingContract, setIsIssuingContract] = useState(false);
+  const [isGeneratingDraft, setIsGeneratingDraft] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
   const [jsonText, setJsonText] = useState(formatContractPayloadJson(form.getValues()));
   const [jsonError, setJsonError] = useState<string | null>(null);
@@ -112,6 +164,9 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
 
   const hayAval = useWatch({ control: form.control, name: 'flags.hay_aval' });
   const fechaInicio = useWatch({ control: form.control, name: 'contrato.fecha_inicio' });
+  const rentaMonto = useWatch({ control: form.control, name: 'renta.monto_clp' });
+  const garantiaPagoInicial = useWatch({ control: form.control, name: 'garantia.pago_inicial_clp' });
+  const garantiaCuotas = useWatch({ control: form.control, name: 'garantia.cuotas' });
   const values = useWatch({ control: form.control });
 
   const selectedTemplate = useMemo(
@@ -164,25 +219,29 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
 
     try {
       const raw = window.localStorage.getItem(storageKey);
-      if (!raw) {
+      let parsed = raw ? parseStoredDraft(raw) : null;
+
+      if (!parsed) {
+        parsed = pickLatestStoredDraft(window.localStorage);
+      }
+
+      if (!parsed) {
         setDraftHydrated(true);
         return;
       }
 
-      const parsed = JSON.parse(raw) as StoredDraft;
-      const validation = ContractPayloadSchema.safeParse(parsed.values);
-      if (validation.success) {
-        form.reset(validation.data);
-        setSelectedTemplateId(parsed.templateId || '');
-        setCurrentStep(
-          Number.isFinite(parsed.currentStep)
-            ? Math.max(0, Math.min(CONTRACT_WIZARD_STEPS.length - 1, parsed.currentStep))
-            : 0
-        );
-        setIsEndDateManual(Boolean(parsed.isEndDateManual));
-        setJsonText(formatContractPayloadJson(validation.data));
-        setRestoredDraft(true);
-      }
+      form.reset(parsed.values);
+      setSelectedTemplateId(parsed.templateId || '');
+      setCurrentStep(
+        Number.isFinite(parsed.currentStep)
+          ? Math.max(0, Math.min(CONTRACT_WIZARD_STEPS.length - 1, parsed.currentStep))
+          : 0
+      );
+      setIsEndDateManual(Boolean(parsed.isEndDateManual));
+      setUnidadTipo(parsed.unidadTipo ?? detectUnidadTipo(parsed.values));
+      setFirmaOnline(Boolean(parsed.firmaOnline));
+      setJsonText(formatContractPayloadJson(parsed.values));
+      setRestoredDraft(true);
     } catch {
       window.localStorage.removeItem(storageKey);
     } finally {
@@ -199,13 +258,25 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
         values: form.getValues(),
         currentStep,
         isEndDateManual,
+        unidadTipo,
+        firmaOnline,
         savedAt: new Date().toISOString(),
       };
       window.localStorage.setItem(storageKey, JSON.stringify(draft));
     }, 500);
 
     return () => window.clearTimeout(timeoutId);
-  }, [currentStep, draftHydrated, form, isEndDateManual, selectedTemplateId, storageKey, values]);
+  }, [
+    currentStep,
+    draftHydrated,
+    firmaOnline,
+    form,
+    isEndDateManual,
+    selectedTemplateId,
+    storageKey,
+    unidadTipo,
+    values,
+  ]);
 
   useEffect(() => {
     if (isEndDateManual) return;
@@ -217,6 +288,117 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
       shouldValidate: true,
     });
   }, [fechaInicio, form, isEndDateManual]);
+
+  useEffect(() => {
+    const renta = Number(rentaMonto ?? 0);
+    const currentTotal = Number(form.getValues('garantia.monto_total_clp') ?? 0);
+    if (renta > 0 && currentTotal !== renta) {
+      form.setValue('garantia.monto_total_clp', renta, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    }
+  }, [form, rentaMonto]);
+
+  useEffect(() => {
+    const total = Number(rentaMonto ?? 0);
+    if (total <= 0) return;
+
+    const pagoInicial = Number(garantiaPagoInicial ?? 0);
+    if (pagoInicial > total) {
+      form.setValue('garantia.pago_inicial_clp', total, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    }
+
+    const schedule = computeAutomaticGuaranteeSchedule({
+      montoTotalClp: total,
+      pagoInicialClp: Math.min(pagoInicial, total),
+      fechaInicio: fechaInicio || '',
+    });
+
+    const currentSerialized = JSON.stringify(garantiaCuotas ?? []);
+    const nextSerialized = JSON.stringify(schedule.cuotas);
+    if (currentSerialized !== nextSerialized) {
+      form.setValue('garantia.cuotas', schedule.cuotas, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    }
+  }, [fechaInicio, form, garantiaCuotas, garantiaPagoInicial, rentaMonto]);
+
+  useEffect(() => {
+    if (!values) return;
+    const withRules = applyAutomaticContractRules(values as ContractWizardDraft, {
+      unidadTipo,
+      firmaOnline,
+      autoDeclaration: true,
+    });
+
+    if (withRules.declaraciones.fondos_origen_texto !== form.getValues('declaraciones.fondos_origen_texto')) {
+      form.setValue('declaraciones.fondos_origen_texto', withRules.declaraciones.fondos_origen_texto, {
+        shouldDirty: true,
+      });
+    }
+
+    if (firmaOnline) {
+      const personeria = form.getValues('arrendadora.personeria');
+      if (personeria.notaria !== 'No aplica (firma online)') {
+        form.setValue('arrendadora.personeria.notaria', 'No aplica (firma online)', {
+          shouldDirty: true,
+          shouldValidate: true,
+        });
+        form.setValue(
+          'arrendadora.personeria.ciudad',
+          form.getValues('contrato.ciudad_firma') || 'Santiago',
+          {
+            shouldDirty: true,
+            shouldValidate: true,
+          }
+        );
+        form.setValue('arrendadora.personeria.notario_nombre', 'No aplica (firma online)', {
+          shouldDirty: true,
+          shouldValidate: true,
+        });
+      }
+    }
+  }, [firmaOnline, form, unidadTipo, values]);
+
+  useEffect(() => {
+    if (unidadTipo === 'departamento') {
+      if (form.getValues('inmueble.numero_casa')) {
+        form.setValue('inmueble.numero_casa', '', { shouldDirty: true });
+      }
+      return;
+    }
+
+    if (form.getValues('inmueble.numero_depto')) {
+      form.setValue('inmueble.numero_depto', '', { shouldDirty: true });
+    }
+  }, [form, unidadTipo]);
+
+  const formatRutField = useCallback(
+    (
+      fieldPath:
+        | 'arrendadora.rut'
+        | 'arrendadora.representante.rut'
+        | 'propietario.rut'
+        | 'arrendatario.rut'
+        | 'aval.rut'
+    ) => {
+      const current = form.getValues(fieldPath);
+      if (typeof current !== 'string') return;
+      const formatted = formatRutForDisplay(current);
+      if (formatted !== current) {
+        form.setValue(fieldPath, formatted as never, {
+          shouldDirty: true,
+          shouldValidate: true,
+        });
+      }
+    },
+    [form]
+  );
 
   const runStepValidation = useCallback(
     async (stepIndex: number): Promise<boolean> => {
@@ -250,6 +432,23 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
         );
       }
 
+      if (step.key === 'partes' && firmaOnline) {
+        const excluded = new Set([
+          'arrendadora.personeria.notaria',
+          'arrendadora.personeria.ciudad',
+          'arrendadora.personeria.notario_nombre',
+        ]);
+        const filtered = fields.filter((field) => !excluded.has(field));
+        const valid =
+          filtered.length === 0 ? true : await form.trigger(filtered as never, { shouldFocus: true });
+        setStepState((prev) => {
+          const next = [...prev];
+          next[stepIndex] = valid ? 'valid' : 'invalid';
+          return next;
+        });
+        return valid;
+      }
+
       const valid = fields.length === 0 ? true : await form.trigger(fields as never, { shouldFocus: true });
       setStepState((prev) => {
         const next = [...prev];
@@ -258,7 +457,7 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
       });
       return valid;
     },
-    [form, hayAval, selectedTemplateId]
+    [firmaOnline, form, hayAval, selectedTemplateId]
   );
 
   const nextStep = useCallback(async () => {
@@ -295,8 +494,12 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
   );
 
   const normalizeAndBuildPayload = useCallback(() => {
-    return prepareContractPayloadForSubmit(form.getValues());
-  }, [form]);
+    return prepareContractPayloadForSubmit(form.getValues(), {
+      unidadTipo,
+      firmaOnline,
+      autoDeclaration: true,
+    });
+  }, [firmaOnline, form, unidadTipo]);
 
   const validateContract = useCallback(async () => {
     if (!selectedTemplateId) {
@@ -346,6 +549,56 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
       setIsValidatingContract(false);
     }
   }, [normalizeAndBuildPayload, selectedTemplateId]);
+
+  const generateDraft = useCallback(async () => {
+    if (!canIssue) return null;
+    if (!selectedTemplateId) {
+      setApiError('Selecciona una plantilla antes de generar borrador.');
+      return null;
+    }
+
+    const validSchema = await form.trigger(undefined, { shouldFocus: true });
+    if (!validSchema) {
+      setApiError('Hay campos pendientes o inválidos en el formulario.');
+      return null;
+    }
+
+    try {
+      setApiError(null);
+      setIsGeneratingDraft(true);
+      const payload = normalizeAndBuildPayload();
+
+      const response = await fetch('/api/contracts/draft', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          templateId: selectedTemplateId,
+          payload,
+        }),
+      });
+
+      const data = (await response.json()) as ContractDraftResponse & {
+        code?: string;
+        message?: string;
+      };
+
+      if (!response.ok || data.status !== 'draft') {
+        setApiError(extractErrorMessage(data, 'No se pudo generar borrador'));
+        return null;
+      }
+
+      setDraftResult(data);
+      return data;
+    } catch (error) {
+      setApiError(error instanceof Error ? error.message : 'Error generando borrador');
+      return null;
+    } finally {
+      setIsGeneratingDraft(false);
+    }
+  }, [canIssue, form, normalizeAndBuildPayload, selectedTemplateId]);
 
   const issueContract = useCallback(async () => {
     if (!canIssue) return null;
@@ -444,6 +697,8 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
     form.reset(parsed.payload);
     setValidationResult(null);
     setIssueResult(null);
+    setDraftResult(null);
+    setUnidadTipo(detectUnidadTipo(parsed.payload));
     return true;
   }, [form, jsonText]);
 
@@ -464,10 +719,14 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
     setRestoredDraft(false);
     setCurrentStep(0);
     setIsEndDateManual(false);
-    form.reset(createContractWizardDefaultDraft());
+    setUnidadTipo('departamento');
+    setFirmaOnline(false);
+    const defaults = createContractWizardDefaultDraft();
+    form.reset(defaults);
     setValidationResult(null);
     setIssueResult(null);
-    setJsonText(formatContractPayloadJson(createContractWizardDefaultDraft()));
+    setDraftResult(null);
+    setJsonText(formatContractPayloadJson(defaults));
   }, [form, storageKey]);
 
   const sectionCompletion = useMemo(() => {
@@ -491,10 +750,21 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
         );
       }
 
+      if (step.key === 'partes' && firmaOnline) {
+        const excluded = new Set([
+          'arrendadora.personeria.notaria',
+          'arrendadora.personeria.ciudad',
+          'arrendadora.personeria.notario_nombre',
+        ]);
+        const filtered = fields.filter((field) => !excluded.has(field));
+        if (filtered.length === 0) return true;
+        return filtered.every((path) => hasValue(getPathValue(currentValues, path)));
+      }
+
       if (fields.length === 0) return true;
       return fields.every((path) => hasValue(getPathValue(currentValues, path)));
     });
-  }, [form, hayAval, selectedTemplateId, values]);
+  }, [firmaOnline, form, hayAval, selectedTemplateId, values]);
 
   return {
     form,
@@ -510,12 +780,18 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
     sectionCompletion,
     canIssue,
     hayAval,
+    unidadTipo,
+    setUnidadTipo,
+    firmaOnline,
+    setFirmaOnline,
     isEndDateManual,
     setIsEndDateManual,
     validationResult,
     issueResult,
+    draftResult,
     isValidatingContract,
     isIssuingContract,
+    isGeneratingDraft,
     apiError,
     jsonText,
     setJsonText,
@@ -526,11 +802,13 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
     prevStep,
     goToStep,
     validateContract,
+    generateDraft,
     issueContract,
     downloadTemplateSource,
     syncJsonFromForm,
     applyJsonToForm,
     formatJson,
     discardDraft,
+    formatRutField,
   };
 }

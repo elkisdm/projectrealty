@@ -88,6 +88,7 @@ export const ContractPayloadSchema = z.object({
   }),
   declaraciones: z.object({
     fondos_origen_texto: z.string().min(1),
+    fondos_origen_fuente: z.string().min(1).optional(),
   }),
 });
 

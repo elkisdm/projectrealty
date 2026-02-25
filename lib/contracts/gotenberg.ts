@@ -14,10 +14,20 @@ export async function convertDocxToPdf(docx: Buffer, filename = 'contract.docx')
   const form = new FormData();
   form.append('files', new Blob([new Uint8Array(docx)]), filename);
 
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    body: form,
-  });
+  let response: Response;
+  try {
+    response = await fetch(endpoint, {
+      method: 'POST',
+      body: form,
+    });
+  } catch (error) {
+    throw new ContractError({
+      code: 'RENDER_FAILED',
+      message: `No se pudo conectar con Gotenberg en ${endpoint}`,
+      details: error instanceof Error ? error.message : String(error),
+      hint: 'Levanta Gotenberg y verifica GOTENBERG_URL (ejemplo: http://localhost:3001).',
+    });
+  }
 
   if (!response.ok) {
     const body = await response.text().catch(() => '');

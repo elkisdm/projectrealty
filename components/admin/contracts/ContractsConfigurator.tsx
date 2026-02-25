@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { Controller, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
-import { ArrowLeft, ArrowRight, FileWarning, Info, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, FileWarning, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -12,8 +12,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import type { AdminRole } from '@/types/admin-ui';
-import { CONTRACT_WIZARD_STEPS } from '@/lib/contracts/form-utils';
+import { CONTRACT_WIZARD_STEPS, formatCLPInput, parseCLPInput } from '@/lib/contracts/form-utils';
 import { useContractConfigurator } from '@/hooks/useContractConfigurator';
 import { useContractHistory } from '@/hooks/useContractHistory';
 import { ContractWizardStepper } from './ContractWizardStepper';
@@ -113,6 +120,15 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
     void history.reload();
   };
 
+  const handleGenerateDraft = async () => {
+    const result = await configurator.generateDraft();
+    if (!result) {
+      toast.error('No se pudo generar borrador');
+      return;
+    }
+    toast.success('Borrador generado correctamente');
+  };
+
   const handleHistoryDownload = async (contractId: string) => {
     const url = await history.downloadContract(contractId);
     if (!url) {
@@ -147,8 +163,13 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
                   <Input {...register('arrendadora.razon_social')} disabled={readOnly} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>RUT</Label>
-                  <Input {...register('arrendadora.rut')} disabled={readOnly} />
+                  <Label>RUT empresa (arrendadora)</Label>
+                  <Input
+                    {...register('arrendadora.rut')}
+                    disabled={readOnly}
+                    onBlur={() => configurator.formatRutField('arrendadora.rut')}
+                  />
+                  <p className="text-xs text-[var(--subtext)]">Este RUT debe ser el de la empresa.</p>
                 </div>
                 <div className="space-y-1.5 md:col-span-2">
                   <Label>Domicilio</Label>
@@ -178,30 +199,62 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
             </SectionCard>
 
             <SectionCard title="Personería y representante">
+              <p className="rounded-lg border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-2)] p-3 text-xs text-[var(--subtext)]">
+                El representante legal usa RUT personal (persona natural), distinto al RUT de la empresa arrendadora.
+              </p>
+              <div className="rounded-lg border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-2)] p-3">
+                <Controller
+                  control={control}
+                  name="arrendadora.personeria.notaria"
+                  render={() => (
+                    <label className="inline-flex items-center gap-2 text-sm text-[var(--text)]">
+                      <Checkbox
+                        checked={configurator.firmaOnline}
+                        onCheckedChange={(checked) => configurator.setFirmaOnline(Boolean(checked))}
+                        disabled={readOnly}
+                      />
+                      Firma online (sin notaría física)
+                    </label>
+                  )}
+                />
+              </div>
               <FieldGrid>
                 <div className="space-y-1.5">
                   <Label>Fecha personería</Label>
                   <Input {...register('arrendadora.personeria.fecha')} disabled={readOnly} />
                 </div>
-                <div className="space-y-1.5">
-                  <Label>Notaría</Label>
-                  <Input {...register('arrendadora.personeria.notaria')} disabled={readOnly} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Ciudad notaría</Label>
-                  <Input {...register('arrendadora.personeria.ciudad')} disabled={readOnly} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Nombre notario</Label>
-                  <Input {...register('arrendadora.personeria.notario_nombre')} disabled={readOnly} />
-                </div>
+                {!configurator.firmaOnline ? (
+                  <>
+                    <div className="space-y-1.5">
+                      <Label>Notaría</Label>
+                      <Input {...register('arrendadora.personeria.notaria')} disabled={readOnly} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Ciudad notaría</Label>
+                      <Input {...register('arrendadora.personeria.ciudad')} disabled={readOnly} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Nombre notario</Label>
+                      <Input {...register('arrendadora.personeria.notario_nombre')} disabled={readOnly} />
+                    </div>
+                  </>
+                ) : (
+                  <div className="space-y-1.5 md:col-span-2">
+                    <Label>Modo firma</Label>
+                    <Input value="Firma online (sin notario)" disabled />
+                  </div>
+                )}
                 <div className="space-y-1.5">
                   <Label>Representante</Label>
                   <Input {...register('arrendadora.representante.nombre')} disabled={readOnly} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>RUT representante</Label>
-                  <Input {...register('arrendadora.representante.rut')} disabled={readOnly} />
+                  <Label>RUT representante legal (personal)</Label>
+                  <Input
+                    {...register('arrendadora.representante.rut')}
+                    disabled={readOnly}
+                    onBlur={() => configurator.formatRutField('arrendadora.representante.rut')}
+                  />
                 </div>
                 <div className="space-y-1.5">
                   <Label>Nacionalidad</Label>
@@ -226,7 +279,11 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
                 </div>
                 <div className="space-y-1.5">
                   <Label>Propietario RUT</Label>
-                  <Input {...register('propietario.rut')} disabled={readOnly} />
+                  <Input
+                    {...register('propietario.rut')}
+                    disabled={readOnly}
+                    onBlur={() => configurator.formatRutField('propietario.rut')}
+                  />
                 </div>
                 <div className="space-y-1.5">
                   <Label>Arrendatario nombre</Label>
@@ -234,7 +291,11 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
                 </div>
                 <div className="space-y-1.5">
                   <Label>Arrendatario RUT</Label>
-                  <Input {...register('arrendatario.rut')} disabled={readOnly} />
+                  <Input
+                    {...register('arrendatario.rut')}
+                    disabled={readOnly}
+                    onBlur={() => configurator.formatRutField('arrendatario.rut')}
+                  />
                 </div>
                 <div className="space-y-1.5">
                   <Label>Nacionalidad</Label>
@@ -283,7 +344,11 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
                   </div>
                   <div className="space-y-1.5">
                     <Label>RUT aval</Label>
-                    <Input {...register('aval.rut')} disabled={readOnly} />
+                    <Input
+                      {...register('aval.rut')}
+                      disabled={readOnly}
+                      onBlur={() => configurator.formatRutField('aval.rut')}
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <Label>Nacionalidad</Label>
@@ -334,12 +399,27 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
                   <Input {...register('inmueble.ciudad')} disabled={readOnly} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Número depto</Label>
-                  <Input {...register('inmueble.numero_depto')} disabled={readOnly} />
+                  <Label>Tipo unidad</Label>
+                  <Select
+                    value={configurator.unidadTipo}
+                    onValueChange={(value) => configurator.setUnidadTipo(value as 'departamento' | 'casa')}
+                  >
+                    <SelectTrigger disabled={readOnly}>
+                      <SelectValue placeholder="Selecciona tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="departamento">Departamento</SelectItem>
+                      <SelectItem value="casa">Casa</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Número casa</Label>
-                  <Input {...register('inmueble.numero_casa')} disabled={readOnly} />
+                  <Label>{configurator.unidadTipo === 'departamento' ? 'Número depto' : 'Número casa'}</Label>
+                  {configurator.unidadTipo === 'departamento' ? (
+                    <Input {...register('inmueble.numero_depto')} disabled={readOnly} />
+                  ) : (
+                    <Input {...register('inmueble.numero_casa')} disabled={readOnly} />
+                  )}
                 </div>
               </FieldGrid>
             </SectionCard>
@@ -398,7 +478,19 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
               <FieldGrid>
                 <div className="space-y-1.5">
                   <Label>Monto CLP</Label>
-                  <Input type="number" {...register('renta.monto_clp', { valueAsNumber: true })} disabled={readOnly} />
+                  <Controller
+                    control={control}
+                    name="renta.monto_clp"
+                    render={({ field }) => (
+                      <Input
+                        inputMode="numeric"
+                        value={formatCLPInput(Number(field.value ?? 0))}
+                        onChange={(event) => field.onChange(parseCLPInput(event.target.value))}
+                        disabled={readOnly}
+                        placeholder="650.000"
+                      />
+                    )}
+                  />
                 </div>
                 <div className="space-y-1.5">
                   <Label>Monto UF</Label>
@@ -419,75 +511,63 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
               <FieldGrid>
                 <div className="space-y-1.5">
                   <Label>Garantía total CLP</Label>
-                  <Input
-                    type="number"
-                    {...register('garantia.monto_total_clp', { valueAsNumber: true })}
-                    disabled={readOnly}
+                  <Controller
+                    control={control}
+                    name="garantia.monto_total_clp"
+                    render={() => (
+                      <Input
+                        inputMode="numeric"
+                        value={formatCLPInput(Number(garantiaTotal ?? 0))}
+                        onChange={() => undefined}
+                        disabled
+                        placeholder="Auto = renta"
+                      />
+                    )}
                   />
+                  <p className="text-xs text-[var(--subtext)]">Se define automáticamente igual al valor del arriendo.</p>
                 </div>
                 <div className="space-y-1.5">
                   <Label>Pago inicial CLP</Label>
-                  <Input
-                    type="number"
-                    {...register('garantia.pago_inicial_clp', { valueAsNumber: true })}
-                    disabled={readOnly}
+                  <Controller
+                    control={control}
+                    name="garantia.pago_inicial_clp"
+                    render={({ field }) => (
+                      <Input
+                        inputMode="numeric"
+                        value={formatCLPInput(Number(field.value ?? 0))}
+                        onChange={(event) => field.onChange(parseCLPInput(event.target.value))}
+                        disabled={readOnly}
+                        placeholder="109.500"
+                      />
+                    )}
                   />
                 </div>
               </FieldGrid>
 
               <div className="space-y-3 rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-2)] p-3">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium text-[var(--text)]">Cuotas garantía</p>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() =>
-                      configurator.cuotasArray.append({
-                        monto_clp: 0,
-                        n: configurator.cuotasArray.fields.length + 1,
-                        fecha: '',
-                      })
-                    }
-                    disabled={readOnly}
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Agregar cuota
-                  </Button>
+                  <p className="text-sm font-medium text-[var(--text)]">Cuotas garantía automáticas</p>
+                  <Badge variant="info">2 meses desde inicio</Badge>
                 </div>
 
-                {configurator.cuotasArray.fields.length === 0 ? (
+                {(garantiaCuotas ?? []).length === 0 ? (
                   <p className="text-xs text-[var(--subtext)]">Sin cuotas. El total se asume como pago inicial.</p>
                 ) : (
                   <div className="space-y-2">
-                    {configurator.cuotasArray.fields.map((field, index) => (
-                      <div key={field.id} className="grid gap-2 rounded-lg border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-1)] p-2 md:grid-cols-[1fr_1fr_1fr_auto]">
-                        <Input
-                          type="number"
-                          placeholder="Monto CLP"
-                          {...register(`garantia.cuotas.${index}.monto_clp`, { valueAsNumber: true })}
-                          disabled={readOnly}
-                        />
-                        <Input
-                          type="number"
-                          placeholder="N cuota"
-                          {...register(`garantia.cuotas.${index}.n`, { valueAsNumber: true })}
-                          disabled={readOnly}
-                        />
-                        <Input
-                          type="date"
-                          {...register(`garantia.cuotas.${index}.fecha`)}
-                          disabled={readOnly}
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => configurator.cuotasArray.remove(index)}
-                          disabled={readOnly}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                    {(garantiaCuotas ?? []).map((cuota, index) => (
+                      <div key={`${cuota.n}-${index}`} className="grid gap-2 rounded-lg border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-1)] p-2 md:grid-cols-3">
+                        <div className="text-sm">
+                          <p className="text-xs text-[var(--subtext)]">Cuota</p>
+                          <p className="font-medium text-[var(--text)]">#{cuota.n}</p>
+                        </div>
+                        <div className="text-sm">
+                          <p className="text-xs text-[var(--subtext)]">Monto</p>
+                          <p className="font-medium text-[var(--text)]">${formatCLPInput(Number(cuota.monto_clp ?? 0))}</p>
+                        </div>
+                        <div className="text-sm">
+                          <p className="text-xs text-[var(--subtext)]">Fecha pago</p>
+                          <p className="font-medium text-[var(--text)]">{cuota.fecha || '-'}</p>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -546,8 +626,19 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
 
             <SectionCard title="Declaración de origen de fondos">
               <div className="space-y-1.5">
-                <Label>Texto declaración</Label>
-                <Textarea rows={8} {...register('declaraciones.fondos_origen_texto')} disabled={readOnly} />
+                <Label>Origen de fondos</Label>
+                <Input
+                  {...register('declaraciones.fondos_origen_fuente')}
+                  disabled={readOnly}
+                  placeholder="Remuneraciones por trabajo dependiente"
+                />
+                <p className="text-xs text-[var(--subtext)]">
+                  Esta fuente se usa para construir automáticamente la declaración completa.
+                </p>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Texto declaración (autogenerado)</Label>
+                <Textarea rows={12} {...register('declaraciones.fondos_origen_texto')} disabled />
               </div>
             </SectionCard>
           </div>
@@ -557,12 +648,15 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
           <ContractReviewPanel
             sections={reviewSections}
             validation={configurator.validationResult}
+            draftResult={configurator.draftResult}
             issueResult={configurator.issueResult}
             apiError={configurator.apiError}
             canIssue={configurator.canIssue}
             isValidating={configurator.isValidatingContract}
+            isGeneratingDraft={configurator.isGeneratingDraft}
             isIssuing={configurator.isIssuingContract}
             onValidate={handleValidate}
+            onGenerateDraft={handleGenerateDraft}
             onIssue={handleIssue}
           />
         );

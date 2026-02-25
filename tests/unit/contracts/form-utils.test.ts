@@ -1,7 +1,11 @@
 import type { ContractPayload } from '@/schemas/contracts';
 import {
+  addMonthsToISODate,
+  computeAutomaticGuaranteeSchedule,
   createContractWizardDefaultDraft,
   formatContractPayloadJson,
+  formatRutForDisplay,
+  generateFundsOriginDeclaration,
   getDefaultContractEndDate,
   isGuaranteeTotalCoherent,
   parseContractPayloadJson,
@@ -102,6 +106,7 @@ function buildPayload(overrides?: Partial<ContractPayload>): ContractPayload {
     },
     declaraciones: {
       fondos_origen_texto: 'Remuneraciones por trabajo dependiente',
+      fondos_origen_fuente: 'Remuneraciones por trabajo dependiente',
       ...(overrides?.declaraciones ?? {}),
     },
   };
@@ -126,15 +131,38 @@ describe('contracts/form-utils', () => {
     expect(isGuaranteeTotalCoherent(broken).coherent).toBe(false);
   });
 
-  test('removes aval when hay_aval=false and normalizes RUT', () => {
+  test('removes aval and applies automatic guarantee/rut rules', () => {
     const payload = buildPayload({
       flags: { hay_aval: false, mascota_permitida: false, depto_amoblado: false },
     });
 
     const prepared = prepareContractPayloadForSubmit(payload);
     expect(prepared.aval).toBeUndefined();
-    expect(prepared.arrendadora.rut).toBe('76123456-7');
-    expect(prepared.arrendadora.representante.rut).toBe('12345678-5');
+    expect(prepared.arrendadora.rut).toBe('76.123.456-7');
+    expect(prepared.arrendadora.representante.rut).toBe('12.345.678-5');
+    expect(prepared.garantia.monto_total_clp).toBe(prepared.renta.monto_clp);
+    expect(prepared.garantia.cuotas.length).toBe(2);
+  });
+
+  test('formats RUT and computes automatic schedule', () => {
+    expect(formatRutForDisplay('761234567')).toBe('76.123.456-7');
+
+    const schedule = computeAutomaticGuaranteeSchedule({
+      montoTotalClp: 650000,
+      pagoInicialClp: 109500,
+      fechaInicio: '2026-03-01',
+    });
+    expect(schedule.cuotas).toHaveLength(2);
+    expect(schedule.cuotas[0].fecha).toBe('2026-04-01');
+    expect(schedule.cuotas[1].fecha).toBe('2026-05-01');
+    expect(addMonthsToISODate('2026-03-01', 2)).toBe('2026-05-01');
+  });
+
+  test('builds declaration text with contextual fields', () => {
+    const text = generateFundsOriginDeclaration(buildPayload());
+    expect(text).toContain('DECLARACION DE ORIGEN DE FONDOS');
+    expect(text).toContain('Doña Carlos Diaz');
+    expect(text).toContain('Hommie SpA');
   });
 
   test('syncs JSON parse/apply with schema validation', () => {
