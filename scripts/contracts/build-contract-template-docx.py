@@ -10,7 +10,6 @@ from pathlib import Path
 import re
 
 from docx import Document
-from docx.enum.section import WD_SECTION_START
 from docx.enum.table import WD_ALIGN_VERTICAL, WD_TABLE_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml import OxmlElement
@@ -104,15 +103,11 @@ def set_bottom_border(paragraph) -> None:
     p_pr.append(p_bdr)
 
 
-def apply_uaf_header(section) -> None:
-    header = section.header
-    header.is_linked_to_previous = False
-
-    for p in list(header.paragraphs):
-        p._element.getparent().remove(p._element)
-
-    logo_paragraph = header.add_paragraph()
+def add_uaf_banner(doc: Document, page_break_before: bool = False) -> None:
+    logo_paragraph = doc.add_paragraph()
     logo_paragraph.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    logo_paragraph.paragraph_format.page_break_before = page_break_before
+    logo_paragraph.paragraph_format.space_before = Pt(0)
     logo_paragraph.paragraph_format.space_after = Pt(4)
     if LOGO.exists():
         logo_paragraph.add_run().add_picture(str(LOGO), width=Cm(6.4))
@@ -121,9 +116,9 @@ def apply_uaf_header(section) -> None:
         fallback.bold = True
         fallback.font.size = Pt(12)
 
-    line_paragraph = header.add_paragraph("")
+    line_paragraph = doc.add_paragraph("")
     line_paragraph.paragraph_format.space_before = Pt(0)
-    line_paragraph.paragraph_format.space_after = Pt(4)
+    line_paragraph.paragraph_format.space_after = Pt(10)
     set_bottom_border(line_paragraph)
 
 
@@ -212,14 +207,14 @@ def main() -> None:
     )
 
     i = 0
+    declaration_count = 0
     while i < len(lines):
         text = lines[i].rstrip("\n")
         normalized = normalize_spanish_text(text)
 
         if normalized.startswith("DECLARACION DE "):
-            declaration_section = doc.add_section(WD_SECTION_START.NEW_PAGE)
-            configure_section(declaration_section)
-            apply_uaf_header(declaration_section)
+            add_uaf_banner(doc, page_break_before=declaration_count > 0)
+            declaration_count += 1
 
             p = doc.add_paragraph("")
             p.paragraph_format.space_after = Pt(10)

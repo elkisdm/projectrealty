@@ -2,7 +2,6 @@
 
 import { Suspense, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Toaster } from "sonner";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { LayoutDashboard, Building2, Home, Flag, CheckCircle2, PlusSquare, FileText } from "lucide-react";
 import React from "react";
@@ -118,18 +117,6 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
         {hideRootShell}
         {isLoginPage ? children : <AuthenticatedContent>{children}</AuthenticatedContent>}
       </div>
-      <Toaster
-        position="top-right"
-        richColors
-        closeButton
-        toastOptions={{
-          style: {
-            background: "var(--admin-surface-1)",
-            border: "1px solid var(--admin-border-subtle)",
-            color: "var(--text)",
-          },
-        }}
-      />
     </QueryClientProvider>
   );
 }
