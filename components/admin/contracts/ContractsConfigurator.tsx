@@ -1,0 +1,703 @@
+'use client';
+
+import { useMemo, useState } from 'react';
+import { Controller, useWatch } from 'react-hook-form';
+import { toast } from 'sonner';
+import { ArrowLeft, ArrowRight, FileWarning, Info, Plus, Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import type { AdminRole } from '@/types/admin-ui';
+import { CONTRACT_WIZARD_STEPS } from '@/lib/contracts/form-utils';
+import { useContractConfigurator } from '@/hooks/useContractConfigurator';
+import { useContractHistory } from '@/hooks/useContractHistory';
+import { ContractWizardStepper } from './ContractWizardStepper';
+import { ContractTemplateSelector } from './ContractTemplateSelector';
+import { ContractReviewPanel } from './ContractReviewPanel';
+import { ContractJsonEditor } from './ContractJsonEditor';
+import { ContractHistoryTable } from './ContractHistoryTable';
+
+interface ContractsConfiguratorProps {
+  role?: AdminRole;
+  adminUserId?: string;
+}
+
+function SectionCard({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Card className="border-[var(--admin-border-subtle)] bg-[var(--admin-surface-1)]">
+      <CardHeader className="pb-4">
+        <CardTitle className="text-base">{title}</CardTitle>
+        {description ? <CardDescription>{description}</CardDescription> : null}
+      </CardHeader>
+      <CardContent className="space-y-4">{children}</CardContent>
+    </Card>
+  );
+}
+
+function FieldGrid({ children }: { children: React.ReactNode }) {
+  return <div className="grid gap-3 md:grid-cols-2">{children}</div>;
+}
+
+export function ContractsConfigurator({ role = 'viewer', adminUserId }: ContractsConfiguratorProps) {
+  const [tab, setTab] = useState<'configurator' | 'json' | 'history'>('configurator');
+  const configurator = useContractConfigurator({ role, adminUserId });
+  const history = useContractHistory({ enabled: tab === 'history' });
+
+  const { register, control, formState, setValue } = configurator.form;
+  const garantiaTotal = useWatch({ control, name: 'garantia.monto_total_clp' });
+  const garantiaInicial = useWatch({ control, name: 'garantia.pago_inicial_clp' });
+  const garantiaCuotas = useWatch({ control, name: 'garantia.cuotas' });
+
+  const guaranteeCoherence = useMemo(() => {
+    const cuotas = garantiaCuotas ?? [];
+    const cuotasSum = cuotas.reduce((acc, cuota) => acc + Number(cuota?.monto_clp ?? 0), 0);
+    const computed = Number(garantiaInicial ?? 0) + cuotasSum;
+    const difference = computed - Number(garantiaTotal ?? 0);
+    return {
+      coherent: Math.abs(difference) <= 1,
+      difference,
+    };
+  }, [garantiaCuotas, garantiaInicial, garantiaTotal]);
+
+  const reviewSections = useMemo(
+    () =>
+      CONTRACT_WIZARD_STEPS.slice(0, 5).map((step, index) => ({
+        title: step.title,
+        completed: configurator.sectionCompletion[index],
+        state: configurator.stepState[index],
+      })),
+    [configurator.sectionCompletion, configurator.stepState]
+  );
+
+  const readOnly = !configurator.canIssue;
+  const fechaTerminoRegister = register('contrato.fecha_termino');
+
+  const handleTemplateDownload = async () => {
+    const url = await configurator.downloadTemplateSource();
+    if (url) {
+      window.open(url, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    toast.error('No se pudo descargar el template fuente');
+  };
+
+  const handleValidate = async () => {
+    const result = await configurator.validateContract();
+    if (result?.valid) {
+      toast.success('Contrato validado correctamente');
+      return;
+    }
+    toast.warning('Validación con observaciones');
+  };
+
+  const handleIssue = async () => {
+    const result = await configurator.issueContract();
+    if (!result) {
+      toast.error('No se pudo emitir el contrato');
+      return;
+    }
+    toast.success(result.idempotentReused ? 'Contrato reutilizado por idempotencia' : 'Contrato emitido');
+    void history.reload();
+  };
+
+  const handleHistoryDownload = async (contractId: string) => {
+    const url = await history.downloadContract(contractId);
+    if (!url) {
+      toast.error('No se pudo obtener la URL de descarga');
+      return;
+    }
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
+  const renderCurrentStep = () => {
+    switch (configurator.currentStep) {
+      case 0:
+        return (
+          <ContractTemplateSelector
+            templates={configurator.templates}
+            selectedTemplate={configurator.selectedTemplate}
+            selectedTemplateId={configurator.selectedTemplateId}
+            isLoading={configurator.isLoadingTemplates}
+            error={configurator.templatesError}
+            onSelect={configurator.setSelectedTemplateId}
+            onReload={configurator.loadTemplates}
+            onDownloadSource={handleTemplateDownload}
+          />
+        );
+      case 1:
+        return (
+          <div className="space-y-4">
+            <SectionCard title="Arrendadora" description="Datos de la sociedad emisora y su cuenta bancaria.">
+              <FieldGrid>
+                <div className="space-y-1.5">
+                  <Label>Razón social</Label>
+                  <Input {...register('arrendadora.razon_social')} disabled={readOnly} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>RUT</Label>
+                  <Input {...register('arrendadora.rut')} disabled={readOnly} />
+                </div>
+                <div className="space-y-1.5 md:col-span-2">
+                  <Label>Domicilio</Label>
+                  <Input {...register('arrendadora.domicilio')} disabled={readOnly} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Email</Label>
+                  <Input type="email" {...register('arrendadora.email')} disabled={readOnly} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Email pagos</Label>
+                  <Input type="email" {...register('arrendadora.cuenta.email_pago')} disabled={readOnly} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Banco</Label>
+                  <Input {...register('arrendadora.cuenta.banco')} disabled={readOnly} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Tipo cuenta</Label>
+                  <Input {...register('arrendadora.cuenta.tipo')} disabled={readOnly} />
+                </div>
+                <div className="space-y-1.5 md:col-span-2">
+                  <Label>Número cuenta</Label>
+                  <Input {...register('arrendadora.cuenta.numero')} disabled={readOnly} />
+                </div>
+              </FieldGrid>
+            </SectionCard>
+
+            <SectionCard title="Personería y representante">
+              <FieldGrid>
+                <div className="space-y-1.5">
+                  <Label>Fecha personería</Label>
+                  <Input {...register('arrendadora.personeria.fecha')} disabled={readOnly} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Notaría</Label>
+                  <Input {...register('arrendadora.personeria.notaria')} disabled={readOnly} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Ciudad notaría</Label>
+                  <Input {...register('arrendadora.personeria.ciudad')} disabled={readOnly} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Nombre notario</Label>
+                  <Input {...register('arrendadora.personeria.notario_nombre')} disabled={readOnly} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Representante</Label>
+                  <Input {...register('arrendadora.representante.nombre')} disabled={readOnly} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>RUT representante</Label>
+                  <Input {...register('arrendadora.representante.rut')} disabled={readOnly} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Nacionalidad</Label>
+                  <Input {...register('arrendadora.representante.nacionalidad')} disabled={readOnly} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Estado civil</Label>
+                  <Input {...register('arrendadora.representante.estado_civil')} disabled={readOnly} />
+                </div>
+                <div className="space-y-1.5 md:col-span-2">
+                  <Label>Profesión</Label>
+                  <Input {...register('arrendadora.representante.profesion')} disabled={readOnly} />
+                </div>
+              </FieldGrid>
+            </SectionCard>
+
+            <SectionCard title="Propietario y Arrendatario">
+              <FieldGrid>
+                <div className="space-y-1.5">
+                  <Label>Propietario nombre</Label>
+                  <Input {...register('propietario.nombre')} disabled={readOnly} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Propietario RUT</Label>
+                  <Input {...register('propietario.rut')} disabled={readOnly} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Arrendatario nombre</Label>
+                  <Input {...register('arrendatario.nombre')} disabled={readOnly} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Arrendatario RUT</Label>
+                  <Input {...register('arrendatario.rut')} disabled={readOnly} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Nacionalidad</Label>
+                  <Input {...register('arrendatario.nacionalidad')} disabled={readOnly} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Estado civil</Label>
+                  <Input {...register('arrendatario.estado_civil')} disabled={readOnly} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Email</Label>
+                  <Input type="email" {...register('arrendatario.email')} disabled={readOnly} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Teléfono</Label>
+                  <Input {...register('arrendatario.telefono')} disabled={readOnly} />
+                </div>
+                <div className="space-y-1.5 md:col-span-2">
+                  <Label>Domicilio</Label>
+                  <Input {...register('arrendatario.domicilio')} disabled={readOnly} />
+                </div>
+              </FieldGrid>
+            </SectionCard>
+
+            <SectionCard title="Aval">
+              <Controller
+                control={control}
+                name="flags.hay_aval"
+                render={({ field }) => (
+                  <label className="mb-4 inline-flex items-center gap-2 text-sm text-[var(--text)]">
+                    <Checkbox
+                      checked={Boolean(field.value)}
+                      onCheckedChange={(checked) => field.onChange(Boolean(checked))}
+                      disabled={readOnly}
+                    />
+                    Incluir aval en el contrato
+                  </label>
+                )}
+              />
+
+              {configurator.hayAval ? (
+                <FieldGrid>
+                  <div className="space-y-1.5">
+                    <Label>Nombre aval</Label>
+                    <Input {...register('aval.nombre')} disabled={readOnly} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>RUT aval</Label>
+                    <Input {...register('aval.rut')} disabled={readOnly} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Nacionalidad</Label>
+                    <Input {...register('aval.nacionalidad')} disabled={readOnly} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Estado civil</Label>
+                    <Input {...register('aval.estado_civil')} disabled={readOnly} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Profesión</Label>
+                    <Input {...register('aval.profesion')} disabled={readOnly} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Email</Label>
+                    <Input type="email" {...register('aval.email')} disabled={readOnly} />
+                  </div>
+                  <div className="space-y-1.5 md:col-span-2">
+                    <Label>Domicilio</Label>
+                    <Input {...register('aval.domicilio')} disabled={readOnly} />
+                  </div>
+                </FieldGrid>
+              ) : (
+                <p className="text-sm text-[var(--subtext)]">Con `hay_aval=false`, el bloque aval se excluye del payload final.</p>
+              )}
+            </SectionCard>
+          </div>
+        );
+      case 2:
+        return (
+          <div className="space-y-4">
+            <SectionCard title="Inmueble">
+              <FieldGrid>
+                <div className="space-y-1.5">
+                  <Label>Condominio</Label>
+                  <Input {...register('inmueble.condominio')} disabled={readOnly} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Dirección</Label>
+                  <Input {...register('inmueble.direccion')} disabled={readOnly} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Comuna</Label>
+                  <Input {...register('inmueble.comuna')} disabled={readOnly} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Ciudad</Label>
+                  <Input {...register('inmueble.ciudad')} disabled={readOnly} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Número depto</Label>
+                  <Input {...register('inmueble.numero_depto')} disabled={readOnly} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Número casa</Label>
+                  <Input {...register('inmueble.numero_casa')} disabled={readOnly} />
+                </div>
+              </FieldGrid>
+            </SectionCard>
+
+            <SectionCard title="Fechas contrato" description="Fecha término se autocompleta (+1 año) hasta que la edites manualmente.">
+              <FieldGrid>
+                <div className="space-y-1.5">
+                  <Label>Ciudad firma</Label>
+                  <Input {...register('contrato.ciudad_firma')} disabled={readOnly} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Fecha inicio</Label>
+                  <Input type="date" {...register('contrato.fecha_inicio')} disabled={readOnly} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Fecha firma</Label>
+                  <Input type="date" {...register('contrato.fecha_firma')} disabled={readOnly} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Fecha término</Label>
+                  <Input
+                    type="date"
+                    {...fechaTerminoRegister}
+                    onChange={(event) => {
+                      configurator.setIsEndDateManual(true);
+                      fechaTerminoRegister.onChange(event);
+                    }}
+                    disabled={readOnly}
+                  />
+                  <div className="flex items-center gap-2">
+                    <Badge variant={configurator.isEndDateManual ? 'warning' : 'neutral'}>
+                      {configurator.isEndDateManual ? 'Editada manualmente' : 'Autocalculada'}
+                    </Badge>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      disabled={readOnly}
+                      onClick={() => {
+                        configurator.setIsEndDateManual(false);
+                        setValue('contrato.fecha_termino', '', { shouldDirty: true, shouldValidate: true });
+                      }}
+                    >
+                      Recalcular automático
+                    </Button>
+                  </div>
+                </div>
+              </FieldGrid>
+            </SectionCard>
+          </div>
+        );
+      case 3:
+        return (
+          <div className="space-y-4">
+            <SectionCard title="Renta">
+              <FieldGrid>
+                <div className="space-y-1.5">
+                  <Label>Monto CLP</Label>
+                  <Input type="number" {...register('renta.monto_clp', { valueAsNumber: true })} disabled={readOnly} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Monto UF</Label>
+                  <Input type="number" step="0.01" {...register('renta.monto_uf', { valueAsNumber: true })} disabled={readOnly} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Día límite pago</Label>
+                  <Input type="number" {...register('renta.dia_limite_pago', { valueAsNumber: true })} disabled={readOnly} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Mes primer reajuste</Label>
+                  <Input {...register('renta.mes_primer_reajuste')} disabled={readOnly} />
+                </div>
+              </FieldGrid>
+            </SectionCard>
+
+            <SectionCard title="Garantía" description="Regla dura: pago inicial + cuotas debe igualar total (tolerancia 1 CLP).">
+              <FieldGrid>
+                <div className="space-y-1.5">
+                  <Label>Garantía total CLP</Label>
+                  <Input
+                    type="number"
+                    {...register('garantia.monto_total_clp', { valueAsNumber: true })}
+                    disabled={readOnly}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Pago inicial CLP</Label>
+                  <Input
+                    type="number"
+                    {...register('garantia.pago_inicial_clp', { valueAsNumber: true })}
+                    disabled={readOnly}
+                  />
+                </div>
+              </FieldGrid>
+
+              <div className="space-y-3 rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-2)] p-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium text-[var(--text)]">Cuotas garantía</p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      configurator.cuotasArray.append({
+                        monto_clp: 0,
+                        n: configurator.cuotasArray.fields.length + 1,
+                        fecha: '',
+                      })
+                    }
+                    disabled={readOnly}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Agregar cuota
+                  </Button>
+                </div>
+
+                {configurator.cuotasArray.fields.length === 0 ? (
+                  <p className="text-xs text-[var(--subtext)]">Sin cuotas. El total se asume como pago inicial.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {configurator.cuotasArray.fields.map((field, index) => (
+                      <div key={field.id} className="grid gap-2 rounded-lg border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-1)] p-2 md:grid-cols-[1fr_1fr_1fr_auto]">
+                        <Input
+                          type="number"
+                          placeholder="Monto CLP"
+                          {...register(`garantia.cuotas.${index}.monto_clp`, { valueAsNumber: true })}
+                          disabled={readOnly}
+                        />
+                        <Input
+                          type="number"
+                          placeholder="N cuota"
+                          {...register(`garantia.cuotas.${index}.n`, { valueAsNumber: true })}
+                          disabled={readOnly}
+                        />
+                        <Input
+                          type="date"
+                          {...register(`garantia.cuotas.${index}.fecha`)}
+                          disabled={readOnly}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => configurator.cuotasArray.remove(index)}
+                          disabled={readOnly}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div
+                className={`rounded-md border p-3 text-sm ${
+                  guaranteeCoherence.coherent
+                    ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
+                    : 'border-amber-500/30 bg-amber-500/10 text-amber-300'
+                }`}
+              >
+                {guaranteeCoherence.coherent
+                  ? 'Coherencia OK entre total y desglose de garantía.'
+                  : `Diferencia actual: ${guaranteeCoherence.difference.toLocaleString('es-CL')} CLP`}
+              </div>
+            </SectionCard>
+          </div>
+        );
+      case 4:
+        return (
+          <div className="space-y-4">
+            <SectionCard title="Condiciones contrato">
+              <div className="grid gap-3 md:grid-cols-2">
+                <Controller
+                  control={control}
+                  name="flags.mascota_permitida"
+                  render={({ field }) => (
+                    <label className="inline-flex items-center gap-2 rounded-lg border border-[var(--admin-border-subtle)] p-3 text-sm">
+                      <Checkbox
+                        checked={Boolean(field.value)}
+                        onCheckedChange={(checked) => field.onChange(Boolean(checked))}
+                        disabled={readOnly}
+                      />
+                      Mascota permitida
+                    </label>
+                  )}
+                />
+                <Controller
+                  control={control}
+                  name="flags.depto_amoblado"
+                  render={({ field }) => (
+                    <label className="inline-flex items-center gap-2 rounded-lg border border-[var(--admin-border-subtle)] p-3 text-sm">
+                      <Checkbox
+                        checked={Boolean(field.value)}
+                        onCheckedChange={(checked) => field.onChange(Boolean(checked))}
+                        disabled={readOnly}
+                      />
+                      Depto amoblado
+                    </label>
+                  )}
+                />
+              </div>
+            </SectionCard>
+
+            <SectionCard title="Declaración de origen de fondos">
+              <div className="space-y-1.5">
+                <Label>Texto declaración</Label>
+                <Textarea rows={8} {...register('declaraciones.fondos_origen_texto')} disabled={readOnly} />
+              </div>
+            </SectionCard>
+          </div>
+        );
+      case 5:
+        return (
+          <ContractReviewPanel
+            sections={reviewSections}
+            validation={configurator.validationResult}
+            issueResult={configurator.issueResult}
+            apiError={configurator.apiError}
+            canIssue={configurator.canIssue}
+            isValidating={configurator.isValidatingContract}
+            isIssuing={configurator.isIssuingContract}
+            onValidate={handleValidate}
+            onIssue={handleIssue}
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <Tabs value={tab} onValueChange={(value) => setTab(value as typeof tab)} className="space-y-4">
+      <TabsList className="h-10 bg-[var(--admin-surface-2)]">
+        <TabsTrigger value="configurator">Configurador</TabsTrigger>
+        <TabsTrigger value="json">JSON avanzado</TabsTrigger>
+        <TabsTrigger value="history">Historial</TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="configurator" className="space-y-4">
+        {configurator.restoredDraft ? (
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-sky-500/30 bg-sky-500/10 p-3 text-sm">
+            <div className="inline-flex items-center gap-2 text-sky-200">
+              <Info className="h-4 w-4" />
+              Se restauró un borrador local para este usuario.
+            </div>
+            <Button type="button" size="sm" variant="outline" onClick={configurator.discardDraft}>
+              Descartar borrador
+            </Button>
+          </div>
+        ) : null}
+
+        <ContractWizardStepper
+          steps={CONTRACT_WIZARD_STEPS}
+          currentStep={configurator.currentStep}
+          stepState={configurator.stepState}
+          sectionCompletion={configurator.sectionCompletion}
+          onStepClick={(step) => {
+            void configurator.goToStep(step);
+          }}
+          readOnly={readOnly}
+        />
+
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="space-y-4">{renderCurrentStep()}</div>
+
+          <aside className="space-y-4">
+            <Card className="border-[var(--admin-border-subtle)] bg-[var(--admin-surface-1)]">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Estado del flujo</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm">
+                <div className="rounded-md border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-2)] p-3">
+                  <p className="text-xs uppercase tracking-wide text-[var(--subtext)]">Paso actual</p>
+                  <p className="font-semibold text-[var(--text)]">
+                    {configurator.currentStep + 1}. {CONTRACT_WIZARD_STEPS[configurator.currentStep]?.title}
+                  </p>
+                </div>
+                <div className="rounded-md border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-2)] p-3">
+                  <p className="text-xs uppercase tracking-wide text-[var(--subtext)]">Plantilla</p>
+                  <p className="text-[var(--text)]">
+                    {configurator.selectedTemplate
+                      ? `${configurator.selectedTemplate.name} · ${configurator.selectedTemplate.version}`
+                      : 'Sin selección'}
+                  </p>
+                </div>
+                {Object.keys(formState.errors).length > 0 ? (
+                  <div className="rounded-md border border-amber-500/30 bg-amber-500/10 p-3">
+                    <p className="mb-1 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-amber-300">
+                      <FileWarning className="h-4 w-4" />
+                      Campos pendientes
+                    </p>
+                    <p className="text-xs text-amber-200">Corrige errores del paso actual antes de avanzar.</p>
+                  </div>
+                ) : null}
+              </CardContent>
+            </Card>
+          </aside>
+        </div>
+
+        <div className="sticky bottom-0 z-10 rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-1)]/95 p-3 backdrop-blur">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={configurator.prevStep}
+              disabled={configurator.currentStep === 0}
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Anterior
+            </Button>
+
+            {configurator.currentStep < CONTRACT_WIZARD_STEPS.length - 1 ? (
+              <Button
+                type="button"
+                onClick={() => {
+                  void configurator.nextStep();
+                }}
+              >
+                Siguiente
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            ) : (
+              <Button type="button" onClick={handleIssue} disabled={!configurator.canIssue || !configurator.validationResult?.valid}>
+                Emitir contrato
+              </Button>
+            )}
+          </div>
+        </div>
+      </TabsContent>
+
+      <TabsContent value="json">
+        <ContractJsonEditor
+          jsonText={configurator.jsonText}
+          onChangeJson={configurator.setJsonText}
+          onSyncFromForm={configurator.syncJsonFromForm}
+          onApplyToForm={configurator.applyJsonToForm}
+          onFormat={configurator.formatJson}
+          jsonError={configurator.jsonError}
+          readOnly={readOnly}
+        />
+      </TabsContent>
+
+      <TabsContent value="history">
+        <ContractHistoryTable
+          contracts={history.contracts}
+          templates={configurator.templates}
+          filters={history.filters}
+          pagination={history.pagination}
+          loading={history.loading}
+          downloading={history.isDownloading}
+          error={history.error}
+          onFiltersChange={history.setFilters}
+          onPageChange={history.setPage}
+          onRefresh={history.reload}
+          onDownload={handleHistoryDownload}
+        />
+      </TabsContent>
+    </Tabs>
+  );
+}

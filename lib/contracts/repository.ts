@@ -28,6 +28,23 @@ export interface ContractRecord {
   created_by: string;
 }
 
+export interface ListContractsFilters {
+  page: number;
+  limit: number;
+  templateId?: string;
+  status?: 'issued' | 'void';
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+export interface ListContractsResult {
+  contracts: ContractRecord[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 export async function listTemplates(): Promise<TemplateRecord[]> {
   const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase
@@ -179,4 +196,55 @@ export async function getContractById(id: string): Promise<ContractRecord> {
     throw new ContractError({ code: 'VALIDATION_ERROR', message: 'Contrato no encontrado', details: id });
   }
   return data as ContractRecord;
+}
+
+export async function listContracts(filters: ListContractsFilters): Promise<ListContractsResult> {
+  const supabase = createSupabaseAdminClient();
+  const page = Math.max(1, filters.page);
+  const limit = Math.min(100, Math.max(1, filters.limit));
+  const from = (page - 1) * limit;
+  const to = from + limit - 1;
+
+  let query = supabase
+    .from('contracts')
+    .select('*', { count: 'exact' })
+    .order('created_at', { ascending: false })
+    .range(from, to);
+
+  if (filters.templateId) {
+    query = query.eq('template_id', filters.templateId);
+  }
+
+  if (filters.status) {
+    query = query.eq('status', filters.status);
+  }
+
+  if (filters.dateFrom) {
+    query = query.gte('created_at', filters.dateFrom);
+  }
+
+  if (filters.dateTo) {
+    query = query.lte('created_at', filters.dateTo);
+  }
+
+  const { data, error, count } = await query;
+
+  if (error) {
+    throw new ContractError({
+      code: 'RENDER_FAILED',
+      message: 'No se pudieron listar contratos',
+      details: error.message,
+    });
+  }
+
+  const total = count ?? 0;
+  const totalPages = total > 0 ? Math.ceil(total / limit) : 1;
+
+  return {
+    contracts: (data ?? []) as ContractRecord[],
+    total,
+    page,
+    limit,
+    totalPages,
+  };
 }

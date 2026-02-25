@@ -1,5 +1,6 @@
 import { ContractError } from './errors';
 import { createSupabaseAdminClient, createSupabaseAnonClient } from './supabase';
+import { getAdminSessionFromAccessToken } from '@/lib/admin/auth-supabase';
 
 export type AdminRole = 'admin' | 'editor' | 'viewer';
 
@@ -28,6 +29,52 @@ function parseAdminToken(request: Request): string | null {
   if (!raw) return null;
   const value = raw.slice('admin-token='.length).trim();
   return value || null;
+}
+
+function getSupabaseCookieName(): string | null {
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!supabaseUrl) return null;
+  const projectRef = supabaseUrl.split('//')[1]?.split('.')[0];
+  if (!projectRef) return null;
+  return `sb-${projectRef}-auth-token`;
+}
+
+function parseSupabaseAccessTokenFromCookie(request: Request): string | null {
+  const cookieName = getSupabaseCookieName();
+  if (!cookieName) return null;
+
+  const cookieHeader = request.headers.get('cookie') ?? '';
+  const raw = cookieHeader
+    .split(';')
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(`${cookieName}=`));
+
+  if (!raw) return null;
+  const value = raw.slice(cookieName.length + 1).trim();
+  if (!value) return null;
+
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+function ensureAllowedRole(actor: { id: string; email: string; role: AdminRole }, allowedRoles: AdminRole[]): RequestAdmin {
+  const role = actor.role as AdminRole;
+  if (!allowedRoles.includes(role)) {
+    throw new ContractError({
+      code: 'FORBIDDEN',
+      message: 'Insufficient role permissions',
+      details: { role, allowedRoles },
+    });
+  }
+
+  return {
+    userId: actor.id,
+    email: actor.email,
+    role,
+  };
 }
 
 async function pickFallbackAdmin(allowedRoles: AdminRole[]): Promise<RequestAdmin> {
@@ -86,20 +133,21 @@ export async function requireAdmin(request: Request, allowedRoles: AdminRole[]):
       });
     }
 
-    const role = data.role as AdminRole;
-    if (!allowedRoles.includes(role)) {
-      throw new ContractError({
-        code: 'FORBIDDEN',
-        message: 'Insufficient role permissions',
-        details: { role, allowedRoles },
-      });
-    }
+    return ensureAllowedRole(
+      { id: data.id, email: data.email, role: data.role as AdminRole },
+      allowedRoles
+    );
+  }
 
-    return {
-      userId: data.id,
-      email: data.email,
-      role,
-    };
+  const accessTokenFromCookie = parseSupabaseAccessTokenFromCookie(request);
+  if (accessTokenFromCookie) {
+    const session = await getAdminSessionFromAccessToken(accessTokenFromCookie);
+    if (session) {
+      return ensureAllowedRole(
+        { id: session.user.id, email: session.user.email, role: session.user.role },
+        allowedRoles
+      );
+    }
   }
 
   const adminToken = parseAdminToken(request);

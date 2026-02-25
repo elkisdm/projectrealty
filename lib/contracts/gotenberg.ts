@@ -12,7 +12,7 @@ export async function convertDocxToPdf(docx: Buffer, filename = 'contract.docx')
   const endpoint = `${gotenbergUrl.replace(/\/$/, '')}/forms/libreoffice/convert`;
 
   const form = new FormData();
-  form.append('files', new Blob([docx]), filename);
+  form.append('files', new Blob([new Uint8Array(docx)]), filename);
 
   const response = await fetch(endpoint, {
     method: 'POST',

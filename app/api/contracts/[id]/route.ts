@@ -4,10 +4,13 @@ import { errorJson, okJson } from '@/lib/contracts/http';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: Request, context: { params: { id: string } }) {
+export async function GET(
+  request: Request,
+  context: { params: Promise<{ id: string }> }
+) {
   try {
     await requireAdmin(request, ['admin', 'editor', 'viewer']);
-    const { id } = context.params;
+    const { id } = await context.params;
     const url = new URL(request.url);
     const trackDownload = url.searchParams.get('download') === '1';
     const result = await getContractMetadata(id, trackDownload);

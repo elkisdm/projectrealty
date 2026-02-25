@@ -4,7 +4,7 @@ import { Suspense, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Toaster } from "sonner";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { LayoutDashboard, Building2, Home, Flag, CheckCircle2, PlusSquare } from "lucide-react";
+import { LayoutDashboard, Building2, Home, Flag, CheckCircle2, PlusSquare, FileText } from "lucide-react";
 import React from "react";
 import { createOptimizedQueryClient } from "@lib/react-query";
 import { ErrorBoundary } from "@components/admin/ErrorBoundary";
@@ -18,6 +18,7 @@ const navItems: AdminNavItem[] = [
   { key: "buildings", href: "/admin/buildings", label: "Edificios", icon: <Building2 className="h-4 w-4" />, minRole: "viewer" },
   { key: "units", href: "/admin/units", label: "Unidades", icon: <Home className="h-4 w-4" />, minRole: "viewer" },
   { key: "new-listing", href: "/admin/listar-propiedad", label: "Listar propiedad", icon: <PlusSquare className="h-4 w-4" />, minRole: "editor" },
+  { key: "contracts", href: "/admin/contracts", label: "Contratos", icon: <FileText className="h-4 w-4" />, minRole: "viewer" },
   { key: "completeness", href: "/admin/completeness", label: "Completitud", icon: <CheckCircle2 className="h-4 w-4" />, minRole: "viewer" },
   { key: "flags", href: "/admin/flags", label: "Feature Flags", icon: <Flag className="h-4 w-4" />, minRole: "admin" },
 ];
@@ -132,4 +133,3 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
     </QueryClientProvider>
   );
 }
-

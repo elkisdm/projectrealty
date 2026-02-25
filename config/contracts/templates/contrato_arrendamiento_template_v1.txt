@@ -1,0 +1,199 @@
+CONTRATO DE ARRENDAMIENTO
+
+[[ARRENDADORA.RAZON_SOCIAL]]
+CON
+[[ARRENDATARIO.NOMBRE]]
+
+En [[CONTRATO.CIUDAD_FIRMA]], Chile, a [[CONTRATO.FECHA_FIRMA]], entre [[ARRENDADORA.RAZON_SOCIAL]], rol unico tributario numero [[ARRENDADORA.RUT]], representada, segun se acreditara, por [[ARRENDADORA.REPRESENTANTE.NOMBRE]], [[ARRENDADORA.REPRESENTANTE.NACIONALIDAD]], [[ARRENDADORA.REPRESENTANTE.ESTADO_CIVIL]], [[ARRENDADORA.REPRESENTANTE.PROFESION]], cedula de identidad numero [[ARRENDADORA.REPRESENTANTE.RUT]], por una parte, en adelante tambien la "Arrendadora" o "[[ARRENDADORA.RAZON_SOCIAL]]", sociedad que actua en representacion de [[PROPIETARIO.NOMBRE]], Rol Unico Tributario numero [[PROPIETARIO.RUT]], todos domiciliados para estos efectos en [[ARRENDADORA.DOMICILIO]]; y por la otra y en adelante indistintamente la arrendataria o parte arrendataria, Don/Donna [[ARRENDATARIO.NOMBRE]], [[ARRENDATARIO.NACIONALIDAD]], [[ARRENDATARIO.ESTADO_CIVIL]], cedula de identidad numero [[ARRENDATARIO.RUT]], domiciliado en [[ARRENDATARIO.DOMICILIO]], todos mayores de edad, quienes exponen que han acordado celebrar el siguiente contrato de arrendamiento.
+
+PRIMERO: ANTECEDENTES
+[[PROPIETARIO.NOMBRE]] es dueno/a del inmueble ubicado en [[INMUEBLE.DIRECCION]], comuna de [[INMUEBLE.COMUNA]], ciudad de [[INMUEBLE.CIUDAD]], correspondiente al condominio [[INMUEBLE.CONDOMINIO]], y en su caso unidad/departamento numero [[INMUEBLE.NUMERO_DEPTO]] y/o numero de casa [[INMUEBLE.NUMERO_CASA]].
+
+SEGUNDO: USO DE LA PROPIEDAD
+En este acto y por medio del presente instrumento, [[ARRENDADORA.RAZON_SOCIAL]], en la representacion en que comparece, entrega en arrendamiento a [[ARRENDATARIO.NOMBRE]], quien acepta para si, el inmueble singularizado en la clausula anterior.
+
+La arrendataria se obliga a destinar la referida propiedad exclusivamente como casa habitacion para ella y su familia, acordando expresamente las partes que esta obligacion es un elemento esencial para la celebracion del presente contrato. Forman parte integrante del presente contrato el acta de entrega y el inventario que las partes suscriben en este mismo acto.
+
+[[IF.MASCOTA_PERMITIDA]]
+En caso de tenencia de mascota permitida por el propietario:
+a) Se permitira su tenencia en el inmueble de un maximo de 20 kilogramos, siempre y cuando la Arrendataria cumpla con lo dispuesto en la Ley 21.020, con el Reglamento de Copropiedad y con las normas que establezca el comite de administracion en el reglamento interno.
+b) La mascota permitida incluira perros, gatos, peces dentro de peceras, asi como otras especies que no representen un peligro o perturbacion para la comunidad. Se prohibe expresamente la tenencia de animales exoticos, razas peligrosas, salvajes o protegidos por ley.
+c) Si la mascota comienza a habitar el inmueble con posterioridad a la firma del contrato, la Arrendataria debera comunicar dicha situacion a la Arrendadora a la mayor brevedad posible.
+d) Toda mascota que circule en pasillos, ascensores y otras areas comunes debera utilizar siempre su correa respectiva.
+e) La Arrendataria sera responsable de cualquier dano o perjuicio, personal o material, que pueda causar la mascota al edificio o sus residentes, obligandose a restituir la propiedad en las mismas condiciones en que fue recibida.
+[[ENDIF.MASCOTA_PERMITIDA]]
+
+TERCERO: VIGENCIA DEL CONTRATO
+El presente contrato regira a contar del dia [[CONTRATO.FECHA_INICIO]] y vencera el [[CONTRATO.FECHA_TERMINO]]. Las partes acuerdan que, de no mediar aviso despachado mediante carta certificada o notarial enviada al domicilio de la otra parte, a la propiedad arrendada y/o mediante correo electronico senalado en la clausula de comunicaciones, con a lo menos 60 dias de anticipacion al vencimiento de dicho plazo o de cualquiera de sus prorrogas, se entendera que el presente contrato se renovara automaticamente en los mismos terminos por periodos iguales y sucesivos de un ano cada uno.
+
+En caso de termino anticipado antes del primer ano, la parte afectada podra cobrar una multa equivalente a dos meses de renta.
+
+Sin perjuicio de lo anterior, una vez transcurrido un ano de vigencia del arrendamiento, la parte arrendataria estara facultada para poner termino anticipado al presente contrato, notificando con al menos 60 dias de anticipacion, y pagando la renta correspondiente a dicho periodo y en todo caso hasta la restitucion efectiva del inmueble.
+
+Asimismo, transcurrido un ano de vigencia del arrendamiento, la Arrendadora tambien podra poner termino anticipado al contrato notificando con al menos 90 dias de anticipacion.
+
+CUARTO: RENTA, PLAZO DE PAGO, REAJUSTES Y MULTAS
+La renta mensual de arrendamiento sera la cantidad de [[RENTA.MONTO_CLP]] (equivalente referencial a [[RENTA.MONTO_UF]]) y se pagara anticipadamente dentro de los [[RENTA.DIA_LIMITE_PAGO]] primeros dias de cada mes.
+
+El pago de las obligaciones debera efectuarse por transferencia a la siguiente cuenta:
+Titular: [[ARRENDADORA.RAZON_SOCIAL]]
+RUT: [[ARRENDADORA.RUT]]
+Banco: [[ARRENDADORA.CUENTA.BANCO]]
+Tipo de cuenta: [[ARRENDADORA.CUENTA.TIPO]]
+Numero de cuenta: [[ARRENDADORA.CUENTA.NUMERO]]
+Correo de pago: [[ARRENDADORA.CUENTA.EMAIL_PAGO]]
+
+La renta se reajustara cada 12 meses conforme a la variacion de la UF. El primer reajuste se aplicara a contar de [[RENTA.MES_PRIMER_REAJUSTE]] y asi sucesivamente.
+
+El retardo en el pago de la renta y/o gastos comunes desde el dia [[RENTA.DIA_LIMITE_PAGO]] de cada mes constituira en mora a la Arrendataria, quedando obligada a pagar una multa de 2% diario sobre rentas o gastos adeudados.
+
+QUINTO: ENTREGA
+La entrega material del inmueble se efectua con esta misma fecha, en condiciones de uso y funcionamiento, desocupado, con servicios debidamente pagados hasta esa fecha, en el estado conocido y aceptado por la Arrendataria, quien se obliga a restituirlo en el mismo estado al termino del contrato.
+
+Toda mejora que efectue la Arrendataria sera de su exclusivo costo y quedara a beneficio de la propiedad, salvo mejoras separables sin detrimento del inmueble.
+
+Al termino del contrato, la Arrendataria debera restituir la propiedad totalmente desocupada, haciendo entrega de llaves al personal de la Arrendadora en dia y horario habil.
+
+SEXTO: OBLIGACIONES
+Seran obligaciones de la Arrendataria:
+a) Pagar la renta en el plazo pactado;
+b) Pagar gastos comunes y servicios basicos con puntualidad;
+c) Mantener el inmueble en correcto estado de aseo y conservacion;
+d) Ejecutar reparaciones locativas que sean de su cargo;
+e) Solicitar autorizacion previa para mejoras;
+f) Respetar el destino habitacional del inmueble y el reglamento de copropiedad;
+g) Responder por danos al inmueble y/o bienes comunes causados por ella o terceros bajo su responsabilidad;
+h) Restituir a la Arrendadora cualquier suma pagada por multas o infracciones imputables a la Arrendataria.
+
+El incumplimiento de cualquiera de las obligaciones dara derecho a la Arrendadora para poner termino anticipado al contrato y exigir restitucion inmediata del inmueble, pago de rentas vencidas, gastos adeudados y demas conceptos pendientes.
+
+SEPTIMO: CASOS FORTUITOS
+La Arrendadora no respondera por robos o hurtos ocurridos en el inmueble ni por perjuicios ocasionados por sismos, incendios, inundaciones, filtraciones, roturas de canerias, humedad, calor, fuerza mayor o hechos analogos.
+
+OCTAVO: INSPECCION
+La Arrendadora queda facultada para inspeccionar la propiedad cuando lo estime conveniente, comprometiendose la Arrendataria a otorgar las facilidades necesarias para este efecto, al menos una vez cada tres meses.
+
+NOVENO: PROHIBICIONES
+Se prohibe a la Arrendataria:
+a) Subarrendar o ceder total o parcialmente el contrato o el uso del inmueble;
+b) Alterar instalaciones de gas, agua, electricidad u otras;
+c) Suscribir convenios de pago de cuentas vencidas que afecten el inmueble sin autorizacion;
+d) Mantener materiales nocivos, inflamables o explosivos;
+e) Ocasionar ruidos molestos;
+f) Mantener mascotas que no cumplan las condiciones de este contrato;
+g) Exceder capacidad razonable de ocupacion del inmueble.
+
+DECIMO: GARANTIA
+Para garantizar la conservacion del inmueble y el cumplimiento del contrato, la Arrendataria entrega en garantia la suma total de [[GARANTIA.MONTO_TOTAL_CLP]].
+
+Esta se pagara con un pago inicial de [[GARANTIA.PAGO_INICIAL_CLP]] y el saldo en cuotas segun liquidacion de la Arrendadora y/o anexo de pago.
+
+La Arrendataria debera solicitar liquidacion de garantia transcurridos 30 dias desde la restitucion del inmueble a entera satisfaccion de la Arrendadora. La garantia se liquidara sin reajuste dentro de los 30 dias siguientes a dicha solicitud.
+
+La Arrendadora podra descontar de la garantia:
+- Reparaciones para dejar el inmueble en condiciones optimas.
+- Dias proporcionales de arriendo pendientes.
+- Cuentas de servicios y gastos comunes adeudados.
+
+La Arrendataria no podra imputar la garantia al pago de rentas.
+
+Adicionalmente, la Arrendataria perdera derecho a devolucion de garantia en casos de incumplimientos graves, incluyendo:
+- Termino por incumplimiento contractual.
+- No solicitar salvoconducto previo a desocupacion.
+- No dar aviso de termino con 60 dias de anticipacion.
+- No suscribir finiquito dentro de plazo.
+- No cumplir el plazo contractual minimo aplicable.
+
+Tabla referencial de precios unitarios de reparaciones (UF + IVA):
+Aseo General Basico 1,145 / Aseo General Intenso 1,527 / Pintura Guardapolvos 0,046 ml / Pintura Muros 0,573 c-u / Pintura Puerta 0,382 c-u / Cambio de Flexible 0,305 c-u / Cambio de Challa Ducha 0,191 c-u / Destape Desagues y Sifon 0,153 c-u / Cambio Tapa WC 0,954 c-u / Monomando Cocina 1,145 c-u / Reposicion Ampolletas 0,095 c-u / Cambio de Chapa Acceso 0,763 c-u / Reparacion forado tabique 0,954 c-u / Cambio de piso 0,704 m2 / Perdida de tarjeta de acceso 2 UF / Perdida de llave 0,185.
+
+[[IF.DEPTO_AMOBLADO]]
+Los siguientes items aplican solo a departamentos amoblados (UF + IVA):
+- Cama 2 plazas 8,25
+- Velador pieza principal 2
+- Respaldo cama principal 2
+- Cubrecolchon cama 2 plazas 0,75
+- Lampara velador 1
+- Mueble/arrimo 1,5
+- Camarote pieza chica 5
+- Colchon 1 plaza 3
+- Cubrecolchon 1 plaza 0,5
+- Estante 1,5
+- Velador pieza chica 1
+- Reposicion Microondas 1,6286
+- Reposicion Juego de Terraza 1,9227
+- Reposicion Pisos de Cocina 1,242
+[[ENDIF.DEPTO_AMOBLADO]]
+
+DECIMO PRIMERO: NOTIFICACION A BOLETINES COMERCIALES
+[[ARRENDATARIO.NOMBRE]] autoriza expresamente a [[ARRENDADORA.RAZON_SOCIAL]] para que, en caso de retardo, mora o incumplimiento total o parcial de las obligaciones de este contrato, pueda comunicar o tratar sus datos personales y los derivados de este contrato en registros de informacion comercial legalmente habilitados.
+[[IF.HAY_AVAL]]
+[[AVAL.NOMBRE]] tambien otorga la misma autorizacion respecto de sus datos personales en su calidad de aval y codeudor solidario.
+[[ENDIF.HAY_AVAL]]
+
+DECIMO SEGUNDO: COMUNICACIONES
+La Arrendataria se obliga a comunicar a [[ARRENDADORA.RAZON_SOCIAL]], dentro de tres dias habiles, cualquier modificacion de su correo electronico o telefono. En caso de no cumplir, se tendran por validas las comunicaciones enviadas al correo indicado en este contrato.
+[[IF.HAY_AVAL]]
+El Aval se obliga en los mismos terminos respecto de sus datos de contacto.
+[[ENDIF.HAY_AVAL]]
+
+DECIMO TERCERO: JURISDICCION
+Para todos los efectos legales, las partes fijan domicilio especial en la ciudad de [[CONTRATO.CIUDAD_FIRMA]] y se someten a la jurisdiccion de sus Tribunales de Justicia.
+
+[[IF.HAY_AVAL]]
+DECIMO CUARTO: AVAL
+Presente a este acto Don/Donna [[AVAL.NOMBRE]], [[AVAL.NACIONALIDAD]], [[AVAL.ESTADO_CIVIL]], [[AVAL.PROFESION]], cedula de identidad numero [[AVAL.RUT]], domiciliado en [[AVAL.DOMICILIO]], quien se constituye en aval y codeudor solidario de la Arrendataria respecto de todas y cada una de las obligaciones emanadas del presente contrato, incluyendo sus modificaciones de renta, plazo y demas estipulaciones.
+[[ENDIF.HAY_AVAL]]
+
+DECIMO QUINTO: DOCUMENTO DE IDENTIDAD
+En caso de que la Arrendataria y/o el Aval hayan firmado el presente contrato usando un documento de identificacion distinto a la cedula de identidad chilena, se obligan a comparecer a las oficinas de [[ARRENDADORA.RAZON_SOCIAL]] en un plazo no mayor a cinco meses desde [[CONTRATO.FECHA_INICIO]] para firmar nuevamente ante notario con cedula chilena vigente.
+
+El incumplimiento de esta obligacion generara una multa mensual de CLP 30.000, incorporada al cupon mensual de arriendo. Los gastos notariales seran de cargo de la parte arrendataria.
+
+DECIMO SEXTO: CESION DE DERECHOS
+La Arrendadora estara facultada para vender, ceder o transferir libremente a terceros el inmueble objeto del presente contrato y/o ceder total o parcialmente sus derechos, en especial el cobro de la renta, sin necesidad de autorizacion de la Arrendataria.
+
+DECIMO SEPTIMO: FIRMA Y COMUNICACIONES
+Todas las comunicaciones, cartas, avisos y/o notificaciones entre las partes a que se refiere el presente contrato deberan ser enviadas a las siguientes direcciones:
+A) [[ARRENDADORA.RAZON_SOCIAL]]: [[ARRENDADORA.EMAIL]]
+B) [[ARRENDATARIO.NOMBRE]]: [[ARRENDATARIO.EMAIL]]
+[[IF.HAY_AVAL]]
+C) [[AVAL.NOMBRE]]: [[AVAL.EMAIL]]
+[[ENDIF.HAY_AVAL]]
+
+El presente contrato se firma en dos ejemplares de identico tenor y fecha, quedando uno en poder de la Arrendataria y uno en poder de la Arrendadora.
+
+La personeria de [[ARRENDADORA.REPRESENTANTE.NOMBRE]] para actuar en representacion de [[ARRENDADORA.RAZON_SOCIAL]] consta en la escritura publica de fecha [[ARRENDADORA.PERSONERIA.FECHA]], otorgada en la notaria [[ARRENDADORA.PERSONERIA.NOTARIA]] de [[ARRENDADORA.PERSONERIA.CIUDAD]], notario/a [[ARRENDADORA.PERSONERIA.NOTARIO_NOMBRE]].
+
+_________________________
+[[ARRENDADORA.REPRESENTANTE.NOMBRE]]
+pp. [[ARRENDADORA.RAZON_SOCIAL]]
+RUT: [[ARRENDADORA.REPRESENTANTE.RUT]]
+
+_________________________
+Arrendataria/o
+[[ARRENDATARIO.NOMBRE]]
+RUT: [[ARRENDATARIO.RUT]]
+
+[[IF.HAY_AVAL]]
+_________________________
+Aval
+[[AVAL.NOMBRE]]
+RUT: [[AVAL.RUT]]
+[[ENDIF.HAY_AVAL]]
+
+DECLARACION DE VINCULO CON PERSONAS EXPUESTAS POLITICAMENTE (PEP)
+Yo, [[ARRENDATARIO.NOMBRE]], cedula de identidad numero [[ARRENDATARIO.RUT]], de nacionalidad [[ARRENDATARIO.NACIONALIDAD]], declaro no ser conyuge ni pariente hasta segundo grado de consanguinidad, ni haber celebrado pacto de actuacion conjunta para influir en sociedades constituidas en Chile con personas politicamente expuestas en los terminos de la normativa vigente.
+
+[[IF.HAY_AVAL]]
+DECLARACION DE VINCULO CON PERSONAS EXPUESTAS POLITICAMENTE (PEP) - AVAL
+Yo, [[AVAL.NOMBRE]], cedula de identidad numero [[AVAL.RUT]], de nacionalidad [[AVAL.NACIONALIDAD]], declaro no ser conyuge ni pariente hasta segundo grado de consanguinidad, ni haber celebrado pacto de actuacion conjunta para influir en sociedades constituidas en Chile con personas politicamente expuestas en los terminos de la normativa vigente.
+[[ENDIF.HAY_AVAL]]
+
+DECLARACION DE ORIGEN DE FONDOS PARA PAGOS ASOCIADOS AL CONTRATO DE ARRENDAMIENTO
+En [[CONTRATO.CIUDAD_FIRMA]], a [[CONTRATO.FECHA_FIRMA]], [[ARRENDATARIO.NOMBRE]], [[ARRENDATARIO.NACIONALIDAD]], [[ARRENDATARIO.ESTADO_CIVIL]], cedula de identidad numero [[ARRENDATARIO.RUT]], domiciliado en [[ARRENDATARIO.DOMICILIO]], certifica y declara lo siguiente:
+
+1. Que respecto del inmueble ubicado en [[INMUEBLE.DIRECCION]], comuna de [[INMUEBLE.COMUNA]], ciudad de [[INMUEBLE.CIUDAD]], departamento/casa [[INMUEBLE.NUMERO_DEPTO]][[INMUEBLE.NUMERO_CASA]], los fondos con los cuales pagara mensualmente rentas y obligaciones provienen de: [[DECLARACIONES.FONDOS_ORIGEN_TEXTO]].
+2. Que dichos fondos han sido adquiridos por medios licitos y no provienen directa ni indirectamente de actividades ilicitas.
+3. Que ha declarado o declarara los impuestos correspondientes respecto de dichos fondos.
+4. Que asume total responsabilidad por la veracidad de la informacion entregada, eximiendo a [[ARRENDADORA.RAZON_SOCIAL]] de responsabilidad derivada de informacion erronea, falsa o inexacta.
