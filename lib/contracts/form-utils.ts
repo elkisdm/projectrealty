@@ -9,6 +9,7 @@ interface AutoRuleOptions {
 }
 
 export const CONTRACT_WIZARD_STEPS = [
+  { key: 'tipo', title: 'Tipo de contrato', description: 'Define el flujo y campos habilitados' },
   { key: 'template', title: 'Plantilla', description: 'Selecciona la versión oficial' },
   { key: 'partes', title: 'Partes', description: 'Arrendadora, arrendatario y aval' },
   { key: 'inmueble', title: 'Inmueble y Fechas', description: 'Dirección y vigencia' },
@@ -23,9 +24,11 @@ type Genero = ContractPayload['arrendatario']['genero'];
 export type WizardStepFieldMap = Record<WizardStepKey, string[]>;
 
 export const WIZARD_STEP_FIELDS: WizardStepFieldMap = {
+  tipo: ['contrato.tipo'],
   template: [],
   partes: [
     'arrendadora.razon_social',
+    'arrendadora.tipo_persona',
     'arrendadora.rut',
     'arrendadora.domicilio',
     'arrendadora.email',
@@ -52,6 +55,11 @@ export const WIZARD_STEP_FIELDS: WizardStepFieldMap = {
     'arrendatario.estado_civil',
     'arrendatario.email',
     'arrendatario.domicilio',
+    'arrendatario.representante_legal.nombre',
+    'arrendatario.representante_legal.rut',
+    'arrendatario.representante_legal.nacionalidad',
+    'arrendatario.representante_legal.estado_civil',
+    'arrendatario.representante_legal.profesion',
   ],
   inmueble: [
     'inmueble.condominio',
@@ -114,6 +122,7 @@ export function createContractWizardDefaultDraft(): ContractPayload {
       fecha_termino: '',
     },
     arrendadora: {
+      tipo_persona: 'natural',
       razon_social: '',
       rut: '',
       domicilio: '',
@@ -152,6 +161,14 @@ export function createContractWizardDefaultDraft(): ContractPayload {
       email: '',
       telefono: '',
       domicilio: '',
+      representante_legal: {
+        nombre: '',
+        rut: '',
+        genero: undefined,
+        nacionalidad: 'Chilena',
+        estado_civil: '',
+        profesion: '',
+      },
     },
     aval: {
       nombre: '',
@@ -441,6 +458,7 @@ export function normalizeContractPayload(input: ContractPayload): ContractPayloa
     },
     arrendadora: {
       ...trimmed.arrendadora,
+      tipo_persona: trimmed.arrendadora.tipo_persona === 'juridica' ? 'juridica' : 'natural',
       rut: formatRutForDisplay(trimmed.arrendadora.rut),
       representante: {
         ...trimmed.arrendadora.representante,
@@ -455,6 +473,12 @@ export function normalizeContractPayload(input: ContractPayload): ContractPayloa
       ...trimmed.arrendatario,
       rut: formatRutForDisplay(trimmed.arrendatario.rut),
       telefono: trimmed.arrendatario.telefono || undefined,
+      representante_legal: trimmed.arrendatario.representante_legal
+        ? {
+            ...trimmed.arrendatario.representante_legal,
+            rut: formatRutForDisplay(trimmed.arrendatario.representante_legal.rut),
+          }
+        : undefined,
     },
     aval: trimmed.aval
       ? {
@@ -562,6 +586,12 @@ export function applyAutomaticContractRules(
             normalized.subarriendo?.referencia_legal
             || 'Artículo 1973 del Código Civil y normativa aplicable.',
         },
+    propietario: isOwnerSublease
+      ? {
+          nombre: normalized.arrendadora.razon_social,
+          rut: normalized.arrendadora.rut,
+        }
+      : normalized.propietario,
   };
 
   if (options.firmaOnline) {

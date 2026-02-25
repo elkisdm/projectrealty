@@ -163,6 +163,7 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
   const [draftHydrated, setDraftHydrated] = useState(false);
 
   const hayAval = useWatch({ control: form.control, name: 'flags.hay_aval' });
+  const contratoTipo = useWatch({ control: form.control, name: 'contrato.tipo' });
   const fechaInicio = useWatch({ control: form.control, name: 'contrato.fecha_inicio' });
   const rentaMonto = useWatch({ control: form.control, name: 'renta.monto_clp' });
   const garantiaPagoInicial = useWatch({ control: form.control, name: 'garantia.pago_inicial_clp' });
@@ -368,6 +369,12 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
   }, [firmaOnline, form, unidadTipo, values]);
 
   useEffect(() => {
+    if (contratoTipo !== 'subarriendo_propietario') return;
+    if (!form.getValues('flags.hay_aval')) return;
+    form.setValue('flags.hay_aval', false, { shouldDirty: true, shouldValidate: true });
+  }, [contratoTipo, form]);
+
+  useEffect(() => {
     if (unidadTipo === 'departamento') {
       if (form.getValues('inmueble.numero_casa')) {
         form.setValue('inmueble.numero_casa', '', { shouldDirty: true });
@@ -387,6 +394,7 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
         | 'arrendadora.representante.rut'
         | 'propietario.rut'
         | 'arrendatario.rut'
+        | 'arrendatario.representante_legal.rut'
         | 'aval.rut'
     ) => {
       const current = form.getValues(fieldPath);
@@ -423,7 +431,27 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
       }
 
       const fields = [...WIZARD_STEP_FIELDS[step.key]];
-      if (step.key === 'partes' && hayAval) {
+      if (step.key === 'partes' && contratoTipo !== 'subarriendo_propietario') {
+        const excluded = new Set([
+          'arrendatario.representante_legal.nombre',
+          'arrendatario.representante_legal.rut',
+          'arrendatario.representante_legal.nacionalidad',
+          'arrendatario.representante_legal.estado_civil',
+          'arrendatario.representante_legal.profesion',
+        ]);
+        const filtered = fields.filter((field) => !excluded.has(field));
+        fields.length = 0;
+        fields.push(...filtered);
+      }
+
+      if (step.key === 'partes' && contratoTipo === 'subarriendo_propietario') {
+        const excluded = new Set(['propietario.nombre', 'propietario.rut']);
+        const filtered = fields.filter((field) => !excluded.has(field));
+        fields.length = 0;
+        fields.push(...filtered);
+      }
+
+      if (step.key === 'partes' && hayAval && contratoTipo !== 'subarriendo_propietario') {
         fields.push(
           'aval.nombre',
           'aval.rut',
@@ -459,7 +487,7 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
       });
       return valid;
     },
-    [firmaOnline, form, hayAval, selectedTemplateId]
+    [contratoTipo, firmaOnline, form, hayAval, selectedTemplateId]
   );
 
   const nextStep = useCallback(async () => {
@@ -737,11 +765,31 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
       const baseFields = WIZARD_STEP_FIELDS[step.key];
       const fields = [...baseFields];
 
+      if (step.key === 'partes' && contratoTipo !== 'subarriendo_propietario') {
+        const excluded = new Set([
+          'arrendatario.representante_legal.nombre',
+          'arrendatario.representante_legal.rut',
+          'arrendatario.representante_legal.nacionalidad',
+          'arrendatario.representante_legal.estado_civil',
+          'arrendatario.representante_legal.profesion',
+        ]);
+        const filtered = fields.filter((field) => !excluded.has(field));
+        fields.length = 0;
+        fields.push(...filtered);
+      }
+
+      if (step.key === 'partes' && contratoTipo === 'subarriendo_propietario') {
+        const excluded = new Set(['propietario.nombre', 'propietario.rut']);
+        const filtered = fields.filter((field) => !excluded.has(field));
+        fields.length = 0;
+        fields.push(...filtered);
+      }
+
       if (step.key === 'template') {
         return Boolean(selectedTemplateId);
       }
 
-      if (step.key === 'partes' && hayAval) {
+      if (step.key === 'partes' && hayAval && contratoTipo !== 'subarriendo_propietario') {
         fields.push(
           'aval.nombre',
           'aval.rut',
@@ -766,7 +814,7 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
       if (fields.length === 0) return true;
       return fields.every((path) => hasValue(getPathValue(currentValues, path)));
     });
-  }, [firmaOnline, form, hayAval, selectedTemplateId, values]);
+  }, [contratoTipo, firmaOnline, form, hayAval, selectedTemplateId, values]);
 
   return {
     form,
@@ -781,6 +829,7 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
     stepState,
     sectionCompletion,
     canIssue,
+    contratoTipo,
     hayAval,
     unidadTipo,
     setUnidadTipo,

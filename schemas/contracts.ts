@@ -18,6 +18,7 @@ export const ContractPayloadSchema = z.object({
     fecha_termino: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   }),
   arrendadora: z.object({
+    tipo_persona: z.enum(['natural', 'juridica']).default('natural'),
     razon_social: z.string().min(1),
     rut: rutField,
     domicilio: z.string().min(1),
@@ -56,6 +57,14 @@ export const ContractPayloadSchema = z.object({
     email: z.string().email(),
     telefono: z.string().optional(),
     domicilio: z.string().min(1),
+    representante_legal: z.object({
+      nombre: z.string().min(1),
+      rut: rutField,
+      genero: generoField,
+      nacionalidad: z.string().min(1),
+      estado_civil: z.string().min(1),
+      profesion: z.string().min(1),
+    }).optional(),
   }),
   aval: z.object({
     nombre: z.string().min(1),

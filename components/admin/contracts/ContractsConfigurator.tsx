@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Controller, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 import { ArrowLeft, ArrowRight, FileWarning, Info } from 'lucide-react';
@@ -65,10 +65,40 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
   const history = useContractHistory({ enabled: tab === 'history' });
 
   const { register, control, formState, setValue } = configurator.form;
+  const { selectedTemplateId, setSelectedTemplateId } = configurator;
   const garantiaTotal = useWatch({ control, name: 'garantia.monto_total_clp' });
   const garantiaInicial = useWatch({ control, name: 'garantia.pago_inicial_clp' });
   const garantiaCuotas = useWatch({ control, name: 'garantia.cuotas' });
   const contratoTipo = useWatch({ control, name: 'contrato.tipo' });
+  const isOwnerSublease = contratoTipo === 'subarriendo_propietario';
+  const currentStepKey = CONTRACT_WIZARD_STEPS[configurator.currentStep]?.key;
+
+  const templatesForType = useMemo(() => {
+    const templates = configurator.templates;
+    if (!isOwnerSublease) {
+      return templates.filter((item) => {
+        const text = `${item.name} ${item.description ?? ''}`.toLowerCase();
+        return !text.includes('subarriendo');
+      });
+    }
+
+    return templates.filter((item) => {
+      const text = `${item.name} ${item.description ?? ''}`.toLowerCase();
+      return text.includes('subarriendo');
+    });
+  }, [configurator.templates, isOwnerSublease]);
+
+  useEffect(() => {
+    if (templatesForType.length === 0) {
+      setSelectedTemplateId('');
+      return;
+    }
+
+    const isCurrentValid = templatesForType.some((item) => item.id === selectedTemplateId);
+    if (!isCurrentValid) {
+      setSelectedTemplateId(templatesForType[0].id);
+    }
+  }, [selectedTemplateId, setSelectedTemplateId, templatesForType]);
 
   const guaranteeCoherence = useMemo(() => {
     const cuotas = garantiaCuotas ?? [];
@@ -83,7 +113,7 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
 
   const reviewSections = useMemo(
     () =>
-      CONTRACT_WIZARD_STEPS.slice(0, 5).map((step, index) => ({
+      CONTRACT_WIZARD_STEPS.slice(0, CONTRACT_WIZARD_STEPS.length - 1).map((step, index) => ({
         title: step.title,
         completed: configurator.sectionCompletion[index],
         state: configurator.stepState[index],
@@ -141,44 +171,125 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
   };
 
   const renderCurrentStep = () => {
-    switch (configurator.currentStep) {
-      case 0:
+    switch (currentStepKey) {
+      case 'tipo':
+        return (
+          <SectionCard
+            title="Tipo de contrato"
+            description="Este paso define el proceso, las figuras y los campos habilitados para toda la emisión."
+          >
+            <div className="grid gap-3 md:grid-cols-2">
+              <button
+                type="button"
+                className={`rounded-xl border p-4 text-left transition ${
+                  !isOwnerSublease
+                    ? 'border-sky-500/50 bg-sky-500/10'
+                    : 'border-[var(--admin-border-subtle)] bg-[var(--admin-surface-2)]'
+                }`}
+                onClick={() =>
+                  setValue('contrato.tipo', 'standard', {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  })
+                }
+                disabled={readOnly}
+              >
+                <p className="font-semibold text-[var(--text)]">Contrato estándar</p>
+                <p className="mt-1 text-sm text-[var(--subtext)]">
+                  Flujo completo de arriendo con campos tradicionales, aval opcional y cláusulas generales.
+                </p>
+              </button>
+              <button
+                type="button"
+                className={`rounded-xl border p-4 text-left transition ${
+                  isOwnerSublease
+                    ? 'border-sky-500/50 bg-sky-500/10'
+                    : 'border-[var(--admin-border-subtle)] bg-[var(--admin-surface-2)]'
+                }`}
+                onClick={() =>
+                  setValue('contrato.tipo', 'subarriendo_propietario', {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  })
+                }
+                disabled={readOnly}
+              >
+                <p className="font-semibold text-[var(--text)]">Propietario con subarriendo</p>
+                <p className="mt-1 text-sm text-[var(--subtext)]">
+                  Activa flujo de subarriendo, autorización del propietario y campos legales específicos.
+                </p>
+              </button>
+            </div>
+            <div className="rounded-lg border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-2)] p-3 text-sm text-[var(--subtext)]">
+              Tipo seleccionado: <strong className="text-[var(--text)]">{isOwnerSublease ? 'Propietario con subarriendo' : 'Estándar'}</strong>
+            </div>
+          </SectionCard>
+        );
+      case 'template':
         return (
           <ContractTemplateSelector
-            templates={configurator.templates}
-            selectedTemplate={configurator.selectedTemplate}
-            selectedTemplateId={configurator.selectedTemplateId}
+            templates={templatesForType}
+            selectedTemplate={templatesForType.find((item) => item.id === selectedTemplateId) ?? null}
+            selectedTemplateId={selectedTemplateId}
             isLoading={configurator.isLoadingTemplates}
-            error={configurator.templatesError}
-            onSelect={configurator.setSelectedTemplateId}
+            error={templatesForType.length === 0
+              ? `No hay plantillas compatibles con "${isOwnerSublease ? 'Propietario con subarriendo' : 'Contrato estándar'}".`
+              : configurator.templatesError}
+            onSelect={setSelectedTemplateId}
             onReload={configurator.loadTemplates}
             onDownloadSource={handleTemplateDownload}
           />
         );
-      case 1:
+      case 'partes':
         return (
           <Accordion className="w-full max-w-none space-y-3" defaultValue={['arrendadora']}>
             <AccordionItem value="arrendadora" className="overflow-hidden rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-1)]">
               <AccordionHeader>
                 <AccordionTrigger className="px-4 py-3 text-left">
-                  <span className="font-semibold text-[var(--text)]">Arrendadora</span>
+                  <span className="font-semibold text-[var(--text)]">{isOwnerSublease ? 'Arrendador/a' : 'Arrendadora'}</span>
                 </AccordionTrigger>
               </AccordionHeader>
               <AccordionPanel className="px-0">
-                <SectionCard title="Arrendadora" description="Datos de la sociedad emisora y su cuenta bancaria.">
+                <SectionCard
+                  title={isOwnerSublease ? 'Arrendador/a' : 'Arrendadora'}
+                  description="Datos de la sociedad emisora y su cuenta bancaria."
+                >
                   <FieldGrid>
                     <div className="space-y-1.5">
-                      <Label>Razón social</Label>
+                      <Label>Tipo de persona</Label>
+                      <Controller
+                        control={control}
+                        name="arrendadora.tipo_persona"
+                        render={({ field }) => (
+                          <Select
+                            value={field.value ?? 'natural'}
+                            onValueChange={(value) => field.onChange(value as 'natural' | 'juridica')}
+                          >
+                            <SelectTrigger disabled={readOnly}>
+                              <SelectValue placeholder="Selecciona tipo" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="natural">Persona natural</SelectItem>
+                              <SelectItem value="juridica">Persona jurídica</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Nombre completo / Razón social</Label>
                       <Input {...register('arrendadora.razon_social')} disabled={readOnly} />
                     </div>
                     <div className="space-y-1.5">
-                      <Label>RUT empresa (arrendadora)</Label>
+                      <Label>RUT arrendador/propietario</Label>
                       <Input
                         {...register('arrendadora.rut')}
                         disabled={readOnly}
                         onBlur={() => configurator.formatRutField('arrendadora.rut')}
                       />
-                      <p className="text-xs text-[var(--subtext)]">Este RUT debe ser el de la empresa.</p>
+                      <p className="text-xs text-[var(--subtext)]">
+                        Por defecto usa persona natural; también puede ser empresa.
+                      </p>
                     </div>
                     <div className="space-y-1.5 md:col-span-2">
                       <Label>Domicilio</Label>
@@ -324,6 +435,7 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
               </AccordionPanel>
             </AccordionItem>
 
+            {!isOwnerSublease ? (
             <AccordionItem value="propietario" className="overflow-hidden rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-1)]">
               <AccordionHeader>
                 <AccordionTrigger className="px-4 py-3 text-left">
@@ -349,6 +461,7 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
                 </SectionCard>
               </AccordionPanel>
             </AccordionItem>
+            ) : null}
 
             <AccordionItem value="arrendatario" className="overflow-hidden rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-1)]">
               <AccordionHeader>
@@ -411,10 +524,63 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
                       <Input {...register('arrendatario.domicilio')} disabled={readOnly} />
                     </div>
                   </FieldGrid>
+
+                  {isOwnerSublease ? (
+                    <>
+                      <div className="my-4 h-px bg-[var(--admin-border-subtle)]" />
+                      <p className="text-sm font-semibold text-[var(--text)]">Representante legal del arrendatario</p>
+                      <FieldGrid>
+                        <div className="space-y-1.5">
+                          <Label>Nombre representante legal</Label>
+                          <Input {...register('arrendatario.representante_legal.nombre')} disabled={readOnly} />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label>RUT representante legal</Label>
+                          <Input
+                            {...register('arrendatario.representante_legal.rut')}
+                            disabled={readOnly}
+                            onBlur={() => configurator.formatRutField('arrendatario.representante_legal.rut')}
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label>Nacionalidad</Label>
+                          <Input {...register('arrendatario.representante_legal.nacionalidad')} disabled={readOnly} />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label>Género representante legal</Label>
+                          <Controller
+                            control={control}
+                            name="arrendatario.representante_legal.genero"
+                            render={({ field }) => (
+                              <Select value={field.value ?? 'na'} onValueChange={(value) => field.onChange(value === 'na' ? undefined : value)}>
+                                <SelectTrigger disabled={readOnly}>
+                                  <SelectValue placeholder="Selecciona género" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="na">No especificado</SelectItem>
+                                  <SelectItem value="femenino">Femenino</SelectItem>
+                                  <SelectItem value="masculino">Masculino</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            )}
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label>Estado civil</Label>
+                          <Input {...register('arrendatario.representante_legal.estado_civil')} disabled={readOnly} />
+                        </div>
+                        <div className="space-y-1.5 md:col-span-2">
+                          <Label>Profesión</Label>
+                          <Input {...register('arrendatario.representante_legal.profesion')} disabled={readOnly} />
+                        </div>
+                      </FieldGrid>
+                    </>
+                  ) : null}
                 </SectionCard>
               </AccordionPanel>
             </AccordionItem>
 
+            {!isOwnerSublease ? (
             <AccordionItem value="aval" className="overflow-hidden rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-1)]">
               <AccordionHeader>
                 <AccordionTrigger className="px-4 py-3 text-left">
@@ -498,9 +664,16 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
                 </SectionCard>
               </AccordionPanel>
             </AccordionItem>
+            ) : (
+              <SectionCard title="Aval" description="No aplica para el flujo de subarriendo de propietario.">
+                <p className="text-sm text-[var(--subtext)]">
+                  Este tipo de contrato deshabilita automáticamente la figura de aval.
+                </p>
+              </SectionCard>
+            )}
           </Accordion>
         );
-      case 2:
+      case 'inmueble':
         return (
           <div className="space-y-4">
             <SectionCard title="Inmueble">
@@ -594,7 +767,7 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
             </SectionCard>
           </div>
         );
-      case 3:
+      case 'finanzas':
         return (
           <div className="space-y-4">
             <SectionCard title="Renta">
@@ -711,41 +884,10 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
             </SectionCard>
           </div>
         );
-      case 4:
+      case 'condiciones':
         return (
           <div className="space-y-4">
             <SectionCard title="Condiciones contrato">
-              <div className="space-y-1.5">
-                <Label>Tipo de contrato</Label>
-                <Controller
-                  control={control}
-                  name="contrato.tipo"
-                  render={({ field }) => (
-                    <Select
-                      value={field.value ?? 'standard'}
-                      onValueChange={(value) => {
-                        const nextValue = value as 'standard' | 'subarriendo_propietario';
-                        field.onChange(nextValue);
-                        if (nextValue === 'subarriendo_propietario') {
-                          setValue('subarriendo.permitido', true, { shouldDirty: true, shouldValidate: true });
-                          setValue('subarriendo.propietario_autoriza', true, { shouldDirty: true, shouldValidate: true });
-                          setValue('subarriendo.notificacion_obligatoria', true, { shouldDirty: true, shouldValidate: true });
-                          setValue('subarriendo.plazo_notificacion_habiles', 5, { shouldDirty: true, shouldValidate: true });
-                        }
-                      }}
-                    >
-                      <SelectTrigger disabled={readOnly}>
-                        <SelectValue placeholder="Selecciona tipo de contrato" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="standard">Estándar</SelectItem>
-                        <SelectItem value="subarriendo_propietario">Propietario con subarriendo</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-              </div>
-
               <div className="grid gap-3 md:grid-cols-2">
                 <Controller
                   control={control}
@@ -776,6 +918,11 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
                   )}
                 />
               </div>
+              {isOwnerSublease ? (
+                <p className="text-xs text-[var(--subtext)]">
+                  En tipo subarriendo, estas banderas se mantienen para compatibilidad de plantilla, pero el flujo principal lo determina la cláusula de subarriendo.
+                </p>
+              ) : null}
             </SectionCard>
 
             <SectionCard
@@ -835,7 +982,7 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
                         onCheckedChange={(checked) => field.onChange(Boolean(checked))}
                         disabled={readOnly}
                       />
-                      Permite múltiples subarrendatarios
+                      Permite múltiples terceros ocupantes
                     </label>
                   )}
                 />
@@ -849,7 +996,7 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
                         onCheckedChange={(checked) => field.onChange(Boolean(checked))}
                         disabled={readOnly}
                       />
-                      Permite período de vacancia entre subarrendatarios
+                      Permite período de vacancia entre terceros ocupantes
                     </label>
                   )}
                 />
@@ -900,7 +1047,7 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
             </SectionCard>
           </div>
         );
-      case 5:
+      case 'review':
         return (
           <ContractReviewPanel
             sections={reviewSections}

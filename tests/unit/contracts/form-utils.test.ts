@@ -24,6 +24,7 @@ function buildPayload(overrides?: Partial<ContractPayload>): ContractPayload {
       ...(overrides?.contrato ?? {}),
     },
     arrendadora: {
+      tipo_persona: 'juridica',
       razon_social: 'Hommie SpA',
       rut: '76.123.456-7',
       domicilio: 'Providencia 123',

@@ -1,0 +1,69 @@
+CONTRATO DE SUBARRENDAMIENTO CON AUTORIZACION DEL PROPIETARIO
+
+[[ARRENDADORA.RAZON_SOCIAL]]
+CON
+[[ARRENDATARIO.NOMBRE]]
+
+En [[CONTRATO.CIUDAD_FIRMA]], Chile, a [[CONTRATO.FECHA_FIRMA]], entre [[ARRENDADORA.RAZON_SOCIAL]], rol unico tributario numero [[ARRENDADORA.RUT]], en adelante la "Arrendadora" o "Arrendador", y por la otra [[ARRENDATARIO.NOMBRE]], cedula de identidad numero [[ARRENDATARIO.RUT]], en adelante la "Arrendataria" o "Arrendatario", quien comparece representado legalmente por [[ARRENDATARIO.REPRESENTANTE_LEGAL.TRATAMIENTO]] [[ARRENDATARIO.REPRESENTANTE_LEGAL.NOMBRE]], cedula de identidad numero [[ARRENDATARIO.REPRESENTANTE_LEGAL.RUT]], ambos con domicilio en [[ARRENDATARIO.DOMICILIO]], se acuerda el presente contrato.
+
+PRIMERO: IDENTIFICACION DE PARTES
+Para este tipo contractual se deja constancia expresa que la parte Arrendadora coincide con la calidad de propietario del inmueble.
+
+SEGUNDO: INMUEBLE
+La Arrendadora da en arriendo el inmueble ubicado en [[INMUEBLE.DIRECCION]], comuna de [[INMUEBLE.COMUNA]], ciudad de [[INMUEBLE.CIUDAD]], condominio [[INMUEBLE.CONDOMINIO]], unidad [[INMUEBLE.UNIDAD_LABEL]].
+
+TERCERO: DESTINO Y USO
+La parte arrendataria destinará el inmueble exclusivamente a uso habitacional, respetando reglamento de copropiedad y normativa aplicable.
+
+CUARTO: SUBARRIENDO AUTORIZADO
+Tipo de contrato: [[CONTRATO.TIPO]].
+Subarriendo: [[SUBARRIENDO.PERMITIDO_LABEL]].
+[[SUBARRIENDO.AUTORIZACION_TEXTO]]
+Notificacion al propietario/arrendadora: [[SUBARRIENDO.NOTIFICACION_DIAS_HABILES]] dias habiles de anticipacion.
+Permite ocupacion por terceros multiples: [[SUBARRIENDO.PERMITE_MULTIPLES_LABEL]].
+Permite periodo de vacancia entre terceros ocupantes: [[SUBARRIENDO.PERIODO_VACANCIA_LABEL]].
+Base legal de referencia: [[SUBARRIENDO.REFERENCIA_LEGAL]].
+[[SUBARRIENDO.RESPONSABILIDAD_PRINCIPAL]]
+
+QUINTO: VIGENCIA
+El presente contrato regira desde [[CONTRATO.FECHA_INICIO]] hasta [[CONTRATO.FECHA_TERMINO]].
+
+SEXTO: RENTA Y GARANTIA
+La renta mensual asciende a [[RENTA.MONTO_CLP]] (referencial [[RENTA.MONTO_UF]]), pagadera dentro de los [[RENTA.DIA_LIMITE_PAGO]] primeros dias de cada mes, en la cuenta:
+Titular: [[ARRENDADORA.RAZON_SOCIAL]]
+RUT: [[ARRENDADORA.RUT]]
+Banco: [[ARRENDADORA.CUENTA.BANCO]]
+Tipo de cuenta: [[ARRENDADORA.CUENTA.TIPO]]
+Numero de cuenta: [[ARRENDADORA.CUENTA.NUMERO]]
+Correo de pago: [[ARRENDADORA.CUENTA.EMAIL_PAGO]]
+
+La garantia total será [[GARANTIA.MONTO_TOTAL_CLP]], con pago inicial de [[GARANTIA.PAGO_INICIAL_CLP]], cuota 1 de [[GARANTIA.CUOTA_1_MONTO_CLP]] ([[GARANTIA.CUOTA_1_FECHA]]) y cuota 2 de [[GARANTIA.CUOTA_2_MONTO_CLP]] ([[GARANTIA.CUOTA_2_FECHA]]).
+
+SEPTIMO: CONDICIONES ADICIONALES
+[[IF.MASCOTA_PERMITIDA]]
+Se permite tenencia de mascota conforme a reglamento interno y legislación vigente.
+[[ENDIF.MASCOTA_PERMITIDA]]
+[[IF.DEPTO_AMOBLADO]]
+El inmueble se entrega amoblado conforme inventario.
+[[ENDIF.DEPTO_AMOBLADO]]
+
+OCTAVO: COMUNICACIONES
+A) [[ARRENDADORA.RAZON_SOCIAL]]: [[ARRENDADORA.EMAIL]]
+B) [[ARRENDATARIO.NOMBRE]]: [[ARRENDATARIO.EMAIL]]
+
+NOVENO: FIRMA
+La personeria de [[ARRENDADORA.REPRESENTANTE.NOMBRE]] para actuar en representación de [[ARRENDADORA.RAZON_SOCIAL]] consta [[ARRENDADORA.PERSONERIA.DESCRIPCION]].
+
+_________________________
+[[ARRENDADORA.REPRESENTANTE.NOMBRE]]
+pp. [[ARRENDADORA.RAZON_SOCIAL]]
+Rut: [[ARRENDADORA.REPRESENTANTE.RUT]]
+
+_________________________
+[[ARRENDATARIO.NOMBRE]]
+Rut: [[ARRENDATARIO.RUT]]
+
+_________________________
+Representante Legal Arrendatario
+[[ARRENDATARIO.REPRESENTANTE_LEGAL.NOMBRE]]
+Rut: [[ARRENDATARIO.REPRESENTANTE_LEGAL.RUT]]

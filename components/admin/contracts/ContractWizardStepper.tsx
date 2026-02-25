@@ -41,7 +41,7 @@ export function ContractWizardStepper({
   readOnly = false,
 }: ContractWizardStepperProps) {
   return (
-    <ol className="grid grid-cols-1 gap-2 md:grid-cols-3 xl:grid-cols-6" aria-label="Pasos configurador">
+    <ol className="grid grid-cols-1 gap-2 md:grid-cols-3 xl:grid-cols-7" aria-label="Pasos configurador">
       {steps.map((step, index) => {
         const active = currentStep === index;
         const completed = sectionCompletion[index] ?? false;

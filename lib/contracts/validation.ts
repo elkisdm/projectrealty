@@ -101,6 +101,24 @@ export function validateBusinessRules(payload: ContractPayload): void {
   }
 
   if (payload.contrato.tipo === 'subarriendo_propietario') {
+    const legalRep = payload.arrendatario.representante_legal;
+    if (!legalRep) {
+      throw new ContractError({
+        code: 'VALIDATION_ERROR',
+        message: 'Subarriendo propietario requiere representante legal del arrendatario',
+        hint: 'Completa datos de representante legal en la sección de Partes.',
+      });
+    }
+
+    assertValidRut('arrendatario.representante_legal.rut', legalRep.rut);
+
+    if (normalizeRut(legalRep.rut) === normalizeRut(payload.arrendatario.rut)) {
+      throw new ContractError({
+        code: 'INVALID_RUT',
+        message: 'RUT de representante legal del arrendatario debe ser distinto al RUT del arrendatario',
+      });
+    }
+
     if (!payload.subarriendo?.permitido || !payload.subarriendo?.propietario_autoriza) {
       throw new ContractError({
         code: 'VALIDATION_ERROR',

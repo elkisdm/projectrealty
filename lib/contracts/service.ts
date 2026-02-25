@@ -13,6 +13,7 @@ import { applyConditionals } from './conditionals';
 import { canonicalStringify, sha256Hex } from './utils';
 import { renderDocxTemplate } from './docx';
 import { convertDocxToPdf } from './gotenberg';
+import { matchesTemplateToContractType } from './template-type';
 import {
   createContractEvent,
   createIssuedContract,
@@ -55,6 +56,22 @@ function renderTemplateWithPayload(params: {
     sourceDocxBuffer: params.sourceDocx,
     transformXml: (xml) => transformXmlContent(xml, params.payload, params.replacements),
   });
+}
+
+function assertTemplateMatchesContractType(
+  template: { name: string; description: string | null },
+  payload: ContractPayload
+): void {
+  const type = payload.contrato.tipo ?? 'standard';
+  if (!matchesTemplateToContractType(template, type)) {
+    throw new ContractError({
+      code: 'VALIDATION_ERROR',
+      message: `La plantilla seleccionada no corresponde al tipo de contrato (${type})`,
+      hint: type === 'subarriendo_propietario'
+        ? 'Selecciona una plantilla de subarriendo (nombre o descripción debe incluir "subarriendo").'
+        : 'Selecciona una plantilla estándar (sin marcador de subarriendo).',
+    });
+  }
 }
 
 export function validateContractInput(payloadRaw: ContractPayload): ValidationResult {
@@ -101,6 +118,7 @@ export async function validateContractForTemplate(params: {
     validateBusinessRules(payload);
 
     const template = await getTemplateById(params.templateId);
+    assertTemplateMatchesContractType(template, payload);
     const sourceDocx = await downloadTemplateDocx(template.docx_path);
     const replacements = buildReplacements(payload);
 
@@ -164,6 +182,7 @@ export async function issueContract(params: {
   validateBusinessRules(payload);
 
   const template = await getTemplateById(params.templateId);
+  assertTemplateMatchesContractType(template, payload);
   if (!template.is_active) {
     throw new ContractError({
       code: 'TEMPLATE_NOT_ACTIVE',
@@ -267,6 +286,7 @@ export async function generateContractDraft(params: {
   validateBusinessRules(payload);
 
   const template = await getTemplateById(params.templateId);
+  assertTemplateMatchesContractType(template, payload);
   if (!template.is_active) {
     throw new ContractError({
       code: 'TEMPLATE_NOT_ACTIVE',

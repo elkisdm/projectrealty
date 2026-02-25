@@ -12,6 +12,7 @@ function payload() {
       fecha_termino: '2027-03-01',
     },
     arrendadora: {
+      tipo_persona: 'juridica',
       razon_social: 'Asesorias DAC',
       rut: '781134996',
       domicilio: 'Av. Vicuna Mackenna 1',

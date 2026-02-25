@@ -229,6 +229,14 @@ export function buildReplacements(payload: ContractPayload): Record<string, stri
       value = getDomiciliado(payload.arrendatario.genero);
     }
 
+    if (scoped === 'ARRENDATARIO.REPRESENTANTE_LEGAL.TRATAMIENTO') {
+      value = getTratamiento(payload.arrendatario.representante_legal?.genero);
+    }
+
+    if (scoped === 'ARRENDATARIO.REPRESENTANTE_LEGAL.DOMICILIADO') {
+      value = getDomiciliado(payload.arrendatario.representante_legal?.genero);
+    }
+
     if (scoped === 'AVAL.TRATAMIENTO') {
       value = getTratamiento(payload.aval?.genero);
     }
@@ -264,7 +272,7 @@ export function applyReplacements(input: string, replacements: Record<string, st
 }
 
 export function findResidualPlaceholders(input: string): string[] {
-  const matches = input.match(/\[\[[A-Z0-9_\.]+\]\]/g) ?? [];
+  const matches = input.match(/\[\[[A-Z0-9_.]+\]\]/g) ?? [];
   return Array.from(new Set(matches));
 }
 
@@ -295,7 +303,7 @@ export function assertAvalPlaceholdersProtected(xmlContent: string, hayAval: boo
 
 export function validateCatalogSyntax(content: string): void {
   const catalog = getCatalog();
-  const tokens = content.match(/\[\[[A-Z0-9_\.]+\]\]/g) ?? [];
+  const tokens = content.match(/\[\[[A-Z0-9_.]+\]\]/g) ?? [];
   const invalid = tokens.filter((token) => !catalog.allowed.includes(token) && !token.startsWith('[[IF.') && !token.startsWith('[[ENDIF.'));
 
   if (invalid.length > 0) {
