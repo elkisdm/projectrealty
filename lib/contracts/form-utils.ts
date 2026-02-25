@@ -18,6 +18,7 @@ export const CONTRACT_WIZARD_STEPS = [
 ] as const;
 
 type WizardStepKey = (typeof CONTRACT_WIZARD_STEPS)[number]['key'];
+type Genero = ContractPayload['arrendatario']['genero'];
 
 export type WizardStepFieldMap = Record<WizardStepKey, string[]>;
 
@@ -38,6 +39,7 @@ export const WIZARD_STEP_FIELDS: WizardStepFieldMap = {
     'arrendadora.personeria.notario_nombre',
     'arrendadora.representante.nombre',
     'arrendadora.representante.rut',
+    'arrendadora.representante.genero',
     'arrendadora.representante.nacionalidad',
     'arrendadora.representante.estado_civil',
     'arrendadora.representante.profesion',
@@ -45,6 +47,7 @@ export const WIZARD_STEP_FIELDS: WizardStepFieldMap = {
     'propietario.rut',
     'arrendatario.nombre',
     'arrendatario.rut',
+    'arrendatario.genero',
     'arrendatario.nacionalidad',
     'arrendatario.estado_civil',
     'arrendatario.email',
@@ -119,6 +122,7 @@ export function createContractWizardDefaultDraft(): ContractPayload {
       representante: {
         nombre: '',
         rut: '',
+        genero: undefined,
         nacionalidad: 'Chilena',
         estado_civil: '',
         profesion: '',
@@ -131,6 +135,7 @@ export function createContractWizardDefaultDraft(): ContractPayload {
     arrendatario: {
       nombre: '',
       rut: '',
+      genero: undefined,
       nacionalidad: 'Chilena',
       estado_civil: '',
       email: '',
@@ -140,6 +145,7 @@ export function createContractWizardDefaultDraft(): ContractPayload {
     aval: {
       nombre: '',
       rut: '',
+      genero: undefined,
       nacionalidad: 'Chilena',
       estado_civil: '',
       profesion: '',
@@ -324,6 +330,18 @@ function resolveUnitLabel(payload: ContractPayload): string {
   return 'Departamento';
 }
 
+function getTratamiento(genero: Genero): string {
+  if (genero === 'masculino') return 'Sr.';
+  if (genero === 'femenino') return 'Sra.';
+  return 'Sr./Sra.';
+}
+
+function getDomiciliado(genero: Genero): string {
+  if (genero === 'masculino') return 'domiciliado';
+  if (genero === 'femenino') return 'domiciliada';
+  return 'domiciliado/a';
+}
+
 export function generateFundsOriginDeclaration(payload: ContractPayload): string {
   const fechaFirma = payload.contrato.fecha_firma || getTodayChileISODate();
   const fechaLarga = formatSpanishLongDate(fechaFirma);
@@ -332,11 +350,13 @@ export function generateFundsOriginDeclaration(payload: ContractPayload): string
   );
   const unidadLabel = resolveUnitLabel(payload);
   const domicilio = payload.arrendatario.domicilio?.trim() || payload.inmueble.direccion;
+  const tratamiento = getTratamiento(payload.arrendatario.genero);
+  const domiciliado = getDomiciliado(payload.arrendatario.genero);
 
   return [
     'DECLARACIÓN DE ORIGEN DE ORIGEN DE FONDOS PARA PAGOS ASOCIADOS AL CONTRATO DE ARRENDAMIENTO',
     '',
-    `En Santiago de Chile, a ${fechaLarga}, Doña ${payload.arrendatario.nombre}, ${payload.arrendatario.nacionalidad}, ${payload.arrendatario.estado_civil}, cédula de identidad número ${payload.arrendatario.rut}, domiciliado en ${domicilio}, ${unidadLabel}, ${payload.inmueble.comuna}, certifico y declaro lo siguiente:`,
+    `En Santiago de Chile, a ${fechaLarga}, ${tratamiento} ${payload.arrendatario.nombre}, ${payload.arrendatario.nacionalidad}, ${payload.arrendatario.estado_civil}, cédula de identidad número ${payload.arrendatario.rut}, ${domiciliado} en ${domicilio}, ${unidadLabel}, ${payload.inmueble.comuna}, certifico y declaro lo siguiente:`,
     '1. Que respecto al inmueble arrendado ubicado en '
       + `${payload.inmueble.direccion}, comuna de ${payload.inmueble.comuna}, ${unidadLabel}, `
       + 'los fondos con los cuales pagaré mensualmente las rentas y obligaciones económicas provienen de: '

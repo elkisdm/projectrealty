@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { Accordion, AccordionHeader, AccordionItem, AccordionPanel, AccordionTrigger } from '@/components/ui/accordion/accordion';
 import {
   Select,
   SelectContent,
@@ -155,227 +156,348 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
         );
       case 1:
         return (
-          <div className="space-y-4">
-            <SectionCard title="Arrendadora" description="Datos de la sociedad emisora y su cuenta bancaria.">
-              <FieldGrid>
-                <div className="space-y-1.5">
-                  <Label>Razón social</Label>
-                  <Input {...register('arrendadora.razon_social')} disabled={readOnly} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>RUT empresa (arrendadora)</Label>
-                  <Input
-                    {...register('arrendadora.rut')}
-                    disabled={readOnly}
-                    onBlur={() => configurator.formatRutField('arrendadora.rut')}
-                  />
-                  <p className="text-xs text-[var(--subtext)]">Este RUT debe ser el de la empresa.</p>
-                </div>
-                <div className="space-y-1.5 md:col-span-2">
-                  <Label>Domicilio</Label>
-                  <Input {...register('arrendadora.domicilio')} disabled={readOnly} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Email</Label>
-                  <Input type="email" {...register('arrendadora.email')} disabled={readOnly} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Email pagos</Label>
-                  <Input type="email" {...register('arrendadora.cuenta.email_pago')} disabled={readOnly} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Banco</Label>
-                  <Input {...register('arrendadora.cuenta.banco')} disabled={readOnly} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Tipo cuenta</Label>
-                  <Input {...register('arrendadora.cuenta.tipo')} disabled={readOnly} />
-                </div>
-                <div className="space-y-1.5 md:col-span-2">
-                  <Label>Número cuenta</Label>
-                  <Input {...register('arrendadora.cuenta.numero')} disabled={readOnly} />
-                </div>
-              </FieldGrid>
-            </SectionCard>
-
-            <SectionCard title="Personería y representante">
-              <p className="rounded-lg border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-2)] p-3 text-xs text-[var(--subtext)]">
-                El representante legal usa RUT personal (persona natural), distinto al RUT de la empresa arrendadora.
-              </p>
-              <div className="rounded-lg border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-2)] p-3">
-                <Controller
-                  control={control}
-                  name="arrendadora.personeria.notaria"
-                  render={() => (
-                    <label className="inline-flex items-center gap-2 text-sm text-[var(--text)]">
-                      <Checkbox
-                        checked={configurator.firmaOnline}
-                        onCheckedChange={(checked) => configurator.setFirmaOnline(Boolean(checked))}
+          <Accordion className="w-full max-w-none space-y-3" defaultValue={['arrendadora']}>
+            <AccordionItem value="arrendadora" className="overflow-hidden rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-1)]">
+              <AccordionHeader>
+                <AccordionTrigger className="px-4 py-3 text-left">
+                  <span className="font-semibold text-[var(--text)]">Arrendadora</span>
+                </AccordionTrigger>
+              </AccordionHeader>
+              <AccordionPanel className="px-0">
+                <SectionCard title="Arrendadora" description="Datos de la sociedad emisora y su cuenta bancaria.">
+                  <FieldGrid>
+                    <div className="space-y-1.5">
+                      <Label>Razón social</Label>
+                      <Input {...register('arrendadora.razon_social')} disabled={readOnly} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>RUT empresa (arrendadora)</Label>
+                      <Input
+                        {...register('arrendadora.rut')}
                         disabled={readOnly}
+                        onBlur={() => configurator.formatRutField('arrendadora.rut')}
                       />
-                      Firma online (sin notaría física)
-                    </label>
+                      <p className="text-xs text-[var(--subtext)]">Este RUT debe ser el de la empresa.</p>
+                    </div>
+                    <div className="space-y-1.5 md:col-span-2">
+                      <Label>Domicilio</Label>
+                      <Input {...register('arrendadora.domicilio')} disabled={readOnly} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Email</Label>
+                      <Input type="email" {...register('arrendadora.email')} disabled={readOnly} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Email pagos</Label>
+                      <Input type="email" {...register('arrendadora.cuenta.email_pago')} disabled={readOnly} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Banco</Label>
+                      <Input {...register('arrendadora.cuenta.banco')} disabled={readOnly} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Tipo cuenta</Label>
+                      <Input {...register('arrendadora.cuenta.tipo')} disabled={readOnly} />
+                    </div>
+                    <div className="space-y-1.5 md:col-span-2">
+                      <Label>Número cuenta</Label>
+                      <Input {...register('arrendadora.cuenta.numero')} disabled={readOnly} />
+                    </div>
+                  </FieldGrid>
+                </SectionCard>
+              </AccordionPanel>
+            </AccordionItem>
+
+            <AccordionItem value="personeria" className="overflow-hidden rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-1)]">
+              <AccordionHeader>
+                <AccordionTrigger className="px-4 py-3 text-left">
+                  <span className="font-semibold text-[var(--text)]">Personería</span>
+                </AccordionTrigger>
+              </AccordionHeader>
+              <AccordionPanel className="px-0">
+                <SectionCard title="Personería">
+                  <p className="rounded-lg border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-2)] p-3 text-xs text-[var(--subtext)]">
+                    El representante legal usa RUT personal (persona natural), distinto al RUT de la empresa arrendadora.
+                  </p>
+                  <div className="rounded-lg border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-2)] p-3">
+                    <Controller
+                      control={control}
+                      name="arrendadora.personeria.notaria"
+                      render={() => (
+                        <label className="inline-flex items-center gap-2 text-sm text-[var(--text)]">
+                          <Checkbox
+                            checked={configurator.firmaOnline}
+                            onCheckedChange={(checked) => configurator.setFirmaOnline(Boolean(checked))}
+                            disabled={readOnly}
+                          />
+                          Firma online (sin notaría física)
+                        </label>
+                      )}
+                    />
+                  </div>
+                  <FieldGrid>
+                    <div className="space-y-1.5">
+                      <Label>Fecha personería</Label>
+                      <Input type="date" {...register('arrendadora.personeria.fecha')} disabled={readOnly} />
+                    </div>
+                    {!configurator.firmaOnline ? (
+                      <>
+                        <div className="space-y-1.5">
+                          <Label>Notaría</Label>
+                          <Input {...register('arrendadora.personeria.notaria')} disabled={readOnly} />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label>Ciudad notaría</Label>
+                          <Input {...register('arrendadora.personeria.ciudad')} disabled={readOnly} />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label>Nombre notario</Label>
+                          <Input {...register('arrendadora.personeria.notario_nombre')} disabled={readOnly} />
+                        </div>
+                      </>
+                    ) : (
+                      <div className="space-y-1.5 md:col-span-2">
+                        <Label>Modo firma</Label>
+                        <Input value="Firma online (sin notario)" disabled />
+                      </div>
+                    )}
+                  </FieldGrid>
+                </SectionCard>
+              </AccordionPanel>
+            </AccordionItem>
+
+            <AccordionItem value="representante" className="overflow-hidden rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-1)]">
+              <AccordionHeader>
+                <AccordionTrigger className="px-4 py-3 text-left">
+                  <span className="font-semibold text-[var(--text)]">Representante legal</span>
+                </AccordionTrigger>
+              </AccordionHeader>
+              <AccordionPanel className="px-0">
+                <SectionCard title="Representante legal">
+                  <FieldGrid>
+                    <div className="space-y-1.5">
+                      <Label>Representante</Label>
+                      <Input {...register('arrendadora.representante.nombre')} disabled={readOnly} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>RUT representante legal (personal)</Label>
+                      <Input
+                        {...register('arrendadora.representante.rut')}
+                        disabled={readOnly}
+                        onBlur={() => configurator.formatRutField('arrendadora.representante.rut')}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Nacionalidad</Label>
+                      <Input {...register('arrendadora.representante.nacionalidad')} disabled={readOnly} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Género representante</Label>
+                      <Controller
+                        control={control}
+                        name="arrendadora.representante.genero"
+                        render={({ field }) => (
+                          <Select value={field.value ?? 'na'} onValueChange={(value) => field.onChange(value === 'na' ? undefined : value)}>
+                            <SelectTrigger disabled={readOnly}>
+                              <SelectValue placeholder="Selecciona género" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="na">No especificado</SelectItem>
+                              <SelectItem value="femenino">Femenino</SelectItem>
+                              <SelectItem value="masculino">Masculino</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Estado civil</Label>
+                      <Input {...register('arrendadora.representante.estado_civil')} disabled={readOnly} />
+                    </div>
+                    <div className="space-y-1.5 md:col-span-2">
+                      <Label>Profesión</Label>
+                      <Input {...register('arrendadora.representante.profesion')} disabled={readOnly} />
+                    </div>
+                  </FieldGrid>
+                </SectionCard>
+              </AccordionPanel>
+            </AccordionItem>
+
+            <AccordionItem value="propietario" className="overflow-hidden rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-1)]">
+              <AccordionHeader>
+                <AccordionTrigger className="px-4 py-3 text-left">
+                  <span className="font-semibold text-[var(--text)]">Propietario/a</span>
+                </AccordionTrigger>
+              </AccordionHeader>
+              <AccordionPanel className="px-0">
+                <SectionCard title="Propietario/a">
+                  <FieldGrid>
+                    <div className="space-y-1.5">
+                      <Label>Propietario nombre</Label>
+                      <Input {...register('propietario.nombre')} disabled={readOnly} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Propietario RUT</Label>
+                      <Input
+                        {...register('propietario.rut')}
+                        disabled={readOnly}
+                        onBlur={() => configurator.formatRutField('propietario.rut')}
+                      />
+                    </div>
+                  </FieldGrid>
+                </SectionCard>
+              </AccordionPanel>
+            </AccordionItem>
+
+            <AccordionItem value="arrendatario" className="overflow-hidden rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-1)]">
+              <AccordionHeader>
+                <AccordionTrigger className="px-4 py-3 text-left">
+                  <span className="font-semibold text-[var(--text)]">Arrendatario/a</span>
+                </AccordionTrigger>
+              </AccordionHeader>
+              <AccordionPanel className="px-0">
+                <SectionCard title="Arrendatario/a">
+                  <FieldGrid>
+                    <div className="space-y-1.5">
+                      <Label>Arrendatario nombre</Label>
+                      <Input {...register('arrendatario.nombre')} disabled={readOnly} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Arrendatario RUT</Label>
+                      <Input
+                        {...register('arrendatario.rut')}
+                        disabled={readOnly}
+                        onBlur={() => configurator.formatRutField('arrendatario.rut')}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Nacionalidad</Label>
+                      <Input {...register('arrendatario.nacionalidad')} disabled={readOnly} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Género arrendatario</Label>
+                      <Controller
+                        control={control}
+                        name="arrendatario.genero"
+                        render={({ field }) => (
+                          <Select value={field.value ?? 'na'} onValueChange={(value) => field.onChange(value === 'na' ? undefined : value)}>
+                            <SelectTrigger disabled={readOnly}>
+                              <SelectValue placeholder="Selecciona género" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="na">No especificado</SelectItem>
+                              <SelectItem value="femenino">Femenino</SelectItem>
+                              <SelectItem value="masculino">Masculino</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Estado civil</Label>
+                      <Input {...register('arrendatario.estado_civil')} disabled={readOnly} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Email</Label>
+                      <Input type="email" {...register('arrendatario.email')} disabled={readOnly} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Teléfono</Label>
+                      <Input {...register('arrendatario.telefono')} disabled={readOnly} />
+                    </div>
+                    <div className="space-y-1.5 md:col-span-2">
+                      <Label>Domicilio</Label>
+                      <Input {...register('arrendatario.domicilio')} disabled={readOnly} />
+                    </div>
+                  </FieldGrid>
+                </SectionCard>
+              </AccordionPanel>
+            </AccordionItem>
+
+            <AccordionItem value="aval" className="overflow-hidden rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-1)]">
+              <AccordionHeader>
+                <AccordionTrigger className="px-4 py-3 text-left">
+                  <span className="font-semibold text-[var(--text)]">Aval</span>
+                </AccordionTrigger>
+              </AccordionHeader>
+              <AccordionPanel className="px-0">
+                <SectionCard title="Aval">
+                  <Controller
+                    control={control}
+                    name="flags.hay_aval"
+                    render={({ field }) => (
+                      <label className="mb-4 inline-flex items-center gap-2 text-sm text-[var(--text)]">
+                        <Checkbox
+                          checked={Boolean(field.value)}
+                          onCheckedChange={(checked) => field.onChange(Boolean(checked))}
+                          disabled={readOnly}
+                        />
+                        Incluir aval en el contrato
+                      </label>
+                    )}
+                  />
+
+                  {configurator.hayAval ? (
+                    <FieldGrid>
+                      <div className="space-y-1.5">
+                        <Label>Nombre aval</Label>
+                        <Input {...register('aval.nombre')} disabled={readOnly} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>RUT aval</Label>
+                        <Input
+                          {...register('aval.rut')}
+                          disabled={readOnly}
+                          onBlur={() => configurator.formatRutField('aval.rut')}
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Nacionalidad</Label>
+                        <Input {...register('aval.nacionalidad')} disabled={readOnly} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Género aval</Label>
+                        <Controller
+                          control={control}
+                          name="aval.genero"
+                          render={({ field }) => (
+                            <Select value={field.value ?? 'na'} onValueChange={(value) => field.onChange(value === 'na' ? undefined : value)}>
+                              <SelectTrigger disabled={readOnly}>
+                                <SelectValue placeholder="Selecciona género" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="na">No especificado</SelectItem>
+                                <SelectItem value="femenino">Femenino</SelectItem>
+                                <SelectItem value="masculino">Masculino</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          )}
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Estado civil</Label>
+                        <Input {...register('aval.estado_civil')} disabled={readOnly} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Profesión</Label>
+                        <Input {...register('aval.profesion')} disabled={readOnly} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Email</Label>
+                        <Input type="email" {...register('aval.email')} disabled={readOnly} />
+                      </div>
+                      <div className="space-y-1.5 md:col-span-2">
+                        <Label>Domicilio</Label>
+                        <Input {...register('aval.domicilio')} disabled={readOnly} />
+                      </div>
+                    </FieldGrid>
+                  ) : (
+                    <p className="text-sm text-[var(--subtext)]">Con `hay_aval=false`, el bloque aval se excluye del payload final.</p>
                   )}
-                />
-              </div>
-              <FieldGrid>
-                <div className="space-y-1.5">
-                  <Label>Fecha personería</Label>
-                  <Input {...register('arrendadora.personeria.fecha')} disabled={readOnly} />
-                </div>
-                {!configurator.firmaOnline ? (
-                  <>
-                    <div className="space-y-1.5">
-                      <Label>Notaría</Label>
-                      <Input {...register('arrendadora.personeria.notaria')} disabled={readOnly} />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label>Ciudad notaría</Label>
-                      <Input {...register('arrendadora.personeria.ciudad')} disabled={readOnly} />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label>Nombre notario</Label>
-                      <Input {...register('arrendadora.personeria.notario_nombre')} disabled={readOnly} />
-                    </div>
-                  </>
-                ) : (
-                  <div className="space-y-1.5 md:col-span-2">
-                    <Label>Modo firma</Label>
-                    <Input value="Firma online (sin notario)" disabled />
-                  </div>
-                )}
-                <div className="space-y-1.5">
-                  <Label>Representante</Label>
-                  <Input {...register('arrendadora.representante.nombre')} disabled={readOnly} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>RUT representante legal (personal)</Label>
-                  <Input
-                    {...register('arrendadora.representante.rut')}
-                    disabled={readOnly}
-                    onBlur={() => configurator.formatRutField('arrendadora.representante.rut')}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Nacionalidad</Label>
-                  <Input {...register('arrendadora.representante.nacionalidad')} disabled={readOnly} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Estado civil</Label>
-                  <Input {...register('arrendadora.representante.estado_civil')} disabled={readOnly} />
-                </div>
-                <div className="space-y-1.5 md:col-span-2">
-                  <Label>Profesión</Label>
-                  <Input {...register('arrendadora.representante.profesion')} disabled={readOnly} />
-                </div>
-              </FieldGrid>
-            </SectionCard>
-
-            <SectionCard title="Propietario y Arrendatario">
-              <FieldGrid>
-                <div className="space-y-1.5">
-                  <Label>Propietario nombre</Label>
-                  <Input {...register('propietario.nombre')} disabled={readOnly} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Propietario RUT</Label>
-                  <Input
-                    {...register('propietario.rut')}
-                    disabled={readOnly}
-                    onBlur={() => configurator.formatRutField('propietario.rut')}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Arrendatario nombre</Label>
-                  <Input {...register('arrendatario.nombre')} disabled={readOnly} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Arrendatario RUT</Label>
-                  <Input
-                    {...register('arrendatario.rut')}
-                    disabled={readOnly}
-                    onBlur={() => configurator.formatRutField('arrendatario.rut')}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Nacionalidad</Label>
-                  <Input {...register('arrendatario.nacionalidad')} disabled={readOnly} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Estado civil</Label>
-                  <Input {...register('arrendatario.estado_civil')} disabled={readOnly} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Email</Label>
-                  <Input type="email" {...register('arrendatario.email')} disabled={readOnly} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Teléfono</Label>
-                  <Input {...register('arrendatario.telefono')} disabled={readOnly} />
-                </div>
-                <div className="space-y-1.5 md:col-span-2">
-                  <Label>Domicilio</Label>
-                  <Input {...register('arrendatario.domicilio')} disabled={readOnly} />
-                </div>
-              </FieldGrid>
-            </SectionCard>
-
-            <SectionCard title="Aval">
-              <Controller
-                control={control}
-                name="flags.hay_aval"
-                render={({ field }) => (
-                  <label className="mb-4 inline-flex items-center gap-2 text-sm text-[var(--text)]">
-                    <Checkbox
-                      checked={Boolean(field.value)}
-                      onCheckedChange={(checked) => field.onChange(Boolean(checked))}
-                      disabled={readOnly}
-                    />
-                    Incluir aval en el contrato
-                  </label>
-                )}
-              />
-
-              {configurator.hayAval ? (
-                <FieldGrid>
-                  <div className="space-y-1.5">
-                    <Label>Nombre aval</Label>
-                    <Input {...register('aval.nombre')} disabled={readOnly} />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>RUT aval</Label>
-                    <Input
-                      {...register('aval.rut')}
-                      disabled={readOnly}
-                      onBlur={() => configurator.formatRutField('aval.rut')}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Nacionalidad</Label>
-                    <Input {...register('aval.nacionalidad')} disabled={readOnly} />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Estado civil</Label>
-                    <Input {...register('aval.estado_civil')} disabled={readOnly} />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Profesión</Label>
-                    <Input {...register('aval.profesion')} disabled={readOnly} />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Email</Label>
-                    <Input type="email" {...register('aval.email')} disabled={readOnly} />
-                  </div>
-                  <div className="space-y-1.5 md:col-span-2">
-                    <Label>Domicilio</Label>
-                    <Input {...register('aval.domicilio')} disabled={readOnly} />
-                  </div>
-                </FieldGrid>
-              ) : (
-                <p className="text-sm text-[var(--subtext)]">Con `hay_aval=false`, el bloque aval se excluye del payload final.</p>
-              )}
-            </SectionCard>
-          </div>
+                </SectionCard>
+              </AccordionPanel>
+            </AccordionItem>
+          </Accordion>
         );
       case 2:
         return (

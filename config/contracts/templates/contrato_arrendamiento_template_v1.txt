@@ -4,7 +4,7 @@ CONTRATO DE ARRENDAMIENTO
 CON
 [[ARRENDATARIO.NOMBRE]]
 
-En [[CONTRATO.CIUDAD_FIRMA]], Chile, a [[CONTRATO.FECHA_FIRMA]], entre [[ARRENDADORA.RAZON_SOCIAL]], rol unico tributario numero [[ARRENDADORA.RUT]], representada, segun se acreditara, por [[ARRENDADORA.REPRESENTANTE.NOMBRE]], [[ARRENDADORA.REPRESENTANTE.NACIONALIDAD]], [[ARRENDADORA.REPRESENTANTE.ESTADO_CIVIL]], [[ARRENDADORA.REPRESENTANTE.PROFESION]], cedula de identidad numero [[ARRENDADORA.REPRESENTANTE.RUT]], por una parte, en adelante tambien la "Arrendadora" o "[[ARRENDADORA.RAZON_SOCIAL]]", sociedad que actua en representacion de [[PROPIETARIO.NOMBRE]], Rol Unico Tributario numero [[PROPIETARIO.RUT]], todos domiciliados para estos efectos en [[ARRENDADORA.DOMICILIO]]; y por la otra, en adelante indistintamente la parte arrendataria, [[ARRENDATARIO.NOMBRE]], [[ARRENDATARIO.NACIONALIDAD]], [[ARRENDATARIO.ESTADO_CIVIL]], cedula de identidad numero [[ARRENDATARIO.RUT]], domiciliado en [[ARRENDATARIO.DOMICILIO]], todos mayores de edad, quienes exponen que han acordado celebrar el siguiente contrato de arrendamiento.
+En [[CONTRATO.CIUDAD_FIRMA]], Chile, a [[CONTRATO.FECHA_FIRMA]], entre [[ARRENDADORA.RAZON_SOCIAL]], rol unico tributario numero [[ARRENDADORA.RUT]], representada, segun se acreditara, por [[ARRENDADORA.REPRESENTANTE.TRATAMIENTO]] [[ARRENDADORA.REPRESENTANTE.NOMBRE]], [[ARRENDADORA.REPRESENTANTE.NACIONALIDAD]], [[ARRENDADORA.REPRESENTANTE.ESTADO_CIVIL]], [[ARRENDADORA.REPRESENTANTE.PROFESION]], cedula de identidad numero [[ARRENDADORA.REPRESENTANTE.RUT]], por una parte, en adelante tambien la "Arrendadora" o "[[ARRENDADORA.RAZON_SOCIAL]]", sociedad que actua en representacion de [[PROPIETARIO.NOMBRE]], Rol Unico Tributario numero [[PROPIETARIO.RUT]], todos domiciliados para estos efectos en [[ARRENDADORA.DOMICILIO]]; y por la otra, en adelante indistintamente la parte [[ARRENDATARIO.ROL]], [[ARRENDATARIO.TRATAMIENTO]] [[ARRENDATARIO.NOMBRE]], [[ARRENDATARIO.NACIONALIDAD]], [[ARRENDATARIO.ESTADO_CIVIL]], cedula de identidad numero [[ARRENDATARIO.RUT]], [[ARRENDATARIO.DOMICILIADO]] en [[ARRENDATARIO.DOMICILIO]], todos mayores de edad, quienes exponen que han acordado celebrar el siguiente contrato de arrendamiento.
 
 PRIMERO: ANTECEDENTES
 [[PROPIETARIO.NOMBRE]] es dueno/a del inmueble ubicado en [[INMUEBLE.DIRECCION]], comuna de [[INMUEBLE.COMUNA]], ciudad de [[INMUEBLE.CIUDAD]], correspondiente al condominio [[INMUEBLE.CONDOMINIO]], unidad [[INMUEBLE.UNIDAD_LABEL]].
@@ -12,7 +12,7 @@ PRIMERO: ANTECEDENTES
 SEGUNDO: USO DE LA PROPIEDAD
 En este acto y por medio del presente instrumento, [[ARRENDADORA.RAZON_SOCIAL]], en la representacion en que comparece, entrega en arrendamiento a [[ARRENDATARIO.NOMBRE]], quien acepta para si, el inmueble singularizado en la clausula anterior.
 
-La arrendataria se obliga a destinar la referida propiedad exclusivamente como casa habitacion para ella y su familia, acordando expresamente las partes que esta obligacion es un elemento esencial para la celebracion del presente contrato. Forman parte integrante del presente contrato el acta de entrega y el inventario que las partes suscriben en este mismo acto.
+La parte [[ARRENDATARIO.ROL]] se obliga a destinar la referida propiedad exclusivamente como casa habitacion para [[ARRENDATARIO.PRONOMBRE_OBJETO]] y su familia, acordando expresamente las partes que esta obligacion es un elemento esencial para la celebracion del presente contrato. Forman parte integrante del presente contrato el acta de entrega y el inventario que las partes suscriben en este mismo acto.
 
 [[IF.MASCOTA_PERMITIDA]]
 En caso de tenencia de mascota permitida por el propietario:
@@ -142,7 +142,7 @@ Para todos los efectos legales, las partes fijan domicilio especial en la ciudad
 
 [[IF.HAY_AVAL]]
 DECIMO CUARTO: AVAL
-Presente a este acto [[AVAL.NOMBRE]], [[AVAL.NACIONALIDAD]], [[AVAL.ESTADO_CIVIL]], [[AVAL.PROFESION]], cedula de identidad numero [[AVAL.RUT]], domiciliado en [[AVAL.DOMICILIO]], quien se constituye en aval y codeudor solidario de la Arrendataria respecto de todas y cada una de las obligaciones emanadas del presente contrato, incluyendo sus modificaciones de renta, plazo y demas estipulaciones.
+Presente a este acto [[AVAL.TRATAMIENTO]] [[AVAL.NOMBRE]], [[AVAL.NACIONALIDAD]], [[AVAL.ESTADO_CIVIL]], [[AVAL.PROFESION]], cedula de identidad numero [[AVAL.RUT]], [[AVAL.DOMICILIADO]] en [[AVAL.DOMICILIO]], quien se constituye en aval y codeudor solidario de la parte [[ARRENDATARIO.ROL]] respecto de todas y cada una de las obligaciones emanadas del presente contrato, incluyendo sus modificaciones de renta, plazo y demas estipulaciones.
 [[ENDIF.HAY_AVAL]]
 
 DECIMO QUINTO: DOCUMENTO DE IDENTIDAD
@@ -225,7 +225,7 @@ Yo, [[AVAL.NOMBRE]], cédula de identidad número [[AVAL.RUT]], de nacionalidad 
 [[ENDIF.HAY_AVAL]]
 
 DECLARACIÓN DE ORIGEN DE ORIGEN DE FONDOS PARA PAGOS ASOCIADOS AL CONTRATO DE ARRENDAMIENTO
-En Santiago de Chile, a [[CONTRATO.FECHA_FIRMA]], Doña [[ARRENDATARIO.NOMBRE]], [[ARRENDATARIO.NACIONALIDAD]], [[ARRENDATARIO.ESTADO_CIVIL]], cédula de identidad número [[ARRENDATARIO.RUT]], domiciliado en [[ARRENDATARIO.DOMICILIO]], [[INMUEBLE.UNIDAD_LABEL]], [[INMUEBLE.COMUNA]], certifico y declaro lo siguiente:
+En Santiago de Chile, a [[CONTRATO.FECHA_FIRMA]], [[ARRENDATARIO.TRATAMIENTO]] [[ARRENDATARIO.NOMBRE]], [[ARRENDATARIO.NACIONALIDAD]], [[ARRENDATARIO.ESTADO_CIVIL]], cédula de identidad número [[ARRENDATARIO.RUT]], [[ARRENDATARIO.DOMICILIADO]] en [[ARRENDATARIO.DOMICILIO]], [[INMUEBLE.UNIDAD_LABEL]], [[INMUEBLE.COMUNA]], certifico y declaro lo siguiente:
 
 1. Que respecto al inmueble arrendado ubicado en [[INMUEBLE.DIRECCION]], comuna de [[INMUEBLE.COMUNA]], [[INMUEBLE.UNIDAD_LABEL]], los fondos con los cuales pagaré mensualmente las rentas y obligaciones económicas provienen de: [[DECLARACIONES.FONDOS_ORIGEN_TEXTO]].
 2. Que los fondos con los cuales pagaré mensualmente las rentas de arrendamiento y obligaciones económicas, los he adquirido por medios lícitos, producto de ingresos que no provienen, directa ni indirectamente, de actividades ilícitas que constituyan alguno de los delitos contemplados en la Ley Nº 19.913, que crea la Unidad de Análisis Financiero, que previenen la comisión de delitos de lavado y blanqueo de activos y financiamiento al terrorismo, o de la ley que en el futuro la sustituya o reemplace.

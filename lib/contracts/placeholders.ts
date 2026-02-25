@@ -9,6 +9,8 @@ interface PlaceholderCatalog {
   required: string[];
 }
 
+type Genero = 'masculino' | 'femenino' | undefined;
+
 let cachedCatalog: PlaceholderCatalog | null = null;
 
 function getCatalog(): PlaceholderCatalog {
@@ -43,6 +45,30 @@ function getUnidadLabel(payload: ContractPayload): string {
 
 function getCuota(payload: ContractPayload, number: 1 | 2) {
   return payload.garantia.cuotas.find((item) => item.n === number);
+}
+
+function getTratamiento(genero: Genero): string {
+  if (genero === 'masculino') return 'Sr.';
+  if (genero === 'femenino') return 'Sra.';
+  return 'Sr./Sra.';
+}
+
+function getDomiciliado(genero: Genero): string {
+  if (genero === 'masculino') return 'domiciliado';
+  if (genero === 'femenino') return 'domiciliada';
+  return 'domiciliado/a';
+}
+
+function getArrendatarioRol(genero: Genero): string {
+  if (genero === 'masculino') return 'arrendatario';
+  if (genero === 'femenino') return 'arrendataria';
+  return 'arrendatario/a';
+}
+
+function getPronombreObjeto(genero: Genero): string {
+  if (genero === 'masculino') return 'él';
+  if (genero === 'femenino') return 'ella';
+  return 'él/ella';
 }
 
 function buildPersoneriaDescripcion(payload: ContractPayload): string {
@@ -151,6 +177,38 @@ export function buildReplacements(payload: ContractPayload): Record<string, stri
 
     if (scoped === 'DECLARACIONES.FONDOS_ORIGEN_DECLARACION') {
       value = payload.declaraciones.fondos_origen_texto;
+    }
+
+    if (scoped === 'ARRENDATARIO.TRATAMIENTO') {
+      value = getTratamiento(payload.arrendatario.genero);
+    }
+
+    if (scoped === 'ARRENDATARIO.ROL') {
+      value = getArrendatarioRol(payload.arrendatario.genero);
+    }
+
+    if (scoped === 'ARRENDATARIO.PRONOMBRE_OBJETO') {
+      value = getPronombreObjeto(payload.arrendatario.genero);
+    }
+
+    if (scoped === 'ARRENDATARIO.DOMICILIADO') {
+      value = getDomiciliado(payload.arrendatario.genero);
+    }
+
+    if (scoped === 'AVAL.TRATAMIENTO') {
+      value = getTratamiento(payload.aval?.genero);
+    }
+
+    if (scoped === 'AVAL.DOMICILIADO') {
+      value = getDomiciliado(payload.aval?.genero);
+    }
+
+    if (scoped === 'ARRENDADORA.REPRESENTANTE.TRATAMIENTO') {
+      value = getTratamiento(payload.arrendadora.representante.genero);
+    }
+
+    if (scoped === 'ARRENDADORA.REPRESENTANTE.DOMICILIADO') {
+      value = getDomiciliado(payload.arrendadora.representante.genero);
     }
 
     if (value === undefined || value === null) {

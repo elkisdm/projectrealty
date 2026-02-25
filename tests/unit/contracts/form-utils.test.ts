@@ -161,8 +161,30 @@ describe('contracts/form-utils', () => {
   test('builds declaration text with contextual fields', () => {
     const text = generateFundsOriginDeclaration(buildPayload());
     expect(text).toContain('DECLARACIÓN DE ORIGEN DE ORIGEN DE FONDOS');
-    expect(text).toContain('Doña Carlos Diaz');
+    expect(text).toContain('Sr./Sra. Carlos Diaz');
     expect(text).toContain('Hommie SpA');
+  });
+
+  test('adapts treatment and grammar by gender', () => {
+    const female = generateFundsOriginDeclaration(
+      buildPayload({
+        arrendatario: {
+          genero: 'femenino',
+        },
+      })
+    );
+    expect(female).toContain('Sra. Carlos Diaz');
+    expect(female).toContain('domiciliada');
+
+    const male = generateFundsOriginDeclaration(
+      buildPayload({
+        arrendatario: {
+          genero: 'masculino',
+        },
+      })
+    );
+    expect(male).toContain('Sr. Carlos Diaz');
+    expect(male).toContain('domiciliado');
   });
 
   test('syncs JSON parse/apply with schema validation', () => {

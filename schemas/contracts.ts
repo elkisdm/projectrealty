@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 const rutField = z.string().min(3).max(20);
+const generoField = z.enum(['masculino', 'femenino']).optional();
 
 const cuotaSchema = z.object({
   monto_clp: z.number().int().nonnegative(),
@@ -35,6 +36,7 @@ export const ContractPayloadSchema = z.object({
     representante: z.object({
       nombre: z.string().min(1),
       rut: rutField,
+      genero: generoField,
       nacionalidad: z.string().min(1),
       estado_civil: z.string().min(1),
       profesion: z.string().min(1),
@@ -47,6 +49,7 @@ export const ContractPayloadSchema = z.object({
   arrendatario: z.object({
     nombre: z.string().min(1),
     rut: rutField,
+    genero: generoField,
     nacionalidad: z.string().min(1),
     estado_civil: z.string().min(1),
     email: z.string().email(),
@@ -56,6 +59,7 @@ export const ContractPayloadSchema = z.object({
   aval: z.object({
     nombre: z.string().min(1),
     rut: rutField,
+    genero: generoField,
     nacionalidad: z.string().min(1),
     estado_civil: z.string().min(1),
     profesion: z.string().min(1),
