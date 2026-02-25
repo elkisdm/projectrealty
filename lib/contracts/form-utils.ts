@@ -72,6 +72,16 @@ export const WIZARD_STEP_FIELDS: WizardStepFieldMap = {
     'garantia.pago_inicial_clp',
   ],
   condiciones: [
+    'contrato.tipo',
+    'subarriendo.permitido',
+    'subarriendo.propietario_autoriza',
+    'subarriendo.notificacion_obligatoria',
+    'subarriendo.plazo_notificacion_habiles',
+    'subarriendo.permite_multiples',
+    'subarriendo.periodo_vacancia',
+    'subarriendo.referencia_legal',
+    'subarriendo.autorizacion_texto',
+    'subarriendo.responsabilidad_principal',
     'flags.mascota_permitida',
     'flags.depto_amoblado',
     'declaraciones.fondos_origen_texto',
@@ -98,6 +108,7 @@ export function createContractWizardDefaultDraft(): ContractPayload {
   return {
     contrato: {
       ciudad_firma: 'Santiago',
+      tipo: 'standard',
       fecha_inicio: '',
       fecha_firma: '',
       fecha_termino: '',
@@ -170,6 +181,19 @@ export function createContractWizardDefaultDraft(): ContractPayload {
       monto_total_clp: 0,
       pago_inicial_clp: 0,
       cuotas: [],
+    },
+    subarriendo: {
+      permitido: false,
+      propietario_autoriza: false,
+      notificacion_obligatoria: true,
+      plazo_notificacion_habiles: 10,
+      permite_multiples: false,
+      periodo_vacancia: false,
+      referencia_legal: 'Artículo 1973 del Código Civil y normativa aplicable.',
+      autorizacion_texto:
+        'La parte arrendataria no podrá subarrendar total o parcialmente el inmueble sin autorización previa y expresa del propietario.',
+      responsabilidad_principal:
+        'En todo caso, la parte arrendataria mantendrá responsabilidad directa y principal frente a la arrendadora por todas las obligaciones del contrato.',
     },
     flags: {
       hay_aval: false,
@@ -406,9 +430,15 @@ export function computeAutomaticGuaranteeSchedule(input: {
 
 export function normalizeContractPayload(input: ContractPayload): ContractPayload {
   const trimmed = trimString(input) as ContractPayload;
+  const contractType =
+    trimmed.contrato.tipo === 'subarriendo_propietario' ? 'subarriendo_propietario' : 'standard';
 
   return {
     ...trimmed,
+    contrato: {
+      ...trimmed.contrato,
+      tipo: contractType,
+    },
     arrendadora: {
       ...trimmed.arrendadora,
       rut: formatRutForDisplay(trimmed.arrendadora.rut),
@@ -449,6 +479,15 @@ export function normalizeContractPayload(input: ContractPayload): ContractPayloa
         n: normalizeNumber(cuota.n),
       })),
     },
+    subarriendo: {
+      ...createContractWizardDefaultDraft().subarriendo,
+      ...(trimmed.subarriendo ?? {}),
+      plazo_notificacion_habiles: normalizeNumber(
+        trimmed.subarriendo?.plazo_notificacion_habiles
+          ?? createContractWizardDefaultDraft().subarriendo?.plazo_notificacion_habiles
+          ?? 0
+      ),
+    },
     declaraciones: {
       ...trimmed.declaraciones,
       fondos_origen_fuente: normalizeFundsSource(trimmed.declaraciones.fondos_origen_fuente),
@@ -461,6 +500,7 @@ export function applyAutomaticContractRules(
   options: AutoRuleOptions = {}
 ): ContractPayload {
   const normalized = normalizeContractPayload(input);
+  const isOwnerSublease = normalized.contrato.tipo === 'subarriendo_propietario';
   const unidadTipo = options.unidadTipo ?? 'departamento';
 
   const adjustedInmueble = {
@@ -483,6 +523,45 @@ export function applyAutomaticContractRules(
       ...normalized.garantia,
       ...guarantee,
     },
+    subarriendo: isOwnerSublease
+      ? {
+          ...normalized.subarriendo,
+          permitido: true,
+          propietario_autoriza: true,
+          notificacion_obligatoria: true,
+          plazo_notificacion_habiles:
+            normalized.subarriendo?.plazo_notificacion_habiles && normalized.subarriendo.plazo_notificacion_habiles > 0
+              ? normalized.subarriendo.plazo_notificacion_habiles
+              : 5,
+          autorizacion_texto:
+            normalized.subarriendo?.autorizacion_texto
+            || 'El propietario autoriza expresamente el subarriendo total o parcial del inmueble, sujeto a las condiciones establecidas en esta cláusula.',
+          responsabilidad_principal:
+            normalized.subarriendo?.responsabilidad_principal
+            || 'La parte arrendataria mantendrá responsabilidad principal y solidaria frente a la arrendadora por cualquier obligación contractual, incluso en caso de subarriendo.',
+          referencia_legal:
+            normalized.subarriendo?.referencia_legal
+            || 'Artículo 1973 del Código Civil y normativa aplicable.',
+        }
+      : {
+          ...normalized.subarriendo,
+          permitido: false,
+          propietario_autoriza: false,
+          notificacion_obligatoria: true,
+          plazo_notificacion_habiles:
+            normalized.subarriendo?.plazo_notificacion_habiles && normalized.subarriendo.plazo_notificacion_habiles > 0
+              ? normalized.subarriendo.plazo_notificacion_habiles
+              : 10,
+          autorizacion_texto:
+            normalized.subarriendo?.autorizacion_texto
+            || 'La parte arrendataria no podrá subarrendar total o parcialmente el inmueble sin autorización previa y expresa del propietario.',
+          responsabilidad_principal:
+            normalized.subarriendo?.responsabilidad_principal
+            || 'En todo caso, la parte arrendataria mantendrá responsabilidad directa y principal frente a la arrendadora por todas las obligaciones del contrato.',
+          referencia_legal:
+            normalized.subarriendo?.referencia_legal
+            || 'Artículo 1973 del Código Civil y normativa aplicable.',
+        },
   };
 
   if (options.firmaOnline) {

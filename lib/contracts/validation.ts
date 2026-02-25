@@ -99,4 +99,34 @@ export function validateBusinessRules(payload: ContractPayload): void {
       });
     }
   }
+
+  if (payload.contrato.tipo === 'subarriendo_propietario') {
+    if (!payload.subarriendo?.permitido || !payload.subarriendo?.propietario_autoriza) {
+      throw new ContractError({
+        code: 'VALIDATION_ERROR',
+        message: 'Subarriendo propietario requiere autorización explícita del propietario',
+        details: {
+          permitido: payload.subarriendo?.permitido ?? false,
+          propietario_autoriza: payload.subarriendo?.propietario_autoriza ?? false,
+        },
+        hint: 'Activa autorización del propietario y subarriendo permitido para este tipo de contrato.',
+      });
+    }
+
+    if (
+      !payload.subarriendo?.notificacion_obligatoria
+      || !payload.subarriendo?.plazo_notificacion_habiles
+      || payload.subarriendo.plazo_notificacion_habiles <= 0
+    ) {
+      throw new ContractError({
+        code: 'VALIDATION_ERROR',
+        message: 'Subarriendo propietario requiere regla de notificación válida',
+        details: {
+          notificacion_obligatoria: payload.subarriendo?.notificacion_obligatoria ?? false,
+          plazo_notificacion_habiles: payload.subarriendo?.plazo_notificacion_habiles ?? null,
+        },
+        hint: 'Define notificación obligatoria y plazo en días hábiles mayor a 0.',
+      });
+    }
+  }
 }

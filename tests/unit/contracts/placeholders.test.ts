@@ -6,6 +6,7 @@ function payload() {
     ...createContractWizardDefaultDraft(),
     contrato: {
       ciudad_firma: 'Santiago',
+      tipo: 'standard',
       fecha_firma: '2026-02-26',
       fecha_inicio: '2026-03-01',
       fecha_termino: '2027-03-01',
@@ -102,6 +103,7 @@ describe('contracts/placeholders', () => {
     );
     expect(replacements['[[INMUEBLE.UNIDAD_LABEL]]']).toBe('Departamento 305');
     expect(replacements['[[GARANTIA.CUOTA_1_MONTO_CLP]]']).toBe('$150.000');
+    expect(replacements['[[CONTRATO.TIPO]]']).toBe('standard');
+    expect(replacements['[[SUBARRIENDO.PERMITIDO_LABEL]]']).toBe('No permitido');
   });
 });
-

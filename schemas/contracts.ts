@@ -12,6 +12,7 @@ const cuotaSchema = z.object({
 export const ContractPayloadSchema = z.object({
   contrato: z.object({
     ciudad_firma: z.string().min(1),
+    tipo: z.enum(['standard', 'subarriendo_propietario']).default('standard'),
     fecha_firma: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
     fecha_inicio: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     fecha_termino: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
@@ -85,6 +86,17 @@ export const ContractPayloadSchema = z.object({
     pago_inicial_clp: z.number().int().nonnegative(),
     cuotas: z.array(cuotaSchema).default([]),
   }),
+  subarriendo: z.object({
+    permitido: z.boolean().optional(),
+    propietario_autoriza: z.boolean().optional(),
+    notificacion_obligatoria: z.boolean().optional(),
+    plazo_notificacion_habiles: z.number().int().min(0).max(365).optional(),
+    permite_multiples: z.boolean().optional(),
+    periodo_vacancia: z.boolean().optional(),
+    referencia_legal: z.string().min(1).optional(),
+    autorizacion_texto: z.string().min(1).optional(),
+    responsabilidad_principal: z.string().min(1).optional(),
+  }).optional(),
   flags: z.object({
     hay_aval: z.boolean(),
     mascota_permitida: z.boolean(),

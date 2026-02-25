@@ -14,6 +14,16 @@ En este acto y por medio del presente instrumento, [[ARRENDADORA.RAZON_SOCIAL]],
 
 La parte [[ARRENDATARIO.ROL]] se obliga a destinar la referida propiedad exclusivamente como casa habitacion para [[ARRENDATARIO.PRONOMBRE_OBJETO]] y su familia, acordando expresamente las partes que esta obligacion es un elemento esencial para la celebracion del presente contrato. Forman parte integrante del presente contrato el acta de entrega y el inventario que las partes suscriben en este mismo acto.
 
+SEGUNDO BIS: SUBARRIENDO Y CESION DE USO
+Tipo de contrato: [[CONTRATO.TIPO]].
+Subarriendo: [[SUBARRIENDO.PERMITIDO_LABEL]].
+[[SUBARRIENDO.AUTORIZACION_TEXTO]]
+Notificacion al propietario/arrendadora: [[SUBARRIENDO.NOTIFICACION_DIAS_HABILES]] dias habiles de anticipacion.
+Permite subarrendatarios multiples: [[SUBARRIENDO.PERMITE_MULTIPLES_LABEL]].
+Permite periodo de vacancia entre subarrendatarios: [[SUBARRIENDO.PERIODO_VACANCIA_LABEL]].
+Base legal de referencia: [[SUBARRIENDO.REFERENCIA_LEGAL]].
+[[SUBARRIENDO.RESPONSABILIDAD_PRINCIPAL]]
+
 [[IF.MASCOTA_PERMITIDA]]
 En caso de tenencia de mascota permitida por el propietario:
 a) Se permitira su tenencia en el inmueble de un maximo de 20 kilogramos, siempre y cuando la Arrendataria cumpla con lo dispuesto en la Ley 21.020, con el Reglamento de Copropiedad y con las normas que establezca el comite de administracion en el reglamento interno.

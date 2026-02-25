@@ -1,7 +1,7 @@
 import { applyPayloadDefaults, validateBusinessRules } from '@/lib/contracts/validation';
 
 const payload: any = {
-  contrato: { ciudad_firma: 'Santiago', fecha_inicio: '2026-03-01' },
+  contrato: { ciudad_firma: 'Santiago', tipo: 'standard', fecha_inicio: '2026-03-01' },
   arrendadora: {
     razon_social: 'A', rut: '12345678-5', domicilio: 'X', email: 'a@a.com',
     cuenta: { banco: 'b', tipo: 'c', numero: '1', email_pago: 'p@a.com' },
@@ -68,6 +68,26 @@ describe('Business validation', () => {
 
     expect(() => validateBusinessRules(out)).toThrow(
       'RUT de representante legal debe ser personal y distinto al RUT de la arrendadora'
+    );
+  });
+
+  test('requires owner authorization when contract type is subarriendo_propietario', () => {
+    const out = applyPayloadDefaults({
+      ...payload,
+      contrato: {
+        ...payload.contrato,
+        tipo: 'subarriendo_propietario',
+      },
+      subarriendo: {
+        permitido: true,
+        propietario_autoriza: false,
+        notificacion_obligatoria: true,
+        plazo_notificacion_habiles: 5,
+      },
+    });
+
+    expect(() => validateBusinessRules(out)).toThrow(
+      'Subarriendo propietario requiere autorización explícita del propietario'
     );
   });
 });

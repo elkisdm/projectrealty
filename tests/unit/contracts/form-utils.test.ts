@@ -17,6 +17,7 @@ function buildPayload(overrides?: Partial<ContractPayload>): ContractPayload {
     ...createContractWizardDefaultDraft(),
     contrato: {
       ciudad_firma: 'Santiago',
+      tipo: 'standard',
       fecha_inicio: '2026-03-01',
       fecha_firma: '2026-02-25',
       fecha_termino: '2027-03-01',
@@ -222,5 +223,20 @@ describe('contracts/form-utils', () => {
 
     const prepared = prepareContractPayloadForSubmit(payload);
     expect(prepared.declaraciones.fondos_origen_fuente).toBe('Remuneraciones por trabajo dependiente');
+  });
+
+  test('forces subarriendo owner defaults for subarriendo_propietario', () => {
+    const prepared = prepareContractPayloadForSubmit(
+      buildPayload({
+        contrato: {
+          tipo: 'subarriendo_propietario',
+        },
+      })
+    );
+
+    expect(prepared.subarriendo?.permitido).toBe(true);
+    expect(prepared.subarriendo?.propietario_autoriza).toBe(true);
+    expect(prepared.subarriendo?.notificacion_obligatoria).toBe(true);
+    expect(prepared.subarriendo?.plazo_notificacion_habiles).toBeGreaterThan(0);
   });
 });

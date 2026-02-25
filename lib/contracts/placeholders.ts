@@ -161,6 +161,40 @@ export function buildReplacements(payload: ContractPayload): Record<string, stri
       value = cuota?.fecha ? formatDateForContract(cuota.fecha) : '-';
     }
 
+    if (scoped === 'CONTRATO.TIPO') {
+      value = payload.contrato.tipo === 'subarriendo_propietario' ? 'subarriendo_propietario' : 'standard';
+    }
+
+    if (scoped === 'SUBARRIENDO.PERMITIDO_LABEL') {
+      value = payload.subarriendo?.permitido ? 'Permitido' : 'No permitido';
+    }
+
+    if (scoped === 'SUBARRIENDO.AUTORIZACION_TEXTO') {
+      value = payload.subarriendo?.autorizacion_texto
+        ?? 'La parte arrendataria no podrá subarrendar total o parcialmente el inmueble sin autorización previa y expresa del propietario.';
+    }
+
+    if (scoped === 'SUBARRIENDO.NOTIFICACION_DIAS_HABILES') {
+      value = String(payload.subarriendo?.plazo_notificacion_habiles ?? 10);
+    }
+
+    if (scoped === 'SUBARRIENDO.PERMITE_MULTIPLES_LABEL') {
+      value = payload.subarriendo?.permite_multiples ? 'Sí' : 'No';
+    }
+
+    if (scoped === 'SUBARRIENDO.PERIODO_VACANCIA_LABEL') {
+      value = payload.subarriendo?.periodo_vacancia ? 'Sí' : 'No';
+    }
+
+    if (scoped === 'SUBARRIENDO.REFERENCIA_LEGAL') {
+      value = payload.subarriendo?.referencia_legal ?? 'Artículo 1973 del Código Civil y normativa aplicable.';
+    }
+
+    if (scoped === 'SUBARRIENDO.RESPONSABILIDAD_PRINCIPAL') {
+      value = payload.subarriendo?.responsabilidad_principal
+        ?? 'En todo caso, la parte arrendataria mantendrá responsabilidad directa y principal frente a la arrendadora por todas las obligaciones del contrato.';
+    }
+
     if (scoped === 'INMUEBLE.UNIDAD_LABEL') {
       value = getUnidadLabel(payload);
     }
