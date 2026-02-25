@@ -8,9 +8,11 @@ Usage:
 
 from pathlib import Path
 import re
+import unicodedata
 
 from docx import Document
 from docx.enum.table import WD_ALIGN_VERTICAL, WD_TABLE_ALIGNMENT
+from docx.enum.text import WD_BREAK
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
@@ -106,13 +108,16 @@ def set_bottom_border(paragraph) -> None:
 def add_uaf_banner(doc: Document, page_break_before: bool = False) -> None:
     logo_paragraph = doc.add_paragraph()
     logo_paragraph.alignment = WD_ALIGN_PARAGRAPH.LEFT
-    logo_paragraph.paragraph_format.page_break_before = page_break_before
     logo_paragraph.paragraph_format.space_before = Pt(0)
     logo_paragraph.paragraph_format.space_after = Pt(4)
+    logo_run = logo_paragraph.add_run()
+    if page_break_before:
+        logo_run.add_break(WD_BREAK.PAGE)
     if LOGO.exists():
-        logo_paragraph.add_run().add_picture(str(LOGO), width=Cm(6.4))
+        logo_run.add_picture(str(LOGO), width=Cm(6.4))
     else:
-        fallback = logo_paragraph.add_run("UNIDAD DE ANÁLISIS FINANCIERO")
+        fallback = logo_run
+        fallback.add_text("UNIDAD DE ANÁLISIS FINANCIERO")
         fallback.bold = True
         fallback.font.size = Pt(12)
 
@@ -139,6 +144,12 @@ def normalize_spanish_text(text: str) -> str:
     for old, new in replacements.items():
         out = out.replace(old, new)
     return out
+
+
+def fold_for_matching(text: str) -> str:
+    folded = unicodedata.normalize("NFD", text)
+    folded = "".join(ch for ch in folded if unicodedata.category(ch) != "Mn")
+    return folded.upper()
 
 
 def add_price_table(doc: Document, rows: list[tuple[str, str, str, str]]) -> None:
@@ -190,12 +201,14 @@ def main() -> None:
     normal.font.size = Pt(11)
 
     heading_re = re.compile(r"^(PRIMERO|SEGUNDO|TERCERO|CUARTO|QUINTO|SEXTO|SEPTIMO|OCTAVO|NOVENO|DECIMO(\s+\w+)?)")
-    declaration_heading_re = re.compile(r"^DECLARACION DE ")
     centered_tokens = {
         "CONTRATO DE ARRENDAMIENTO",
         "CON",
         "[[ARRENDADORA.RAZON_SOCIAL]]",
         "[[ARRENDATARIO.NOMBRE]]",
+    }
+    declaration_subtitles = {
+        "PERSONAS EXPUESTAS POLITICAMENTE (PEP)",
     }
     account_prefixes = (
         "Titular:",
@@ -207,20 +220,29 @@ def main() -> None:
     )
 
     i = 0
-    declaration_count = 0
     while i < len(lines):
         text = lines[i].rstrip("\n")
         normalized = normalize_spanish_text(text)
+        normalized_fold = fold_for_matching(normalized)
 
-        if normalized.startswith("DECLARACION DE "):
-            add_uaf_banner(doc, page_break_before=declaration_count > 0)
-            declaration_count += 1
+        if normalized_fold.startswith("DECLARACION DE "):
+            add_uaf_banner(doc, page_break_before=False)
 
             p = doc.add_paragraph("")
             p.paragraph_format.space_after = Pt(10)
             run = p.add_run(normalized)
             run.bold = True
             run.font.size = Pt(14)
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            i += 1
+            continue
+
+        if normalized_fold in declaration_subtitles:
+            p = doc.add_paragraph("")
+            p.paragraph_format.space_after = Pt(10)
+            run = p.add_run(normalized)
+            run.bold = True
+            run.font.size = Pt(13)
             p.alignment = WD_ALIGN_PARAGRAPH.CENTER
             i += 1
             continue
@@ -290,7 +312,7 @@ def main() -> None:
             i += 1
             continue
 
-        if declaration_heading_re.match(normalized):
+        if normalized_fold.startswith("DECLARACION DE "):
             run = paragraph.add_run(normalized)
             run.bold = True
             run.font.size = Pt(12)

@@ -182,18 +182,52 @@ Aval
 RUT: [[AVAL.RUT]]
 [[ENDIF.HAY_AVAL]]
 
-DECLARACION DE VINCULO CON PERSONAS EXPUESTAS POLITICAMENTE (PEP)
-Yo, [[ARRENDATARIO.NOMBRE]], cedula de identidad numero [[ARRENDATARIO.RUT]], de nacionalidad [[ARRENDATARIO.NACIONALIDAD]], declaro no ser conyuge ni pariente hasta segundo grado de consanguinidad, ni haber celebrado pacto de actuacion conjunta para influir en sociedades constituidas en Chile con personas politicamente expuestas en los terminos de la normativa vigente.
+DECLARACIÓN DE VÍNCULO CON
+PERSONAS EXPUESTAS POLÍTICAMENTE (PEP)
+Yo, [[ARRENDATARIO.NOMBRE]], cédula de identidad número [[ARRENDATARIO.RUT]], de nacionalidad [[ARRENDATARIO.NACIONALIDAD]], declaro no ser cónyuge o parientes hasta el segundo grado de consanguinidad (abuelo(a), padre, madre, hijo(a), hermano(a), nieto(a)), ni haber celebrado pacto de actuación conjunta mediante el cual tengan poder de voto suficiente para influir en sociedades constituidas en Chile, con ninguna de las Personas Políticamente Expuestas que a continuación se indican, sea que actualmente desempeñen o hayan desempeñado uno o más de los siguientes cargos:
+1) Presidente de la República.
+2) Senadores, Diputados y Alcaldes.
+3) Ministros de la Corte Suprema y Cortes de Apelaciones.
+4) Ministros de Estado, Subsecretarios, Intendentes, Gobernadores, Secretarios Regionales Ministeriales, Embajadores, Jefes Superiores de Servicio, tanto centralizados como descentralizados y el directivo superior inmediato que deba subrogar a cada uno de ellos.
+5) Comandantes en Jefe de las Fuerzas Armadas, Director General Carabineros, Director General de Investigaciones, y el oficial superior inmediato que deba subrogar a cada uno de ellos.
+6) Fiscal Nacional del Ministerio Público y Fiscales Regionales.
+7) Contralor General de la República.
+8) Consejeros del Banco Central de Chile.
+9) Consejeros del Consejo de Defensa del Estado.
+10) Ministros del Tribunal Constitucional.
+11) Ministros del Tribunal de la Libre Competencia.
+12) Integrantes titulares y suplentes del Tribunal de Contratación Pública.
+13) Consejeros del Consejo de Alta Dirección Pública.
+14) Los directores y ejecutivos principales de empresas públicas, según lo definido por la Ley Nº 18.045.
+15) Directores de sociedades anónimas nombrados por el Estado o sus organismos.
+16) Miembros de las directivas de los partidos políticos.
 
 [[IF.HAY_AVAL]]
-DECLARACION DE VINCULO CON PERSONAS EXPUESTAS POLITICAMENTE (PEP) - AVAL
-Yo, [[AVAL.NOMBRE]], cedula de identidad numero [[AVAL.RUT]], de nacionalidad [[AVAL.NACIONALIDAD]], declaro no ser conyuge ni pariente hasta segundo grado de consanguinidad, ni haber celebrado pacto de actuacion conjunta para influir en sociedades constituidas en Chile con personas politicamente expuestas en los terminos de la normativa vigente.
+DECLARACIÓN DE VÍNCULO CON
+PERSONAS EXPUESTAS POLÍTICAMENTE (PEP)
+Yo, [[AVAL.NOMBRE]], cédula de identidad número [[AVAL.RUT]], de nacionalidad [[AVAL.NACIONALIDAD]], declaro no ser cónyuge o parientes hasta el segundo grado de consanguinidad (abuelo(a), padre, madre, hijo(a), hermano(a), nieto(a)), ni haber celebrado pacto de actuación conjunta mediante el cual tengan poder de voto suficiente para influir en sociedades constituidas en Chile, con ninguna de las Personas Políticamente Expuestas que a continuación se indican, sea que actualmente desempeñen o hayan desempeñado uno o más de los siguientes cargos:
+1) Presidente de la República.
+2) Senadores, Diputados y Alcaldes.
+3) Ministros de la Corte Suprema y Cortes de Apelaciones.
+4) Ministros de Estado, Subsecretarios, Intendentes, Gobernadores, Secretarios Regionales Ministeriales, Embajadores, Jefes Superiores de Servicio, tanto centralizados como descentralizados y el directivo superior inmediato que deba subrogar a cada uno de ellos.
+5) Comandantes en Jefe de las Fuerzas Armadas, Director General Carabineros, Director General de Investigaciones, y el oficial superior inmediato que deba subrogar a cada uno de ellos.
+6) Fiscal Nacional del Ministerio Público y Fiscales Regionales.
+7) Contralor General de la República.
+8) Consejeros del Banco Central de Chile.
+9) Consejeros del Consejo de Defensa del Estado.
+10) Ministros del Tribunal Constitucional.
+11) Ministros del Tribunal de la Libre Competencia.
+12) Integrantes titulares y suplentes del Tribunal de Contratación Pública.
+13) Consejeros del Consejo de Alta Dirección Pública.
+14) Los directores y ejecutivos principales de empresas públicas, según lo definido por la Ley Nº 18.045.
+15) Directores de sociedades anónimas nombrados por el Estado o sus organismos.
+16) Miembros de las directivas de los partidos políticos.
 [[ENDIF.HAY_AVAL]]
 
-DECLARACION DE ORIGEN DE FONDOS PARA PAGOS ASOCIADOS AL CONTRATO DE ARRENDAMIENTO
-En [[CONTRATO.CIUDAD_FIRMA]], a [[CONTRATO.FECHA_FIRMA]], [[ARRENDATARIO.NOMBRE]], [[ARRENDATARIO.NACIONALIDAD]], [[ARRENDATARIO.ESTADO_CIVIL]], cedula de identidad numero [[ARRENDATARIO.RUT]], domiciliado en [[ARRENDATARIO.DOMICILIO]], certifica y declara lo siguiente:
+DECLARACIÓN DE ORIGEN DE ORIGEN DE FONDOS PARA PAGOS ASOCIADOS AL CONTRATO DE ARRENDAMIENTO
+En Santiago de Chile, a [[CONTRATO.FECHA_FIRMA]], Doña [[ARRENDATARIO.NOMBRE]], [[ARRENDATARIO.NACIONALIDAD]], [[ARRENDATARIO.ESTADO_CIVIL]], cédula de identidad número [[ARRENDATARIO.RUT]], domiciliado en [[ARRENDATARIO.DOMICILIO]], [[INMUEBLE.UNIDAD_LABEL]], [[INMUEBLE.COMUNA]], certifico y declaro lo siguiente:
 
-1. Que respecto del inmueble ubicado en [[INMUEBLE.DIRECCION]], comuna de [[INMUEBLE.COMUNA]], ciudad de [[INMUEBLE.CIUDAD]], unidad [[INMUEBLE.UNIDAD_LABEL]], los fondos con los cuales pagara mensualmente rentas y obligaciones provienen de: [[DECLARACIONES.FONDOS_ORIGEN_TEXTO]].
-2. Que dichos fondos han sido adquiridos por medios licitos y no provienen directa ni indirectamente de actividades ilicitas.
-3. Que ha declarado o declarara los impuestos correspondientes respecto de dichos fondos.
-4. Que asume total responsabilidad por la veracidad de la informacion entregada, eximiendo a [[ARRENDADORA.RAZON_SOCIAL]] de responsabilidad derivada de informacion erronea, falsa o inexacta.
+1. Que respecto al inmueble arrendado ubicado en [[INMUEBLE.DIRECCION]], comuna de [[INMUEBLE.COMUNA]], [[INMUEBLE.UNIDAD_LABEL]], los fondos con los cuales pagaré mensualmente las rentas y obligaciones económicas provienen de: [[DECLARACIONES.FONDOS_ORIGEN_TEXTO]].
+2. Que los fondos con los cuales pagaré mensualmente las rentas de arrendamiento y obligaciones económicas, los he adquirido por medios lícitos, producto de ingresos que no provienen, directa ni indirectamente, de actividades ilícitas que constituyan alguno de los delitos contemplados en la Ley Nº 19.913, que crea la Unidad de Análisis Financiero, que previenen la comisión de delitos de lavado y blanqueo de activos y financiamiento al terrorismo, o de la ley que en el futuro la sustituya o reemplace.
+3. Asimismo, declaro que he pagado o declarado o que pagaré y declararé los impuestos correspondientes respecto de los fondos con que pagaré las rentas.
+4. Mediante la firma de este documento, declaro asumir completa responsabilidad por la veracidad de la información entregada y eximo a [[ARRENDADORA.RAZON_SOCIAL]] de toda responsabilidad que se derive de información errónea, falsa o inexacta que hubiere proporcionado en este documento.

@@ -226,12 +226,22 @@ function normalizeFundsSource(value: string | undefined): string {
   const source = (value ?? '').trim().normalize('NFC');
   if (!source) return fallback;
 
+  const sourceFolded = source
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase();
+
   // Guard against pasting the full declaration text in the source field.
-  if (source.length > 180 || /DECLARACION DE ORIGEN DE FONDOS/i.test(source) || source.includes('\n')) {
+  if (
+    source.length > 180 ||
+    sourceFolded.includes('DECLARACION DE ORIGEN DE FONDOS') ||
+    sourceFolded.includes('DECLARACION DE ORIGEN DE ORIGEN DE FONDOS') ||
+    /[\r\n]/.test(source)
+  ) {
     return fallback;
   }
 
-  return source.replace(/[.;:\s]+$/, '');
+  return source.replace(/\s+/g, ' ').replace(/[.;:\s]+$/, '');
 }
 
 export function formatRutForDisplay(value: string): string {
@@ -317,14 +327,16 @@ function resolveUnitLabel(payload: ContractPayload): string {
 export function generateFundsOriginDeclaration(payload: ContractPayload): string {
   const fechaFirma = payload.contrato.fecha_firma || getTodayChileISODate();
   const fechaLarga = formatSpanishLongDate(fechaFirma);
-  const fuente =
-    payload.declaraciones.fondos_origen_fuente?.trim() || 'Remuneraciones por trabajo dependiente';
+  const fuente = normalizeFundsSource(
+    payload.declaraciones.fondos_origen_fuente ?? payload.declaraciones.fondos_origen_texto
+  );
   const unidadLabel = resolveUnitLabel(payload);
+  const domicilio = payload.arrendatario.domicilio?.trim() || payload.inmueble.direccion;
 
   return [
-    'DECLARACION DE ORIGEN DE FONDOS PARA PAGOS ASOCIADOS AL CONTRATO DE ARRENDAMIENTO',
+    'DECLARACIÓN DE ORIGEN DE ORIGEN DE FONDOS PARA PAGOS ASOCIADOS AL CONTRATO DE ARRENDAMIENTO',
     '',
-    `En Santiago de Chile, a ${fechaLarga}, Doña ${payload.arrendatario.nombre}, ${payload.arrendatario.nacionalidad}, ${payload.arrendatario.estado_civil}, cédula de identidad número ${payload.arrendatario.rut}, domiciliado en ${payload.inmueble.direccion}, ${unidadLabel}, ${payload.inmueble.comuna}, certifico y declaro lo siguiente:`,
+    `En Santiago de Chile, a ${fechaLarga}, Doña ${payload.arrendatario.nombre}, ${payload.arrendatario.nacionalidad}, ${payload.arrendatario.estado_civil}, cédula de identidad número ${payload.arrendatario.rut}, domiciliado en ${domicilio}, ${unidadLabel}, ${payload.inmueble.comuna}, certifico y declaro lo siguiente:`,
     '1. Que respecto al inmueble arrendado ubicado en '
       + `${payload.inmueble.direccion}, comuna de ${payload.inmueble.comuna}, ${unidadLabel}, `
       + 'los fondos con los cuales pagaré mensualmente las rentas y obligaciones económicas provienen de: '

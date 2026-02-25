@@ -192,12 +192,14 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
       }
 
       const incoming = data.templates ?? [];
-      setTemplates(incoming);
+      const activeOnly = incoming.filter((item) => item.isActive);
+      const visibleTemplates = activeOnly.length > 0 ? activeOnly : incoming;
+      setTemplates(visibleTemplates);
 
       setSelectedTemplateId((prev) => {
-        if (prev) return prev;
-        const active = incoming.find((item) => item.isActive);
-        return active?.id ?? prev;
+        if (prev && visibleTemplates.some((item) => item.id === prev)) return prev;
+        const active = visibleTemplates.find((item) => item.isActive);
+        return active?.id ?? visibleTemplates[0]?.id ?? prev;
       });
     } catch (error) {
       setTemplatesError(error instanceof Error ? error.message : 'Error al cargar templates');

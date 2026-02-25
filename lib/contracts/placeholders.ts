@@ -59,6 +59,28 @@ function buildPersoneriaDescripcion(payload: ContractPayload): string {
   return `en la escritura publica de fecha ${fecha}, otorgada en la notaria ${personeria.notaria} de ${personeria.ciudad}, notario/a ${personeria.notario_nombre}`;
 }
 
+function sanitizeFundsSource(value: string | undefined): string {
+  const fallback = 'Remuneraciones por trabajo dependiente';
+  const source = (value ?? '').trim().normalize('NFC');
+  if (!source) return fallback;
+
+  const sourceFolded = source
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase();
+
+  if (
+    source.length > 180 ||
+    sourceFolded.includes('DECLARACION DE ORIGEN DE FONDOS') ||
+    sourceFolded.includes('DECLARACION DE ORIGEN DE ORIGEN DE FONDOS') ||
+    /[\r\n]/.test(source)
+  ) {
+    return fallback;
+  }
+
+  return source.replace(/\s+/g, ' ').replace(/[.;:\s]+$/, '');
+}
+
 export function buildReplacements(payload: ContractPayload): Record<string, string> {
   const catalog = getCatalog();
   const replacements: Record<string, string> = {};
@@ -122,7 +144,9 @@ export function buildReplacements(payload: ContractPayload): Record<string, stri
     }
 
     if (scoped === 'DECLARACIONES.FONDOS_ORIGEN_TEXTO') {
-      value = payload.declaraciones.fondos_origen_fuente ?? payload.declaraciones.fondos_origen_texto;
+      value = sanitizeFundsSource(
+        payload.declaraciones.fondos_origen_fuente ?? payload.declaraciones.fondos_origen_texto
+      );
     }
 
     if (scoped === 'DECLARACIONES.FONDOS_ORIGEN_DECLARACION') {

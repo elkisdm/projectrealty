@@ -160,7 +160,7 @@ describe('contracts/form-utils', () => {
 
   test('builds declaration text with contextual fields', () => {
     const text = generateFundsOriginDeclaration(buildPayload());
-    expect(text).toContain('DECLARACION DE ORIGEN DE FONDOS');
+    expect(text).toContain('DECLARACIÓN DE ORIGEN DE ORIGEN DE FONDOS');
     expect(text).toContain('Doña Carlos Diaz');
     expect(text).toContain('Hommie SpA');
   });
