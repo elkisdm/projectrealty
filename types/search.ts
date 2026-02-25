@@ -6,12 +6,19 @@
 export interface SearchFilters {
   q?: string;
   comuna?: string | string[];
+  operation?: "rent";
+  dormitoriosMin?: number;
+  tipos?: string | string[];
   dormitorios?: 'Estudio' | '1' | '2' | '3' | Array<'Estudio' | '1' | '2' | '3'>;
   estacionamiento?: boolean;
   bodega?: boolean;
   mascotas?: boolean;
   precioMin?: number;
   precioMax?: number;
+  // New Hero Cocktail fields for progressive disclosure
+  beds?: string | string[];
+  priceMax?: string;
+  moveIn?: string;
 }
 
 export interface SearchBarContainerProps {
@@ -26,9 +33,9 @@ export interface SearchBarContainerProps {
 
 export interface QuickFiltersRowProps {
   selectedComuna?: string | string[];
-  selectedDormitorios?: string | string[];
+  selectedDormitoriosMin?: number;
   onComunaChange: (value: string | string[] | undefined) => void;
-  onDormitoriosChange: (value: string | string[] | undefined) => void;
+  onDormitoriosMinChange: (value: number | undefined) => void;
   onMoreFiltersClick: () => void;
   activeFiltersCount: number;
   className?: string;
@@ -41,6 +48,14 @@ export interface FilterBottomSheetProps {
   onFiltersChange: (filters: SearchFilters) => void;
   resultsCount?: number;
   isLoading?: boolean;
+  // New Hero Cocktail LEVEL 2 fields
+  beds?: string | string[];
+  priceMax?: string;
+  moveIn?: string;
+  onBedsChange?: (value: string | string[] | undefined) => void;
+  onPriceMaxChange?: (value: string | undefined) => void;
+  onMoveInChange?: (value: string | undefined) => void;
+  triggerRef?: React.RefObject<HTMLElement | null>;
 }
 
 export interface ToggleRowProps {
@@ -56,4 +71,6 @@ export interface StickyCTAProps {
   isLoading?: boolean;
   onClick: () => void;
   className?: string;
+  /** Custom label for the button (overrides default text) */
+  label?: string;
 }

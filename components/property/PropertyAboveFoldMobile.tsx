@@ -1,10 +1,11 @@
 "use client";
 import React, { useState, useRef } from "react";
 import Image from "next/image";
-import { Share2, Heart, ArrowLeft, MapPin, ChevronLeft, ChevronRight } from "lucide-react";
+import { Share2, Heart, ArrowLeft, MapPin, ChevronLeft, ChevronRight, Star, Square, Sun, Play, PawPrint } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { Building, Unit } from "@schemas/models";
 import { StickyCtaBar } from "@components/ui/StickyCtaBar";
+import { PropertyVideoModal } from "@components/property/PropertyVideoModal";
 
 const DEFAULT_BLUR = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q==";
 
@@ -24,33 +25,32 @@ function getAllImages(unit?: Unit, building?: Building): string[] {
         });
     };
 
-    // Prioridad 1: Imágenes de tipología
+    // Prioridad 1: Imágenes de la unidad (interior) - mayor prioridad para imágenes específicas de la unidad
+    if (unit?.images && Array.isArray(unit.images) && unit.images.length > 0) {
+        addImages(unit.images);
+    }
+
+    // Prioridad 2: Imágenes de tipología
     if (unit?.imagesTipologia && Array.isArray(unit.imagesTipologia) && unit.imagesTipologia.length > 0) {
         addImages(unit.imagesTipologia);
     }
 
-    // Prioridad 2: Imágenes de áreas comunes del edificio
+    // Prioridad 3: Imágenes de áreas comunes del edificio
     if (unit?.imagesAreasComunes && Array.isArray(unit.imagesAreasComunes) && unit.imagesAreasComunes.length > 0) {
         addImages(unit.imagesAreasComunes);
     }
 
-    // Prioridad 3: Imágenes del edificio (galería) - solo si NO hay imagesAreasComunes
-    // (porque imagesAreasComunes ya contiene las imágenes del edificio)
-    if (!unit?.imagesAreasComunes || unit.imagesAreasComunes.length === 0) {
+    // Prioridad 4: Imágenes del edificio (galería) - solo si NO hay imágenes de la unidad
+    if (!unit?.images || unit.images.length === 0) {
         if (building?.gallery && Array.isArray(building.gallery) && building.gallery.length > 0) {
             addImages(building.gallery);
         }
     }
 
-    // Prioridad 4: CoverImage del edificio (solo si no está ya incluida)
+    // Prioridad 5: CoverImage del edificio (solo si no está ya incluida)
     if (building?.coverImage && !seen.has(building.coverImage)) {
         images.push(building.coverImage);
         seen.add(building.coverImage);
-    }
-
-    // Prioridad 5: Imágenes de la unidad (interior) - solo si no hay imágenes del edificio
-    if (unit?.images && Array.isArray(unit.images) && unit.images.length > 0) {
-        addImages(unit.images);
     }
 
     // Fallback: si no hay imágenes, usar coverImage del edificio
@@ -58,7 +58,8 @@ function getAllImages(unit?: Unit, building?: Building): string[] {
         images.push(building.coverImage);
     }
 
-    return images;
+    // Excluir parque-mackenna.jpg (no existe en public)
+    return images.filter((url) => !url.includes("parque-mackenna.jpg"));
 }
 
 interface PropertyAboveFoldMobileProps {
@@ -84,8 +85,12 @@ export function PropertyAboveFoldMobile({
 }: PropertyAboveFoldMobileProps) {
     const [isSaved, setIsSaved] = useState(false);
     const [activeImageIndex, setActiveImageIndex] = useState(0);
+    const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
     const router = useRouter();
+
+    const firstVideoUrl = selectedUnit?.videos?.[0];
+    const hasVideo = Boolean(firstVideoUrl);
 
     // Obtener todas las imágenes
     const allImages = getAllImages(selectedUnit, building);
@@ -103,66 +108,103 @@ export function PropertyAboveFoldMobile({
         });
     }
     
-    const finalImages = allImages.length > 0
+    // Fallback: parque-mackenna.jpg no existe en public; usar IMG_4922.jpg
+    const safeCoverImage = building.coverImage?.includes("parque-mackenna.jpg")
+        ? "/images/parque-mackenna-305/IMG_4922.jpg"
+        : building.coverImage;
+    const baseImages = allImages.length > 0
         ? allImages
-        : building.coverImage
-            ? [building.coverImage]
+        : safeCoverImage
+            ? [safeCoverImage]
             : ['/images/lascondes-cover.jpg'];
 
-    const totalImages = finalImages.length;
+    // Scroll infinito: duplicar imágenes para loop seamless (clone última al inicio, primera al final)
+    const finalImages = baseImages.length > 1
+        ? [baseImages[baseImages.length - 1], ...baseImages, baseImages[0]]
+        : baseImages;
 
-    // Manejar scroll del slider
+    const totalImages = baseImages.length;
+
+    const isInfinite = finalImages.length > baseImages.length;
+
+    // Manejar scroll del slider (incluye lógica de loop infinito)
     const handleScroll = () => {
-        if (scrollRef.current) {
-            const { scrollLeft, clientWidth } = scrollRef.current;
-            const newIndex = Math.round(scrollLeft / clientWidth);
-            if (newIndex !== activeImageIndex && newIndex >= 0 && newIndex < finalImages.length) {
-                setActiveImageIndex(newIndex);
+        if (!scrollRef.current || !isInfinite) {
+            if (scrollRef.current && baseImages.length > 0) {
+                const { scrollLeft, clientWidth } = scrollRef.current;
+                const newIndex = Math.round(scrollLeft / clientWidth);
+                if (newIndex !== activeImageIndex && newIndex >= 0 && newIndex < baseImages.length) {
+                    setActiveImageIndex(newIndex);
+                }
             }
+            return;
+        }
+        const { scrollLeft, clientWidth } = scrollRef.current;
+        const totalWidth = clientWidth * finalImages.length;
+        // Al llegar al clone del final (primera imagen duplicada al final), saltar a la real
+        if (scrollLeft >= totalWidth - clientWidth * 0.5) {
+            scrollRef.current.scrollLeft = clientWidth;
+            setActiveImageIndex(0);
+            return;
+        }
+        // Al llegar al clone del inicio (última imagen duplicada al inicio), saltar a la real
+        if (scrollLeft <= clientWidth * 0.5) {
+            scrollRef.current.scrollLeft = totalWidth - clientWidth * 2;
+            setActiveImageIndex(baseImages.length - 1);
+            return;
+        }
+        const newIndex = Math.round((scrollLeft - clientWidth) / clientWidth);
+        if (newIndex !== activeImageIndex && newIndex >= 0 && newIndex < baseImages.length) {
+            setActiveImageIndex(newIndex);
         }
     };
 
+    // Inicializar scroll en posición correcta para loop infinito (mostrar primera imagen real)
+    React.useEffect(() => {
+        if (scrollRef.current && isInfinite && baseImages.length > 1) {
+            scrollRef.current.scrollLeft = scrollRef.current.clientWidth;
+        }
+    }, [isInfinite, baseImages.length]);
+
     // Navegar a imagen anterior
     const goToPrevious = () => {
-        if (scrollRef.current && activeImageIndex > 0) {
-            const newIndex = activeImageIndex - 1;
-            scrollRef.current.scrollTo({
-                left: newIndex * scrollRef.current.clientWidth,
-                behavior: 'smooth'
-            });
-            setActiveImageIndex(newIndex);
+        if (scrollRef.current) {
+            const idx = isInfinite ? (activeImageIndex === 0 ? baseImages.length - 1 : activeImageIndex - 1) : Math.max(0, activeImageIndex - 1);
+            const scrollPos = isInfinite ? (idx + 1) * scrollRef.current.clientWidth : idx * scrollRef.current.clientWidth;
+            scrollRef.current.scrollTo({ left: scrollPos, behavior: 'smooth' });
+            setActiveImageIndex(idx);
         }
     };
 
     // Navegar a imagen siguiente
     const goToNext = () => {
-        if (scrollRef.current && activeImageIndex < finalImages.length - 1) {
-            const newIndex = activeImageIndex + 1;
-            scrollRef.current.scrollTo({
-                left: newIndex * scrollRef.current.clientWidth,
-                behavior: 'smooth'
-            });
-            setActiveImageIndex(newIndex);
+        if (scrollRef.current) {
+            const idx = isInfinite ? (activeImageIndex === baseImages.length - 1 ? 0 : activeImageIndex + 1) : Math.min(baseImages.length - 1, activeImageIndex + 1);
+            const scrollPos = isInfinite ? (idx + 1) * scrollRef.current.clientWidth : idx * scrollRef.current.clientWidth;
+            scrollRef.current.scrollTo({ left: scrollPos, behavior: 'smooth' });
+            setActiveImageIndex(idx);
         }
     };
 
     // Calcular precio total por mes (arriendo + GGCC)
     const arriendo = selectedUnit?.price || building.precio_desde || 290000;
-    const ggcc = selectedUnit?.gastoComun || 45000;
+    const ggcc = selectedUnit?.gastoComun || selectedUnit?.gc || selectedUnit?.gastosComunes || 0;
     const precioTotalMes = arriendo + ggcc;
 
-    // Datos para overlay informativo
+    // Datos para overlay informativo (desde Supabase)
     const tipologia = selectedUnit?.tipologia || "2D";
-    const m2 = selectedUnit?.area_interior_m2 || selectedUnit?.m2 || 48;
+    const m2 = selectedUnit?.area_interior_m2 || selectedUnit?.m2;
+    const m2Balcon = selectedUnit?.m2_terraza ?? selectedUnit?.area_exterior_m2;
     const dormitorios = selectedUnit?.dormitorios || selectedUnit?.bedrooms || 0;
     const estacionamiento = selectedUnit?.estacionamiento ? 1 : (selectedUnit?.parkingOptions?.length || 0);
-    const petFriendly = selectedUnit?.petFriendly ?? true;
-    const minutosMetro = 6;
-    const stock = building.units?.filter(u => u.disponible).length || 7;
+    const petFriendly = selectedUnit?.petFriendly ?? selectedUnit?.pet_friendly;
+    // Metro: siempre usar el metro más cercano del edificio si está disponible
+    const minutosMetro = building.metroCercano?.tiempoCaminando;
+    const nombreMetro = building.metroCercano?.nombre;
+    const stock = building.units?.filter(u => u.disponible).length;
     const totalUnitsCount = building.units?.length || 0;
-    // Mostrar botón si hay unidades en el edificio (mostrar TODAS las unidades en el modal, no solo disponibles)
-    // Esto es importante porque hay 1 edificio con 111 departamentos
-    const shouldShowChangeButton = onSelectOtherUnit && totalUnitsCount > 0;
+    // Mostrar botón "Cambiar" solo si hay más de una unidad en el edificio
+    const shouldShowChangeButton = onSelectOtherUnit && totalUnitsCount > 1;
 
     // Formatear texto informativo
     const getInfoText = () => {
@@ -189,9 +231,11 @@ export function PropertyAboveFoldMobile({
     };
 
     return (
+        <>
         <section aria-labelledby="af-title" className="relative">
-            {/* Hero Image con Overlay (60-70vh) */}
-            <div className="relative min-h-[60vh] max-h-[70vh] h-[65vh] w-full overflow-hidden rounded-2xl">
+            {/* Hero Image: full-bleed en móvil; contenido en columna en desktop para evitar solapamiento con sidebar */}
+            <div className="w-screen relative left-1/2 -translate-x-1/2 -mt-4 lg:w-full lg:left-0 lg:translate-x-0 lg:-mt-6 lg:rounded-2xl lg:overflow-hidden">
+                <div className="relative min-h-[60vh] max-h-[70vh] h-[65vh] lg:min-h-[50vh] lg:h-[55vh] w-full overflow-hidden">
                 {/* Slider de imágenes */}
                 <div
                     ref={scrollRef}
@@ -257,47 +301,46 @@ export function PropertyAboveFoldMobile({
                 </div>
 
                 {/* Overlay inferior: Información clave + Pills navegación */}
-                <div className="absolute bottom-0 left-0 right-0 z-20 p-4 pb-6 bg-gradient-to-t from-black/90 via-black/75 to-black/40">
-                    {/* Pills de navegación */}
-                    <div className="flex gap-2 mb-4">
-                        <button
-                            onClick={() => {
-                                // Scroll a galería completa o abrir lightbox
-                                const gallerySection = document.querySelector('[role="region"][aria-label*="galería"]');
-                                if (gallerySection) {
-                                    gallerySection.scrollIntoView({ behavior: 'smooth' });
-                                }
-                            }}
-                            className="px-3 sm:px-4 py-1.5 sm:py-2 bg-white/25 backdrop-blur-md hover:bg-white/35 text-white text-xs sm:text-sm font-semibold rounded-full border border-white/40 shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white/70"
-                            aria-label={`Ver ${totalImages} fotos`}
-                        >
-                            {totalImages} {totalImages === 1 ? 'Foto' : 'Fotos'}
-                        </button>
-                        <button
-                            onClick={handleMapClick}
-                            className="px-3 sm:px-4 py-1.5 sm:py-2 bg-white/25 backdrop-blur-md hover:bg-white/35 text-white text-xs sm:text-sm font-semibold rounded-full border border-white/40 shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white/70 flex items-center gap-1.5"
-                            aria-label="Ver mapa"
-                        >
-                            <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                            <span>Mapa</span>
-                        </button>
-                    </div>
+                <div className="absolute bottom-0 left-0 right-0 z-20 p-4 pb-6 min-w-0 bg-gradient-to-t from-black/90 via-black/75 to-black/40">
+                    <div className="flex flex-col gap-3 min-w-0">
+                        {/* Pills de navegación */}
+                        <div className="flex flex-wrap gap-2 shrink-0">
+                            {hasVideo && (
+                                <button
+                                    onClick={() => setIsVideoModalOpen(true)}
+                                    className="px-3 sm:px-4 py-1.5 sm:py-2 bg-white/25 backdrop-blur-md hover:bg-white/35 text-white text-xs sm:text-sm font-semibold rounded-full border border-white/40 shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white/70 flex items-center gap-1.5"
+                                    aria-label="Ver video"
+                                >
+                                    <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current shrink-0" aria-hidden />
+                                    Ver video
+                                </button>
+                            )}
+                            <button
+                                onClick={handleMapClick}
+                                className="px-3 sm:px-4 py-1.5 sm:py-2 bg-white/25 backdrop-blur-md hover:bg-white/35 text-white text-xs sm:text-sm font-semibold rounded-full border border-white/40 shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white/70 flex items-center gap-1.5 shrink-0"
+                                aria-label="Ver ubicación"
+                            >
+                                <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                <span>Ver ubicación</span>
+                            </button>
+                        </div>
 
-                    {/* Texto informativo con mejor contraste */}
-                    <p className="text-white text-base sm:text-lg font-bold leading-tight [text-shadow:_0_2px_8px_rgb(0_0_0_/_80%)]">
-                        {getInfoText()}
-                    </p>
+                        {/* Texto informativo: evita truncado horizontal con min-w-0 y break-words */}
+                        <p className="text-white text-base sm:text-lg font-bold leading-tight break-words min-w-0 [text-shadow:_0_2px_8px_rgb(0_0_0_/_80%)]">
+                            {getInfoText()}
+                        </p>
+                    </div>
                 </div>
 
                 {/* Indicador de imagen activa (si hay más de una) */}
-                {finalImages.length > 1 && (
+                {totalImages > 1 && (
                     <div className="absolute top-20 right-4 z-20 bg-black/50 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-xs font-medium">
                         {activeImageIndex + 1} / {totalImages}
                     </div>
                 )}
 
                 {/* Flechas de navegación interactivas */}
-                {finalImages.length > 1 && (
+                {totalImages > 1 && (
                     <>
                         {/* Flecha izquierda */}
                         <button
@@ -305,7 +348,7 @@ export function PropertyAboveFoldMobile({
                                 e.stopPropagation();
                                 goToPrevious();
                             }}
-                            disabled={activeImageIndex === 0}
+                            disabled={!isInfinite && activeImageIndex === 0}
                             className="absolute left-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center bg-black/60 hover:bg-black/80 backdrop-blur-sm text-white rounded-full transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-white/50 shadow-lg"
                             aria-label="Imagen anterior"
                         >
@@ -318,7 +361,7 @@ export function PropertyAboveFoldMobile({
                                 e.stopPropagation();
                                 goToNext();
                             }}
-                            disabled={activeImageIndex === finalImages.length - 1}
+                            disabled={!isInfinite && activeImageIndex === totalImages - 1}
                             className="absolute right-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center bg-black/60 hover:bg-black/80 backdrop-blur-sm text-white rounded-full transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-white/50 shadow-lg"
                             aria-label="Imagen siguiente"
                         >
@@ -326,6 +369,7 @@ export function PropertyAboveFoldMobile({
                         </button>
                     </>
                 )}
+                </div>
             </div>
 
             {/* Breadcrumb y título (debajo del hero) */}
@@ -336,9 +380,26 @@ export function PropertyAboveFoldMobile({
                     <span className="text-gray-700 dark:text-slate-300">{building.name}</span>
                 </nav>
                 <div className="flex items-start justify-between gap-4">
-                    <h1 id="af-title" className="text-xl font-semibold leading-tight text-gray-900 dark:text-white flex-1">
-                        {tipologia} luminoso en {building.comuna}
-                    </h1>
+                    <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#8B6CFF]/15 text-[#8B6CFF] border border-[#8B6CFF]/30">
+                                <Star className="w-3.5 h-3.5 shrink-0" aria-hidden />
+                                Destacado
+                            </span>
+                            {stock === 1 && (
+                                <span className="px-2 py-1 rounded-full text-xs font-medium bg-amber-50 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/40 shadow-sm">
+                                    Última unidad disponible
+                                </span>
+                            )}
+                        </div>
+                        <h1 id="af-title" className="text-xl font-semibold leading-tight text-gray-900 dark:text-white">
+                            Departamento {selectedUnit?.codigoUnidad ?? selectedUnit?.id?.split("-").pop() ?? "—"}
+                        </h1>
+                        <p className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-slate-400 mt-0.5">
+                            <MapPin className="w-3.5 h-3.5 shrink-0 text-[#8B6CFF]" aria-hidden />
+                            <span>{building.address}</span>
+                        </p>
+                    </div>
                     {shouldShowChangeButton && (
                         <button
                             onClick={onSelectOtherUnit}
@@ -351,56 +412,69 @@ export function PropertyAboveFoldMobile({
                 </div>
             </div>
 
-            {/* Precio total/mes */}
-            <div className="px-4 py-4 bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
-                <div className="flex items-end justify-between gap-4">
+            {/* Precio y detalles: en desktop el sidebar muestra precio; aquí solo badges clave */}
+            <div className="px-4 py-4 bg-[var(--card)] border-b border-[var(--border)]">
+                {/* Precio/operator: solo móvil (sidebar lo muestra en desktop) */}
+                <div className="flex items-end justify-between gap-4 lg:hidden">
                     <div className="flex flex-col">
-                        <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                        <p className="text-2xl font-bold text-[var(--text)]">
                             ${arriendo.toLocaleString('es-CL')}
-                            <span className="text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">
+                            <span className="text-sm font-normal text-[var(--text-secondary)] ml-2">
                                 / mes
                             </span>
                         </p>
-                        <p className="text-lg font-medium text-gray-700 dark:text-gray-300">
-                            + ${ggcc.toLocaleString('es-CL')}
-                            <span className="text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">
-                                (GGCC)
-                            </span>
-                        </p>
+                        {ggcc > 0 && (
+                            <p className="text-lg font-medium text-[var(--text)]">
+                                + ${ggcc.toLocaleString('es-CL')}
+                                <span className="text-sm font-normal text-[var(--text-secondary)] ml-2">
+                                    (GGCC)
+                                </span>
+                            </p>
+                        )}
                     </div>
 
                     <div className="flex flex-col items-end shrink-0 pb-1">
-                        <span className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400 font-medium mb-1">
+                        <span className="text-[10px] uppercase tracking-wider text-[var(--text-secondary)] font-medium mb-1">
                             Operado por
                         </span>
                         <div className="flex items-center">
-                            <div className="relative w-24 h-6">
-                                <Image
-                                    src="/images/assetplan-logo.svg"
-                                    alt="AssetPlan"
-                                    fill
-                                    className="object-contain object-right dark:invert"
-                                    priority
-                                />
-                            </div>
+                            <span className="text-sm font-semibold text-[var(--text)]">
+                                Elkis Realtor
+                            </span>
                         </div>
                     </div>
                 </div>
 
-                {/* Badges clave */}
-                <div className="mt-4 flex flex-wrap items-center gap-2">
-                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 shadow-sm">
-                        {m2} m²
-                    </span>
-                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 shadow-sm">
-                        {petFriendly ? 'Pet-friendly' : 'No mascotas'}
-                    </span>
-                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 shadow-sm">
-                        Metro {minutosMetro}'
-                    </span>
+                {/* Badges clave: visibles en móvil y desktop */}
+                <div className="flex flex-wrap items-center gap-2 mt-4 lg:mt-0">
+                    {m2 && (
+                        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium bg-[var(--card)] text-[var(--text)] border border-[var(--border)] shadow-sm">
+                            <Square className="w-3.5 h-3.5 shrink-0 text-[#8B6CFF]" aria-hidden />
+                            {m2} m²
+                        </span>
+                    )}
+                    {m2Balcon != null && m2Balcon > 0 && (
+                        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium bg-[var(--card)] text-[var(--text)] border border-[var(--border)] shadow-sm">
+                            <Sun className="w-3.5 h-3.5 shrink-0 text-[#8B6CFF]" aria-hidden />
+                            {m2Balcon} m²
+                        </span>
+                    )}
+                    {petFriendly !== undefined && (
+                        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium bg-[var(--card)] text-[var(--text)] border border-[var(--border)] shadow-sm">
+                            <PawPrint className="w-3.5 h-3.5 shrink-0 text-[#8B6CFF]" aria-hidden />
+                            {petFriendly ? 'Pet-friendly' : 'No mascotas'}
+                        </span>
+                    )}
+                    {/* Badge de metro: logo + estación + tiempo */}
+                    {building.metroCercano && minutosMetro != null && (
+                        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium bg-[var(--card)] text-[var(--text)] border border-[var(--border)] shadow-sm">
+                            <Image src="/icons/metro-santiago.png" alt="" width={16} height={16} className="shrink-0 object-contain" aria-hidden />
+                            {nombreMetro ? `${nombreMetro} ${minutosMetro} min` : `${minutosMetro} min`}
+                        </span>
+                    )}
 
-                    {/* Badge de urgencia si stock bajo */}
-                    {stock <= 3 && (
+                    {/* Badge de urgencia si stock bajo (2 o 3 unidades; "Última unidad disponible" va junto a Destacado) */}
+                    {stock !== undefined && stock > 1 && stock <= 3 && (
                         <span className="px-2 py-1 rounded-full text-xs font-medium bg-amber-50 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/40 shadow-sm">
                             Quedan {stock}
                         </span>
@@ -408,9 +482,9 @@ export function PropertyAboveFoldMobile({
                 </div>
             </div>
 
-            {/* Sticky CTA Bar - aparece después de scroll > 120px */}
+            {/* Sticky CTA Bar - aparece después de scroll > 120px (solo arriendo, sin gasto común) */}
             <StickyCtaBar
-                priceMonthly={precioTotalMes}
+                priceMonthly={arriendo}
                 onBook={onScheduleVisit}
                 onWhatsApp={onWhatsApp || (() => {})}
                 propertyId={selectedUnit?.id}
@@ -418,6 +492,15 @@ export function PropertyAboveFoldMobile({
                 unit={selectedUnit}
                 buildingId={building.id}
             />
+
+            {hasVideo && (
+                <PropertyVideoModal
+                    isOpen={isVideoModalOpen}
+                    onClose={() => setIsVideoModalOpen(false)}
+                    videoUrl={firstVideoUrl!}
+                />
+            )}
         </section>
+        </>
     );
 }

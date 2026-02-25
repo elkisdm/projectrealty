@@ -6,7 +6,7 @@ import { extractFloorNumber } from "@/lib/utils/unit";
  */
 
 const SITE_NAME = "Elkis Realtor";
-const SITE_DESCRIPTION = "Arrienda departamentos con 0% de comisión. Compara, agenda visita y arrienda fácil.";
+const SITE_DESCRIPTION = "Arrienda departamentos en Santiago. Compara precios, agenda visitas y encuentra tu hogar de forma fácil y transparente.";
 const DEFAULT_IMAGE = "/images/og-default.jpg";
 
 /**
@@ -124,12 +124,12 @@ export function generateUnitMetadata({
   // Construir título con formato: "Departamento de [tipologia] en [Comuna] - Piso [X]"
   let title: string;
   if (floorNumber !== null) {
-    title = `Departamento de ${tipologiaLabel} en ${comuna} - Piso ${floorNumber} | 0% Comisión`;
+    title = `Departamento de ${tipologiaLabel} en ${comuna} - Piso ${floorNumber}`;
   } else {
-    title = `${tipologiaLabel} en Arriendo en ${comuna} | 0% Comisión`;
+    title = `${tipologiaLabel} en Arriendo en ${comuna}`;
   }
-  
-  const description = `Arrienda ${tipologiaLabel} en ${comuna} sin comisión de corretaje. ${dormitorios} dormitorio${dormitorios > 1 ? "s" : ""}, ${banos} baño${banos > 1 ? "s" : ""}. Precio: $${price.toLocaleString("es-CL")}.`;
+
+  const description = `Arrienda ${tipologiaLabel} en ${comuna}. ${dormitorios} dormitorio${dormitorios > 1 ? "s" : ""}, ${banos} baño${banos > 1 ? "s" : ""}. Precio: $${price.toLocaleString("es-CL")}.`;
 
   return generateBaseMetadata({
     title,
@@ -145,12 +145,14 @@ export function generateUnitMetadata({
 export function generateSearchMetadata({
   comuna,
   dormitorios,
+  dormitoriosMin,
   precioMin,
   precioMax,
   q,
 }: {
   comuna?: string;
   dormitorios?: string;
+  dormitoriosMin?: string;
   precioMin?: string;
   precioMax?: string;
   q?: string;
@@ -159,7 +161,8 @@ export function generateSearchMetadata({
   const searchParams = new URLSearchParams();
   
   if (comuna) searchParams.set("comuna", comuna);
-  if (dormitorios) searchParams.set("dormitorios", dormitorios);
+  if (dormitoriosMin) searchParams.set("dormitoriosMin", dormitoriosMin);
+  else if (dormitorios) searchParams.set("dormitorios", dormitorios);
   if (precioMin) searchParams.set("precioMin", precioMin);
   if (precioMax) searchParams.set("precioMax", precioMax);
   if (q) searchParams.set("q", q);
@@ -174,26 +177,27 @@ export function generateSearchMetadata({
   if (comuna && comuna !== "Todas") {
     titleParts.push(`en ${comuna}`);
   }
-  if (dormitorios) {
+  const dormitoriosLabel = dormitoriosMin ? `${dormitoriosMin}+` : dormitorios;
+  if (dormitoriosLabel) {
     const dormLabel =
-      dormitorios === "Estudio"
+      dormitoriosLabel === "Estudio"
         ? "Estudio"
-        : `${dormitorios} dormitorio${dormitorios !== "1" ? "s" : ""}`;
+        : `${dormitoriosLabel} dormitorio${dormitoriosLabel !== "1" ? "s" : ""}`;
     titleParts.push(dormLabel);
   }
 
   const title = titleParts.length > 0
-    ? `Departamentos ${titleParts.join(" ")} - Arrienda Sin Comisión`
-    : "Departamentos en arriendo - Arrienda Sin Comisión";
+    ? `Departamentos ${titleParts.join(" ")} - Arrienda en Santiago`
+    : "Departamentos en arriendo - Arrienda en Santiago";
 
   // Construir descripción dinámica
-  let description = "Busca departamentos en arriendo sin comisión. ";
+  let description = "Busca departamentos en arriendo. ";
   const descParts: string[] = [];
   if (comuna && comuna !== "Todas") {
     descParts.push(`en ${comuna}`);
   }
-  if (dormitorios) {
-    descParts.push(`con ${dormitorios} dormitorio${dormitorios !== "1" ? "s" : ""}`);
+  if (dormitoriosLabel) {
+    descParts.push(`con ${dormitoriosLabel} dormitorio${dormitoriosLabel !== "1" ? "s" : ""}`);
   }
   if (precioMin || precioMax) {
     const precioText = precioMin && precioMax
@@ -227,8 +231,8 @@ export function generateComunaMetadata({
   comuna: string;
   comunaSlug: string;
 }): Metadata {
-  const title = `Departamentos en Arriendo en ${comuna} - 0% Comisión`;
-  const description = `Encuentra departamentos en arriendo en ${comuna} sin comisión de corretaje. Miles de opciones disponibles.`;
+  const title = `Departamentos en Arriendo en ${comuna}`;
+  const description = `Encuentra departamentos en arriendo en ${comuna}. Miles de opciones disponibles.`;
 
   return generateBaseMetadata({
     title,
@@ -236,7 +240,6 @@ export function generateComunaMetadata({
     path: `/arriendo/departamento/${comunaSlug}`,
   });
 }
-
 
 
 

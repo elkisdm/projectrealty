@@ -2,6 +2,7 @@ import { BuildingSchema } from "@schemas/models";
 import type { Building, Unit, TypologySummary, PromotionBadge } from "@schemas/models";
 import { logger } from "./logger";
 import { normalizeUnit } from "./utils/unit";
+import { normalizePmqId } from "./constants/pmq-ids";
 import { MOCK_BUILDINGS } from "@data/buildings.mock";
 
 type ListFilters = {
@@ -15,6 +16,20 @@ function calculatePrecioDesde(units: Unit[]): number | null {
   const disponibles = units.filter((u) => u.disponible);
   if (disponibles.length === 0) return null;
   return Math.min(...disponibles.map((u) => u.price));
+}
+
+/** Normaliza terminaciones/equipamiento desde Supabase (array, JSON string o null). */
+function parseStringArray(val: unknown): string[] {
+  if (Array.isArray(val)) return val.filter((x): x is string => typeof x === "string");
+  if (typeof val === "string") {
+    try {
+      const parsed = JSON.parse(val) as unknown;
+      return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === "string") : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
 }
 
 function validateBuilding(raw: unknown): Building {
@@ -48,38 +63,46 @@ async function readFromSupabase(): Promise<Building[]> {
     
     // Obtener edificios con sus unidades usando la relación correcta
     // Usar left join para incluir edificios aunque no tengan unidades cargadas
-    const { data: buildingsData, error: buildingsError } = await client
-      .from('buildings')
-      .select(`
-        id,
-        slug,
-        name,
-        comuna,
-        address,
-        amenities,
-        gallery,
-        cover_image,
-        badges,
-        service_level,
-        gc_mode,
-        units!left (
-          id,
-          tipologia,
-          m2,
-          price,
-          disponible,
-          estacionamiento,
-          bodega,
-          bedrooms,
-          bathrooms,
-          pet_friendly,
-          images_tipologia,
-          images_areas_comunes,
-          images
-        )
-      `)
-      .order('name')
-      .limit(100);
+        const { data: buildingsData, error: buildingsError } = await client
+          .from('buildings')
+          .select(`
+            id,
+            slug,
+            name,
+            comuna,
+            address,
+            amenities,
+            gallery,
+            cover_image,
+            badges,
+            service_level,
+            gc_mode,
+            metro_cercano_nombre,
+            metro_cercano_distancia,
+            metro_cercano_tiempo,
+            terminaciones,
+            equipamiento,
+            units!left (
+              id,
+              unidad,
+              id_pmq,
+              tipologia,
+              m2,
+              price,
+              disponible,
+              estacionamiento,
+              bodega,
+              bedrooms,
+              bathrooms,
+              pet_friendly,
+              images_tipologia,
+              images_areas_comunes,
+              images,
+              videos
+            )
+          `)
+          .order('name')
+          .limit(100);
 
     if (buildingsError) {
       logger.error(`[readFromSupabase] Supabase query error:`, {
@@ -253,6 +276,13 @@ async function readFromSupabase(): Promise<Building[]> {
           : ['/images/default-building.jpg'];
       }
       
+      // Construir objeto metroCercano si hay datos
+      const buildingMetroCercano = (b as any).metro_cercano_nombre ? {
+        nombre: (b as any).metro_cercano_nombre,
+        distancia: (b as any).metro_cercano_distancia,
+        tiempoCaminando: (b as any).metro_cercano_tiempo,
+      } : undefined;
+
       const buildingResult = {
         id: b.id,
         slug: b.slug || `edificio-${b.id}`,
@@ -268,9 +298,14 @@ async function readFromSupabase(): Promise<Building[]> {
         precio_hasta,
         gc_mode: (b.gc_mode === 'MF' || b.gc_mode === 'variable') ? b.gc_mode : undefined,
         featured: false,
+        metroCercano: buildingMetroCercano,
+        terminaciones: parseStringArray((b as Record<string, unknown>).terminaciones),
+        equipamiento: parseStringArray((b as Record<string, unknown>).equipamiento),
         units: validUnits.map((unit: unknown) => {
           const u = unit as {
             id: string;
+            unidad?: string | null;
+            id_pmq?: string | null;
             tipologia?: string;
             m2?: number;
             price?: number;
@@ -283,6 +318,7 @@ async function readFromSupabase(): Promise<Building[]> {
             images_tipologia?: string[]; // Campo desde Supabase (snake_case)
             images_areas_comunes?: string[]; // Campo desde Supabase (snake_case)
             images?: string[];
+            videos?: string[];
           };
           
           // Normalizar tipología antes de crear la unidad
@@ -291,10 +327,16 @@ async function readFromSupabase(): Promise<Building[]> {
           fetch('http://127.0.0.1:7242/ingest/bf5372fb-b70d-4713-b992-51094d7d9401',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/data.ts:258',message:'Normalizing tipologia',data:{originalTipologia:u.tipologia,normalizedTipologia},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
           // #endregion
           
+          // codigoUnidad: desde DB (unidad) o derivado del id
+          const codigoUnidad = (u.unidad && u.unidad.trim()) ? u.unidad.trim() : (u.id?.split("-").pop() ?? u.id?.substring(0, 8) ?? u.id);
+          // slug: id_pmq (PMQD305C) si existe, sino lo genera normalizeUnit
+          const slugFromPmq = (u.id_pmq && String(u.id_pmq).trim()) ? normalizePmqId(u.id_pmq) : undefined;
           // Usar helper para crear Unit completo
           return normalizeUnit(
             {
               id: u.id,
+              codigoUnidad,
+              ...(slugFromPmq && { slug: slugFromPmq }),
               tipologia: normalizedTipologia, // Usar tipología normalizada
               m2: u.m2,
               price: u.price!, // Ya validado arriba que price > 0
@@ -307,6 +349,7 @@ async function readFromSupabase(): Promise<Building[]> {
               imagesTipologia: u.images_tipologia, // Mapear desde snake_case a camelCase
               imagesAreasComunes: u.images_areas_comunes, // Mapear desde snake_case a camelCase
               images: u.images,
+              videos: u.videos,
             },
             b.id,
             b.slug || `edificio-${b.id}`
@@ -532,6 +575,15 @@ async function readFromMock(): Promise<Building[]> {
   }
 }
 
+const READ_SUPABASE_TIMEOUT_MS = 5_000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms)),
+  ]);
+}
+
 export async function readAll(): Promise<Building[]> {
   const USE_SUPABASE = process.env.USE_SUPABASE === "true";
   
@@ -539,7 +591,14 @@ export async function readAll(): Promise<Building[]> {
   
   if (USE_SUPABASE) {
     try {
-      const buildings = await readFromSupabase();
+      const buildings = await withTimeout(
+        readFromSupabase(),
+        READ_SUPABASE_TIMEOUT_MS,
+        [] as Building[]
+      );
+      if (buildings.length === 0 && logger) {
+        logger.warn(`[readAll] Supabase sin datos o timeout (${READ_SUPABASE_TIMEOUT_MS}ms), retornando vacío`);
+      }
       logger.log(`[readAll] Edificios desde Supabase: ${buildings.length}`);
       if (buildings.length > 0) {
         logger.log(`[readAll] Primer edificio: ${buildings[0].name}, unidades: ${buildings[0].units.length}`);
@@ -618,8 +677,15 @@ export async function getBuildingBySlug(slug: string): Promise<(Building & { pre
             cover_image,
             badges,
             service_level,
+            metro_cercano_nombre,
+            metro_cercano_distancia,
+            metro_cercano_tiempo,
+            terminaciones,
+            equipamiento,
             units!left (
               id,
+              unidad,
+              id_pmq,
               tipologia,
               m2,
               price,
@@ -631,7 +697,8 @@ export async function getBuildingBySlug(slug: string): Promise<(Building & { pre
               pet_friendly,
               images_tipologia,
               images_areas_comunes,
-              images
+              images,
+              videos
             )
           `)
           .eq('slug', slug)
@@ -642,6 +709,23 @@ export async function getBuildingBySlug(slug: string): Promise<(Building & { pre
           const availableUnits = (b.units || []).filter((u: any) => u.disponible);
           const prices = availableUnits.map((u: any) => u.price || 0).filter((p: number) => p > 0);
           
+          // Construir objeto metroCercano si hay datos
+          const buildingMetroCercanoGetBySlug = (b as any).metro_cercano_nombre ? {
+            nombre: (b as any).metro_cercano_nombre,
+            distancia: (b as any).metro_cercano_distancia,
+            tiempoCaminando: (b as any).metro_cercano_tiempo,
+          } : undefined;
+
+          // Fallback para gallery/coverImage (alineado con readFromSupabase)
+          const rawGallery = Array.isArray(b.gallery) && b.gallery.length > 0 ? b.gallery : [];
+          const rawCover = b.cover_image || (rawGallery.length > 0 ? rawGallery[0] : undefined);
+          const firstUnitImage = (b.units || []).find((u: { images?: string[] }) => Array.isArray(u?.images) && u.images.length > 0)?.images?.[0];
+          // parque-mackenna.jpg no existe en public; usar IMG_4922.jpg como fallback
+          const replaceInvalidCover = (url: string) => (url?.includes('parque-mackenna.jpg') ? '/images/parque-mackenna-305/IMG_4922.jpg' : url);
+          const galleryRaw = rawGallery.length > 0 ? rawGallery : (rawCover ? [rawCover] : (firstUnitImage ? [firstUnitImage] : ['/images/lascondes-cover.jpg']));
+          const gallery = galleryRaw.map(replaceInvalidCover);
+          const coverImage = replaceInvalidCover(rawCover || gallery[0] || '/images/lascondes-cover.jpg');
+
           const building: Building = {
             id: b.id,
             slug: b.slug || `edificio-${b.id}`,
@@ -649,14 +733,21 @@ export async function getBuildingBySlug(slug: string): Promise<(Building & { pre
             comuna: b.comuna,
             address: b.address || 'Dirección no disponible',
             amenities: Array.isArray(b.amenities) && b.amenities.length > 0 ? b.amenities : [],
-            gallery: Array.isArray(b.gallery) && b.gallery.length > 0 ? b.gallery : [],
-            coverImage: b.cover_image || (Array.isArray(b.gallery) && b.gallery.length > 0 ? b.gallery[0] : undefined),
+            gallery,
+            coverImage,
             badges: Array.isArray(b.badges) ? b.badges : [],
             serviceLevel: b.service_level as 'pro' | 'standard' | undefined,
+            metroCercano: buildingMetroCercanoGetBySlug,
+            terminaciones: parseStringArray(b.terminaciones),
+            equipamiento: parseStringArray(b.equipamiento),
             units: (b.units || []).map((u: any) => {
+              const codigoUnidad = (u.unidad && String(u.unidad).trim()) ? String(u.unidad).trim() : (u.id?.split("-").pop() ?? u.id?.substring(0, 8) ?? u.id);
+              const slugFromPmq = (u.id_pmq && String(u.id_pmq).trim()) ? normalizePmqId(u.id_pmq) : undefined;
               return normalizeUnit(
                 {
                   id: u.id,
+                  codigoUnidad,
+                  ...(slugFromPmq && { slug: slugFromPmq }),
                   tipologia: u.tipologia || 'Studio',
                   m2: u.m2,
                   price: u.price || 0,
@@ -669,6 +760,7 @@ export async function getBuildingBySlug(slug: string): Promise<(Building & { pre
                   imagesTipologia: u.images_tipologia,
                   imagesAreasComunes: u.images_areas_comunes,
                   images: u.images,
+                  videos: u.videos,
                 },
                 b.id,
                 b.slug || `edificio-${b.id}`

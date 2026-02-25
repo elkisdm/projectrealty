@@ -6,7 +6,7 @@ import { SearchPills } from "@/components/marketing/SearchPills";
 import type { QuickFiltersRowProps } from "@/types/search";
 
 const COMUNAS_PRINCIPALES = ['Las Condes', 'Ñuñoa', 'Providencia', 'Santiago', 'Macul', 'La Florida'];
-const DORMITORIOS_OPTIONS = ['Estudio', '1', '2', '3'] as const;
+const DORMITORIOS_MIN_OPTIONS = ['1+', '2+', '3+', '4+'] as const;
 
 /**
  * QuickFiltersRow component - Mobile-first filter row
@@ -14,9 +14,9 @@ const DORMITORIOS_OPTIONS = ['Estudio', '1', '2', '3'] as const;
  */
 export const QuickFiltersRow = memo(function QuickFiltersRow({
   selectedComuna,
-  selectedDormitorios,
+  selectedDormitoriosMin,
   onComunaChange,
-  onDormitoriosChange,
+  onDormitoriosMinChange,
   onMoreFiltersClick,
   activeFiltersCount,
   className = "",
@@ -25,8 +25,11 @@ export const QuickFiltersRow = memo(function QuickFiltersRow({
 
   const handleClear = useCallback(() => {
     onComunaChange(undefined);
-    onDormitoriosChange(undefined);
-  }, [onComunaChange, onDormitoriosChange]);
+    onDormitoriosMinChange(undefined);
+  }, [onComunaChange, onDormitoriosMinChange]);
+
+  const selectedDormitorioLabel =
+    typeof selectedDormitoriosMin === "number" ? `${selectedDormitoriosMin}+` : undefined;
 
   return (
     <div className={`flex items-center gap-2 overflow-x-auto pb-2 ${className}`}>
@@ -42,13 +45,20 @@ export const QuickFiltersRow = memo(function QuickFiltersRow({
         />
       </div>
 
-      {/* Dormitorios Filter - Compact pill */}
+      {/* Dormitorios mínimos */}
       <div className="flex-shrink-0" role="group" aria-label="Filtro de dormitorios">
         <SearchPills
-          options={[...DORMITORIOS_OPTIONS]}
-          selected={selectedDormitorios}
-          onSelect={onDormitoriosChange}
-          multiple={true}
+          options={[...DORMITORIOS_MIN_OPTIONS]}
+          selected={selectedDormitorioLabel}
+          onSelect={(value) => {
+            if (!value || Array.isArray(value)) {
+              onDormitoriosMinChange(undefined);
+              return;
+            }
+            const parsed = Number(value.replace("+", ""));
+            onDormitoriosMinChange(Number.isFinite(parsed) ? parsed : undefined);
+          }}
+          multiple={false}
           className="flex-nowrap"
           label="" // Hide label, aria-label on parent
         />

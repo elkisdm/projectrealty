@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { createRateLimiter } from '@lib/rate-limit';
 import { signInAdmin } from '@lib/admin/auth-supabase';
 import { setSupabaseCookies } from '@lib/admin/supabase-cookies';
+import { adminError, adminOk, createAdminMutationMeta } from '@lib/admin/contracts';
 import { logger } from '@lib/logger';
 
 // Force dynamic rendering
@@ -18,6 +19,9 @@ const LoginSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  const requestMeta = createAdminMutationMeta();
+  const responseHeaders = { "x-request-id": requestMeta.request_id };
+
   try {
     // Rate limiting
     const ipHeader = request.headers.get('x-forwarded-for');
@@ -25,15 +29,17 @@ export async function POST(request: NextRequest) {
 
     const rateLimitResult = await limiter.check(ip);
     if (!rateLimitResult.ok) {
-      return NextResponse.json(
-        { 
-          error: 'rate_limited', 
-          message: 'Demasiados intentos. Por favor intenta más tarde.',
-          retryAfter: rateLimitResult.retryAfter,
-        },
+      return adminError(
+        "rate_limited",
+        "Demasiados intentos. Por favor intenta más tarde.",
         {
           status: 429,
-          headers: { 'Retry-After': String(rateLimitResult.retryAfter ?? 60) },
+          details: { retryAfter: rateLimitResult.retryAfter },
+          meta: requestMeta,
+          headers: {
+            ...responseHeaders,
+            "Retry-After": String(rateLimitResult.retryAfter ?? 60),
+          },
         }
       );
     }
@@ -43,14 +49,12 @@ export async function POST(request: NextRequest) {
     const validatedData = LoginSchema.safeParse(body);
 
     if (!validatedData.success) {
-      return NextResponse.json(
-        { 
-          error: 'validation_error', 
-          message: 'Datos inválidos',
-          details: validatedData.error.errors,
-        },
-        { status: 400 }
-      );
+      return adminError("validation_error", "Datos inválidos", {
+        status: 400,
+        details: validatedData.error.errors,
+        meta: requestMeta,
+        headers: responseHeaders,
+      });
     }
 
     const { email, password } = validatedData.data;
@@ -62,47 +66,54 @@ export async function POST(request: NextRequest) {
       // Logging sin password (solo email)
       logger.warn(`[AUTH] Intento de login fallido para: ${email}`);
       
-      return NextResponse.json(
-        { 
-          error: 'invalid_credentials', 
-          message: 'Email o password incorrectos',
-        },
-        { status: 401 }
-      );
+      return adminError("unauthorized", "Email o password incorrectos", {
+        status: 401,
+        meta: requestMeta,
+        headers: responseHeaders,
+      });
     }
 
     // Logging exitoso (sin password)
     logger.log(`[AUTH] Login exitoso para: ${email} (${session.user.role})`);
 
-    // Crear respuesta con cookies
-    const response = NextResponse.json(
+    if (!session.access_token || !session.refresh_token) {
+      logger.error('[AUTH] Sesión sin tokens:', { hasAccess: !!session.access_token, hasRefresh: !!session.refresh_token });
+      return adminError("internal_error", "Error al crear sesión. Reintenta.", {
+        status: 500,
+        meta: requestMeta,
+        headers: responseHeaders,
+      });
+    }
+
+    const response = adminOk(
       {
-        success: true,
+        authenticated: true,
         user: {
           id: session.user.id,
           email: session.user.email,
           role: session.user.role,
         },
       },
-      { status: 200 }
+      { status: 200, meta: requestMeta, headers: responseHeaders }
     );
 
-    // Establecer cookies de sesión
-    return setSupabaseCookies(response, session);
+    setSupabaseCookies(response, session);
+    return response;
   } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
     logger.error('[AUTH] Error inesperado en login:', error);
-    
-    return NextResponse.json(
-      { 
-        error: 'internal_error', 
-        message: 'Error interno del servidor',
-      },
-      { status: 500 }
+
+    return adminError(
+      "internal_error",
+      process.env.NODE_ENV === 'development' ? message : 'Error interno del servidor',
+      {
+        status: 500,
+        meta: requestMeta,
+        headers: responseHeaders,
+      }
     );
   }
 }
-
-
 
 
 

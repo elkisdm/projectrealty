@@ -2,8 +2,8 @@ import { z } from "zod";
 
 /**
  * Schema de validación para el formulario de búsqueda
- * Según especificación: solo q, comuna, precioMin, precioMax, dormitorios
- * NO incluye baños (removido según especificación)
+ * Nuevos campos Hero Cocktail: intent, moveIn, beds, priceMax, petFriendly, parking, storage
+ * Campos legacy mantenidos para compatibilidad: dormitorios, precioMax, mascotas, estacionamiento, bodega
  * 
  * Nota: El formulario trabaja con strings, pero transformamos a numbers al validar
  */
@@ -12,6 +12,17 @@ export const searchFormInputSchema = z.object({
   q: z.string().max(100, "La búsqueda no puede tener más de 100 caracteres").optional(),
   comuna: z.string().optional(),
   precioMin: z.string().optional(),
+  
+  // New fields for Hero Cocktail
+  intent: z.enum(["rent", "buy", "invest"]).optional(),
+  moveIn: z.enum(["now", "30d", "60d"]).optional(),
+  beds: z.enum(["studio", "1", "2", "3plus"]).optional(),
+  priceMax: z.string().optional(),
+  petFriendly: z.enum(["true", "false"]).optional(),
+  parking: z.enum(["true", "false"]).optional(),
+  storage: z.enum(["true", "false"]).optional(),
+  
+  // Legacy fields (kept for backwards compatibility)
   precioMax: z.string().optional(),
   dormitorios: z.enum(["Estudio", "1", "2", "3"], {
     errorMap: () => ({ message: "Selecciona una opción válida" }),
@@ -32,6 +43,22 @@ export const searchFormSchema = searchFormInputSchema
           return isNaN(num) ? undefined : num;
         })()
       : undefined,
+    
+    // New fields (intent defaults to "rent")
+    intent: data.intent || "rent",
+    moveIn: data.moveIn,
+    beds: data.beds,
+    priceMax: data.priceMax && data.priceMax.trim() !== ""
+      ? (() => {
+          const num = Number(data.priceMax);
+          return isNaN(num) ? undefined : num;
+        })()
+      : undefined,
+    petFriendly: data.petFriendly === "true" ? true : data.petFriendly === "false" ? false : undefined,
+    parking: data.parking === "true" ? true : data.parking === "false" ? false : undefined,
+    storage: data.storage === "true" ? true : data.storage === "false" ? false : undefined,
+    
+    // Legacy fields (kept for backwards compatibility)
     precioMax: data.precioMax && data.precioMax.trim() !== ""
       ? (() => {
           const num = Number(data.precioMax);
@@ -48,6 +75,17 @@ export const searchFormSchema = searchFormInputSchema
       q: z.string().max(100).optional(),
       comuna: z.string().optional(),
       precioMin: z.number().min(0, "El precio mínimo debe ser mayor o igual a 0").optional(),
+      
+      // New fields (intent defaults to "rent" if not provided)
+      intent: z.enum(["rent", "buy", "invest"]).optional(),
+      moveIn: z.enum(["now", "30d", "60d"]).optional(),
+      beds: z.enum(["studio", "1", "2", "3plus"]).optional(),
+      priceMax: z.number().min(0, "El precio máximo debe ser mayor o igual a 0").optional(),
+      petFriendly: z.boolean().optional(),
+      parking: z.boolean().optional(),
+      storage: z.boolean().optional(),
+      
+      // Legacy fields
       precioMax: z.number().min(0, "El precio máximo debe ser mayor o igual a 0").optional(),
       dormitorios: z.enum(["Estudio", "1", "2", "3"]).optional(),
       estacionamiento: z.boolean().optional(),
@@ -57,15 +95,16 @@ export const searchFormSchema = searchFormInputSchema
   )
   .refine(
     (data) => {
-      // Validar que precioMax >= precioMin si ambos están presentes
-      if (data.precioMin !== undefined && data.precioMax !== undefined) {
-        return data.precioMax >= data.precioMin;
+      // Validar que priceMax/precioMax >= precioMin si están presentes
+      const maxPrice = data.priceMax || data.precioMax;
+      if (data.precioMin !== undefined && maxPrice !== undefined) {
+        return maxPrice >= data.precioMin;
       }
       return true;
     },
     {
       message: "El precio máximo debe ser mayor o igual al precio mínimo",
-      path: ["precioMax"],
+      path: ["priceMax"],
     }
   );
 

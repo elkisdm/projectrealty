@@ -94,13 +94,13 @@ export function PriceBreakdown({
       </div>
 
       {/* Contenedor principal */}
-      <div className="bg-gray-800:bg-gray-800 rounded-xl shadow-lg border border-gray-700:border-gray-700 p-4 space-y-4">
+      <div className="bg-[var(--card)] dark:bg-gray-800 rounded-xl shadow-lg border border-[var(--border)] dark:border-gray-700 p-4 space-y-4">
         {/* Título de la unidad */}
         <div className="text-center">
-          <h2 className="text-xl font-bold text-white:text-white mb-1">
+          <h2 className="text-xl font-bold text-[var(--text)] mb-1">
             Departamento {selectedUnit.id}
           </h2>
-          <p className="text-sm text-gray-300:text-gray-400">
+          <p className="text-sm text-[var(--text-secondary)] dark:text-[var(--subtext)]">
             {unitDetails.tipologia} • Piso {unitDetails.piso}
           </p>
         </div>
@@ -108,46 +108,46 @@ export function PriceBreakdown({
         {/* Precio total mensual destacado */}
         <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-xl border border-blue-200 dark:border-blue-700 p-4">
           <div className="text-center">
-            <div className="text-sm text-gray-300:text-gray-400 mb-1">
+            <div className="text-sm text-[var(--text-secondary)] dark:text-[var(--subtext)] mb-1">
               Total estimado / mes
             </div>
-            <div className="text-2xl font-bold text-white:text-white mb-1">
+            <div className="text-2xl font-bold text-[var(--text)] mb-1">
               ${precioTotalMensual.toLocaleString('es-CL')}
             </div>
-            <div className="text-xs text-gray-400:text-gray-400">
+            <div className="text-xs text-[var(--text-secondary)] dark:text-[var(--subtext)]">
               Arriendo + Gastos comunes
             </div>
           </div>
         </div>
 
         {/* Tabla de desglose de precios */}
-        <div className="bg-gray-900:bg-gray-700 rounded-xl p-3">
-          <h3 className="font-semibold text-white:text-white text-center mb-3 text-sm">
+        <div className="bg-[var(--surface)] dark:bg-gray-700 rounded-xl p-3">
+          <h3 className="font-semibold text-[var(--text)] text-center mb-3 text-sm">
             Desglose de costos
           </h3>
 
           <dl className="space-y-2 relative">
             {/* Arriendo */}
             <div className="flex items-center justify-between">
-              <dt className="text-sm text-gray-300:text-gray-400 flex items-center gap-1">
+              <dt className="text-sm text-[var(--text-secondary)] dark:text-[var(--subtext)] flex items-center gap-1">
                 Arriendo
                 <Tooltip content="Precio base del arriendo mensual" />
               </dt>
-              <dd className="text-sm font-medium text-white:text-white">${discountPrice.toLocaleString('es-CL')}</dd>
+              <dd className="text-sm font-medium text-[var(--text)]">${discountPrice.toLocaleString('es-CL')}</dd>
             </div>
 
             {/* Gastos comunes */}
             <div className="flex items-center justify-between">
-              <dt className="text-sm text-gray-300:text-gray-400 flex items-center gap-1">
+              <dt className="text-sm text-[var(--text-secondary)] dark:text-[var(--subtext)] flex items-center gap-1">
                 Gastos comunes
                 <Tooltip content="Incluye mantención, administración y servicios comunes del edificio" />
               </dt>
-              <dd className="text-sm font-medium text-white:text-white">${gastosComunes.toLocaleString('es-CL')}</dd>
+              <dd className="text-sm font-medium text-[var(--text)]">${gastosComunes.toLocaleString('es-CL')}</dd>
             </div>
 
             {/* Garantía */}
             <div className="flex items-center justify-between">
-              <dt className="text-sm text-gray-300:text-gray-400 flex items-center gap-1">
+              <dt className="text-sm text-[var(--text-secondary)] dark:text-[var(--subtext)] flex items-center gap-1">
                 Garantía
                 <Tooltip
                   content={
@@ -157,7 +157,7 @@ export function PriceBreakdown({
                   }
                 />
               </dt>
-              <dd className="text-sm font-medium text-white:text-white">
+              <dd className="text-sm font-medium text-[var(--text)]">
                 ${garantiaTotal.toLocaleString('es-CL')}
                 {tieneCuotasGarantia && cuotaGarantia && (
                   <span className="text-xs text-gray-400 ml-1">
@@ -169,11 +169,11 @@ export function PriceBreakdown({
 
             {/* Comisión de corretaje */}
             <div className="flex items-center justify-between">
-              <dt className="text-sm text-gray-300:text-gray-400 flex items-center gap-1">
+              <dt className="text-sm text-[var(--text-secondary)] dark:text-[var(--subtext)] flex items-center gap-1">
                 Comisión de corretaje
                 <Tooltip content="Comisión de corretaje equivalente al 50% del arriendo, más IVA (19%) aplicado sobre esa comisión. Se paga una sola vez al inicio del contrato." />
               </dt>
-              <dd className="text-sm font-medium text-white:text-white">
+              <dd className="text-sm font-medium text-[var(--text)]">
                 {hasFreeCommission ? (
                   <span className="text-green-600">$0 (Gratis)</span>
                 ) : (
@@ -183,9 +183,9 @@ export function PriceBreakdown({
             </div>
 
             {/* Total destacado */}
-            <div className="flex items-center justify-between pt-2 border-t border-gray-700:border-gray-600">
-              <dt className="text-sm font-semibold text-white:text-white">Total mensual</dt>
-              <dd className="text-lg font-bold text-white:text-white">${precioTotalMensual.toLocaleString('es-CL')}</dd>
+            <div className="flex items-center justify-between pt-2 border-t border-[var(--border)] dark:border-gray-600">
+              <dt className="text-sm font-semibold text-[var(--text)]">Total mensual</dt>
+              <dd className="text-lg font-bold text-[var(--text)]">${precioTotalMensual.toLocaleString('es-CL')}</dd>
             </div>
           </dl>
         </div>
@@ -204,39 +204,39 @@ export function PriceBreakdown({
         </div>
 
         {/* Características principales */}
-        <div className="bg-gray-900:bg-gray-700 rounded-xl p-3">
-          <h3 className="font-semibold text-white:text-white text-center mb-3 text-sm">
+        <div className="bg-[var(--surface)] dark:bg-gray-700 rounded-xl p-3">
+          <h3 className="font-semibold text-[var(--text)] text-center mb-3 text-sm">
             Características principales
           </h3>
           <div className="grid grid-cols-3 gap-3 text-center">
-            <div className="bg-gray-800:bg-gray-600 rounded-lg p-2">
+            <div className="bg-[var(--soft)] dark:bg-gray-600 rounded-lg p-2">
               <Bed className="w-5 h-5 text-blue-600 mx-auto mb-1" />
-              <div className="text-sm font-semibold text-white:text-white">{unitDetails.dormitorios}</div>
-              <div className="text-xs text-gray-400:text-gray-400">Dorm.</div>
+              <div className="text-sm font-semibold text-[var(--text)]">{unitDetails.dormitorios}</div>
+              <div className="text-xs text-[var(--text-secondary)] dark:text-[var(--subtext)]">Dorm.</div>
             </div>
-            <div className="bg-gray-800:bg-gray-600 rounded-lg p-2">
+            <div className="bg-[var(--soft)] dark:bg-gray-600 rounded-lg p-2">
               <Bath className="w-5 h-5 text-blue-600 mx-auto mb-1" />
-              <div className="text-sm font-semibold text-white:text-white">{unitDetails.banos}</div>
-              <div className="text-xs text-gray-400:text-gray-400">Baños</div>
+              <div className="text-sm font-semibold text-[var(--text)]">{unitDetails.banos}</div>
+              <div className="text-xs text-[var(--text-secondary)] dark:text-[var(--subtext)]">Baños</div>
             </div>
-            <div className="bg-gray-800:bg-gray-600 rounded-lg p-2">
+            <div className="bg-[var(--soft)] dark:bg-gray-600 rounded-lg p-2">
               <Square className="w-5 h-5 text-blue-600 mx-auto mb-1" />
-              <div className="text-sm font-semibold text-white:text-white">{unitDetails.m2}</div>
-              <div className="text-xs text-gray-400:text-gray-400">m²</div>
+              <div className="text-sm font-semibold text-[var(--text)]">{unitDetails.m2}</div>
+              <div className="text-xs text-[var(--text-secondary)] dark:text-[var(--subtext)]">m²</div>
             </div>
             {/* New Chips */}
             {selectedUnit.orientacion && (
-              <div className="bg-gray-800:bg-gray-600 rounded-lg p-2 col-span-1">
-                <div className="text-sm font-semibold text-white:text-white">{selectedUnit.orientacion}</div>
-                <div className="text-xs text-gray-400:text-gray-400">Orient.</div>
+              <div className="bg-[var(--soft)] dark:bg-gray-600 rounded-lg p-2 col-span-1">
+                <div className="text-sm font-semibold text-[var(--text)]">{selectedUnit.orientacion}</div>
+                <div className="text-xs text-[var(--text-secondary)] dark:text-[var(--subtext)]">Orient.</div>
               </div>
             )}
             {selectedUnit.pet_friendly && (
-              <div className="bg-gray-800:bg-gray-600 rounded-lg p-2 col-span-2 flex items-center justify-center gap-2">
+              <div className="bg-[var(--soft)] dark:bg-gray-600 rounded-lg p-2 col-span-2 flex items-center justify-center gap-2">
                 <span className="text-xl">🐾</span>
                 <div className="text-left">
-                  <div className="text-xs font-semibold text-white:text-white">Mascotas</div>
-                  <div className="text-[10px] text-gray-400:text-gray-400">Permitidas</div>
+                  <div className="text-xs font-semibold text-[var(--text)]">Mascotas</div>
+                  <div className="text-[10px] text-[var(--text-secondary)] dark:text-[var(--subtext)]">Permitidas</div>
                 </div>
               </div>
             )}
@@ -249,21 +249,21 @@ export function PriceBreakdown({
             <div className="p-2 bg-green-100 dark:bg-green-800 rounded-lg">
               <DollarSign className="w-5 h-5 text-green-600 dark:text-green-400" />
             </div>
-            <h3 className="font-semibold text-white:text-white">
+            <h3 className="font-semibold text-[var(--text)]">
               Cálculo del primer pago
             </h3>
           </div>
 
           <div className="ml-11 mb-4">
             <div className="flex items-baseline gap-2">
-              <span className="text-sm text-gray-300:text-gray-400">
+              <span className="text-sm text-[var(--text-secondary)] dark:text-[var(--subtext)]">
                 Te mudas con
               </span>
               <span className="text-xl font-bold text-green-600 dark:text-green-400">
                 ${(originalPrice + gastosComunes).toLocaleString('es-CL')}
               </span>
             </div>
-            <div className="text-sm text-gray-400:text-gray-400 mt-1">
+            <div className="text-sm text-[var(--text-secondary)] dark:text-[var(--subtext)] mt-1">
               el {new Date().toLocaleDateString('es-CL', { day: 'numeric', month: 'short' })}
             </div>
           </div>
@@ -297,15 +297,15 @@ export function PriceBreakdown({
               >
                 <div className="mt-4 pt-4 border-t border-green-200 dark:border-green-700 space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-300:text-gray-400">Depósito</span>
+                    <span className="text-[var(--text-secondary)] dark:text-[var(--subtext)]">Depósito</span>
                     <span className="font-medium">${originalPrice.toLocaleString('es-CL')}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-300:text-gray-400">Primer mes</span>
+                    <span className="text-[var(--text-secondary)] dark:text-[var(--subtext)]">Primer mes</span>
                     <span className="font-medium">${discountPrice.toLocaleString('es-CL')}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-300:text-gray-400">Gastos comunes</span>
+                    <span className="text-[var(--text-secondary)] dark:text-[var(--subtext)]">Gastos comunes</span>
                     <span className="font-medium">${gastosComunes.toLocaleString('es-CL')}</span>
                   </div>
                   <div className="flex justify-between text-sm font-semibold pt-2 border-t border-green-200 dark:border-green-700">
@@ -332,7 +332,7 @@ export function PriceBreakdown({
           {/* Botón deshabilitado temporalmente */}
           {/* <button
             onClick={onSendQuotation}
-            className="w-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-white:text-white text-white font-semibold py-2.5 px-4 rounded-lg transition-colors duration-100 text-sm"
+            className="w-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-[var(--text)] font-semibold py-2.5 px-4 rounded-lg transition-colors duration-100 text-sm"
             aria-label="Postular"
           >
             Postular

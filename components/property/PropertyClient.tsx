@@ -13,13 +13,11 @@ import { usePropertyUnit } from "@hooks/usePropertyUnit";
 
 // Componentes de propiedad
 import { PropertyAboveFoldMobile } from "./PropertyAboveFoldMobile";
-import { PropertyBreadcrumb } from "./PropertyBreadcrumb";
 import { PropertySidebar } from "./PropertySidebar";
 import { PropertyBookingCard } from "./PropertyBookingCard";
 import { PropertyTabs } from "./PropertyTabs";
 import { PropertySimilarUnits } from "./PropertySimilarUnits";
 import { CommuneLifeSection } from "./CommuneLifeSection";
-import { PropertyFAQ } from "./PropertyFAQ";
 import { UnitSelectorModal } from "./UnitSelectorModal";
 
 // Import directo para evitar problemas de lazy loading
@@ -318,7 +316,6 @@ export function PropertyClient({
             <ErrorBoundary>
                 <div className="min-h-screen bg-bg">
                     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 lg:py-8">
-                        <PropertyBreadcrumb building={building} unit={selectedUnit || building.units[0] || undefined} variant={variant} />
                         <div className="mt-6">
                             <a
                                 href={`/property/${building.slug}`}
@@ -341,10 +338,7 @@ export function PropertyClient({
     return (
         <ErrorBoundary>
             <div className="min-h-screen bg-bg">
-                <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 lg:py-8">
-                    {/* Breadcrumb accesible */}
-                    <PropertyBreadcrumb building={building} unit={selectedUnit || undefined} variant={variant} />
-
+                <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 lg:py-8 overflow-x-hidden">
                     {/* Layout principal: 3 columnas */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
                         {/* Columna principal (2/3) */}
@@ -429,9 +423,6 @@ export function PropertyClient({
                                 </Suspense>
                             </section>
 
-                            {/* Preguntas frecuentes */}
-                            <PropertyFAQ building={building} variant={variant} />
-
                             {/* Sticky Mobile CTA ya est? integrado en PropertyAboveFoldMobile */}
                         </div>
 
@@ -456,6 +447,8 @@ export function PropertyClient({
                     propertyName={building.name}
                     propertyAddress={building.address}
                     propertyImage={building.coverImage}
+                    unit={selectedUnit ?? undefined}
+                    building={building}
                     onSuccess={(visitData) => {
                         logger.log('? Visita creada exitosamente:', visitData);
                         track(ANALYTICS_EVENTS.VISIT_SCHEDULED, {

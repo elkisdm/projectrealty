@@ -19,8 +19,8 @@ function createClient(
   key?: string, 
   options?: { auth: { persistSession: boolean } }
 ): SupabaseClientType {
-  // Si no hay configuración, usar mock
-  if (!supabaseUrl || !supabaseAnonKey || !url || !key) {
+  // Si no hay configuración en los parámetros, usar mock
+  if (!url || !key) {
     if (!supabaseUrl || !supabaseAnonKey) {
       logger.warn('⚠️  Supabase no configurado, usando mock');
     }
@@ -48,5 +48,8 @@ export const supabaseAdmin = supabaseUrl && supabaseServiceKey
       },
     })
   : createClient(); // Mock si no hay configuración
+
+/** True si la BD está configurada (SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY). Usar para logs/diagnóstico. */
+export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseServiceKey);
 
 export type { SupabaseClientType as SupabaseClient };

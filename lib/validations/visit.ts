@@ -58,25 +58,52 @@ export function normalizeChileanPhone(phone: string): string {
 }
 
 /**
+ * Valida RUT chileno (formato 7-8 dígitos + guión + dígito verificador 0-9 o K)
+ * Incluye validación del dígito verificador (módulo 11)
+ */
+export function isValidChileanRut(rut: string): boolean {
+  const trimmed = rut.trim();
+  if (!trimmed) return false;
+  // Aceptar con o sin puntos; si no hay guión, último carácter = DV (ej. 123456789 → 12345678-9)
+  let normalized = trimmed.replace(/\./g, "");
+  if (/^[0-9]{7,8}[0-9kK]{1}$/.test(normalized) && !normalized.includes("-")) {
+    normalized = normalized.slice(0, -1) + "-" + normalized.slice(-1);
+  }
+  if (!/^[0-9]{7,8}-[0-9kK]{1}$/.test(normalized)) return false;
+
+  const rutClean = normalized.replace("-", "");
+  const dv = rutClean.slice(-1).toUpperCase();
+  const rutNumber = parseInt(rutClean.slice(0, -1), 10);
+
+  if (Number.isNaN(rutNumber)) return false;
+
+  let sum = 0;
+  let multiplier = 2;
+  const digitsReversed = rutNumber.toString().split("").reverse();
+
+  for (let idx = 0; idx < digitsReversed.length; idx++) {
+    sum += Number(digitsReversed[idx]) * multiplier;
+    multiplier = multiplier === 7 ? 2 : multiplier + 1;
+  }
+
+  const expectedDv = 11 - (sum % 11);
+  const calculatedDv = expectedDv === 11 ? "0" : expectedDv === 10 ? "K" : expectedDv.toString();
+
+  return dv.toUpperCase() === calculatedDv;
+}
+
+/**
  * Valida si un teléfono tiene formato chileno válido
  * Acepta múltiples formatos antes de normalización
  */
 export function isValidChileanPhone(phone: string): boolean {
-  // Remover espacios y caracteres especiales para validar
-  const cleaned = phone.replace(/[\s\-().]/g, '');
-  
-  // Formato: +569XXXXXXXX (11 dígitos con +569)
-  if (cleaned.match(/^\+569\d{8}$/)) return true;
-  
-  // Formato: 569XXXXXXXX (10 dígitos con 569)
-  if (cleaned.match(/^569\d{8}$/)) return true;
-  
-  // Formato: 9XXXXXXXX (9 dígitos empezando con 9)
+  const trimmed = phone.trim();
+  if (!trimmed) return false;
+  const cleaned = trimmed.replace(/[\s\-().]/g, "");
+  // Móvil Chile: 9 dígitos empezando con 9, o con prefijo +56/56
   if (cleaned.match(/^9\d{8}$/)) return true;
-  
-  // Formato: +56 9 XXXX XXXX (con espacios)
+  if (cleaned.match(/^569\d{8}$/)) return true;
   if (cleaned.match(/^\+569\d{8}$/)) return true;
-  
   return false;
 }
 
@@ -100,14 +127,24 @@ export const visitFormSchema = z.object({
   
   phone: z
     .string()
+    .trim()
     .min(1, "El teléfono es requerido")
     .refine(
       (val) => isValidChileanPhone(val),
       {
-        message: "El teléfono debe tener un formato chileno válido (+56 9 XXXX XXXX, 9XXXXXXXX, etc.)"
+        message: "Formato chileno: 9 XXXX XXXX o +56 9 XXXX XXXX"
       }
     )
-    .transform((val) => normalizeChileanPhone(val)), // Normalizar automáticamente
+    .transform((val) => normalizeChileanPhone(val)),
+
+  rut: z
+    .string()
+    .trim()
+    .min(1, "El RUT es requerido")
+    .refine(
+      (val) => isValidChileanRut(val),
+      { message: "RUT inválido (ej: 12.345.678-9 o 12345678-9)" }
+    ),
 });
 
 // Tipo para el formulario
@@ -118,6 +155,7 @@ export type VisitFormInput = {
   name: string;
   email?: string;
   phone: string;
+  rut: string;
 };
 
 

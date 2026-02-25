@@ -95,7 +95,7 @@ export async function getFeaturedUnits(
         );
         break;
 
-      case 'dormitorios':
+      case 'dormitorios': {
         const tipologias = dormitoriosToTipologia(filter.value as string);
         filteredUnits = allUnits.filter((item) => {
           // Verificar por tipología
@@ -110,13 +110,15 @@ export async function getFeaturedUnits(
           return false;
         });
         break;
+      }
 
-      case 'precio':
+      case 'precio': {
         const maxPrice = typeof filter.value === 'number' ? filter.value : parseInt(filter.value as string, 10);
         filteredUnits = allUnits.filter((item) => item.unit.price <= maxPrice);
         break;
+      }
 
-      case 'featured':
+      case 'featured': {
         // Por ahora, featured = unidades disponibles de edificios con más unidades disponibles
         // O podemos usar un campo específico si existe en el futuro
         filteredUnits = allUnits;
@@ -132,6 +134,7 @@ export async function getFeaturedUnits(
           return countB - countA;
         });
         break;
+      }
     }
 
     // Limitar resultados

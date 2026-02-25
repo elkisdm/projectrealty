@@ -44,6 +44,7 @@ export const Bell = createIcon('Bell');
 export const CalendarIcon = createIcon('CalendarIcon');
 export const BarChart3 = createIcon('BarChart3');
 export const Download = createIcon('Download');
+export const Heart = createIcon('Heart');
 
 export default {} as any;
 

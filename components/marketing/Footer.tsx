@@ -75,7 +75,7 @@ export function Footer() {
                             </span>
                         </div>
                         <p className="text-subtext text-sm leading-relaxed mb-4">
-                            Arrienda departamentos con 0% de comisión. Encuentra tu hogar ideal en Santiago de manera fácil y transparente.
+                            Arrienda departamentos en Santiago. Compara precios, agenda visitas y encuentra tu hogar de forma fácil y transparente.
                         </p>
                         <div className="flex items-center gap-2 text-xs text-subtext">
                             <Shield className="w-4 h-4" aria-hidden="true" />
@@ -98,10 +98,10 @@ export function Footer() {
                                 </li>
                                 <li>
                                     <Link
-                                        href="/arrienda-sin-comision"
+                                        href="/buscar"
                                         className="text-subtext hover:text-text transition-colors text-sm"
                                     >
-                                        Arriendo sin comisión
+                                        Departamentos destacados
                                     </Link>
                                 </li>
                                 <li>

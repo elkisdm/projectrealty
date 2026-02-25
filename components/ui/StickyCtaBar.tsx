@@ -1,8 +1,20 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Calendar, MessageCircle, DollarSign } from "lucide-react";
+import {
+  Calendar,
+  MessageCircle,
+  DollarSign,
+  Wallet,
+  Shield,
+  RefreshCw,
+  MapPin,
+  Bed,
+  Bath,
+  PawPrint,
+  Ruler
+} from "lucide-react";
 import { track, ANALYTICS_EVENTS } from "@lib/analytics";
 import type { Unit } from "@schemas/models";
 import { useReducedMotion } from "@hooks/useReducedMotion";
@@ -16,6 +28,9 @@ interface StickyCtaBarProps {
   commune?: string;
   unit?: Unit;
   buildingId?: string;
+  buildingName?: string;
+  buildingAddress?: string;
+  onSelectAnotherUnit?: () => void;
 }
 
 export const StickyCtaBar: React.FC<StickyCtaBarProps> = ({
@@ -24,7 +39,6 @@ export const StickyCtaBar: React.FC<StickyCtaBarProps> = ({
   onWhatsApp,
   isVisible: _isVisible = false,
   propertyId,
-  commune,
   unit,
   buildingId
 }) => {
@@ -97,7 +111,7 @@ export const StickyCtaBar: React.FC<StickyCtaBarProps> = ({
           aria-label="Acciones rápidas para agendar visita"
         >
           <div
-            className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-t border-gray-200/50 dark:border-gray-700/50 shadow-lg shadow-black/10"
+            className="bg-[var(--card)]/95 backdrop-blur-xl border-t border-[var(--border)]/50 shadow-lg shadow-black/10"
             style={{
               paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))"
             }}
@@ -172,8 +186,39 @@ export const StickyCtaSidebar: React.FC<StickyCtaBarProps> = ({
   propertyId,
   commune,
   unit,
-  buildingId
+  buildingId,
+  buildingName,
+  buildingAddress,
+  onSelectAnotherUnit
 }) => {
+  const currencyFormatter = useMemo(
+    () =>
+      new Intl.NumberFormat("es-CL", {
+        style: "currency",
+        currency: "CLP",
+        maximumFractionDigits: 0,
+      }),
+    []
+  );
+
+  const numberFormatter = useMemo(
+    () =>
+      new Intl.NumberFormat("es-CL", {
+        maximumFractionDigits: 0,
+      }),
+    []
+  );
+
+  const formatCurrency = useCallback(
+    (value?: number | null) => {
+      if (typeof value !== "number") {
+        return "Por confirmar";
+      }
+      return currencyFormatter.format(value);
+    },
+    [currencyFormatter]
+  );
+
   const handleBookClick = useCallback(() => {
     track(ANALYTICS_EVENTS.CTA_CLICK, {
       cta_type: "schedule_visit",
@@ -196,50 +241,240 @@ export const StickyCtaSidebar: React.FC<StickyCtaBarProps> = ({
     onWhatsApp();
   }, [onWhatsApp, buildingId, propertyId, unit]);
 
+  const handleSelectAnotherUnit = useCallback(() => {
+    if (onSelectAnotherUnit) {
+      onSelectAnotherUnit();
+      return;
+    }
+    const anchor = document.getElementById("units-section");
+    if (anchor) {
+      anchor.scrollIntoView({ behavior: "smooth", block: "start" });
+    } else {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [onSelectAnotherUnit]);
+
+  const gastoComun =
+    unit?.gc ?? unit?.gastosComunes ?? unit?.gastoComun ?? null;
+  const garantiaHelper =
+    typeof unit?.garantia_cuotas === "number" && unit.garantia_cuotas > 0
+      ? `Hasta ${unit.garantia_cuotas} cuota${
+          unit.garantia_cuotas === 1 ? "" : "s"
+        }`
+      : typeof unit?.garantia_meses === "number" && unit.garantia_meses > 0
+      ? `${unit.garantia_meses} mes${
+          unit.garantia_meses === 1 ? "" : "es"
+        } de garantía`
+      : undefined;
+  const reajusteValue =
+    typeof unit?.reajuste_meses === "number" && unit.reajuste_meses > 0
+      ? `Cada ${unit.reajuste_meses} meses`
+      : unit?.reajuste || "Según UF";
+
+  const metricItems = useMemo(() => {
+    const items: Array<{
+      key: string;
+      label: string;
+      value: string;
+      helper?: string;
+      icon: React.ComponentType<{ className?: string }>;
+      accent: string;
+    }> = [
+      {
+        key: "rent",
+        label: "Valor arriendo",
+        value: formatCurrency(unit?.price ?? priceMonthly),
+        helper:
+          typeof unit?.meses_descuento === "number" && unit.meses_descuento > 0
+            ? `Precio fijo primeros ${unit.meses_descuento} meses`
+            : "Tarifa mensual referencial",
+        icon: DollarSign,
+        accent: "text-indigo-600 bg-indigo-50",
+      },
+    ];
+
+    if (typeof gastoComun === "number") {
+      items.push({
+        key: "gc",
+        label: "Gasto común fijo",
+        value: formatCurrency(gastoComun),
+        helper: "Monto referencial mensual",
+        icon: Wallet,
+        accent: "text-amber-600 bg-amber-50",
+      });
+    }
+
+    if (typeof unit?.garantia === "number") {
+      items.push({
+        key: "guarantee",
+        label: "Garantía",
+        value: formatCurrency(unit.garantia),
+        helper: garantiaHelper || "Revisa facilidades disponibles",
+        icon: Shield,
+        accent: "text-emerald-600 bg-emerald-50",
+      });
+    }
+
+    items.push({
+      key: "reajuste",
+      label: "Reajuste",
+      value: reajusteValue,
+      helper: "Arriendo se ajusta según contrato",
+      icon: RefreshCw,
+      accent: "text-purple-600 bg-purple-50",
+    });
+
+    return items;
+  }, [formatCurrency, gastoComun, garantiaHelper, reajusteValue, unit, priceMonthly]);
+
+  const summaryChips = useMemo(() => {
+    const chips: Array<{
+      key: string;
+      label: string;
+      icon: React.ComponentType<{ className?: string }>;
+    }> = [];
+
+    const surface = unit?.m2 ?? unit?.area_interior_m2;
+    if (typeof surface === "number" && surface > 0) {
+      chips.push({
+        key: "surface",
+        icon: Ruler,
+        label: `${numberFormatter.format(surface)} m²`,
+      });
+    }
+
+    const bedrooms = unit?.dormitorios ?? unit?.bedrooms;
+    if (typeof bedrooms === "number") {
+      chips.push({
+        key: "bedrooms",
+        icon: Bed,
+        label: `${bedrooms} dormitorio${bedrooms === 1 ? "" : "s"}`,
+      });
+    }
+
+    const bathrooms = unit?.banos ?? unit?.bathrooms;
+    if (typeof bathrooms === "number") {
+      chips.push({
+        key: "bathrooms",
+        icon: Bath,
+        label: `${bathrooms} baño${bathrooms === 1 ? "" : "s"}`,
+      });
+    }
+
+    if (unit?.pet_friendly || unit?.petFriendly) {
+      chips.push({
+        key: "pets",
+        icon: PawPrint,
+        label: "Pet-friendly",
+      });
+    }
+
+    return chips;
+  }, [numberFormatter, unit]);
+
+  const locationLabel = buildingAddress || commune || "Ubicación por confirmar";
+  const unitLabel =
+    unit?.tipologia || unit?.slug || unit?.codigoUnidad || "Unidad disponible";
+
   return (
-    <div className="hidden lg:block sticky top-6">
-      <div className="bg-gray-800:bg-gray-800 rounded-2xl shadow-lg border border-gray-700:border-gray-700 p-6">
-        {/* Precio destacado */}
-        <div className="text-center mb-6">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <DollarSign className="w-6 h-6 text-green-600 dark:text-green-400" />
-            <span className="text-2xl font-bold text-green-700 dark:text-green-300">
-              ${priceMonthly.toLocaleString('es-CL')}
-            </span>
+    <aside className="hidden lg:block sticky top-6" aria-label="Resumen de la unidad y acciones rápidas">
+      <div className="ml-auto max-w-sm rounded-3xl border border-gray-100 bg-[var(--card)] p-8 shadow-2xl shadow-violet-200/60 dark:border-gray-800 dark:bg-gray-900 dark:shadow-black/30">
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-indigo-600 dark:text-indigo-300">
+            <span>{unitLabel}</span>
+            {unit?.codigoUnidad && (
+              <span className="text-gray-400 dark:text-gray-500">· {unit.codigoUnidad}</span>
+            )}
           </div>
-          <span className="text-sm text-gray-300:text-gray-400">
-            Total estimado / mes
-          </span>
+          <div>
+            <p className="text-lg font-semibold text-[var(--text)]">
+              {buildingName || "Condominio disponible"}
+            </p>
+            <p className="mt-1 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+              <MapPin className="h-4 w-4 text-gray-400" aria-hidden="true" />
+              <span>{locationLabel}</span>
+            </p>
+          </div>
+          {summaryChips.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {summaryChips.map((chip) => (
+                <span
+                  key={chip.key}
+                  className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-medium text-gray-700 dark:border-gray-700 dark:bg-gray-800/70 dark:text-gray-200"
+                >
+                  <chip.icon className="h-3.5 w-3.5" aria-hidden="true" />
+                  {chip.label}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Botones de acción */}
-        <div className="space-y-3">
+        <div className="mt-6 rounded-2xl border border-indigo-100 bg-gradient-to-br from-white via-indigo-50 to-indigo-100 p-5 text-center dark:border-indigo-900/60 dark:from-gray-900 dark:via-gray-900 dark:to-indigo-950/40">
+          <p className="text-sm font-semibold uppercase tracking-wide text-indigo-700 dark:text-indigo-300">
+            Arriendo mensual
+          </p>
+          <p className="mt-2 text-3xl font-bold text-[var(--text)]">
+            {formatCurrency(unit?.price ?? priceMonthly)}
+            <span className="ml-1 text-base font-medium text-gray-500 dark:text-gray-300">/mes</span>
+          </p>
+          {typeof unit?.meses_descuento === "number" && unit.meses_descuento > 0 && (
+            <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
+              Precio fijo primeros {unit.meses_descuento} meses
+            </p>
+          )}
+        </div>
+
+        <ul className="mt-6 space-y-4">
+          {metricItems.map((item) => (
+            <li key={item.key} className="flex items-start gap-3">
+              <span
+                className={`flex h-11 w-11 items-center justify-center rounded-2xl text-base font-semibold ${item.accent}`}
+                aria-hidden="true"
+              >
+                <item.icon className="h-5 w-5" />
+              </span>
+              <div>
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{item.label}</p>
+                <p className="text-lg font-semibold text-[var(--text)]">{item.value}</p>
+                {item.helper && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{item.helper}</p>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
+
+        <div className="mt-6 space-y-3">
           <button
             onClick={handleBookClick}
-            className="w-full flex items-center justify-center gap-3 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            className="w-full rounded-2xl bg-gradient-to-r from-indigo-500 via-violet-500 to-purple-600 py-4 text-center text-base font-semibold text-white shadow-lg shadow-violet-300/50 transition-transform duration-200 hover:scale-[1.01] focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"
             aria-label="Agendar visita a la propiedad"
           >
-            <Calendar className="w-5 h-5" aria-hidden="true" />
-            <span>Agendar visita</span>
+            Agendar visita
           </button>
 
           <button
             onClick={handleWhatsAppClick}
-            className="w-full flex items-center justify-center gap-3 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+            className="w-full rounded-2xl bg-emerald-500 py-4 text-center text-base font-semibold text-white shadow-lg shadow-emerald-300/60 transition-transform duration-200 hover:scale-[1.01] focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
             aria-label="Contactar por WhatsApp"
           >
-            <MessageCircle className="w-5 h-5" aria-hidden="true" />
-            <span>Hablar por WhatsApp</span>
+            WhatsApp
           </button>
         </div>
 
-        {/* Micro-trust */}
-        <div className="mt-4 text-center">
-          <p className="text-xs text-gray-400:text-gray-400">
-            Respaldado por Assetplan
-          </p>
+        <button
+          type="button"
+          onClick={handleSelectAnotherUnit}
+          className="mt-4 w-full text-center text-sm font-semibold text-indigo-600 underline-offset-4 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+        >
+          Selecciona otro departamento
+        </button>
+
+        <div className="mt-4 rounded-2xl bg-gray-50 p-4 text-center text-xs text-gray-500 dark:bg-gray-800/70 dark:text-gray-400">
+          Respaldado por Assetplan · Atención humana en menos de 15 minutos
         </div>
       </div>
-    </div>
+    </aside>
   );
 };

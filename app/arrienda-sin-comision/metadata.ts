@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Encuentra tu próximo hogar | Hommie",
-  description: "Departamentos listos para ti, con beneficios claros: sin comisión, pet friendly, garantía en cuotas y proceso 100% digital.",
+  title: "Departamentos destacados | Elkis Realtor",
+  description: "Departamentos listos para ti: pet friendly, garantía en cuotas y proceso 100% digital.",
   keywords: [
-    "arriendo sin comisión",
+    "arriendo Santiago",
     "departamentos pet friendly",
     "garantía en cuotas",
     "vivir en Santiago",
@@ -14,24 +14,24 @@ export const metadata: Metadata = {
     "arriendo digital"
   ],
   openGraph: {
-    title: "Encuentra tu próximo hogar | Hommie",
-    description: "Departamentos listos para ti, con beneficios claros: sin comisión, pet friendly, garantía en cuotas y proceso 100% digital.",
+    title: "Departamentos destacados | Elkis Realtor",
+    description: "Departamentos listos para ti: pet friendly, garantía en cuotas y proceso 100% digital.",
     type: "website",
     locale: "es_CL",
-    siteName: "Hommie",
+    siteName: "Elkis Realtor",
     images: [
       {
         url: "/images/og-arriendo-sin-comision.jpg",
         width: 1200,
         height: 630,
-        alt: "Encuentra tu próximo hogar - Hommie"
+        alt: "Departamentos destacados - Elkis Realtor"
       }
     ]
   },
   twitter: {
     card: "summary_large_image",
-    title: "Encuentra tu próximo hogar | Hommie",
-    description: "Departamentos listos para ti, con beneficios claros: sin comisión, pet friendly, garantía en cuotas y proceso 100% digital.",
+    title: "Departamentos destacados | Elkis Realtor",
+    description: "Departamentos listos para ti: pet friendly, garantía en cuotas y proceso 100% digital.",
     images: ["/images/og-arriendo-sin-comision.jpg"]
   },
   robots: {

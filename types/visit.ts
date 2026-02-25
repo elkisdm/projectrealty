@@ -40,7 +40,7 @@ export interface Visit {
   listingId: string;
   slotId: string;
   userId: string;
-  status: 'pending' | 'confirmed' | 'canceled' | 'no_show' | 'completed';
+  status: 'pending' | 'confirmed' | 'in_progress' | 'canceled' | 'no_show' | 'completed';
   createdAt: string;
   idempotencyKey: string;
   agentId: string;
@@ -93,6 +93,7 @@ export interface CreateVisitRequest {
     name: string;
     phone: string;
     email?: string;
+    rut?: string;
   };
 }
 

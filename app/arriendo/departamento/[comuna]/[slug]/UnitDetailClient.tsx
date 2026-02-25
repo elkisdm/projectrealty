@@ -11,13 +11,11 @@ import { UnitSelectorModal } from "@components/property/UnitSelectorModal";
 
 // Componentes de propiedad
 import { PropertyAboveFoldMobile } from "@components/property/PropertyAboveFoldMobile";
-import { PropertyBreadcrumb } from "@components/property/PropertyBreadcrumb";
 import { PropertySidebar } from "@components/property/PropertySidebar";
 import { PropertyBookingCard } from "@components/property/PropertyBookingCard";
 import { PropertyTabs } from "@components/property/PropertyTabs";
 import { PropertySimilarUnits } from "@components/property/PropertySimilarUnits";
-import { CommuneLifeSection } from "@components/property/CommuneLifeSection";
-import { PropertyFAQ } from "@components/property/PropertyFAQ";
+import { NearbyAmenitiesSection } from "@components/property/NearbyAmenitiesSection";
 import { UnitCard } from "@components/ui/UnitCard";
 
 // Error Boundary Component
@@ -88,25 +86,24 @@ export function UnitDetailClient({
 }: UnitDetailClientProps) {
   const [isVisitModalOpen, setIsVisitModalOpen] = useState(false);
   const [isUnitSelectorModalOpen, setIsUnitSelectorModalOpen] = useState(false);
+  
+  // Solo mostrar modal de amenidades para Parque Mackenna
+  const showNearbyAmenities = building.id === 'bld-condominio-parque-mackenna';
 
   // Usar todas las unidades del edificio si están disponibles, sino solo la unidad actual
   const allBuildingUnits = building.allUnits && building.allUnits.length > 0 
     ? building.allUnits 
     : [unit];
 
-  // Convertir building reducido a Building completo para componentes que lo requieren
-  // Usar todas las unidades obtenidas, no solo la unidad actual
+  // Building completo para tabs/características: preservar terminaciones, equipamiento y todo lo que venga del server
   const fullBuilding: Building = {
-    id: building.id,
-    name: building.name,
-    slug: building.slug,
-    address: building.address,
-    comuna: building.comuna,
-    amenities: building.amenities.length > 0 ? building.amenities : ['Áreas comunes'],
-    gallery: building.gallery.length > 0 ? building.gallery : ["/images/default-building.jpg"],
-    coverImage: building.gallery[0] || "/images/default-building.jpg",
-    precio_desde: unit.price,
-    units: allBuildingUnits, // TODAS las unidades del edificio
+    ...(building as Building),
+    amenities: building.amenities?.length ? building.amenities : ['Áreas comunes'],
+    gallery: building.gallery?.length ? building.gallery : ["/images/default-building.jpg"],
+    coverImage: building.gallery?.[0] || (building as Building).coverImage || "/images/default-building.jpg",
+    units: allBuildingUnits,
+    terminaciones: (building as Building).terminaciones ?? [],
+    equipamiento: (building as Building).equipamiento ?? [],
   };
 
   // Handler para abrir modal de selector de unidades
@@ -208,13 +205,10 @@ export function UnitDetailClient({
     <ErrorBoundary>
       <div className="min-h-screen bg-bg">
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 lg:py-8">
-          {/* Breadcrumb */}
-          <PropertyBreadcrumb building={fullBuilding} unit={unit} variant="catalog" />
-
-          {/* Layout principal: 3 columnas */}
+          {/* Layout principal: 3 columnas - hero contenido en columna en desktop */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
             {/* Columna principal (2/3) */}
-            <div className="lg:col-span-2 space-y-6 lg:space-y-8">
+            <div className="lg:col-span-2 min-w-0 space-y-6 lg:space-y-8">
               {/* Above the fold móvil optimizado */}
               <PropertyAboveFoldMobile
                 building={fullBuilding}
@@ -233,6 +227,11 @@ export function UnitDetailClient({
 
               {/* Tabs de contenido */}
               <PropertyTabs unit={unit} building={fullBuilding} />
+
+              {/* Sección de Amenidades Cercanas (solo Parque Mackenna) */}
+              {showNearbyAmenities && (
+                <NearbyAmenitiesSection building={fullBuilding} />
+              )}
 
               {/* Unidades similares */}
               {similarUnits && similarUnits.length > 0 ? (
@@ -259,11 +258,6 @@ export function UnitDetailClient({
                 />
               )}
 
-              {/* Cómo es vivir en la comuna */}
-              <CommuneLifeSection building={fullBuilding} variant="catalog" />
-
-              {/* Preguntas frecuentes */}
-              <PropertyFAQ building={fullBuilding} variant="catalog" />
             </div>
 
             {/* Sidebar sticky (1/3) - Booking Card */}
@@ -285,6 +279,8 @@ export function UnitDetailClient({
           propertyName={building.name}
           propertyAddress={building.address}
           propertyImage={building.gallery[0] || fullBuilding.coverImage}
+          unit={unit}
+          building={fullBuilding}
           onSuccess={(visitData) => {
             logger.log("✅ Visita creada exitosamente:", visitData);
             track(ANALYTICS_EVENTS.VISIT_SCHEDULED, {
@@ -306,6 +302,7 @@ export function UnitDetailClient({
           building={fullBuilding}
           currentUnitId={unit.id}
         />
+
       </div>
     </ErrorBoundary>
   );

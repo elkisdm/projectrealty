@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Mona_Sans, Hubot_Sans } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@lib/theme-context";
 import { Header } from "@components/marketing/Header";
-import { Footer } from "@components/marketing/Footer";
+import { ConditionalFooter } from "@components/ConditionalFooter";
 import { getFlagValue } from "@lib/flags";
 import { getBaseUrl } from "@lib/seo/metadata";
 import Providers from "./providers";
@@ -11,16 +11,34 @@ import Providers from "./providers";
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseUrl()),
   title: {
-    default: "Elkis Realtor · 0% Comisión",
+    default: "Elkis Realtor · Arriendos en Santiago",
     template: "%s | Elkis Realtor",
   },
-  description: "Arrienda departamentos con 0% de comisión. Compara, agenda visita y arrienda fácil.",
+  description: "Arrienda departamentos en Santiago. Compara precios, agenda visitas y encuentra tu hogar de forma fácil y transparente.",
 };
 
 const inter = Inter({
   subsets: ["latin"],
   display: 'swap',
   preload: true,
+  variable: "--font-inter",
+});
+
+// Pesos reducidos para carga inicial más rápida (menos requests a fonts.gstatic)
+const monaSans = Mona_Sans({
+  subsets: ["latin"],
+  display: "swap",
+  preload: true,
+  variable: "--font-mona-sans",
+  weight: ["400", "600", "700"],
+});
+
+const hubotSans = Hubot_Sans({
+  subsets: ["latin"],
+  display: "swap",
+  preload: true,
+  variable: "--font-hubot-sans",
+  weight: ["400", "600", "700"],
 });
 
 // Script para prevenir parpadeo inicial - aplica el tema guardado consistentemente
@@ -49,7 +67,11 @@ const themeScript = `
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es" className={inter.className} suppressHydrationWarning>
+    <html
+      lang="es"
+      className={`${inter.variable} ${monaSans.variable} ${hubotSans.variable} ${inter.className}`}
+      suppressHydrationWarning
+    >
       <head>
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
@@ -108,7 +130,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <main id="main-content" className="flex-1 bg-background text-foreground" role="main">
                 {children}
               </main>
-              {getFlagValue('FOOTER_ENABLED') && <Footer />}
+              {getFlagValue('FOOTER_ENABLED') && <ConditionalFooter />}
             </div>
           </Providers>
         </ThemeProvider>

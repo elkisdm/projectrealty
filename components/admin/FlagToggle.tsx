@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Switch } from '@headlessui/react';
+import { getErrorMessage } from '@lib/admin/client-errors';
 // TODO: Uncomment when heroicons is installed
 // import { CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
@@ -81,7 +82,7 @@ export function FlagToggle({
         // Clear success message after 3 seconds
         setTimeout(() => setSuccess(null), 3000);
       } else {
-        setError(result.error || 'Error al aplicar override');
+        setError(getErrorMessage(result.error, 'Error al aplicar override'));
       }
     } catch {
       setError('Error de conexión');

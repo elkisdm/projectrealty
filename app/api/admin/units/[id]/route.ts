@@ -1,164 +1,164 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { z } from "zod";
 import { createRateLimiter } from "@lib/rate-limit";
-import { readAll } from "@lib/data";
-import { updateUnit, deleteUnit } from "@lib/admin/data";
-import { UnitSchema } from "@schemas/models";
-import type { Unit } from "@schemas/models";
+import { AdminUnitUpdateSchema, adminError, adminOk } from "@lib/admin/contracts";
+import {
+  deleteAdminUnit,
+  getAdminUnitById,
+  updateAdminUnit,
+} from "@lib/admin/repositories/units.repository";
+import { requireAdminSession } from "@lib/admin/guards";
+import { logAdminActivity } from "@lib/admin/repositories/activity.repository";
 
-// Force dynamic rendering
 export const dynamic = "force-dynamic";
 
-// Rate limiting for admin endpoints
-const limiter = createRateLimiter({ windowMs: 60_000, max: 20 });
+const limiter = createRateLimiter({ windowMs: 60_000, max: 30 });
 
 const ParamsSchema = z.object({
   id: z.string().min(1),
 });
+
+async function checkRateLimit(request: NextRequest) {
+  const ipHeader = request.headers.get("x-forwarded-for");
+  const ip = ipHeader ? ipHeader.split(",")[0].trim() : "unknown";
+  const rateLimitResult = await limiter.check(ip);
+
+  if (!rateLimitResult.ok) {
+    return adminError("rate_limited", "Demasiadas solicitudes", {
+      status: 429,
+      details: { retryAfter: rateLimitResult.retryAfter ?? 60 },
+    });
+  }
+
+  return null;
+}
 
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Rate limiting
-    const ipHeader = request.headers.get("x-forwarded-for");
-    const ip = ipHeader ? ipHeader.split(",")[0].trim() : "unknown";
+    const auth = await requireAdminSession(request, "viewer");
+    if (auth.response) {
+      return auth.response;
+    }
 
-    const rateLimitResult = await limiter.check(ip);
-    if (!rateLimitResult.ok) {
-      return NextResponse.json(
-        { error: "rate_limited" },
-        {
-          status: 429,
-          headers: { "Retry-After": String(rateLimitResult.retryAfter ?? 60) },
-        }
-      );
+    const rateLimitResponse = await checkRateLimit(request);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
     }
 
     const params = await context.params;
-    const parsed = ParamsSchema.safeParse(params);
+    const parsedParams = ParamsSchema.safeParse(params);
 
-    if (!parsed.success) {
-      return NextResponse.json(
-        { error: "invalid_params", details: parsed.error.errors },
-        { status: 400 }
-      );
+    if (!parsedParams.success) {
+      return adminError("invalid_params", "Parámetros inválidos", {
+        status: 400,
+        details: parsedParams.error.errors,
+      });
     }
 
-    const { id } = parsed.data;
+    const unit = await getAdminUnitById(parsedParams.data.id);
 
-    // Buscar unidad
-    const buildings = await readAll();
-    let foundUnit: (Unit & { buildingId: string; buildingName: string }) | null =
-      null;
-
-    for (const building of buildings) {
-      const unit = building.units.find((u) => u.id === id);
-      if (unit) {
-        foundUnit = {
-          ...unit,
-          buildingId: building.id,
-          buildingName: building.name,
-        };
-        break;
-      }
+    if (!unit) {
+      return adminError("not_found", "Unidad no encontrada", { status: 404 });
     }
 
-    if (!foundUnit) {
-      return NextResponse.json(
-        { error: "not_found", message: "Unidad no encontrada" },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      data: foundUnit,
-    });
+    return adminOk(unit);
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: "internal_error",
-        message:
-          error instanceof Error ? error.message : "Error interno del servidor",
-      },
-      { status: 500 }
-    );
+    return adminError("internal_error", error instanceof Error ? error.message : "Error interno del servidor", {
+      status: 500,
+    });
   }
+}
+
+async function handleUpdate(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const auth = await requireAdminSession(request, "editor");
+    if (auth.response) {
+      return auth.response;
+    }
+
+    const rateLimitResponse = await checkRateLimit(request);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
+    const params = await context.params;
+    const parsedParams = ParamsSchema.safeParse(params);
+
+    if (!parsedParams.success) {
+      return adminError("invalid_params", "Parámetros inválidos", {
+        status: 400,
+        details: parsedParams.error.errors,
+      });
+    }
+
+    const body = await request.json();
+    const parsedBody = AdminUnitUpdateSchema.safeParse(body);
+
+    if (!parsedBody.success) {
+      return adminError("validation_error", "Payload inválido", {
+        status: 400,
+        details: parsedBody.error.errors,
+      });
+    }
+
+    const updated = await updateAdminUnit(parsedParams.data.id, parsedBody.data);
+
+    await logAdminActivity({
+      actorId: auth.session.user.id,
+      actorEmail: auth.session.user.email,
+      actorRole: auth.session.user.role,
+      action: "unit.update",
+      entity: "unit",
+      entityId: updated.id,
+      metadata: {
+        publicationStatus: updated.publicationStatus,
+      },
+    });
+
+    return adminOk(updated);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Error interno del servidor";
+
+    if (message.startsWith("not_found:")) {
+      return adminError("not_found", message.replace("not_found:", "").trim(), {
+        status: 404,
+      });
+    }
+
+    if (message.startsWith("validation_error:")) {
+      return adminError("validation_error", message.replace("validation_error:", "").trim(), {
+        status: 400,
+      });
+    }
+
+    if (message.startsWith("database_error:")) {
+      return adminError("database_error", message.replace("database_error:", "").trim(), {
+        status: 500,
+      });
+    }
+
+    return adminError("internal_error", message, { status: 500 });
+  }
+}
+
+export async function PATCH(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  return handleUpdate(request, context);
 }
 
 export async function PUT(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  try {
-    // Rate limiting
-    const ipHeader = request.headers.get("x-forwarded-for");
-    const ip = ipHeader ? ipHeader.split(",")[0].trim() : "unknown";
-
-    const rateLimitResult = await limiter.check(ip);
-    if (!rateLimitResult.ok) {
-      return NextResponse.json(
-        { error: "rate_limited" },
-        {
-          status: 429,
-          headers: { "Retry-After": String(rateLimitResult.retryAfter ?? 60) },
-        }
-      );
-    }
-
-    const params = await context.params;
-    const parsed = ParamsSchema.safeParse(params);
-
-    if (!parsed.success) {
-      return NextResponse.json(
-        { error: "invalid_params", details: parsed.error.errors },
-        { status: 400 }
-      );
-    }
-
-    const { id } = parsed.data;
-
-    // Parsear y validar body (partial update)
-    const body = await request.json();
-    const partialSchema = UnitSchema.partial();
-    const validation = partialSchema.safeParse(body);
-
-    if (!validation.success) {
-      return NextResponse.json(
-        {
-          error: "validation_error",
-          details: validation.error.errors,
-        },
-        { status: 400 }
-      );
-    }
-
-    // Actualizar unidad
-    const unit = await updateUnit(id, validation.data);
-
-    return NextResponse.json({
-      success: true,
-      data: unit,
-    });
-  } catch (error) {
-    if (error instanceof Error && error.message.includes("no encontrada")) {
-      return NextResponse.json(
-        { error: "not_found", message: error.message },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json(
-      {
-        error: "internal_error",
-        message:
-          error instanceof Error ? error.message : "Error interno del servidor",
-      },
-      { status: 500 }
-    );
-  }
+  return handleUpdate(request, context);
 }
 
 export async function DELETE(
@@ -166,66 +166,47 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Rate limiting
-    const ipHeader = request.headers.get("x-forwarded-for");
-    const ip = ipHeader ? ipHeader.split(",")[0].trim() : "unknown";
+    const auth = await requireAdminSession(request, "admin");
+    if (auth.response) {
+      return auth.response;
+    }
 
-    const rateLimitResult = await limiter.check(ip);
-    if (!rateLimitResult.ok) {
-      return NextResponse.json(
-        { error: "rate_limited" },
-        {
-          status: 429,
-          headers: { "Retry-After": String(rateLimitResult.retryAfter ?? 60) },
-        }
-      );
+    const rateLimitResponse = await checkRateLimit(request);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
     }
 
     const params = await context.params;
-    const parsed = ParamsSchema.safeParse(params);
+    const parsedParams = ParamsSchema.safeParse(params);
 
-    if (!parsed.success) {
-      return NextResponse.json(
-        { error: "invalid_params", details: parsed.error.errors },
-        { status: 400 }
-      );
+    if (!parsedParams.success) {
+      return adminError("invalid_params", "Parámetros inválidos", {
+        status: 400,
+        details: parsedParams.error.errors,
+      });
     }
 
-    const { id } = parsed.data;
+    await deleteAdminUnit(parsedParams.data.id);
 
-    // Eliminar unidad
-    await deleteUnit(id);
-
-    return NextResponse.json({
-      success: true,
-      message: "Unidad eliminada correctamente",
+    await logAdminActivity({
+      actorId: auth.session.user.id,
+      actorEmail: auth.session.user.email,
+      actorRole: auth.session.user.role,
+      action: "unit.delete",
+      entity: "unit",
+      entityId: parsedParams.data.id,
     });
+
+    return adminOk({ id: parsedParams.data.id, deleted: true });
   } catch (error) {
-    if (error instanceof Error && error.message.includes("no encontrada")) {
-      return NextResponse.json(
-        { error: "not_found", message: error.message },
-        { status: 404 }
-      );
+    const message = error instanceof Error ? error.message : "Error interno del servidor";
+
+    if (message.startsWith("database_error:")) {
+      return adminError("database_error", message.replace("database_error:", "").trim(), {
+        status: 500,
+      });
     }
 
-    return NextResponse.json(
-      {
-        error: "internal_error",
-        message:
-          error instanceof Error ? error.message : "Error interno del servidor",
-      },
-      { status: 500 }
-    );
+    return adminError("internal_error", message, { status: 500 });
   }
 }
-
-
-
-
-
-
-
-
-
-
-

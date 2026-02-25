@@ -29,7 +29,7 @@
         "lib/*"
       ],
       "@data/*": [
-        "_workspace/data/*"
+        "data/*"
       ],
       "@schemas/*": [
         "schemas/*"
@@ -43,8 +43,18 @@
       "@types": [
         "types/index.ts"
       ],
+      "@stores/*": [
+        "stores/*"
+      ],
+      "@workspace/scripts/*": [
+        "scripts/tools/*"
+      ],
+      "@workspace/data/*": [
+        "data/*"
+      ],
       "@workspace/*": [
-        "_workspace/*"
+        "scripts/tools/*",
+        "data/*"
       ]
     },
     "incremental": true,
@@ -66,6 +76,11 @@
     "arriendo-zero/**",
     "tests/**",
     "**/* 2.tsx",
-    "**/* 2.ts"
+    "**/* 2.ts",
+    "components/product/ProductCard.tsx",
+    "components/product/ProductInfo.tsx",
+    "lib/ecommerce/**",
+    "lib/shopify/**",
+    "stores/productPageStore.ts"
   ]
 }

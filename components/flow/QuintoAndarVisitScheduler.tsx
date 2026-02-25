@@ -21,6 +21,8 @@ import type { Unit, Building } from '@schemas/models';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { track, ANALYTICS_EVENTS } from '@lib/analytics';
 import { generateAndDownloadICS } from '@lib/calendar/ics-generator';
+import { toast } from 'sonner';
+import { ScrollFadeEffect } from '@/components/ncdai/scroll-fade-effect';
 
 interface QuintoAndarVisitSchedulerProps {
     isOpen: boolean;
@@ -35,13 +37,14 @@ interface QuintoAndarVisitSchedulerProps {
     onSuccess?: (visitData: CreateVisitResponse) => void;
 }
 
-// TypeScript: Tipos mejorados
-type Step = 'selection' | 'contact' | 'premium' | 'success';
+// TypeScript: Tipos mejorados (4 pasos: selección → contacto → calificación → éxito)
+type Step = 'selection' | 'contact' | 'qualification' | 'success';
 
 interface FormErrors {
     name?: string;
     email?: string;
     phone?: string;
+    rut?: string;
 }
 
 interface RentalQualification {
@@ -49,6 +52,8 @@ interface RentalQualification {
     hasGuarantor: boolean | null;
     hasSufficientIncome: boolean | null;
     rentalPurpose: 'residencial' | 'inversión';
+    incomeAboveArriendoX3: boolean | null;
+    negativeDicom: boolean | null;
 }
 
 export function QuintoAndarVisitScheduler({
@@ -80,7 +85,7 @@ export function QuintoAndarVisitScheduler({
         || propertyImage;
 
     const arriendo = unit?.price || 0;
-    const gastoComun = unit?.gastoComun || unit?.gc || unit?.gastosComunes || 0;
+    const gastoComun = unit?.gastoComun ?? unit?.gc ?? unit?.gastosComunes ?? 0;
     const area = unit?.m2 || unit?.area_interior_m2;
     const dormitorios = unit?.dormitorios || unit?.bedrooms || 0;
     const estacionamiento = unit?.estacionamiento || unit?.parking_opcional ? 1 : 0;
@@ -90,24 +95,28 @@ export function QuintoAndarVisitScheduler({
         name: string;
         email: string;
         phone: string;
+        rut: string;
     };
 
     const [contactData, setContactData] = useState<ContactFormData>({
         name: '',
         email: '',
-        phone: ''
+        phone: '',
+        rut: ''
     });
     const [formErrors, setFormErrors] = useState<FormErrors>({});
     const [isFormValid, setIsFormValid] = useState(false);
     const [showConfetti, setShowConfetti] = useState(false);
     const [visitResponse, setVisitResponse] = useState<CreateVisitResponse | null>(null);
 
-    // Estados para calificación de arriendo (ahora opcionales)
+    // Estados para calificación de arriendo (paso 3: 3 preguntas deslizables)
     const [rentalQualification, setRentalQualification] = useState<RentalQualification>({
         needsToMoveIn30Days: null,
         hasGuarantor: null,
         hasSufficientIncome: null,
-        rentalPurpose: 'residencial'
+        rentalPurpose: 'residencial',
+        incomeAboveArriendoX3: null,
+        negativeDicom: null,
     });
 
     // Estado para controlar qué pregunta está visible
@@ -119,26 +128,29 @@ export function QuintoAndarVisitScheduler({
     // Estado para confirmación antes de cerrar
     const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
 
-    // Configuración de preguntas de calificación
-    const qualificationQuestions = [
-        {
-            key: 'needsToMoveIn30Days',
-            title: '¿Necesitas mudarte en los próximos 30 días?',
-            options: ['Sí', 'No']
-        },
-        {
-            key: 'hasGuarantor',
-            title: '¿Tienes aval?',
-            options: ['Sí', 'No']
-        },
-        {
-            key: 'hasSufficientIncome',
-            title: '¿Tienes ingresos suficientes para el arriendo?',
-            options: ['Sí', 'No']
-        }
-    ];
+    // Configuración de las 3 preguntas del paso calificación (una a la vez)
+    const qualificationQuestions = useMemo(() => {
+        const arriendoX3 = (arriendo * 3).toLocaleString('es-CL');
+        return [
+            {
+                key: 'incomeAboveArriendoX3' as const,
+                title: `Entre tú y tu aval, ¿tienen una renta superior a $${arriendoX3}?`,
+                options: ['Sí', 'No'] as const,
+            },
+            {
+                key: 'needsToMoveIn30Days' as const,
+                title: '¿Te mudas en los próximos 30 días?',
+                options: ['Sí', 'No'] as const,
+            },
+            {
+                key: 'negativeDicom' as const,
+                title: '¿Tienes reporte negativo en Dicom?',
+                options: ['Sí', 'No'] as const,
+            },
+        ];
+    }, [arriendo]);
 
-    // Configuración de campos del formulario (sin RUT según especificación)
+    // Configuración de campos del formulario: nombre, celular, RUT; email opcional al final
     const formFields = [
         {
             key: 'name',
@@ -147,16 +159,22 @@ export function QuintoAndarVisitScheduler({
             placeholder: 'Tu nombre completo',
         },
         {
-            key: 'email',
-            title: '¿Cuál es tu email? (opcional)',
-            type: 'email',
-            placeholder: 'tu@email.com',
-        },
-        {
             key: 'phone',
             title: '¿Cuál es tu teléfono?',
             type: 'tel',
             placeholder: '+56 9 1234 5678',
+        },
+        {
+            key: 'rut',
+            title: 'RUT',
+            type: 'text',
+            placeholder: '12.345.678-9',
+        },
+        {
+            key: 'email',
+            title: '¿Cuál es tu email? (opcional)',
+            type: 'email',
+            placeholder: 'tu@email.com',
         }
     ];
 
@@ -277,8 +295,10 @@ export function QuintoAndarVisitScheduler({
                 } else if (saved.selectedDate) {
                     selectDateTime(saved.selectedDate, '');
                 }
-                setRentalQualification(saved.rentalQualification);
-                setContactData(saved.contactData);
+                const defaultQual: RentalQualification = { needsToMoveIn30Days: null, hasGuarantor: null, hasSufficientIncome: null, rentalPurpose: 'residencial', incomeAboveArriendoX3: null, negativeDicom: null };
+                setRentalQualification({ ...defaultQual, ...saved.rentalQualification });
+                const defaultContact: ContactFormData = { name: '', email: '', phone: '', rut: '' };
+                setContactData({ ...defaultContact, ...saved.contactData });
                 setCurrentQuestionIndex(saved.currentQuestionIndex);
                 setCurrentFieldIndex(saved.currentFieldIndex);
 
@@ -450,6 +470,7 @@ export function QuintoAndarVisitScheduler({
             name: testData.name,
             email: testData.email || undefined,
             phone: testData.phone,
+            rut: testData.rut,
         });
 
         // Si el campo actual es válido o es email (opcional), avanzar
@@ -507,12 +528,13 @@ export function QuintoAndarVisitScheduler({
         return !!(selectedDate && selectedTime);
     }, [selectedDate, selectedTime]);
 
-    // Performance: Memoizar validación del formulario
+    // Performance: Memoizar validación del formulario (incluye RUT)
     const canContinueForm = useMemo(() => {
         const result = visitFormSchema.safeParse({
             name: contactData.name,
             email: contactData.email || undefined,
             phone: contactData.phone,
+            rut: contactData.rut,
         });
         return result.success;
     }, [contactData]);
@@ -534,6 +556,7 @@ export function QuintoAndarVisitScheduler({
             name: testData.name,
             email: testData.email || undefined,
             phone: testData.phone,
+            rut: testData.rut,
         });
 
         // Si la validación completa es exitosa, el campo es válido
@@ -566,13 +589,14 @@ export function QuintoAndarVisitScheduler({
     };
 
 
-    // Code refactor: Función unificada para submit de formulario
+    // Code refactor: Función unificada para submit de formulario (crear visita)
     const handleFormSubmit = useCallback(async () => {
         // Validar y normalizar con Zod antes de enviar
         const validationResult = visitFormSchema.safeParse({
             name: contactData.name,
             email: contactData.email || undefined,
             phone: contactData.phone,
+            rut: contactData.rut,
         });
 
         if (!validationResult.success) {
@@ -593,7 +617,8 @@ export function QuintoAndarVisitScheduler({
         const result = await createVisit({
             name: normalizedData.name,
             phone: normalizedData.phone, // Ya normalizado
-            email: normalizedData.email
+            email: normalizedData.email,
+            rut: normalizedData.rut
         });
 
         if (result) {
@@ -623,16 +648,48 @@ export function QuintoAndarVisitScheduler({
         }
     }, [contactData, createVisit, onSuccess, listingId, selectedDate, selectedTime, clearProgress]);
 
-    // Continuar al éxito (alias para compatibilidad)
-    const handleContinueToSuccess = handleFormSubmit;
+    // Paso contact → qualification: validar formulario y avanzar (no enviar visita aún)
+    const handleContactContinue = () => {
+        const validationResult = visitFormSchema.safeParse({
+            name: contactData.name,
+            email: contactData.email || undefined,
+            phone: contactData.phone,
+            rut: contactData.rut,
+        });
+        if (!validationResult.success) {
+            const errors: FormErrors = {};
+            validationResult.error.errors.forEach((error) => {
+                if (error.path[0]) {
+                    errors[error.path[0] as keyof FormErrors] = error.message;
+                }
+            });
+            setFormErrors(errors);
+            return;
+        }
+        setFormErrors({});
+        setCurrentQuestionIndex(0);
+        setStep('qualification');
+    };
 
-    // Regresar al paso anterior
+    // Paso qualification: Continuar (siguiente pregunta o enviar visita)
+    const handleQualificationContinue = () => {
+        if (currentQuestionIndex < qualificationQuestions.length - 1) {
+            setCurrentQuestionIndex((prev) => prev + 1);
+        } else {
+            handleFormSubmit();
+        }
+    };
+
+    // Regresar al paso anterior (4 pasos: selection → contact → qualification → success)
     const handleBack = () => {
         if (step === 'contact') {
-            setCurrentFieldIndex(0); // Resetear índice del formulario
+            setCurrentFieldIndex(0);
             setStep('selection');
-        } else if (step === 'success') {
+        } else if (step === 'qualification') {
+            setCurrentQuestionIndex(0);
             setStep('contact');
+        } else if (step === 'success') {
+            setStep('qualification');
         }
     };
 
@@ -691,7 +748,7 @@ export function QuintoAndarVisitScheduler({
     // Verificar si hay datos ingresados que se perderían al cerrar
     const hasUnsavedData = useMemo(() => {
         if (step === 'success') return false; // No necesita confirmación si ya completó
-        return !!(selectedDate || selectedTime || contactData.name || contactData.phone || contactData.email);
+        return !!(selectedDate || selectedTime || contactData.name || contactData.phone || contactData.email || contactData.rut);
     }, [step, selectedDate, selectedTime, contactData]);
 
     const performClose = useCallback(() => {
@@ -730,6 +787,12 @@ export function QuintoAndarVisitScheduler({
         performClose();
     }, [hasUnsavedData, step, performClose]);
 
+    // Ref para desacoplar handleClose del focus trap (evita re-ejecutar el effect en cada tecla)
+    const handleCloseRef = useRef(handleClose);
+    useEffect(() => {
+        handleCloseRef.current = handleClose;
+    }, [handleClose]);
+
     const handleConfirmClose = useCallback(() => {
         performClose();
     }, [performClose]);
@@ -738,15 +801,17 @@ export function QuintoAndarVisitScheduler({
         setShowCloseConfirmation(false);
     }, []);
 
-    // TypeScript: Información del paso actual con tipado estricto
+    // TypeScript: Información del paso actual con tipado estricto (4 pasos)
     const getStepInfo = useCallback((currentStep: Step) => {
         switch (currentStep) {
             case 'selection':
                 return { number: 1, title: 'Selecciona fecha y hora', description: 'Elige el mejor momento para tu visita' };
             case 'contact':
-                return { number: 2, title: 'Datos de contacto', description: 'Completa tu información para el arriendo' };
+                return { number: 2, title: 'Datos de contacto', description: 'Completa tus datos para confirmar la visita' };
+            case 'qualification':
+                return { number: 3, title: 'Calificación', description: 'Responde unas breves preguntas' };
             case 'success':
-                return { number: 3, title: '¡Visita confirmada!', description: 'Todo listo para tu visita' };
+                return { number: 4, title: '¡Visita confirmada!', description: 'Todo listo para tu visita' };
             default:
                 return { number: 1, title: 'Agendar visita', description: 'Programa tu visita' };
         }
@@ -787,11 +852,11 @@ export function QuintoAndarVisitScheduler({
             }) as HTMLElement[];
         };
 
-        // Función para manejar Tab y Escape
+        // Función para manejar Tab y Escape (usa ref para no re-ejecutar effect al escribir)
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
                 e.preventDefault();
-                handleClose();
+                handleCloseRef.current?.();
                 return;
             }
 
@@ -835,12 +900,14 @@ export function QuintoAndarVisitScheduler({
             document.removeEventListener('keydown', handleKeyDown);
             document.body.style.overflow = originalOverflow;
 
-            // Restaurar focus al elemento previo
-            if (previousActiveElement.current) {
+            // Restaurar focus solo si el foco ya no está dentro del modal (evita robar foco al escribir)
+            const activeEl = document.activeElement as HTMLElement | null;
+            const focusInsideModal = modalRef.current?.contains(activeEl);
+            if (!focusInsideModal && previousActiveElement.current) {
                 previousActiveElement.current.focus();
             }
         };
-    }, [isOpen, handleClose]);
+    }, [isOpen]);
 
     // Performance: Actualizar dimensiones de ventana para confeti
     useEffect(() => {
@@ -872,49 +939,47 @@ export function QuintoAndarVisitScheduler({
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={animationConfig}
-                    className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                    className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
                     onClick={handleClose}
                 >
                     <motion.div
                         ref={modalRef}
-                        initial={shouldReduceMotion ? { opacity: 0 } : { scale: 0.95, opacity: 0 }}
+                        initial={shouldReduceMotion ? { opacity: 0 } : { scale: 0.98, opacity: 0 }}
                         animate={shouldReduceMotion ? { opacity: 1 } : { scale: 1, opacity: 1 }}
-                        exit={shouldReduceMotion ? { opacity: 0 } : { scale: 0.95, opacity: 0 }}
+                        exit={shouldReduceMotion ? { opacity: 0 } : { scale: 0.98, opacity: 0 }}
                         transition={animationConfig}
-                        className="relative w-full max-w-md max-h-[85vh] sm:max-h-[90vh] bg-white dark:bg-gray-900 rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+                        className="fixed inset-0 w-full h-full bg-white dark:bg-gray-900 flex flex-col overflow-hidden"
                         onClick={(e) => e.stopPropagation()}
                         role="dialog"
                         aria-modal="true"
                         aria-labelledby="modal-title"
                         aria-describedby="modal-description"
                     >
-                        {/* Header */}
-                        <div className="p-3 sm:p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-                            <div className="flex items-center justify-between mb-3 sm:mb-4">
+                        {/* Header: compacto, minimalista */}
+                        <div className="p-3 sm:p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0 space-y-3">
+                            <div className="flex items-start justify-between gap-2">
+                                <h1 id="modal-title" className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white leading-tight pr-2">
+                                    ¿Cuándo quieres visitar esta propiedad?
+                                </h1>
                                 <button
                                     ref={closeButtonRef}
                                     onClick={handleClose}
-                                    className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                                    className="flex-shrink-0 min-h-11 min-w-11 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                                     aria-label="Cerrar modal"
                                 >
                                     <X className="w-5 h-5 text-gray-500 dark:text-gray-300" />
                                 </button>
                             </div>
 
-                            {/* Título principal */}
-                            <h1 id="modal-title" className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-3 sm:mb-4">
-                                ¿Cuándo quieres visitar esta propiedad?
-                            </h1>
-
-                            {/* Card de propiedad */}
-                            <div className="flex gap-2 sm:gap-3 p-2 sm:p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                            {/* Card de propiedad: compacta, imagen y texto equilibrados */}
+                            <div className={`p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 ${finalPropertyImage ? 'grid grid-cols-2 gap-3 sm:gap-4 items-stretch' : 'block'}`}>
                                 {finalPropertyImage && (
-                                    <div className="relative w-12 h-12 sm:w-16 sm:h-16 rounded-lg overflow-hidden flex-shrink-0">
+                                    <div className="relative min-h-0 w-full aspect-square rounded-xl overflow-hidden">
                                         <Image
                                             src={finalPropertyImage}
                                             alt={propertyName}
                                             fill
-                                            sizes="(max-width: 640px) 48px, 64px"
+                                            sizes="(max-width: 640px) 50vw, 200px"
                                             className="object-cover"
                                             loading="lazy"
                                             placeholder="blur"
@@ -922,26 +987,44 @@ export function QuintoAndarVisitScheduler({
                                         />
                                     </div>
                                 )}
-                                <div className="flex-1 min-w-0">
-                                    {arriendo > 0 && (
-                                        <div className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
-                                            ${arriendo.toLocaleString('es-CL')} arriendo
-                                        </div>
-                                    )}
-                                    {gastoComun > 0 && (
-                                        <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                                            ${gastoComun.toLocaleString('es-CL')} gastos comunes
-                                        </div>
-                                    )}
-                                    <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                                        {building?.address || propertyAddress}
+                                <div className={`flex flex-col justify-between gap-2 min-w-0 ${finalPropertyImage ? 'py-0.5' : ''}`}>
+                                    {/* Bloque Ubicación */}
+                                    <div className="space-y-0.5">
+                                        {(unit?.codigoUnidad || unit?.tipologia) && (
+                                            <p className="text-xs font-semibold text-gray-900 dark:text-white leading-tight">
+                                                {[unit?.codigoUnidad && `Unidad ${unit.codigoUnidad}`, unit?.tipologia].filter(Boolean).join(' · ')}
+                                            </p>
+                                        )}
+                                        <p className="text-xs text-gray-600 dark:text-gray-400 leading-snug">
+                                            {building?.address || propertyAddress}
+                                        </p>
+                                        {building?.comuna && (
+                                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                {building.comuna}
+                                            </p>
+                                        )}
                                     </div>
-                                    <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                                        {[
-                                            area && `${area} m²`,
-                                            dormitorios > 0 && `${dormitorios} dormitorio${dormitorios > 1 ? 's' : ''}`,
-                                            estacionamiento > 0 && `${estacionamiento} estacionamiento`
-                                        ].filter(Boolean).join(' · ')}
+                                    {/* Bloque Precio y detalles */}
+                                    <div className="pt-1.5 mt-auto border-t border-gray-200 dark:border-gray-600 space-y-0.5">
+                                        {arriendo > 0 && (
+                                            <p className="text-sm font-bold text-gray-900 dark:text-white leading-tight">
+                                                ${arriendo.toLocaleString('es-CL')} <span className="font-normal text-gray-600 dark:text-gray-400">arriendo</span>
+                                            </p>
+                                        )}
+                                        {(gastoComun !== undefined && gastoComun > 0) && (
+                                            <p className="text-xs text-gray-600 dark:text-gray-400">
+                                                ${gastoComun.toLocaleString('es-CL')} gastos comunes
+                                            </p>
+                                        )}
+                                        {(area || dormitorios > 0 || estacionamiento > 0) && (
+                                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                {[
+                                                    area && `${area} m²`,
+                                                    dormitorios > 0 && `${dormitorios} dormitorio${dormitorios > 1 ? 's' : ''}`,
+                                                    estacionamiento > 0 && `${estacionamiento} estacionamiento`
+                                                ].filter(Boolean).join(' · ')}
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -949,14 +1032,14 @@ export function QuintoAndarVisitScheduler({
                                 Modal de agendamiento de visita para {propertyName}
                             </div>
 
-                            {/* Progress bar - solo mostrar en pasos posteriores */}
+                            {/* Progress bar y paso actual - solo en pasos 2 y 3 */}
                             {step !== 'selection' && (
-                                <>
-                                    <div className="flex items-center gap-2 mb-2">
-                                        {[1, 2, 3].map((stepNumber) => (
+                                <div className="space-y-2 pt-1">
+                                    <div className="flex gap-2" aria-hidden="true">
+                                        {[1, 2, 3, 4].map((stepNumber) => (
                                             <div
                                                 key={stepNumber}
-                                                className={`flex-1 h-2 rounded-full ${stepNumber <= stepInfo.number
+                                                className={`flex-1 h-2 rounded-full transition-colors ${stepNumber <= stepInfo.number
                                                     ? 'bg-blue-600'
                                                     : 'bg-gray-200 dark:bg-gray-700'
                                                     }`}
@@ -964,53 +1047,54 @@ export function QuintoAndarVisitScheduler({
                                         ))}
                                     </div>
                                     <div className="flex items-center justify-between">
-                                        <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+                                        <h2 className="text-base font-semibold text-gray-900 dark:text-white">
                                             {stepInfo.title}
-                                        </h3>
-                                        <span className="text-sm text-gray-600 dark:text-gray-400">
-                                            {stepInfo.number}/3
+                                        </h2>
+                                        <span className="text-sm text-gray-600 dark:text-gray-400" aria-hidden="true">
+                                            {stepInfo.number}/4
                                         </span>
                                     </div>
-                                    <p className="text-sm mt-1 text-gray-600 dark:text-gray-400">
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">
                                         {stepInfo.description}
                                     </p>
-                                </>
+                                </div>
                             )}
                         </div>
 
-                        {/* Content */}
+                        {/* Content: área central con scroll por paso */}
                         <div className="flex-1 flex flex-col overflow-hidden min-h-0">
                             {/* Step 1: Selección de fecha y hora */}
                             {step === 'selection' && (
                                 <div className="flex-1 flex flex-col overflow-hidden min-h-0">
-                                    <div className="flex-1 p-3 sm:p-4 overflow-y-auto">
+                                    <ScrollFadeEffect orientation="vertical" className="flex-1 min-h-0">
+                                    <div className="p-3 sm:p-4 space-y-4">
                                         {/* UX: Loading state mientras carga disponibilidad */}
                                         {isLoading && !availableDays.length && (
-                                            <div className="flex items-center justify-center py-8">
-                                                <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
-                                                <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">Cargando disponibilidad...</span>
+                                            <div className="flex items-center justify-center py-6">
+                                                <Loader2 className="w-5 h-5 animate-spin text-blue-600" aria-hidden />
+                                                <span className="ml-2 text-xs text-gray-600 dark:text-gray-400">Cargando disponibilidad...</span>
                                             </div>
                                         )}
                                         {/* Selección de fecha */}
-                                        <div className="mb-6">
-                                            <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                                        <div>
+                                            <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
                                                 Elige un día
                                             </h4>
-                                            <div className="flex gap-3 overflow-x-auto pb-2">
+                                            <div className="flex gap-2 overflow-x-auto pb-1">
                                                 {availableDays.map((day) => (
                                                     <button
                                                         key={day.id}
                                                         onClick={() => handleDateSelect(day)}
                                                         disabled={!day.available}
-                                                        className={`flex-shrink-0 w-16 h-16 rounded-full text-center transition-colors ${selectedDate === day.date
+                                                        className={`flex-shrink-0 w-12 h-12 rounded-full text-center transition-colors ${selectedDate === day.date
                                                             ? 'bg-blue-500 text-white'
                                                             : day.available
                                                                 ? 'bg-gray-100 text-gray-900 hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700'
                                                                 : 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-500'
                                                             }`}
                                                     >
-                                                        <div className="text-xs font-medium">{day.day}</div>
-                                                        <div className="text-lg font-bold">{day.number}</div>
+                                                        <div className="text-[10px] font-medium leading-tight">{day.day}</div>
+                                                        <div className="text-sm font-bold leading-tight">{day.number}</div>
                                                     </button>
                                                 ))}
                                             </div>
@@ -1018,17 +1102,17 @@ export function QuintoAndarVisitScheduler({
 
                                         {/* Selección de hora */}
                                         {selectedDate && (
-                                            <div className="mb-6">
-                                                <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                                            <div>
+                                                <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
                                                     Elige un horario
                                                 </h4>
-                                                <div className="flex gap-3 overflow-x-auto pb-2">
+                                                <div className="flex gap-2 overflow-x-auto pb-1">
                                                     {availableSlots.map((timeSlot) => (
                                                         <button
                                                             key={timeSlot.id}
                                                             onClick={() => handleTimeSelect(timeSlot)}
                                                             disabled={!timeSlot.available}
-                                                            className={`flex-shrink-0 px-4 py-3 rounded-xl text-center transition-colors min-w-[80px] ${selectedTime === timeSlot.time
+                                                            className={`flex-shrink-0 px-3 py-2 rounded-lg text-sm text-center transition-colors min-w-[72px] ${selectedTime === timeSlot.time
                                                                 ? 'bg-blue-500 text-white'
                                                                 : timeSlot.available
                                                                     ? 'bg-gray-100 text-gray-900 hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700'
@@ -1042,198 +1126,191 @@ export function QuintoAndarVisitScheduler({
                                             </div>
                                         )}
 
-                                        {/* Flow: Preguntas de calificación progresivas (opcionales) */}
-                                        {selectedDate && selectedTime && currentQuestionIndex < qualificationQuestions.length && (
-                                            <div className="mb-4 sm:mb-6">
-                                                {/* Indicador de progreso */}
-                                                <div className="flex items-center justify-between mb-3 sm:mb-4">
-                                                    <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                                                        Pregunta {currentQuestionIndex + 1} de {qualificationQuestions.length} (opcional)
-                                                    </span>
-                                                    <div className="flex gap-1">
-                                                        {qualificationQuestions.map((_, index) => (
-                                                            <div
-                                                                key={index}
-                                                                className={`w-2 h-2 rounded-full transition-colors ${index <= currentQuestionIndex
-                                                                    ? 'bg-blue-500'
-                                                                    : 'bg-gray-300 dark:bg-gray-600'
-                                                                    }`}
-                                                            />
-                                                        ))}
-                                                    </div>
-                                                </div>
-
-                                                {/* Pregunta actual */}
-                                                <AnimatePresence mode="wait">
-                                                    <motion.div
-                                                        key={currentQuestionIndex}
-                                                        initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, x: 20 }}
-                                                        animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, x: 0 }}
-                                                        exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, x: -20 }}
-                                                        transition={animationConfig}
-                                                    >
-                                                        <h4 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">
-                                                            {qualificationQuestions[currentQuestionIndex].title}
-                                                        </h4>
-                                                        <div className="flex gap-2 sm:gap-3">
-                                                            {qualificationQuestions[currentQuestionIndex].options.map((option, optionIndex) => {
-                                                                const questionKey = qualificationQuestions[currentQuestionIndex].key;
-                                                                const currentValue = rentalQualification[questionKey as keyof RentalQualification];
-                                                                const isSelected = currentValue === (option === 'Sí' ? true : false);
-
-                                                                return (
-                                                                    <button
-                                                                        key={optionIndex}
-                                                                        onClick={() => {
-                                                                            const answer = option === 'Sí' ? true : false;
-                                                                            handleQualificationAnswer(questionKey, answer);
-                                                                        }}
-                                                                        className={`flex-1 py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl text-center transition-colors font-medium text-sm sm:text-base ${isSelected
-                                                                            ? 'bg-blue-500 text-white'
-                                                                            : 'bg-gray-100 text-gray-900 hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700'
-                                                                            }`}
-                                                                    >
-                                                                        {option}
-                                                                    </button>
-                                                                );
-                                                            })}
-                                                            {/* Flow: Botón para saltar pregunta */}
-                                                            <button
-                                                                onClick={() => {
-                                                                    if (currentQuestionIndex < qualificationQuestions.length - 1) {
-                                                                        setCurrentQuestionIndex(prev => prev + 1);
-                                                                    }
-                                                                }}
-                                                                className="px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
-                                                            >
-                                                                Saltar
-                                                            </button>
-                                                        </div>
-                                                    </motion.div>
-                                                </AnimatePresence>
+                                        {/* Enlace para solicitar otra fecha/horario (referencia QuintoAndar) */}
+                                        {selectedDate && (
+                                            <div className="pt-1">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        toast.info('Pronto podrás solicitar otra fecha. Mientras tanto, elige entre las opciones disponibles.');
+                                                        handleClose();
+                                                    }}
+                                                    className="text-sm text-blue-600 dark:text-blue-400 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 rounded"
+                                                >
+                                                    Solicitar otra fecha y horario
+                                                </button>
                                             </div>
                                         )}
-                                    </div>
 
-                                    {/* Botón continuar - fijo en la parte inferior */}
-                                    <div className="p-3 sm:p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex-shrink-0">
+                                    </div>
+                                    </ScrollFadeEffect>
+
+                                    {/* Botón continuar - ancho reducido, texto ligeramente suave */}
+                                    <div className="p-3 sm:p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex-shrink-0 flex justify-center">
                                         <button
                                             onClick={handleContinue}
                                             disabled={!canContinue || isLoading}
-                                            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-3 sm:py-4 px-6 rounded-2xl transition-colors text-base sm:text-lg touch-manipulation disabled:cursor-not-allowed active:scale-95 shadow-lg flex items-center justify-center gap-2"
+                                            className="w-full max-w-[92%] min-h-11 py-2.5 px-4 rounded-full text-sm font-medium text-white/90 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors touch-manipulation active:scale-[0.98] flex items-center justify-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                                         >
                                             {isLoading && (
-                                                <Loader2 className="w-5 h-5 animate-spin" />
+                                                <Loader2 className="w-4 h-4 animate-spin" />
                                             )}
-                                            {canContinue ? 'Continuar →' : 'Completa todas las opciones'}
+                                            {canContinue ? 'Continuar' : 'Completa todas las opciones'}
                                         </button>
                                     </div>
                                 </div>
                             )}
 
-                            {/* Step 2: Formulario de contacto secuencial */}
+                            {/* Step 2: Datos de contacto – compacto, minimalista, campos visibles sin scroll */}
                             {step === 'contact' && (
                                 <div className="flex-1 flex flex-col overflow-hidden min-h-0">
-                                    <div className="flex-1 p-3 sm:p-4 overflow-y-auto">
-                                        {/* Indicador de progreso */}
-                                        <div className="flex items-center justify-between mb-4">
-                                            <span className="text-sm text-gray-600 dark:text-gray-400">
-                                                Campo {currentFieldIndex + 1} de {formFields.length}
-                                            </span>
-                                            <div className="flex gap-1">
-                                                {formFields.map((_, index) => (
-                                                    <div
-                                                        key={index}
-                                                        className={`w-2 h-2 rounded-full transition-colors ${index <= currentFieldIndex
-                                                            ? 'bg-blue-500'
-                                                            : 'bg-gray-300 dark:bg-gray-600'
-                                                            }`}
+                                    <ScrollFadeEffect orientation="vertical" className="flex-1 min-h-0">
+                                    <div className="p-3 sm:p-4 space-y-3">
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                                            2/4 – Datos de contacto
+                                        </p>
+                                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                                            Completa tus datos para confirmar la visita.
+                                        </p>
+                                        <div className="space-y-2.5">
+                                            {formFields.map((field) => (
+                                                <div key={field.key}>
+                                                    <label htmlFor={`contact-${field.key}`} className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-0.5">
+                                                        {field.title}
+                                                    </label>
+                                                    <input
+                                                        id={`contact-${field.key}`}
+                                                        type={field.type}
+                                                        value={contactData[field.key as keyof ContactFormData] || ''}
+                                                        onChange={(e) => {
+                                                            const value = e.target.value;
+                                                            setContactData(prev => ({ ...prev, [field.key]: value }));
+                                                            if (formErrors[field.key as keyof FormErrors]) {
+                                                                setFormErrors(prev => ({ ...prev, [field.key]: undefined }));
+                                                            }
+                                                        }}
+                                                        className="w-full p-2.5 rounded-lg border border-gray-300 bg-white text-gray-900 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white transition-colors"
+                                                        placeholder={field.placeholder}
+                                                        aria-invalid={!!formErrors[field.key as keyof FormErrors]}
+                                                        aria-describedby={formErrors[field.key as keyof FormErrors] ? `contact-${field.key}-error` : undefined}
+                                                        autoFocus={field.key === 'name'}
                                                     />
-                                                ))}
-                                            </div>
+                                                    {formErrors[field.key as keyof FormErrors] && (
+                                                        <p id={`contact-${field.key}-error`} className="mt-0.5 text-xs text-red-600 dark:text-red-400" role="alert">
+                                                            {formErrors[field.key as keyof FormErrors]}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            ))}
                                         </div>
+                                    </div>
+                                    </ScrollFadeEffect>
 
-                                        {/* Campo actual */}
+                                    <div className="p-3 sm:p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex-shrink-0 flex gap-3 items-center justify-between">
+                                        <button
+                                            type="button"
+                                            onClick={handleBack}
+                                            className="flex-1 min-h-11 py-2.5 px-4 rounded-full text-sm font-bold text-gray-900 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                                        >
+                                            Atrás
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={handleContactContinue}
+                                            disabled={!canContinueForm}
+                                            className="flex-1 min-h-11 py-2.5 px-4 rounded-full text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors touch-manipulation active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                                        >
+                                            {canContinueForm ? 'Sí, solicitar visita' : 'Completa nombre, teléfono y RUT'}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Step 3: Calificación (3 preguntas deslizables) */}
+                            {step === 'qualification' && (
+                                <div className="flex-1 flex flex-col overflow-hidden min-h-0">
+                                    <ScrollFadeEffect orientation="vertical" className="flex-1 min-h-0">
+                                    <div className="p-4 sm:p-5 space-y-4">
+                                        <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                                            Pregunta {currentQuestionIndex + 1} de {qualificationQuestions.length}
+                                        </p>
                                         <AnimatePresence mode="wait">
                                             <motion.div
-                                                key={currentFieldIndex}
+                                                key={currentQuestionIndex}
                                                 initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, x: 20 }}
                                                 animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, x: 0 }}
                                                 exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, x: -20 }}
                                                 transition={animationConfig}
                                             >
-                                                <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                                                    {formFields[currentFieldIndex].title}
+                                                <h4 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">
+                                                    {qualificationQuestions[currentQuestionIndex].title}
                                                 </h4>
-                                                <div className="relative">
-                                                    <input
-                                                        type={formFields[currentFieldIndex].type}
-                                                        value={contactData[formFields[currentFieldIndex].key as keyof ContactFormData] || ''}
-                                                        onChange={(e) => {
-                                                            const value = e.target.value;
-                                                            setContactData(prev => ({ ...prev, [formFields[currentFieldIndex].key]: value }));
-                                                        }}
-                                                        onKeyPress={(e) => {
-                                                            if (e.key === 'Enter') {
-                                                                handleNextField();
-                                                            }
-                                                        }}
-                                                        className="w-full p-4 pr-16 rounded-xl border-2 border-gray-300 bg-white text-gray-900 focus:border-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white transition-colors text-lg"
-                                                        placeholder={formFields[currentFieldIndex].placeholder}
-                                                        autoFocus
-                                                    />
-                                                    {/* Flow: Botón de flecha unificado con handleNextField */}
+                                                <div className="space-y-3">
+                                                    <div className="flex gap-2 sm:gap-3">
+                                                        {qualificationQuestions[currentQuestionIndex].options.map((option) => {
+                                                            const questionKey = qualificationQuestions[currentQuestionIndex].key;
+                                                            const currentValue = rentalQualification[questionKey as keyof RentalQualification];
+                                                            const isSelected = currentValue === (option === 'Sí');
+
+                                                            return (
+                                                                <button
+                                                                    key={option}
+                                                                    type="button"
+                                                                    onClick={() => handleQualificationAnswer(questionKey, option === 'Sí')}
+                                                                    className={`flex-1 min-w-[100px] py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl text-center transition-colors font-medium text-sm sm:text-base ${isSelected
+                                                                        ? 'bg-blue-500 text-white'
+                                                                        : 'bg-gray-100 text-gray-900 hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700'
+                                                                        } focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500`}
+                                                                >
+                                                                    {option}
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </div>
                                                     <button
                                                         type="button"
-                                                        onClick={handleNextField}
-                                                        disabled={!isCurrentFieldValid}
-                                                        className="absolute right-3 top-1/2 transform -translate-y-1/2 p-2 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white transition-colors"
-                                                        aria-label="Siguiente campo"
+                                                        onClick={() => {
+                                                            if (currentQuestionIndex < qualificationQuestions.length - 1) {
+                                                                setCurrentQuestionIndex((prev) => prev + 1);
+                                                            }
+                                                        }}
+                                                        className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors underline"
                                                     >
-                                                        <ChevronRight className="w-5 h-5" />
+                                                        Saltar
                                                     </button>
-                                                    {/* Mostrar error si existe */}
-                                                    {formErrors[formFields[currentFieldIndex].key as keyof FormErrors] && (
-                                                        <p className="mt-2 text-sm text-red-600 dark:text-red-400">
-                                                            {formErrors[formFields[currentFieldIndex].key as keyof FormErrors]}
-                                                        </p>
-                                                    )}
                                                 </div>
                                             </motion.div>
                                         </AnimatePresence>
                                     </div>
-
-                                    {/* Flow: Botones de navegación unificados - fijos en la parte inferior */}
-                                    <div className="p-3 sm:p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 space-y-2 sm:space-y-3 flex-shrink-0">
+                                    </ScrollFadeEffect>
+                                    <div className="p-3 sm:p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex-shrink-0 flex gap-3 items-center justify-between">
                                         <button
                                             type="button"
                                             onClick={handleBack}
-                                            className="w-full py-2.5 sm:py-3 px-6 rounded-xl font-semibold transition-colors bg-gray-100 text-gray-900 hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700"
+                                            className="flex-1 min-h-11 py-2.5 px-4 rounded-full text-sm font-bold text-gray-900 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                                         >
-                                            ← Atrás
+                                            Atrás
                                         </button>
                                         <button
                                             type="button"
-                                            onClick={currentFieldIndex < formFields.length - 1 ? handleNextField : handleContinueToSuccess}
-                                            disabled={isLoading || (currentFieldIndex < formFields.length - 1 ? !isCurrentFieldValid : !canContinueForm)}
-                                            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-3 sm:py-4 px-6 rounded-2xl transition-colors text-base sm:text-lg touch-manipulation disabled:cursor-not-allowed active:scale-95 shadow-lg flex items-center justify-center gap-2"
+                                            onClick={handleQualificationContinue}
+                                            disabled={isLoading}
+                                            className="flex-1 min-h-11 py-2.5 px-4 rounded-full text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors touch-manipulation active:scale-[0.98] flex items-center justify-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                                         >
                                             {isLoading ? (
                                                 <>
-                                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                                    <Loader2 className="w-4 h-4 animate-spin" />
                                                     Procesando...
                                                 </>
                                             ) : (
-                                                currentFieldIndex < formFields.length - 1
-                                                    ? 'Siguiente →'
-                                                    : (canContinueForm ? 'Completar →' : 'Completa todos los campos')
+                                                currentQuestionIndex < qualificationQuestions.length - 1 ? 'Continuar' : 'Sí, solicitar visita'
                                             )}
                                         </button>
                                     </div>
                                 </div>
                             )}
 
-                            {/* Step 3: Éxito */}
+                            {/* Step 4: Éxito */}
                             {step === 'success' && (
                                 <div className="flex-1 flex flex-col overflow-hidden min-h-0">
                                     <div className="flex-1 p-3 sm:p-4 overflow-y-auto flex flex-col items-center justify-center text-center">

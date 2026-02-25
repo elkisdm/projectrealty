@@ -28,6 +28,7 @@ import { VisitSchedulerModal } from "@components/flow/VisitSchedulerModal";
 import { Header } from "@components/marketing/Header";
 import { track } from "@lib/analytics";
 import type { Unit, Building } from "@schemas/models";
+import { PromotionType } from "@schemas/models";
 
 // Lazy load components for better performance - V3 Optimized
 const RelatedList = lazy(() => import("@components/lists/RelatedList").then(module => ({ default: module.RelatedList })));
@@ -268,6 +269,14 @@ export function PropertyClient({ building, relatedBuildings, defaultUnitId }: Pr
   // const [includeParking] = useState(false);
   // const [includeStorage] = useState(false);
   const [isVisitSchedulerOpen, setIsVisitSchedulerOpen] = useState(false);
+  const handleSelectAnotherUnit = useCallback(() => {
+    const anchor = document.getElementById("units-section");
+    if (anchor) {
+      anchor.scrollIntoView({ behavior: "smooth", block: "start" });
+    } else {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, []);
 
   // Seleccionar unidad por defecto basada en defaultUnitId o la primera disponible
   const getDefaultUnit = useCallback(() => {
@@ -309,12 +318,27 @@ export function PropertyClient({ building, relatedBuildings, defaultUnitId }: Pr
   // Datos estratégicos basados en AssetPlan
   const originalPrice = selectedUnit?.price || building.precio_desde || 290000;
 
-  // PASO 4: Badges estratégicos simplificados (máximo 3 principales) - Memoizado
-  const primaryBadges = useMemo(() => [
-    { label: "0% comisión", icon: DollarSign, color: "green", bgColor: "from-green-500 to-emerald-500" },
-    { label: "50% OFF primer mes", icon: Flame, color: "orange", bgColor: "from-orange-500 to-red-500" },
-    { label: "Garantía en cuotas", icon: Shield, color: "blue", bgColor: "from-indigo-500 to-blue-500" }
-  ], []);
+  // Badges derivados de promotions (unit + building) - solo mostrar beneficios que la unidad tiene
+  const BADGE_CONFIG: Record<string, { label: string; icon: typeof DollarSign; bgColor: string }> = {
+    [PromotionType.FREE_COMMISSION]: { label: "0% comisión", icon: DollarSign, bgColor: "from-green-500 to-emerald-500" },
+    [PromotionType.DISCOUNT_PERCENT]: { label: "Descuento", icon: Flame, bgColor: "from-orange-500 to-red-500" },
+    [PromotionType.GUARANTEE_INSTALLMENTS]: { label: "Garantía en cuotas", icon: Shield, bgColor: "from-indigo-500 to-blue-500" },
+  };
+  const primaryBadges = useMemo(() => {
+    const unitPromos = selectedUnit?.promotions ?? [];
+    const bldgBadges = building?.badges ?? [];
+    const seen = new Set<string>();
+    const result: { label: string; icon: typeof DollarSign; color: string; bgColor: string }[] = [];
+    for (const p of [...unitPromos, ...bldgBadges]) {
+      const type = p.type as PromotionType;
+      const config = BADGE_CONFIG[type];
+      if (config && !seen.has(type)) {
+        seen.add(type);
+        result.push({ ...config, color: "inherit", label: p.label || config.label });
+      }
+    }
+    return result.slice(0, 3);
+  }, [selectedUnit?.promotions, building?.badges]);
 
   // Datos dinámicos de la unidad seleccionada (removed unused)
   /*
@@ -428,6 +452,7 @@ export function PropertyClient({ building, relatedBuildings, defaultUnitId }: Pr
         <Header />
 
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 lg:py-8">
+          <div id="units-section" className="sr-only" aria-hidden="true" />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Main content (2/3) */}
             <div className="lg:col-span-2 space-y-6 lg:space-y-8">
@@ -462,7 +487,7 @@ export function PropertyClient({ building, relatedBuildings, defaultUnitId }: Pr
                     }
                   }}
                 >
-                  {primaryBadges.slice(0, 3).map((badge, index) => (
+                  {primaryBadges.slice(0, 3).map((badge) => (
                     <motion.div
                       key={badge.label}
                       className={`flex-1 lg:flex-none inline-flex items-center justify-center gap-1 lg:gap-3 px-2 lg:px-6 py-1.5 lg:py-3 bg-gradient-to-r ${badge.bgColor} text-white text-xs lg:text-sm font-bold rounded-lg lg:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-white/20`}
@@ -593,6 +618,9 @@ export function PropertyClient({ building, relatedBuildings, defaultUnitId }: Pr
                 commune={building.comuna}
                 unit={selectedUnit || undefined}
                 buildingId={building.id}
+                buildingName={building.name}
+                buildingAddress={building.address}
+                onSelectAnotherUnit={handleSelectAnotherUnit}
               />
             </div>
 
@@ -608,6 +636,9 @@ export function PropertyClient({ building, relatedBuildings, defaultUnitId }: Pr
               commune={building.comuna}
               unit={selectedUnit || undefined}
               buildingId={building.id}
+              buildingName={building.name}
+              buildingAddress={building.address}
+              onSelectAnotherUnit={handleSelectAnotherUnit}
             />
           </div>
         </main>

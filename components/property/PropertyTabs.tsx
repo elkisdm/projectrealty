@@ -6,7 +6,6 @@ import { PropertyDetailTab } from "./PropertyDetailTab";
 import { PropertyLocationTab } from "./PropertyLocationTab";
 import { PropertyAmenitiesTab } from "./PropertyAmenitiesTab";
 import { PropertyRequirementsTab } from "./PropertyRequirementsTab";
-import { PropertyFAQTab } from "./PropertyFAQTab";
 
 interface PropertyTabsProps {
   unit: Unit;
@@ -14,7 +13,7 @@ interface PropertyTabsProps {
   className?: string;
 }
 
-type TabId = "detalle" | "caracteristicas" | "requisitos" | "faq";
+type TabId = "detalle" | "ubicacion" | "caracteristicas" | "requisitos";
 
 interface Tab {
   id: TabId;
@@ -49,6 +48,11 @@ export function PropertyTabs({ unit, building, className = "" }: PropertyTabsPro
       component: <PropertyDetailTab unit={unit} building={building} />
     },
     {
+      id: "ubicacion",
+      label: "Ubicación",
+      component: <PropertyLocationTab building={building} />
+    },
+    {
       id: "caracteristicas",
       label: "Características",
       component: <PropertyAmenitiesTab unit={unit} building={building} />
@@ -57,11 +61,6 @@ export function PropertyTabs({ unit, building, className = "" }: PropertyTabsPro
       id: "requisitos",
       label: "Requisitos",
       component: <PropertyRequirementsTab unit={unit} building={building} />
-    },
-    {
-      id: "faq",
-      label: "Preguntas Frecuentes",
-      component: <PropertyFAQTab unit={unit} building={building} />
     }
   ];
 

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Bed, Bath, Square, Building2, Eye, Home, PawPrint, Sun, Ruler } from "lucide-react";
+import { Bed, Bath, Square, Building2, Eye, Home, PawPrint, Ruler, Car, Package, Sun } from "lucide-react";
 import type { Unit, Building } from "@schemas/models";
 
 interface PropertyDetailTabProps {
@@ -103,70 +103,69 @@ export function PropertyDetailTab({ unit, building }: PropertyDetailTabProps) {
         </div>
       </div>
 
-      {/* Tipología */}
-      <div className="bg-card border border-border rounded-2xl p-6">
-        <h4 className="text-base font-semibold text-text mb-4">Tipología</h4>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {/* Grid 2 columnas: tipología + piso, vista, amoblado, mascotas */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="bg-card border border-border rounded-xl p-4">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-[#8B6CFF]/10 rounded-lg">
               <Bed className="w-5 h-5 text-[#8B6CFF]" />
             </div>
             <div>
               <div className="text-sm text-subtext">Dormitorios</div>
-              <div className="text-lg font-bold text-text">{dormitorios}</div>
+              <div className="text-base font-semibold text-text">{dormitorios}</div>
             </div>
           </div>
+        </div>
+        <div className="bg-card border border-border rounded-xl p-4">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-[#8B6CFF]/10 rounded-lg">
               <Bath className="w-5 h-5 text-[#8B6CFF]" />
             </div>
             <div>
               <div className="text-sm text-subtext">Baños</div>
-              <div className="text-lg font-bold text-text">{banos}</div>
+              <div className="text-base font-semibold text-text">{banos}</div>
             </div>
           </div>
-          {superficie > 0 && (
+        </div>
+        {superficie > 0 && (
+          <div className="bg-card border border-border rounded-xl p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-[#8B6CFF]/10 rounded-lg">
                 <Ruler className="w-5 h-5 text-[#8B6CFF]" />
               </div>
               <div>
-                <div className="text-sm text-subtext">Superficie Total</div>
-                <div className="text-lg font-bold text-text">
-                  {superficie} m²
-                </div>
+                <div className="text-sm text-subtext">Superficie Interior</div>
+                <div className="text-base font-semibold text-text">{superficie} m²</div>
               </div>
             </div>
-          )}
-          {superficieTerraza > 0 && (
+          </div>
+        )}
+        {superficieTerraza > 0 && (
+          <div className="bg-card border border-border rounded-xl p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-[#8B6CFF]/10 rounded-lg">
                 <Sun className="w-5 h-5 text-[#8B6CFF]" />
               </div>
               <div>
-                <div className="text-sm text-subtext">Terraza</div>
-                <div className="text-lg font-bold text-text">
-                  {superficieTerraza} m²
-                </div>
+                <div className="text-sm text-subtext">Superficie exterior</div>
+                <div className="text-base font-semibold text-text">{superficieTerraza} m²</div>
               </div>
             </div>
-          )}
-          {!(dormitorios > 0 || banos > 0) && (
+          </div>
+        )}
+        {!(dormitorios > 0 || banos > 0) && (
+          <div className="bg-card border border-border rounded-xl p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-[#8B6CFF]/10 rounded-lg">
                 <Building2 className="w-5 h-5 text-[#8B6CFF]" />
               </div>
               <div>
                 <div className="text-sm text-subtext">Tipo</div>
-                <div className="text-lg font-bold text-text">{tipologia}</div>
+                <div className="text-base font-semibold text-text">{tipologia}</div>
               </div>
             </div>
-          )}
-        </div>
-      </div>
-
-      {/* Información adicional */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          </div>
+        )}
         {piso && (
           <div className="bg-card border border-border rounded-xl p-4">
             <div className="flex items-center gap-3">
@@ -180,7 +179,6 @@ export function PropertyDetailTab({ unit, building }: PropertyDetailTabProps) {
             </div>
           </div>
         )}
-
         {vista && (
           <div className="bg-card border border-border rounded-xl p-4">
             <div className="flex items-center gap-3">
@@ -194,7 +192,6 @@ export function PropertyDetailTab({ unit, building }: PropertyDetailTabProps) {
             </div>
           </div>
         )}
-
         {amoblado !== undefined && (
           <div className="bg-card border border-border rounded-xl p-4">
             <div className="flex items-center gap-3">
@@ -210,7 +207,6 @@ export function PropertyDetailTab({ unit, building }: PropertyDetailTabProps) {
             </div>
           </div>
         )}
-
         <div className="bg-card border border-border rounded-xl p-4">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-[#8B6CFF]/10 rounded-lg">
@@ -219,6 +215,32 @@ export function PropertyDetailTab({ unit, building }: PropertyDetailTabProps) {
             <div>
               <div className="text-sm text-subtext">Política Mascotas</div>
               <div className="text-base font-semibold text-text">{politicaMascotas}</div>
+            </div>
+          </div>
+        </div>
+        <div className="bg-card border border-border rounded-xl p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-[#8B6CFF]/10 rounded-lg">
+              <Car className="w-5 h-5 text-[#8B6CFF]" />
+            </div>
+            <div>
+              <div className="text-sm text-subtext">Estacionamiento</div>
+              <div className="text-base font-semibold text-text">
+                {unit.estacionamiento ? "Incluido" : "No"}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="bg-card border border-border rounded-xl p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-[#8B6CFF]/10 rounded-lg">
+              <Package className="w-5 h-5 text-[#8B6CFF]" />
+            </div>
+            <div>
+              <div className="text-sm text-subtext">Bodega</div>
+              <div className="text-base font-semibold text-text">
+                {unit.bodega ? "Incluido" : "No"}
+              </div>
             </div>
           </div>
         </div>

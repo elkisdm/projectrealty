@@ -6,7 +6,11 @@ import { ChevronRight, Home } from "lucide-react";
 /**
  * Breadcrumb simple para la página de resultados
  */
-export function ResultsBreadcrumb() {
+interface ResultsBreadcrumbProps {
+  location?: string;
+}
+
+export function ResultsBreadcrumb({ location }: ResultsBreadcrumbProps) {
   return (
     <nav
       aria-label="Navegación de migas de pan"
@@ -27,11 +31,18 @@ export function ResultsBreadcrumb() {
         <li className="text-text font-medium" aria-current="page">
           Resultados
         </li>
+        {location && (
+          <>
+            <ChevronRight className="w-4 h-4 text-subtext" aria-hidden="true" />
+            <li className="text-subtext truncate max-w-[160px]" title={location}>
+              {location}
+            </li>
+          </>
+        )}
       </ol>
     </nav>
   );
 }
-
 
 
 

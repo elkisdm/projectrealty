@@ -1,120 +1,103 @@
 "use client";
 
-import Link from "next/link";
 import { Suspense, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { Toaster } from "sonner";
+import { usePathname, useRouter } from "next/navigation";
 import { QueryClientProvider } from "@tanstack/react-query";
+import { LayoutDashboard, Building2, Home, Flag, CheckCircle2, PlusSquare, FileText } from "lucide-react";
+import React from "react";
 import { createOptimizedQueryClient } from "@lib/react-query";
 import { ErrorBoundary } from "@components/admin/ErrorBoundary";
 import { useAdminAuth } from "@hooks/useAdminAuth";
 import { logger } from "@lib/logger";
-import React from "react";
+import { AdminShell } from "@components/admin/ui/AdminShell";
+import type { AdminNavItem } from "@/types/admin-ui";
 
-const navItems = [
-    { href: "/admin", label: "Dashboard", icon: "📊" },
-    { href: "/admin/buildings", label: "Edificios", icon: "🏢" },
-    { href: "/admin/units", label: "Unidades", icon: "🏠" },
-    { href: "/admin/flags", label: "Feature Flags", icon: "🚩" },
-    { href: "/admin/completeness", label: "Completitud", icon: "✅" },
+const navItems: AdminNavItem[] = [
+  { key: "dashboard", href: "/admin", label: "Dashboard", icon: <LayoutDashboard className="h-4 w-4" />, minRole: "viewer" },
+  { key: "buildings", href: "/admin/buildings", label: "Edificios", icon: <Building2 className="h-4 w-4" />, minRole: "viewer" },
+  { key: "units", href: "/admin/units", label: "Unidades", icon: <Home className="h-4 w-4" />, minRole: "viewer" },
+  { key: "new-listing", href: "/admin/listar-propiedad", label: "Listar propiedad", icon: <PlusSquare className="h-4 w-4" />, minRole: "editor" },
+  { key: "contracts", href: "/admin/contracts", label: "Contratos", icon: <FileText className="h-4 w-4" />, minRole: "viewer" },
+  { key: "completeness", href: "/admin/completeness", label: "Completitud", icon: <CheckCircle2 className="h-4 w-4" />, minRole: "viewer" },
+  { key: "flags", href: "/admin/flags", label: "Feature Flags", icon: <Flag className="h-4 w-4" />, minRole: "admin" },
 ];
 
 function LoadingFallback() {
+  return (
+    <div className="space-y-4">
+      <div className="h-9 w-1/3 animate-pulse rounded-lg bg-[var(--admin-surface-2)]" />
+      <div className="h-64 animate-pulse rounded-2xl bg-[var(--admin-surface-2)]" />
+    </div>
+  );
+}
+
+function AuthenticatedContent({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const { user, logout, isAuthenticated, isLoadingSession, isLoggingOut, error: sessionError } = useAdminAuth();
+
+  useEffect(() => {
+    if (!isLoadingSession && !isAuthenticated) {
+      router.push("/admin/login");
+    }
+  }, [isAuthenticated, isLoadingSession, router]);
+
+  if (isLoadingSession) {
     return (
-        <div className="container mx-auto px-4 md:px-6 py-8">
-            <div className="animate-pulse space-y-4">
-                <div className="h-8 bg-[var(--soft)] rounded w-1/3"></div>
-                <div className="h-64 bg-[var(--soft)] rounded-2xl"></div>
-            </div>
+      <div className="flex min-h-screen items-center justify-center bg-[var(--bg)]">
+        <div className="text-center">
+          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-brand-violet" />
+          <p className="text-sm text-[var(--subtext)]">Verificando sesion...</p>
         </div>
+      </div>
     );
-}
+  }
 
-function AuthGuard({ children }: { children: React.ReactNode }) {
-    const { isAuthenticated, isLoadingSession } = useAdminAuth();
-    const router = useRouter();
-
-    useEffect(() => {
-        if (!isLoadingSession && !isAuthenticated) {
-            router.push('/admin/login');
-        }
-    }, [isAuthenticated, isLoadingSession, router]);
-
-    if (isLoadingSession) {
-        return (
-            <div className="min-h-screen bg-[var(--bg)] flex items-center justify-center">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-violet mx-auto mb-4"></div>
-                    <p className="text-[var(--subtext)]">Verificando sesión...</p>
-                </div>
-            </div>
-        );
-    }
-
-    if (!isAuthenticated) {
-        return null; // El redirect se maneja en el useEffect
-    }
-
-    return <>{children}</>;
-}
-
-function NavBar() {
-    const { user, logout, isLoggingOut } = useAdminAuth();
-
+  if (sessionError && !isAuthenticated) {
+    const message = sessionError instanceof Error ? sessionError.message : "Error al verificar sesion";
     return (
-        <nav className="border-b border-white/10 bg-[var(--soft)]/50 backdrop-blur-sm sticky top-0 z-50">
-            <div className="container mx-auto px-4 md:px-6">
-                <div className="flex items-center justify-between h-16">
-                    <div className="flex items-center gap-2">
-                        <h1 className="text-xl font-bold text-[var(--text)]">Panel de Control</h1>
-                    </div>
-                    <div className="flex items-center gap-1">
-                        {navItems.map((item) => (
-                            <Link
-                                key={item.href}
-                                href={item.href}
-                                className="px-3 py-2 rounded-lg text-sm font-medium text-[var(--subtext)] hover:text-[var(--text)] hover:bg-[var(--soft)] transition-colors focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--bg)]"
-                            >
-                                <span className="mr-1.5">{item.icon}</span>
-                                <span className="hidden sm:inline">{item.label}</span>
-                            </Link>
-                        ))}
-                        {user && (
-                            <div className="ml-4 flex items-center gap-3 border-l border-white/10 pl-4">
-                                <span className="text-sm text-[var(--subtext)] hidden sm:inline">
-                                    {user.email}
-                                </span>
-                                <button
-                                    onClick={() => {
-                                        logout().catch((err) => {
-                                            // El error ya está manejado en el mutation's onError
-                                            // Solo prevenimos el unhandled promise rejection
-                                            logger.error('Error en logout:', err);
-                                        });
-                                    }}
-                                    disabled={isLoggingOut}
-                                    className="px-3 py-2 rounded-lg text-sm font-medium text-[var(--subtext)] hover:text-[var(--text)] hover:bg-[var(--soft)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-brand-violet focus:ring-offset-2 focus:ring-offset-[var(--bg)]"
-                                >
-                                    {isLoggingOut ? 'Cerrando...' : 'Cerrar sesión'}
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </div>
-        </nav>
+      <div className="flex min-h-screen items-center justify-center bg-[var(--bg)]">
+        <div className="max-w-md rounded-2xl border border-amber-500/30 bg-amber-500/10 p-6 text-center">
+          <p className="text-sm font-medium text-amber-200">{message}</p>
+          <p className="mt-2 text-xs text-[var(--subtext)]">Redirigiendo al login...</p>
+        </div>
+      </div>
     );
+  }
+
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  return (
+    <AdminShell
+      navItems={navItems}
+      role={user?.role || "viewer"}
+      email={user?.email}
+      pathname={pathname}
+      onLogout={() => {
+        logout().catch((error) => {
+          logger.error("Error en logout:", error);
+        });
+      }}
+      isLoggingOut={isLoggingOut}
+    >
+      <ErrorBoundary>
+        <Suspense fallback={<LoadingFallback />}>{children}</Suspense>
+      </ErrorBoundary>
+    </AdminShell>
+  );
 }
 
 export default function AdminLayoutClient({ children }: { children: React.ReactNode }) {
-    const [queryClient] = React.useState(() => createOptimizedQueryClient());
+  const [queryClient] = React.useState(() => createOptimizedQueryClient());
+  const pathname = usePathname();
+  const isLoginPage = pathname === "/admin/login";
 
-    return (
-        <QueryClientProvider client={queryClient}>
-            <div className="min-h-screen bg-[var(--bg)] -mt-16 -mb-16">
-                {/* Ocultar Header y Footer del layout raíz usando CSS */}
-                <style dangerouslySetInnerHTML={{
-                    __html: `
+  const hideRootShell = (
+    <style
+      dangerouslySetInnerHTML={{
+        __html: `
           header,
           footer {
             display: none !important;
@@ -123,34 +106,17 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
             padding: 0 !important;
             margin: 0 !important;
           }
-        `}} />
-                <AuthGuard>
-                    {/* Navigation */}
-                    <NavBar />
+        `,
+      }}
+    />
+  );
 
-                    {/* Main Content */}
-                    <div className="min-h-[calc(100vh-4rem)]">
-                        <ErrorBoundary>
-                            <Suspense fallback={<LoadingFallback />}>{children}</Suspense>
-                        </ErrorBoundary>
-                    </div>
-                </AuthGuard>
-
-                {/* Toast Notifications */}
-                <Toaster
-                    position="top-right"
-                    richColors
-                    closeButton
-                    toastOptions={{
-                        style: {
-                            background: "var(--soft)",
-                            border: "1px solid rgba(255, 255, 255, 0.1)",
-                            color: "var(--text)",
-                        },
-                    }}
-                />
-            </div>
-        </QueryClientProvider>
-    );
+  return (
+    <QueryClientProvider client={queryClient}>
+      <div className="min-h-screen bg-[var(--bg)] -mb-16">
+        {hideRootShell}
+        {isLoginPage ? children : <AuthenticatedContent>{children}</AuthenticatedContent>}
+      </div>
+    </QueryClientProvider>
+  );
 }
-

@@ -13,7 +13,8 @@ type UnitPageProps = {
   params: Promise<{ comuna: string; slug: string }>;
 };
 
-export const revalidate = 3600; // 1 hour
+// Revalidar cada hora; 0 mientras se verifica que terminaciones/equipamiento lleguen desde Supabase
+export const revalidate = 0;
 
 /**
  * Página de unidad específica en estructura SEO
@@ -33,15 +34,22 @@ export default async function UnitPage({ params }: UnitPageProps) {
       notFound();
     }
 
-    // Obtener el building completo con TODAS sus unidades
-    const fullBuilding = await getBuildingBySlug(result.building.slug);
-    
-    // Mapear al formato esperado por UnitDetailResponse
-    // Extender el building con todas las unidades si están disponibles
-    const buildingWithAllUnits = fullBuilding 
+    // Obtener el building completo por slug; si no hay match (ej. slug en DB distinto), intentar por id
+    let fullBuilding = await getBuildingBySlug(result.building.slug);
+    if (!fullBuilding && result.building.id) {
+      fullBuilding = await getBuildingBySlug(result.building.id);
+    }
+
+    // Usar fullBuilding como base para tener terminaciones, equipamiento y units; preservar datos del processor si faltan
+    const buildingWithAllUnits = fullBuilding
       ? {
-          ...result.building,
-          // Incluir todas las unidades del edificio completo como propiedad adicional
+          ...fullBuilding,
+          // Asegurar terminaciones/equipamiento (por si fullBuilding los trae vacíos por caché)
+          terminaciones: (fullBuilding.terminaciones?.length ? fullBuilding.terminaciones : (result.building as { terminaciones?: string[] }).terminaciones) ?? [],
+          equipamiento: (fullBuilding.equipamiento?.length ? fullBuilding.equipamiento : (result.building as { equipamiento?: string[] }).equipamiento) ?? [],
+          // Preservar campos que el processor puede tener más actualizados (ej. gallery, amenities del join)
+          ...(result.building.amenities?.length && { amenities: result.building.amenities }),
+          ...(result.building.gallery?.length && { gallery: result.building.gallery }),
           allUnits: fullBuilding.units || [],
         }
       : result.building;
@@ -51,6 +59,12 @@ export default async function UnitPage({ params }: UnitPageProps) {
       building: buildingWithAllUnits,
       ...(result.similarUnits && result.similarUnits.length > 0 && { similarUnits: result.similarUnits }),
     };
+
+    if (process.env.NODE_ENV === "development") {
+      const t = (unitData.building as { terminaciones?: string[] }).terminaciones;
+      const e = (unitData.building as { equipamiento?: string[] }).equipamiento;
+      console.debug("[UnitPage] building.terminaciones:", t?.length ?? 0, "equipamiento:", e?.length ?? 0);
+    }
 
     // Verificar que la comuna coincida
     const normalizedComuna = normalizeComunaSlug(unitData.building.comuna);

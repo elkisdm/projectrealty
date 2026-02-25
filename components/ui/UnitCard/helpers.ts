@@ -1,0 +1,275 @@
+/**
+ * Helper functions for UnitCard component
+ * Pure functions that can be unit tested independently
+ */
+
+import type { Unit, Building } from '@types';
+import type { TipologiaColorConfig, BadgePriority, ChipType, ComputedUnitData } from './types';
+import { 
+  TIPOLOGIA_COLORS, 
+  DEFAULT_TIPOLOGIA_COLOR, 
+  DEFAULT_FALLBACK_IMAGE,
+} from './constants';
+import { normalizeComunaSlug } from '@lib/utils/slug';
+import { formatPrice } from '@lib/utils';
+
+/**
+ * Get the best available image for a unit
+ * Priority: tipologia > areas comunes > unit images > building gallery > cover > fallback
+ */
+export function getUnitImage(unit: Unit, building?: Building): string {
+  const sanitizeUrl = (url: string) =>
+    url.includes('parque-mackenna.jpg') ? '/images/parque-mackenna-305/IMG_4922.jpg' : url;
+
+  // Priority 1: Tipology images
+  if (unit.imagesTipologia && Array.isArray(unit.imagesTipologia) && unit.imagesTipologia.length > 0) {
+    return sanitizeUrl(unit.imagesTipologia[0]);
+  }
+
+  // Priority 2: Common areas images
+  if (unit.imagesAreasComunes && Array.isArray(unit.imagesAreasComunes) && unit.imagesAreasComunes.length > 0) {
+    return sanitizeUrl(unit.imagesAreasComunes[0]);
+  }
+
+  // Priority 3: Unit images (interior)
+  if (unit.images && Array.isArray(unit.images) && unit.images.length > 0) {
+    return sanitizeUrl(unit.images[0]);
+  }
+
+  // Priority 4: Building gallery
+  if (building?.gallery && building.gallery.length > 0) {
+    return sanitizeUrl(building.gallery[0]);
+  }
+
+  // Priority 5: Building cover image
+  if (building?.coverImage) {
+    return sanitizeUrl(building.coverImage);
+  }
+
+  // Fallback
+  return DEFAULT_FALLBACK_IMAGE;
+}
+
+/**
+ * Get the unit slug for URL navigation.
+ * Must match server logic (getUnitBySlug): id_pmq normalized, or building-slug-codigoUnidad.
+ */
+export function getUnitSlug(unit: Unit, building?: Building): string {
+  // Use unit slug if available (e.g. from id_pmq)
+  if (unit.slug) {
+    return unit.slug;
+  }
+
+  // Same as server: codigoUnidad (unidad) or first 8 chars of id
+  const codigoUnidad = unit.codigoUnidad?.trim() || unit.id.substring(0, 8);
+
+  if (building?.slug) {
+    return `${building.slug}-${codigoUnidad}`;
+  }
+
+  if (building?.id) {
+    return `${building.id}-${codigoUnidad}`;
+  }
+
+  return unit.id;
+}
+
+/**
+ * Get unit status text based on availability
+ */
+export function getStatusText(unit: Unit): string {
+  if (unit.status === 'available' || unit.disponible) {
+    return 'Disponible';
+  }
+  if (unit.status === 'reserved') {
+    return 'Reservado';
+  }
+  if (unit.status === 'rented') {
+    return 'Arrendado';
+  }
+  return 'Disponible'; // Default
+}
+
+/**
+ * Extract floor number from unit code
+ * Examples: 2201 -> 22, 301 -> 3, 1205 -> 12
+ */
+export function extractFloorNumber(unitCode: string): number | null {
+  if (!unitCode) return null;
+  
+  // Remove non-numeric characters
+  const numericCode = unitCode.replace(/\D/g, '');
+  if (!numericCode || numericCode.length < 2) return null;
+  
+  // 4+ digits: take first 2 as floor (2201 -> 22)
+  if (numericCode.length >= 4) {
+    const floor = parseInt(numericCode.substring(0, 2), 10);
+    if (floor > 0 && floor <= 99) return floor;
+  } 
+  // 3 digits: take first 1 as floor (301 -> 3)
+  else if (numericCode.length === 3) {
+    const floor = parseInt(numericCode.substring(0, 1), 10);
+    if (floor > 0 && floor <= 9) return floor;
+  }
+  
+  return null;
+}
+
+/**
+ * Get tipologia color configuration
+ */
+export function getTipologiaColor(tipologia: string): TipologiaColorConfig {
+  const normalized = tipologia.toLowerCase().trim().replace(/\s+/g, '');
+  return TIPOLOGIA_COLORS[normalized] || DEFAULT_TIPOLOGIA_COLOR;
+}
+
+/**
+ * Generate the href for unit navigation
+ * Uses SEO-friendly route if comuna is available
+ */
+export function generateUnitHref(unit: Unit, building?: Building): string {
+  const slug = getUnitSlug(unit, building);
+  const comuna = building?.comuna || '';
+  
+  return comuna 
+    ? `/arriendo/departamento/${normalizeComunaSlug(comuna)}/${slug}`
+    : `/property/${slug}`;
+}
+
+/**
+ * Compute the primary badge to show (only 1 badge)
+ * Priority: Promo > Exclusive > Pet Friendly > Available
+ */
+export function computePrimaryBadge(
+  unit: Unit, 
+  building?: Building
+): { text: string; type: BadgePriority } | null {
+  // Check for promotions on unit
+  if (unit.promotions && unit.promotions.length > 0) {
+    const promo = unit.promotions[0];
+    return { text: promo.label, type: 'promo' };
+  }
+
+  // Check for building badges
+  if (building?.badges && building.badges.length > 0) {
+    const badge = building.badges[0];
+    return { text: badge.label, type: 'promo' };
+  }
+
+  // Check for pet friendly
+  if (unit.pet_friendly || unit.petFriendly) {
+    return { text: 'Pet Friendly', type: 'pet_friendly' };
+  }
+
+  // Default: availability status
+  const statusText = getStatusText(unit);
+  return { text: statusText, type: 'available' };
+}
+
+/**
+ * Compute chips for the card (max 2)
+ * Priority: Included features > Pet > Optional features
+ */
+export function computeChips(
+  unit: Unit,
+  maxChips: number = 2
+): Array<{ type: ChipType; label: string; included: boolean }> {
+  const chips: Array<{ type: ChipType; label: string; included: boolean }> = [];
+
+  // Pet friendly (if not already shown as badge)
+  if (unit.pet_friendly || unit.petFriendly) {
+    chips.push({ type: 'pet', label: 'Mascotas', included: true });
+  }
+
+  // Parking (included)
+  if (unit.estacionamiento) {
+    chips.push({ type: 'parking', label: 'Estacionamiento', included: true });
+  }
+
+  // Storage (included)
+  if (unit.bodega) {
+    chips.push({ type: 'storage', label: 'Bodega', included: true });
+  }
+
+  // Terrace
+  if (unit.m2_terraza && unit.m2_terraza > 0) {
+    chips.push({ type: 'terrace', label: `Terraza ${unit.m2_terraza}m²`, included: true });
+  }
+
+  // Return only max allowed chips
+  return chips.slice(0, maxChips);
+}
+
+/**
+ * Format specs string (m² · D · B)
+ */
+export function formatSpecs(
+  m2?: number,
+  dormitorios?: number,
+  banos?: number,
+  terraza?: number
+): string {
+  const parts: string[] = [];
+  
+  if (m2) {
+    parts.push(`${m2} m²`);
+  }
+  
+  if (dormitorios !== undefined) {
+    parts.push(`${dormitorios}D`);
+  }
+  
+  if (banos !== undefined) {
+    parts.push(`${banos}B`);
+  }
+  
+  if (terraza && terraza > 0) {
+    parts.push(`+${terraza}m² terraza`);
+  }
+  
+  return parts.join(' · ');
+}
+
+/**
+ * Compute all derived data for a unit
+ */
+export function computeUnitData(unit: Unit, building?: Building): ComputedUnitData {
+  const gastoComun = unit.gastoComun || unit.gc || 0;
+  const dormitorios = unit.dormitorios ?? unit.bedrooms ?? 0;
+  const banos = unit.banos ?? unit.bathrooms ?? 1;
+  const totalMensual =
+    typeof unit.total_mensual === 'number' && unit.total_mensual > 0
+      ? unit.total_mensual
+      : gastoComun > 0
+      ? unit.price + gastoComun
+      : unit.price;
+
+  const address = [building?.address, building?.comuna]
+    .filter((part): part is string => Boolean(part && part.trim()))
+    .join(' · ');
+
+  return {
+    imageUrl: getUnitImage(unit, building),
+    href: generateUnitHref(unit, building),
+    slug: getUnitSlug(unit, building),
+    statusText: getStatusText(unit),
+    buildingName: building?.name || 'Edificio',
+    comuna: building?.comuna || '',
+    address,
+    floorNumber: extractFloorNumber(unit.codigoUnidad || ''),
+    gastoComun,
+    totalMensual,
+    tipologiaColor: getTipologiaColor(unit.tipologia),
+    badge: computePrimaryBadge(unit, building),
+    chips: computeChips(unit),
+    specs: {
+      m2: unit.m2,
+      dormitorios,
+      banos,
+      terraza: unit.m2_terraza
+    }
+  };
+}
+
+// Re-export formatPrice for convenience
+export { formatPrice };

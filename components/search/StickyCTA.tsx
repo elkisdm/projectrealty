@@ -14,12 +14,17 @@ export const StickyCTA = memo(function StickyCTA({
   isLoading = false,
   onClick,
   className = "",
+  label,
 }: StickyCTAProps) {
   const prefersReducedMotion = useReducedMotion();
 
   const getButtonText = useMemo(() => {
     if (isLoading) {
       return "Buscando...";
+    }
+    // Use custom label if provided
+    if (label) {
+      return label;
     }
     if (resultsCount === undefined) {
       return "Ver departamentos";
@@ -31,7 +36,7 @@ export const StickyCTA = memo(function StickyCTA({
       return "Ver 1 departamento";
     }
     return `Ver ${resultsCount} departamentos`;
-  }, [isLoading, resultsCount]);
+  }, [isLoading, resultsCount, label]);
 
   const isDisabled = isLoading || resultsCount === 0;
 
@@ -39,8 +44,8 @@ export const StickyCTA = memo(function StickyCTA({
     <div
       className={`
         sticky bottom-0 left-0 right-0
-        bg-surface dark:bg-gray-900
-        border-t border-border dark:border-gray-700
+        bg-surface
+        border-t border-border
         p-4
         z-10
         ${className}
@@ -61,7 +66,7 @@ export const StickyCTA = memo(function StickyCTA({
           flex items-center justify-center gap-2
           ${
             isDisabled
-              ? "bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+              ? "bg-muted text-muted-foreground cursor-not-allowed"
               : "bg-[#8B6CFF] hover:bg-[#7a5ce6] text-white shadow-lg shadow-violet-500/25"
           }
         `}

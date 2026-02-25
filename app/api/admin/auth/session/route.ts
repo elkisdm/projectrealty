@@ -1,22 +1,35 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getAdminSession } from '@lib/admin/auth-supabase';
+import { NextRequest } from 'next/server';
+import { getAdminSessionFromAccessToken } from '@lib/admin/auth-supabase';
+import { getSupabaseCookies } from '@lib/admin/supabase-cookies';
+import { adminOk, createAdminMutationMeta } from '@lib/admin/contracts';
 import { logger } from '@lib/logger';
 
-// Force dynamic rendering
 export const dynamic = 'force-dynamic';
 
-export async function GET(_request: NextRequest) {
-  try {
-    const session = await getAdminSession();
+export async function GET(request: NextRequest) {
+  const requestMeta = createAdminMutationMeta();
+  const responseHeaders = { "x-request-id": requestMeta.request_id };
 
-    if (!session) {
-      return NextResponse.json(
-        { authenticated: false },
-        { status: 200 }
+  try {
+    const { access_token } = getSupabaseCookies(request);
+
+    if (!access_token) {
+      return adminOk(
+        { authenticated: false, user: null },
+        { status: 200, meta: requestMeta, headers: responseHeaders }
       );
     }
 
-    return NextResponse.json(
+    const session = await getAdminSessionFromAccessToken(access_token);
+
+    if (!session) {
+      return adminOk(
+        { authenticated: false, user: null },
+        { status: 200, meta: requestMeta, headers: responseHeaders }
+      );
+    }
+
+    return adminOk(
       {
         authenticated: true,
         user: {
@@ -25,18 +38,16 @@ export async function GET(_request: NextRequest) {
           role: session.user.role,
         },
       },
-      { status: 200 }
+      { status: 200, meta: requestMeta, headers: responseHeaders }
     );
   } catch (error) {
     logger.error('[AUTH] Error en verificación de sesión:', error);
-    
-    return NextResponse.json(
-      { authenticated: false },
-      { status: 200 }
+    return adminOk(
+      { authenticated: false, user: null },
+      { status: 200, meta: requestMeta, headers: responseHeaders }
     );
   }
 }
-
 
 
 

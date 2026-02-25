@@ -1,6 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Evita timeout en build si la generación de páginas tarda (home con datos pesados)
+  staticPageGenerationTimeout: 120,
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: [
@@ -12,6 +14,11 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'lytgdrbdyvmvziypvumy.supabase.co',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'keyluynuhmfuqydnmbfh.supabase.co',
         pathname: '/**',
       },
     ],

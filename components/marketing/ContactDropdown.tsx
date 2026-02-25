@@ -106,7 +106,7 @@ export function ContactDropdown() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.95 }}
               transition={{ duration: 0.2 }}
-              className="absolute right-0 mt-2 w-48 bg-gray-800 dark:bg-gray-900 rounded-xl shadow-xl border border-gray-700 dark:border-gray-700 z-50 overflow-hidden"
+              className="absolute right-0 mt-2 w-48 bg-card rounded-xl shadow-xl border border-border z-50 overflow-hidden"
               role="menu"
               aria-orientation="vertical"
             >
@@ -119,7 +119,7 @@ export function ContactDropdown() {
                     return (
                       <div
                         key={option.label}
-                        className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 cursor-not-allowed opacity-50"
+                        className="px-4 py-3 text-sm text-muted-foreground cursor-not-allowed opacity-50"
                         role="menuitem"
                       >
                         <div className="flex items-center gap-3">
@@ -135,7 +135,7 @@ export function ContactDropdown() {
                       key={option.label}
                       href={option.href}
                       onClick={option.onClick}
-                      className="flex items-center gap-3 px-4 py-3 text-sm text-gray-300 dark:text-gray-300 hover:bg-gray-700 dark:hover:bg-gray-800 transition-colors duration-150"
+                      className="flex items-center gap-3 px-4 py-3 text-sm text-foreground hover:bg-muted transition-colors duration-150"
                       role="menuitem"
                     >
                       <Icon className="w-4 h-4" />

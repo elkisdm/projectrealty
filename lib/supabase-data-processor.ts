@@ -3,6 +3,7 @@ import { createClient as createSupabaseClient, type SupabaseClient } from '@supa
 import { createMockSupabaseClient } from './supabase.mock';
 import { getTremendoUnitsProcessor, type TremendoUnitsProcessor } from './tremendo-units-processor';
 import { logger } from './logger';
+import { normalizePmqId, pmqIdEquals, isPmqSlug } from './constants/pmq-ids';
 
 /**
  * Función helper para crear cliente Supabase (real o mock según disponibilidad)
@@ -140,6 +141,7 @@ export interface SupabaseUnitRow {
   images_tipologia?: string[];
   images_areas_comunes?: string[];
   images?: string[];
+  videos?: string[];
   buildings: {
     id: string;
     name: string;
@@ -149,6 +151,9 @@ export interface SupabaseUnitRow {
     amenities?: string[];
     gallery?: string[];
     cover_image?: string;
+    metro_cercano_nombre?: string;
+    metro_cercano_distancia?: number;
+    metro_cercano_tiempo?: number;
   } | null;
 }
 
@@ -157,6 +162,20 @@ class SupabaseDataProcessor {
   private condominios: Map<string, CondominioData> = new Map();
   private isInitialized = false;
   private tremendoProcessor: TremendoUnitsProcessor | null = null;
+
+  private sanitizeImageUrl(url: string | null | undefined): string | undefined {
+    if (!url || typeof url !== 'string') return undefined;
+    // Known invalid placeholder: file does not exist in /public
+    if (url.includes('parque-mackenna.jpg')) return '/images/parque-mackenna-305/IMG_4922.jpg';
+    return url;
+  }
+
+  private sanitizeImageList(urls: unknown): string[] {
+    if (!Array.isArray(urls)) return [];
+    return urls
+      .map((item) => (typeof item === 'string' ? this.sanitizeImageUrl(item) : undefined))
+      .filter((value): value is string => Boolean(value && value.trim()));
+  }
 
   constructor() {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -186,34 +205,38 @@ class SupabaseDataProcessor {
       const { data: units, error } = await this.supabase
         .from('units')
         .select(`
-          id,
-          building_id,
-          tipologia,
-          m2,
-          price,
-          gc,
-          total_mensual,
-          orientacion,
-          m2_terraza,
-          descuento_porcentaje,
-          meses_descuento,
-          garantia_meses,
-          garantia_cuotas,
-          rentas_necesarias,
-          pet_friendly,
-          reajuste_meses,
-          link_listing,
-          disponible,
-          estacionamiento,
-          bodega,
-          parking_optional,
-          storage_optional,
-          bedrooms,
-          bathrooms,
-          images_tipologia,
-          images_areas_comunes,
-          images,
-          buildings!inner (
+        id,
+        building_id,
+        unidad,
+        id_pmq,
+        tipologia,
+        m2,
+        price,
+        gc,
+        total_mensual,
+        orientacion,
+        m2_terraza,
+        descuento_porcentaje,
+        meses_descuento,
+        garantia_meses,
+        garantia_cuotas,
+        rentas_necesarias,
+        pet_friendly,
+        reajuste_meses,
+        link_listing,
+        disponible,
+        estacionamiento,
+        bodega,
+        parking_optional,
+        storage_optional,
+        conexion_lavadora,
+        bedrooms,
+        bathrooms,
+        images_tipologia,
+        images_areas_comunes,
+        images,
+        videos,
+        buildings!inner (
             id,
             name,
             slug,
@@ -221,7 +244,12 @@ class SupabaseDataProcessor {
             address,
             amenities,
             gallery,
-            cover_image
+            cover_image,
+            metro_cercano_nombre,
+            metro_cercano_distancia,
+            metro_cercano_tiempo,
+            terminaciones,
+            equipamiento
           )
         `)
         .order('price', { ascending: true });
@@ -434,9 +462,16 @@ class SupabaseDataProcessor {
    */
   async getUnits(filters: {
     comuna?: string | string[];
+    operation?: 'rent';
     precioMin?: number;
     precioMax?: number;
+    dormitoriosMin?: number;
+    tipos?: string | string[];
     dormitorios?: number | string | string[];
+    estacionamiento?: boolean;
+    bodega?: boolean;
+    mascotas?: boolean;
+    sort?: string;
     q?: string; // Búsqueda por texto
   }, page: number = 1, limit: number = 12): Promise<{
     units: Array<{
@@ -469,6 +504,14 @@ class SupabaseDataProcessor {
       await this.loadDataFromSupabase();
     }
 
+    if (filters.operation && filters.operation !== 'rent') {
+      return {
+        units: [],
+        total: 0,
+        hasMore: false,
+      };
+    }
+
     // Obtener todas las unidades desde Supabase
     // Usar solo las columnas que realmente existen en la tabla units
     let query = this.supabase
@@ -476,25 +519,49 @@ class SupabaseDataProcessor {
       .select(`
         id,
         building_id,
+        unidad,
+        id_pmq,
         tipologia,
         bedrooms,
         bathrooms,
         m2,
         price,
+        gc,
+        total_mensual,
+        orientacion,
+        m2_terraza,
+        descuento_porcentaje,
+        meses_descuento,
+        garantia_meses,
+        garantia_cuotas,
+        rentas_necesarias,
+        pet_friendly,
+        reajuste_meses,
+        link_listing,
         disponible,
         estacionamiento,
         bodega,
+        parking_optional,
+        storage_optional,
+        conexion_lavadora,
         images_tipologia,
         images_areas_comunes,
         images,
+        videos,
         buildings!inner (
           id,
           name,
           slug,
           comuna,
           address,
+          gc_mode,
           gallery,
-          cover_image
+          cover_image,
+          metro_cercano_nombre,
+          metro_cercano_distancia,
+          metro_cercano_tiempo,
+          terminaciones,
+          equipamiento
         )
       `, { count: 'exact' })
       .eq('disponible', true); // Solo unidades disponibles
@@ -520,7 +587,7 @@ class SupabaseDataProcessor {
     // Obtener datos sin paginación primero para poder filtrar por comuna y texto
     // Nota: Para filtros complejos con relaciones anidadas, obtenemos todos los datos
     // y filtramos en memoria (más eficiente que múltiples queries)
-    const { data: allData, error, count: totalCount } = await query;
+    const { data: allData, error } = await query;
 
     if (error) {
       logger.error('Error obteniendo unidades desde Supabase:', error);
@@ -542,7 +609,33 @@ class SupabaseDataProcessor {
       };
     }
 
-    let filteredData = (allData || []) as Array<UnitRowWithFields & { buildings: { id: string; name: string; slug?: string; comuna: string; address: string; gallery?: string[]; cover_image?: string } | null }>;
+    type UnitRowWithFields = SupabaseUnitRow & {
+      unidad?: string;
+      id_pmq?: string | null;
+      gastos_comunes?: number;
+      area_interior_m2?: number;
+      piso?: number;
+      orientacion?: string;
+      amoblado?: boolean;
+      pet_friendly?: boolean;
+      status?: string;
+      images_tipologia?: string[];
+      images_areas_comunes?: string[];
+      images?: string[];
+      videos?: string[];
+    };
+
+    const normalizeToken = (value: string) => value.trim().toLowerCase();
+    const tipologiaToDormitorios = (tipologia?: string): number | undefined => {
+      if (!tipologia) return undefined;
+      const normalized = normalizeToken(tipologia);
+      if (normalized === 'studio' || normalized === 'estudio') return 0;
+      const match = normalized.match(/^(\d+)d/);
+      if (match) return Number(match[1]);
+      return undefined;
+    };
+
+    let filteredData = (allData || []) as Array<UnitRowWithFields & { buildings: { id: string; name: string; slug?: string; comuna: string; address: string; gc_mode?: string; gallery?: string[]; cover_image?: string; metro_cercano_nombre?: string; metro_cercano_distancia?: number; metro_cercano_tiempo?: number } | null }>;
 
     // Filtrar por comuna en memoria (soporta multiselección con OR)
     if (filters.comuna) {
@@ -557,6 +650,27 @@ class SupabaseDataProcessor {
           )
         );
       }
+    }
+
+    if (filters.tipos) {
+      const tiposArray = Array.isArray(filters.tipos) ? filters.tipos : [filters.tipos];
+      const normalizedTipos = new Set(tiposArray.map(normalizeToken));
+      if (normalizedTipos.size > 0) {
+        filteredData = filteredData.filter((unitRow) =>
+          normalizedTipos.has(normalizeToken(unitRow.tipologia || ''))
+        );
+      }
+    }
+
+    if (typeof filters.dormitoriosMin === 'number') {
+      filteredData = filteredData.filter((unitRow) => {
+        const dormitorios =
+          typeof unitRow.bedrooms === 'number'
+            ? unitRow.bedrooms
+            : tipologiaToDormitorios(unitRow.tipologia);
+
+        return typeof dormitorios === 'number' && dormitorios >= filters.dormitoriosMin!;
+      });
     }
 
     // Filtrar por dormitorios - filtrar SOLO por tipología porque bedrooms suele ser null
@@ -597,6 +711,27 @@ class SupabaseDataProcessor {
       }
     }
 
+    if (filters.estacionamiento !== undefined) {
+      filteredData = filteredData.filter((unitRow) => {
+        if (unitRow.buildings?.gc_mode === 'MF') return true;
+        return (unitRow.estacionamiento ?? false) === filters.estacionamiento;
+      });
+    }
+
+    if (filters.bodega !== undefined) {
+      filteredData = filteredData.filter((unitRow) => {
+        if (unitRow.buildings?.gc_mode === 'MF') return true;
+        return (unitRow.bodega ?? false) === filters.bodega;
+      });
+    }
+
+    if (filters.mascotas !== undefined) {
+      filteredData = filteredData.filter((unitRow) => {
+        const petFriendly = unitRow.pet_friendly ?? false;
+        return petFriendly === filters.mascotas;
+      });
+    }
+
     // Filtrar por búsqueda de texto (si se especifica)
     if (filters.q) {
       const qLower = filters.q.toLowerCase();
@@ -614,44 +749,40 @@ class SupabaseDataProcessor {
       });
     }
 
-    // Ordenar por precio (ascendente)
-    filteredData.sort((a, b) => (a.price || 0) - (b.price || 0));
+    // Ordenamiento
+    switch (filters.sort) {
+      case 'precio-desc':
+        filteredData.sort((a, b) => (b.price || 0) - (a.price || 0));
+        break;
+      case 'comuna-asc':
+      case 'ubicacion':
+        filteredData.sort((a, b) =>
+          (a.buildings?.comuna || '').localeCompare(b.buildings?.comuna || '')
+        );
+        break;
+      case 'precio-asc':
+      case 'precio':
+      case 'default':
+      case 'relevancia':
+      default:
+        filteredData.sort((a, b) => (a.price || 0) - (b.price || 0));
+        break;
+    }
 
     // Paginación
     const offset = (page - 1) * limit;
     const filteredTotal = filteredData.length;
     const paginatedData = filteredData.slice(offset, offset + limit);
 
-    // Type assertion: Supabase puede retornar más campos de los definidos en el tipo
-    type UnitRowWithFields = SupabaseUnitRow & {
-      unidad?: string;
-      gastos_comunes?: number;
-      area_interior_m2?: number;
-      piso?: number;
-      orientacion?: string;
-      amoblado?: boolean;
-      pet_friendly?: boolean;
-      status?: string;
-      images_tipologia?: string[];
-      images_areas_comunes?: string[];
-      images?: string[];
-    };
-    
     const units = paginatedData;
 
     // Mapear a formato Unit, filtrando unidades sin building
     const mappedUnits = units
       .filter((unitRow) => {
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/bf5372fb-b70d-4713-b992-51094d7d9401',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/supabase-data-processor.ts:643',message:'Checking unit building association',data:{unitId:unitRow.id,hasBuilding:!!unitRow.buildings,buildingId:unitRow.buildings?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-        // #endregion
         if (!unitRow.buildings) {
           // En lugar de lanzar error, filtrar silenciosamente unidades sin building
           // Esto puede pasar con datos mock o datos inconsistentes
           console.warn(`[SupabaseDataProcessor] Unidad ${unitRow.id} no tiene building asociado, omitiendo`);
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/bf5372fb-b70d-4713-b992-51094d7d9401',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/supabase-data-processor.ts:648',message:'Unit filtered - no building',data:{unitId:unitRow.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-          // #endregion
           return false;
         }
         return true;
@@ -659,27 +790,27 @@ class SupabaseDataProcessor {
       .map((unitRow) => {
       const building = unitRow.buildings!; // Safe porque ya filtramos arriba
 
-      // Generar slug de unidad: building-slug-codigoUnidad (usar código de unidad si está disponible)
+      // Slug: id_pmq (PMQD305C) si existe, sino building-slug-codigoUnidad
       const rowWithFields = unitRow as UnitRowWithFields;
       const codigoUnidad = rowWithFields.unidad || unitRow.id.substring(0, 8);
-      const unitSlug = building.slug 
-        ? `${building.slug}-${codigoUnidad}`
-        : `${building.id}-${codigoUnidad}`;
+      const unitSlug = rowWithFields.id_pmq
+        ? normalizePmqId(rowWithFields.id_pmq)
+        : (building.slug ? `${building.slug}-${codigoUnidad}` : `${building.id}-${codigoUnidad}`);
 
-      // Calcular garantía (por defecto 1 mes de arriendo)
-      const garantia = unitRow.price ? unitRow.price : 0;
-      const gastoComun = rowWithFields.gastos_comunes || 0;
+      // Obtener imágenes (priorizar imágenes de la unidad; fallback al edificio; luego fallback por comuna)
+      // Fallback por comuna usa imágenes que existen en /public/images
+      const rawBuildingGallery = this.sanitizeImageList(building.gallery);
+      const buildingGallery =
+        rawBuildingGallery.length > 0 ? rawBuildingGallery : this.getGallery(building.comuna);
+      const rawCoverImage = this.sanitizeImageUrl(building.cover_image);
+      const buildingCoverImage = rawCoverImage || this.getCoverImage(building.comuna);
 
-      // Obtener imágenes (usar gallery del edificio si no hay imágenes específicas)
-      // Siempre asegurar al menos una imagen para cumplir con el schema
+      const unitImages = this.sanitizeImageList(rowWithFields.images ?? (unitRow as { images?: unknown }).images);
       let images: string[] = [];
-      if (building.gallery && building.gallery.length > 0) {
-        images = building.gallery.slice(0, 5); // Máximo 5 imágenes
-      } else if (building.cover_image) {
-        images = [building.cover_image];
-      } else {
-        images = ['/images/default-unit.jpg']; // Fallback obligatorio
-      }
+      if (unitImages.length > 0) images = unitImages;
+      else if (rawBuildingGallery.length > 0) images = rawBuildingGallery.slice(0, 5);
+      else if (rawCoverImage) images = [rawCoverImage];
+      else images = [buildingCoverImage];
       
       return {
         id: unitRow.id,
@@ -699,6 +830,7 @@ class SupabaseDataProcessor {
         // Campos de imágenes
         imagesTipologia: rowWithFields.images_tipologia || [],
         imagesAreasComunes: rowWithFields.images_areas_comunes || [],
+        videos: rowWithFields.videos,
         // Campos opcionales nuevos
         orientacion: unitRow.orientacion || rowWithFields.orientacion,
         m2_terraza: unitRow.m2_terraza,
@@ -712,6 +844,7 @@ class SupabaseDataProcessor {
         link_listing: unitRow.link_listing,
         parking_opcional: unitRow.parking_optional,
         storage_opcional: unitRow.storage_optional,
+        conexion_lavadora: (unitRow as { conexion_lavadora?: boolean }).conexion_lavadora,
 
         // Campos opcionales legacy
         piso: rowWithFields.piso,
@@ -721,13 +854,20 @@ class SupabaseDataProcessor {
         estacionamiento: unitRow.estacionamiento,
         bodega: unitRow.bodega,
         estado: rowWithFields.status === 'available' ? 'Disponible' : undefined,
-        // Información del edificio (contexto)
+        // Información del edificio (contexto; incluir gallery/coverImage para UnitCard)
         building: {
           id: building.id,
           name: building.name,
           slug: building.slug || building.id,
           comuna: building.comuna,
           address: building.address,
+          gallery: buildingGallery,
+          coverImage: buildingCoverImage,
+          metroCercano: building.metro_cercano_nombre ? {
+            nombre: building.metro_cercano_nombre,
+            distancia: building.metro_cercano_distancia,
+            tiempoCaminando: building.metro_cercano_tiempo,
+          } : undefined,
         },
       };
     });
@@ -802,6 +942,11 @@ class SupabaseDataProcessor {
         slug: string;
         comuna: string;
         address: string;
+        metroCercano?: {
+          nombre: string;
+          distancia?: number;
+          tiempoCaminando?: number;
+        };
       };
       [key: string]: unknown;
     };
@@ -813,6 +958,14 @@ class SupabaseDataProcessor {
       address: string;
       amenities: string[];
       gallery: string[];
+      coverImage: string;
+      metroCercano?: {
+        nombre: string;
+        distancia?: number;
+        tiempoCaminando?: number;
+      };
+      terminaciones?: string[];
+      equipamiento?: string[];
     };
     similarUnits?: Array<{
       id: string;
@@ -845,6 +998,8 @@ class SupabaseDataProcessor {
       .select(`
         id,
         building_id,
+        unidad,
+        id_pmq,
         tipologia,
         bedrooms,
         bathrooms,
@@ -867,9 +1022,11 @@ class SupabaseDataProcessor {
         bodega,
         parking_optional,
         storage_optional,
+        conexion_lavadora,
         images_tipologia,
         images_areas_comunes,
         images,
+        videos,
         buildings!inner (
           id,
           name,
@@ -878,7 +1035,12 @@ class SupabaseDataProcessor {
           address,
           gallery,
           cover_image,
-          amenities
+          amenities,
+          metro_cercano_nombre,
+          metro_cercano_distancia,
+          metro_cercano_tiempo,
+          terminaciones,
+          equipamiento
         )
       `)
       .eq('disponible', true);
@@ -891,6 +1053,7 @@ class SupabaseDataProcessor {
     // Type assertion para campos extendidos
     type UnitRowWithFields = SupabaseUnitRow & {
       unidad?: string;
+      id_pmq?: string | null;
       gastos_comunes?: number;
       area_interior_m2?: number;
       piso?: number;
@@ -901,48 +1064,59 @@ class SupabaseDataProcessor {
       images_tipologia?: string[];
       images_areas_comunes?: string[];
       images?: string[];
+      videos?: string[];
     };
     
-    const units = (allUnits as Array<UnitRowWithFields & { buildings: { id: string; name: string; slug?: string; comuna: string; address: string; gallery?: string[]; cover_image?: string; amenities?: string[] } | null }>) || [];
+    const units = (allUnits as Array<UnitRowWithFields & { buildings: { id: string; name: string; slug?: string; comuna: string; address: string; gallery?: string[]; cover_image?: string; amenities?: string[]; metro_cercano_nombre?: string; metro_cercano_distancia?: number; metro_cercano_tiempo?: number } | null }>) || [];
 
     // Buscar la unidad que coincida con el slug
     let foundUnit: typeof units[0] | null = null;
 
-    for (const unitRow of units) {
-      const building = unitRow.buildings;
-      if (!building) continue;
-
-      // Generar slug de unidad de la misma forma que en getUnits
-      const generatedSlug = building.slug 
-        ? `${building.slug}-${unitRow.id.substring(0, 8)}`
-        : `${building.id}-${unitRow.id.substring(0, 8)}`;
-
-      if (generatedSlug === unitSlug) {
-        foundUnit = unitRow;
-        break;
-      }
-
-      // Buscar por código de unidad si el slug lo contiene (formato: building-slug-codigoUnidad)
-      const unitRowWithFields = unitRow as UnitRowWithFields;
-      const codigoUnidad = unitRowWithFields.unidad || unitRow.id.substring(0, 8);
-      if (codigoUnidad) {
-        // Verificar si el slug termina con el código de unidad
-        const slugEndsWithCodigo = unitSlug.endsWith(codigoUnidad) || unitSlug.includes(`-${codigoUnidad}`);
-        if (slugEndsWithCodigo) {
-          // Verificar que el building slug también coincida (al inicio)
-          const buildingSlugMatch = building.slug && (unitSlug.startsWith(building.slug) || unitSlug.includes(building.slug));
-          const buildingIdMatch = !building.slug && (unitSlug.startsWith(building.id) || unitSlug.includes(building.id));
-          if (buildingSlugMatch || buildingIdMatch) {
-            foundUnit = unitRow;
-            break;
-          }
+    // Resolver por id_pmq (PMQD305C) case-insensitive primero
+    if (isPmqSlug(unitSlug)) {
+      for (const unitRow of units) {
+        const rowWithFields = unitRow as UnitRowWithFields;
+        if (pmqIdEquals(rowWithFields.id_pmq, unitSlug)) {
+          foundUnit = unitRow;
+          break;
         }
       }
+    }
 
-      // También buscar por ID directo como fallback
-      if (unitRow.id === unitSlug || unitSlug.endsWith(unitRow.id.substring(0, 8))) {
-        foundUnit = unitRow;
-        break;
+    if (!foundUnit) {
+      for (const unitRow of units) {
+        const building = unitRow.buildings;
+        if (!building) continue;
+
+        // Slug generado (id_pmq o building-slug-codigoUnidad)
+        const rowWithFields = unitRow as UnitRowWithFields;
+        const codigoUnidad = rowWithFields.unidad || unitRow.id.substring(0, 8);
+        const generatedSlug = rowWithFields.id_pmq
+          ? normalizePmqId(rowWithFields.id_pmq)
+          : (building.slug ? `${building.slug}-${codigoUnidad}` : `${building.id}-${codigoUnidad}`);
+
+        if (generatedSlug === unitSlug) {
+          foundUnit = unitRow;
+          break;
+        }
+
+        // Buscar por código de unidad si el slug lo contiene (formato: building-slug-codigoUnidad)
+        if (codigoUnidad) {
+          const slugEndsWithCodigo = unitSlug.endsWith(codigoUnidad) || unitSlug.includes(`-${codigoUnidad}`);
+          if (slugEndsWithCodigo) {
+            const buildingSlugMatch = building.slug && (unitSlug.startsWith(building.slug) || unitSlug.includes(building.slug));
+            const buildingIdMatch = !building.slug && (unitSlug.startsWith(building.id) || unitSlug.includes(building.id));
+            if (buildingSlugMatch || buildingIdMatch) {
+              foundUnit = unitRow;
+              break;
+            }
+          }
+        }
+
+        if (unitRow.id === unitSlug || unitSlug.endsWith(unitRow.id.substring(0, 8))) {
+          foundUnit = unitRow;
+          break;
+        }
       }
     }
 
@@ -959,17 +1133,32 @@ class SupabaseDataProcessor {
     const foundUnitWithFields = foundUnit as UnitRowWithFields;
     const codigoUnidad = foundUnitWithFields.unidad || foundUnit.id.substring(0, 8);
 
-    // Generar slug usando código de unidad (formato: building-slug-codigoUnidad)
-    const finalUnitSlug = building.slug 
-      ? `${building.slug}-${codigoUnidad}`
-      : `${building.id}-${codigoUnidad}`;
+    // Slug público: id_pmq (PMQD305C) si existe, sino building-slug-codigoUnidad
+    const finalUnitSlug = foundUnitWithFields.id_pmq
+      ? normalizePmqId(foundUnitWithFields.id_pmq)
+      : (building.slug ? `${building.slug}-${codigoUnidad}` : `${building.id}-${codigoUnidad}`);
 
     const garantia = foundUnit.price ? foundUnit.price : 0;
-    const gastoComun = foundUnit.gastos_comunes || 0;
+    const gastoComun = foundUnit.gc || foundUnit.gastos_comunes || 0;
 
-    const images = building.gallery && building.gallery.length > 0 
-      ? building.gallery.slice(0, 5) 
-      : (building.cover_image ? [building.cover_image] : ['/images/default-unit.jpg']);
+    // Priorizar imágenes de la unidad sobre las del edificio; fallback por comuna si no hay en DB
+    const rawBuildingGalleryForUnit = this.sanitizeImageList(building.gallery);
+    const buildingGalleryForUnit =
+      rawBuildingGalleryForUnit.length > 0
+        ? rawBuildingGalleryForUnit
+        : this.getGallery(building.comuna);
+    const rawBuildingCoverForUnit = this.sanitizeImageUrl(building.cover_image);
+    const buildingCoverForUnit = rawBuildingCoverForUnit || this.getCoverImage(building.comuna);
+
+    const unitImagesForUnit = this.sanitizeImageList(foundUnit.images);
+    const images =
+      unitImagesForUnit.length > 0
+        ? unitImagesForUnit
+        : rawBuildingGalleryForUnit.length > 0
+          ? rawBuildingGalleryForUnit.slice(0, 5)
+          : rawBuildingCoverForUnit
+            ? [rawBuildingCoverForUnit]
+            : [buildingCoverForUnit];
 
     const unit = {
       id: foundUnit.id,
@@ -988,6 +1177,7 @@ class SupabaseDataProcessor {
       images,
       imagesTipologia: foundUnit.images_tipologia || [],
       imagesAreasComunes: foundUnit.images_areas_comunes || [],
+      videos: foundUnit.videos,
       piso: foundUnit.piso,
       vista: foundUnit.orientacion,
       amoblado: foundUnit.amoblado,
@@ -1009,12 +1199,20 @@ class SupabaseDataProcessor {
       link_listing: foundUnit.link_listing,
       parking_opcional: foundUnit.parking_optional,
       storage_opcional: foundUnit.storage_optional,
+      conexion_lavadora: (foundUnit as { conexion_lavadora?: boolean }).conexion_lavadora,
       building: {
         id: building.id,
         name: building.name,
         slug: building.slug || building.id,
         comuna: building.comuna,
         address: building.address,
+        gallery: buildingGalleryForUnit,
+        coverImage: buildingCoverForUnit,
+        metroCercano: building.metro_cercano_nombre ? {
+          nombre: building.metro_cercano_nombre,
+          distancia: building.metro_cercano_distancia,
+          tiempoCaminando: building.metro_cercano_tiempo,
+        } : undefined,
       },
     };
 
@@ -1035,17 +1233,23 @@ class SupabaseDataProcessor {
       .slice(0, 6)
       .map(u => {
         const uBuilding = u.buildings!;
-        const uSlug = uBuilding.slug 
-          ? `${uBuilding.slug}-${u.id.substring(0, 8)}`
-          : `${uBuilding.id}-${u.id.substring(0, 8)}`;
-
-        const uImages = uBuilding.gallery && uBuilding.gallery.length > 0 
-          ? uBuilding.gallery.slice(0, 1)
-          : (uBuilding.cover_image ? [uBuilding.cover_image] : ['/images/default-unit.jpg']);
-
-        // Generar codigoUnidad: usar campo 'unidad' si existe, sino usar ID truncado
         const uWithFields = u as UnitRowWithFields;
         const uCodigoUnidad = uWithFields.unidad || u.id.substring(0, 8);
+        const uSlug = uWithFields.id_pmq
+          ? normalizePmqId(uWithFields.id_pmq)
+          : (uBuilding.slug ? `${uBuilding.slug}-${uCodigoUnidad}` : `${uBuilding.id}-${uCodigoUnidad}`);
+
+        const uUnitImages = this.sanitizeImageList((u as { images?: unknown }).images);
+        const uRawGallery = this.sanitizeImageList(uBuilding.gallery);
+        const uRawCover = this.sanitizeImageUrl(uBuilding.cover_image);
+        const uImages =
+          uUnitImages.length > 0
+            ? uUnitImages.slice(0, 1)
+            : uRawGallery.length > 0
+              ? uRawGallery.slice(0, 1)
+              : uRawCover
+                ? [uRawCover]
+                : [this.getCoverImage(uBuilding.comuna)];
 
         const uGarantia = u.price || 0;
         return {
@@ -1065,6 +1269,14 @@ class SupabaseDataProcessor {
         };
       });
 
+    // Construir objeto metroCercano si hay datos
+    const metroCercano = building.metro_cercano_nombre ? {
+      nombre: building.metro_cercano_nombre,
+      distancia: building.metro_cercano_distancia,
+      tiempoCaminando: building.metro_cercano_tiempo,
+    } : undefined;
+
+    const buildingRow = building as { terminaciones?: string[]; equipamiento?: string[] };
     return {
       unit,
       building: {
@@ -1074,14 +1286,18 @@ class SupabaseDataProcessor {
         comuna: building.comuna,
         address: building.address,
         amenities: Array.isArray(building.amenities) ? building.amenities : [],
-        gallery: Array.isArray(building.gallery) ? building.gallery : (building.cover_image ? [building.cover_image] : []),
+        gallery: buildingGalleryForUnit,
+        coverImage: buildingCoverForUnit,
+        metroCercano,
+        terminaciones: Array.isArray(buildingRow.terminaciones) ? buildingRow.terminaciones : [],
+        equipamiento: Array.isArray(buildingRow.equipamiento) ? buildingRow.equipamiento : [],
       },
       similarUnits: similarUnits.length > 0 ? similarUnits : undefined,
     };
   }
 
   private getCoverImage(comuna: string): string {
-    // Mapear comunas a imágenes de portada
+    // Mapear comunas a imágenes de portada (todas deben existir en /public/images)
     const comunaImages: Record<string, string> = {
       'Las Condes': '/images/lascondes-cover.jpg',
       'Providencia': '/images/providencia-cover.jpg',
@@ -1091,13 +1307,14 @@ class SupabaseDataProcessor {
       'Estación Central': '/images/estacioncentral-cover.jpg',
       'San Miguel': '/images/sanmiguel-cover.jpg',
       'Independencia': '/images/independencia-cover.jpg',
+      'Macul': '/images/parque-mackenna-305/IMG_4922.jpg',
     };
 
-    return comunaImages[comuna] || '/images/lascondes-cover.jpg';
+    return comunaImages[comuna] || '/images/nunoa-cover.jpg';
   }
 
   private getGallery(comuna: string): string[] {
-    // Galería de imágenes por comuna
+    // Galería de imágenes por comuna (todas deben existir en /public/images)
     const comunaGalleries: Record<string, string[]> = {
       'Las Condes': [
         '/images/lascondes-1.jpg',
@@ -1114,12 +1331,17 @@ class SupabaseDataProcessor {
         '/images/nunoa-2.jpg',
         '/images/nunoa-3.jpg',
       ],
+      'Macul': [
+        '/images/parque-mackenna-305/IMG_4922.jpg',
+        '/images/parque-mackenna-305/IMG_4923.jpg',
+        '/images/parque-mackenna-305/IMG_4924.jpg',
+      ],
     };
 
     return comunaGalleries[comuna] || [
-      '/images/lascondes-1.jpg',
-      '/images/lascondes-2.jpg',
-      '/images/lascondes-3.jpg',
+      '/images/nunoa-1.jpg',
+      '/images/nunoa-2.jpg',
+      '/images/nunoa-3.jpg',
     ];
   }
 }
@@ -1135,4 +1357,3 @@ export async function getSupabaseProcessor(): Promise<SupabaseDataProcessor> {
 }
 
 export { SupabaseDataProcessor };
-
