@@ -3,6 +3,7 @@ import { applyPayloadDefaults, validateBusinessRules } from '@/lib/contracts/val
 const payload: any = {
   contrato: { ciudad_firma: 'Santiago', tipo: 'standard', fecha_inicio: '2026-03-01' },
   arrendadora: {
+    tipo_persona: 'juridica',
     razon_social: 'A', rut: '12345678-5', domicilio: 'X', email: 'a@a.com',
     cuenta: { banco: 'b', tipo: 'c', numero: '1', email_pago: 'p@a.com' },
     personeria: { fecha: 'x', notaria: 'n', ciudad: 'c', notario_nombre: 'z' },
@@ -71,12 +72,37 @@ describe('Business validation', () => {
     );
   });
 
-  test('requires owner authorization when contract type is subarriendo_propietario', () => {
+  test('subarriendo_propietario normalizes owner authorization defaults before validation', () => {
     const out = applyPayloadDefaults({
       ...payload,
       contrato: {
         ...payload.contrato,
         tipo: 'subarriendo_propietario',
+      },
+      arrendadora: {
+        ...payload.arrendadora,
+        tipo_persona: 'natural',
+        nacionalidad: 'chilena',
+        estado_civil: 'casada',
+        profesion: 'enfermera',
+      },
+      propietario: {
+        ...payload.propietario,
+        nombre: payload.arrendadora.razon_social,
+        rut: payload.arrendadora.rut,
+      },
+      arrendatario: {
+        ...payload.arrendatario,
+        tipo_persona: 'juridica',
+        representante_legal: {
+          nombre: 'Rep Legal',
+          rut: '11111111-1',
+          nacionalidad: 'cl',
+          estado_civil: 's',
+          profesion: 'abogado',
+          domicilio: 'Las Condes 1',
+          email: 'rep@empresa.cl',
+        },
       },
       subarriendo: {
         permitido: true,
@@ -86,8 +112,7 @@ describe('Business validation', () => {
       },
     });
 
-    expect(() => validateBusinessRules(out)).toThrow(
-      'Subarriendo propietario requiere autorización explícita del propietario'
-    );
+    expect(out.subarriendo?.propietario_autoriza).toBe(true);
+    expect(() => validateBusinessRules(out)).not.toThrow();
   });
 });

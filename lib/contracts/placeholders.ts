@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { ContractPayload } from '@/schemas/contracts';
-import { ContractError } from './errors';
+import { ContractError } from './contract-error';
 import { formatCLP, formatDateForContract, formatUF } from './utils';
 
 interface PlaceholderCatalog {
@@ -9,15 +9,26 @@ interface PlaceholderCatalog {
   required: string[];
 }
 
+type ContractTypeKey = ContractPayload['contrato']['tipo'];
+type ContractTypeProfiles = Record<ContractTypeKey, string[]>;
+
 type Genero = 'masculino' | 'femenino' | undefined;
 
 let cachedCatalog: PlaceholderCatalog | null = null;
+let cachedProfiles: ContractTypeProfiles | null = null;
 
 function getCatalog(): PlaceholderCatalog {
   if (cachedCatalog) return cachedCatalog;
   const path = join(process.cwd(), 'config/contracts/placeholders.catalog.json');
   cachedCatalog = JSON.parse(readFileSync(path, 'utf8')) as PlaceholderCatalog;
   return cachedCatalog;
+}
+
+function getProfiles(): ContractTypeProfiles {
+  if (cachedProfiles) return cachedProfiles;
+  const path = join(process.cwd(), 'config/contracts/placeholders.by-contract-type.json');
+  cachedProfiles = JSON.parse(readFileSync(path, 'utf8')) as ContractTypeProfiles;
+  return cachedProfiles;
 }
 
 function getValueFromPath(payload: ContractPayload, path: string): unknown {
@@ -71,9 +82,19 @@ function getPronombreObjeto(genero: Genero): string {
   return 'él/ella';
 }
 
+function getOwnerNoun(payload: ContractPayload): string {
+  if (payload.propietario.genero === 'femenino') return 'dueña';
+  if (payload.propietario.genero === 'masculino') return 'dueño';
+
+  const civil = (payload.arrendadora.estado_civil ?? '').trim().toLowerCase();
+  if (/(soltera|casada|viuda|divorciada)/.test(civil)) return 'dueña';
+  if (/(soltero|casado|viudo|divorciado)/.test(civil)) return 'dueño';
+  return 'dueño/a';
+}
+
 function buildPersoneriaDescripcion(payload: ContractPayload): string {
   const personeria = payload.arrendadora.personeria;
-  const fecha = formatDateForContract(personeria.fecha);
+  const fecha = formatDateForContract(personeria.fecha ?? '');
   const notaria = personeria.notaria?.toLowerCase() ?? '';
   const notario = personeria.notario_nombre?.toLowerCase() ?? '';
   const isOnline = notaria.includes('firma online') || notario.includes('firma online');
@@ -105,6 +126,28 @@ function sanitizeFundsSource(value: string | undefined): string {
   }
 
   return source.replace(/\s+/g, ' ').replace(/[.;:\s]+$/, '');
+}
+
+function formatDateWithWeekday(dateISO: string): string {
+  if (!dateISO) return '';
+  const date = new Date(`${dateISO}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return formatDateForContract(dateISO);
+  const long = new Intl.DateTimeFormat('es-CL', {
+    weekday: 'long',
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'America/Santiago',
+  }).format(date);
+  return long.charAt(0).toUpperCase() + long.slice(1);
+}
+
+function buildFirstReajusteLabel(payload: ContractPayload): string {
+  const month = (payload.renta.mes_primer_reajuste ?? '').trim() || 'Marzo';
+  const yearFromStart = payload.contrato.fecha_inicio?.match(/^(\d{4})-/)?.[1];
+  if (!yearFromStart) return month;
+  const firstReajusteYear = Number(yearFromStart) + 1;
+  return `${month} de ${firstReajusteYear} (12 meses desde el inicio del contrato)`;
 }
 
 export function buildReplacements(payload: ContractPayload): Record<string, string> {
@@ -165,6 +208,18 @@ export function buildReplacements(payload: ContractPayload): Record<string, stri
       value = payload.contrato.tipo === 'subarriendo_propietario' ? 'subarriendo_propietario' : 'standard';
     }
 
+    if (scoped === 'CONTRATO.FECHA_FIRMA_LARGA') {
+      value = formatDateWithWeekday(payload.contrato.fecha_firma ?? '');
+    }
+
+    if (scoped === 'CONTRATO.AVISO_TERMINO_DIAS') {
+      value = String(payload.contrato.aviso_termino_dias ?? 30);
+    }
+
+    if (scoped === 'RENTA.MES_PRIMER_REAJUSTE') {
+      value = buildFirstReajusteLabel(payload);
+    }
+
     if (scoped === 'SUBARRIENDO.PERMITIDO_LABEL') {
       value = payload.subarriendo?.permitido ? 'Permitido' : 'No permitido';
     }
@@ -197,6 +252,10 @@ export function buildReplacements(payload: ContractPayload): Record<string, stri
 
     if (scoped === 'INMUEBLE.UNIDAD_LABEL') {
       value = getUnidadLabel(payload);
+    }
+
+    if (scoped === 'PROPIETARIO.DUENO_A') {
+      value = getOwnerNoun(payload);
     }
 
     if (scoped === 'ARRENDADORA.PERSONERIA.DESCRIPCION') {
@@ -245,6 +304,90 @@ export function buildReplacements(payload: ContractPayload): Record<string, stri
       value = getDomiciliado(payload.arrendadora.representante.genero);
     }
 
+    if (scoped === 'ARRENDADOR.NOMBRE') {
+      value = payload.arrendadora.razon_social;
+    }
+
+    if (scoped === 'ARRENDADOR.RUT') {
+      value = payload.arrendadora.rut;
+    }
+
+    if (scoped === 'ARRENDADOR.NACIONALIDAD') {
+      value = payload.arrendadora.nacionalidad ?? '';
+    }
+
+    if (scoped === 'ARRENDADOR.ESTADO_CIVIL') {
+      value = payload.arrendadora.estado_civil ?? '';
+    }
+
+    if (scoped === 'ARRENDADOR.PROFESION') {
+      value = payload.arrendadora.profesion ?? '';
+    }
+
+    if (scoped === 'ARRENDADOR.DOMICILIO') {
+      value = payload.arrendadora.domicilio;
+    }
+
+    if (scoped === 'ARRENDADOR.EMAIL') {
+      value = payload.arrendadora.email;
+    }
+
+    if (scoped === 'ARRENDADOR.TRATAMIENTO') {
+      value = getTratamiento(payload.arrendadora.representante.genero);
+    }
+
+    if (scoped === 'ARRENDATARIA.RAZON_SOCIAL') {
+      value = payload.arrendatario.nombre;
+    }
+
+    if (scoped === 'ARRENDATARIA.RUT') {
+      value = payload.arrendatario.rut;
+    }
+
+    if (scoped === 'ARRENDATARIA.DOMICILIO') {
+      value = payload.arrendatario.domicilio;
+    }
+
+    if (scoped === 'ARRENDATARIA.EMAIL') {
+      value = payload.arrendatario.email;
+    }
+
+    if (scoped === 'ARRENDATARIA.REPRESENTANTE.NOMBRE') {
+      value = payload.arrendatario.representante_legal?.nombre ?? '';
+    }
+
+    if (scoped === 'ARRENDATARIA.REPRESENTANTE.RUT') {
+      value = payload.arrendatario.representante_legal?.rut ?? '';
+    }
+
+    if (scoped === 'ARRENDATARIA.REPRESENTANTE.NACIONALIDAD') {
+      value = payload.arrendatario.representante_legal?.nacionalidad ?? '';
+    }
+
+    if (scoped === 'ARRENDATARIA.REPRESENTANTE.ESTADO_CIVIL') {
+      value = payload.arrendatario.representante_legal?.estado_civil ?? '';
+    }
+
+    if (scoped === 'ARRENDATARIA.REPRESENTANTE.PROFESION') {
+      value = payload.arrendatario.representante_legal?.profesion ?? '';
+    }
+
+    if (scoped === 'ARRENDATARIA.REPRESENTANTE.DOMICILIO') {
+      value = payload.arrendatario.representante_legal?.domicilio ?? '';
+    }
+
+    if (scoped === 'ARRENDATARIA.REPRESENTANTE.TRATAMIENTO') {
+      value = getTratamiento(payload.arrendatario.representante_legal?.genero);
+    }
+
+    if (scoped === 'ARRENDATARIA.REPRESENTANTE.DOMICILIADO') {
+      value = getDomiciliado(payload.arrendatario.representante_legal?.genero);
+    }
+
+    if (scoped === 'RENTA.PORCENTAJE_SUBARRIENDO') {
+      value = `${Number(payload.renta.porcentaje_subarriendo ?? 91)}%`;
+    }
+
     if (value === undefined || value === null) {
       continue;
     }
@@ -264,7 +407,7 @@ export function applyReplacements(input: string, replacements: Record<string, st
 }
 
 export function findResidualPlaceholders(input: string): string[] {
-  const matches = input.match(/\[\[[A-Z0-9_\.]+\]\]/g) ?? [];
+  const matches = input.match(/\[\[[A-Z0-9_.]+\]\]/g) ?? [];
   return Array.from(new Set(matches));
 }
 
@@ -293,9 +436,42 @@ export function assertAvalPlaceholdersProtected(xmlContent: string, hayAval: boo
   }
 }
 
+export function assertTemplateMatchesContractTypeProfile(
+  xmlContent: string,
+  contractType: ContractTypeKey
+): void {
+  const profiles = getProfiles();
+  const profile = profiles[contractType] ?? [];
+  if (profile.length === 0) return;
+
+  const templateTokens = Array.from(new Set(xmlContent.match(/\[\[[A-Z0-9_.]+\]\]/g) ?? []));
+  const profileSet = new Set(profile);
+  const templateSet = new Set(templateTokens);
+
+  const missing = profile.filter((token) => !templateSet.has(token));
+  const unexpected =
+    contractType === 'subarriendo_propietario'
+      ? templateTokens.filter((token) => !profileSet.has(token))
+      : [];
+
+  if (missing.length > 0 || unexpected.length > 0) {
+    throw new ContractError({
+      code: 'VALIDATION_ERROR',
+      message: `La plantilla no corresponde al contrato tipo ${contractType}`,
+      details: {
+        missing: missing.slice(0, 20),
+        unexpected: unexpected.slice(0, 20),
+      },
+      hint: contractType === 'subarriendo_propietario'
+        ? 'Selecciona o sube la plantilla de subarriendo propietario con placeholders ARRENDADOR/ARRENDATARIA.'
+        : 'Selecciona una plantilla estándar compatible.',
+    });
+  }
+}
+
 export function validateCatalogSyntax(content: string): void {
   const catalog = getCatalog();
-  const tokens = content.match(/\[\[[A-Z0-9_\.]+\]\]/g) ?? [];
+  const tokens = content.match(/\[\[[A-Z0-9_.]+\]\]/g) ?? [];
   const invalid = tokens.filter((token) => !catalog.allowed.includes(token) && !token.startsWith('[[IF.') && !token.startsWith('[[ENDIF.'));
 
   if (invalid.length > 0) {

@@ -1,0 +1,86 @@
+CONTRATO DE ARRENDAMIENTO
+[[ARRENDADOR.NOMBRE]]
+A
+[[ARRENDATARIA.RAZON_SOCIAL]]
+
+En [[CONTRATO.CIUDAD_FIRMA]], República de Chile, a [[CONTRATO.FECHA_FIRMA_LARGA]], entre:
+1) [[ARRENDADOR.NOMBRE]], [[ARRENDADOR.NACIONALIDAD]], [[ARRENDADOR.ESTADO_CIVIL]], [[ARRENDADOR.PROFESION]], cédula de identidad N° [[ARRENDADOR.RUT]], domiciliado en [[ARRENDADOR.DOMICILIO]], en adelante también e indistintamente como el “Arrendador” y/o Propietario; y
+2) [[ARRENDATARIA.RAZON_SOCIAL]], rol único tributario número [[ARRENDATARIA.RUT]], representada, según se acreditará, por [[ARRENDATARIA.REPRESENTANTE.TRATAMIENTO]] [[ARRENDATARIA.REPRESENTANTE.NOMBRE]], [[ARRENDATARIA.REPRESENTANTE.NACIONALIDAD]], [[ARRENDATARIA.REPRESENTANTE.ESTADO_CIVIL]], [[ARRENDATARIA.REPRESENTANTE.PROFESION]], cédula de identidad número [[ARRENDATARIA.REPRESENTANTE.RUT]], [[ARRENDATARIA.REPRESENTANTE.DOMICILIADO]] en [[ARRENDATARIA.REPRESENTANTE.DOMICILIO]], y conjuntamente con el Arrendador, como las “Partes”, han convenido en el siguiente contrato de arrendamiento:
+
+PRIMERO: ANTECEDENTES.
+1.1.- [[ARRENDADOR.NOMBRE]] es dueño del inmueble ubicado en [[INMUEBLE.DIRECCION]], comuna de [[INMUEBLE.COMUNA]], ciudad de [[INMUEBLE.CIUDAD]], correspondiente al condominio [[INMUEBLE.CONDOMINIO]], y en su caso [[INMUEBLE.UNIDAD_LABEL]].
+
+SEGUNDO: ARRENDAMIENTO Y SUBARRIENDO.
+2.1. Por el presente instrumento, [[ARRENDADOR.NOMBRE]] da en arrendamiento el Inmueble a [[ARRENDATARIA.RAZON_SOCIAL]], quien acepta para sí, con el único y exclusivo objeto de darlo en subarrendamiento a un tercero para uso residencial, autorizándose expresamente al Arrendatario a subarrendar el Inmueble conforme lo establecido en el [[SUBARRIENDO.REFERENCIA_LEGAL]].
+2.2. Las Partes dejan constancia que la Arrendataria podrá suscribir varios subarrendamientos durante la vigencia del presente contrato. La Arrendataria deberá notificar al Arrendador de la fecha de inicio y de término de cada subarrendamiento dentro del plazo de [[SUBARRIENDO.NOTIFICACION_DIAS_HABILES]] días hábiles desde que ello ocurra, mediante correo electrónico.
+
+TERCERO: VIGENCIA.
+3.1. El presente contrato comenzará a regir desde [[CONTRATO.FECHA_INICIO]] y tendrá duración hasta [[CONTRATO.FECHA_TERMINO]], prorrogándose automáticamente por períodos de un año, salvo aviso por escrito con a lo menos [[CONTRATO.AVISO_TERMINO_DIAS]] días de anticipación.
+
+CUARTO: RENTA DE ARRENDAMIENTO.
+4.1. La renta mensual de arrendamiento que la Arrendataria pagará al Arrendador ascenderá al equivalente al [[RENTA.PORCENTAJE_SUBARRIENDO]] de la suma efectivamente percibida por la Arrendataria por concepto de rentas de subarrendamiento.
+4.2. La renta determinada conforme a este contrato se pagará a más tardar el día [[RENTA.DIA_LIMITE_PAGO]] de cada mes, mediante depósito o transferencia en la cuenta que el Arrendador indique para estos efectos.
+
+QUINTO: ENTREGA DEL INMUEBLE.
+La entrega del Inmueble se efectuará por el Arrendador a la Arrendataria en buen estado de aseo y mantención, con todos sus artefactos, instalaciones y accesorios en perfecto estado de funcionamiento y con todos sus consumos y servicios pagados al día.
+
+SEXTO: DESTINO DEL INMUEBLE.
+El Inmueble será destinado exclusivamente por la Arrendataria para ser dado en subarrendamiento a terceros con destino residencial.
+
+SÉPTIMO: OBLIGACIONES DE LAS PARTES.
+7.1. Obligaciones de la Arrendataria.
+a) Destinar el Inmueble únicamente al uso indicado en la cláusula sexta precedente.
+b) Pagar puntualmente la renta de arrendamiento del presente contrato.
+c) Ejecutar las gestiones necesarias para la restitución del inmueble por parte del subarrendatario cuando corresponda.
+
+7.2. Obligaciones del Arrendador.
+a) Pagar oportunamente el impuesto territorial del Inmueble.
+b) Cubrir los gastos y expensas extraordinarias de mantención del Inmueble.
+
+7.3. Gastos de cobranza, desalojo e informes comerciales por incumplimiento grave del Subarrendatario.
+En caso de incumplimiento grave del Subarrendatario, incluyendo mora prolongada por más de 30 días corridos en el pago de rentas, gastos comunes o servicios básicos, o daños relevantes al Inmueble, las Partes acuerdan que los honorarios y gastos asociados a: (i) asesoría y gestión legal, (ii) acciones judiciales o extrajudiciales de cobro y/o restitución del Inmueble (desalojo), y (iii) gestión de informes y/o reportes comerciales (DICOM u otros registros legalmente habilitados), serán de cargo exclusivo del Arrendador.
+Para su cobro, dichos gastos deberán: (a) ser previamente informados al Arrendador por escrito (correo electrónico), con detalle de concepto, monto estimado y fundamento; y (b) contar con autorización previa y expresa del Arrendador; o, en su defecto, ajustarse estrictamente a montos, topes y condiciones previamente pactados por escrito entre las Partes en anexo vigente.
+La Arrendataria deberá rendir cuenta documentada de los gastos efectivamente incurridos, acompañando respaldos suficientes (boletas, facturas, comprobantes y/o liquidaciones). En ningún caso podrán cargarse al Arrendador gastos no informados o no autorizados conforme a esta cláusula, salvo urgencia debidamente justificada para evitar perjuicios graves e inminentes al Inmueble, la que deberá ser informada al Arrendador dentro de 48 horas.
+OCTAVO: PROHIBICIONES.
+Queda especialmente prohibido a la Arrendataria:
+a) Destinar el inmueble a un objeto distinto al señalado en este contrato.
+b) Efectuar mejoras estructurales sin autorización previa del Arrendador.
+
+NOVENO: GARANTÍA.
+Las Partes dejan expresa constancia que el presente contrato no contempla garantía de parte de la Arrendataria para asegurar el correcto uso del Inmueble.
+
+DÉCIMO: AUTORIZACIÓN TRATAMIENTO DE DATOS.
+Con el objeto de dar cumplimiento a la Ley 19.628 sobre protección de datos de carácter personal, las Partes autorizan el tratamiento de datos en los términos legalmente permitidos.
+
+DÉCIMO PRIMERO: ARBITRAJE.
+Cualquier diferencia, dificultad o controversia que pueda surgir entre las Partes con motivo de la interpretación, cumplimiento o terminación de este contrato será sometida a arbitraje mixto de acuerdo con el Reglamento del Centro de Arbitrajes y Mediaciones de Santiago.
+
+DÉCIMO SEGUNDO: DOMICILIO.
+Para todos los efectos legales, judiciales y convencionales derivados del presente contrato, las Partes fijan su domicilio en la ciudad de Santiago.
+
+DÉCIMO TERCERO: CESIÓN DEL PRESENTE CONTRATO.
+El Arrendador autoriza expresamente a la Arrendataria a ceder o transferir a cualquier título su posición contractual conforme a las reglas de este contrato.
+
+DÉCIMO CUARTO: GASTOS E IMPUESTOS.
+Todos los gastos, impuestos y derechos derivados del otorgamiento del presente contrato serán de cargo del Arrendador.
+
+DÉCIMO QUINTO: FIRMA ELECTRÓNICA.
+Al firmar este documento, las Partes reconocen y declaran que aceptan la firma electrónica de este documento en los términos de la Ley N°19.799.
+
+DÉCIMO SEXTO: AVISOS Y NOTIFICACIONES.
+Todos los avisos y notificaciones que se realicen con motivo u ocasión de este contrato deberán dirigirse vía correo electrónico, según se indica a continuación:
+(i) [[ARRENDATARIA.RAZON_SOCIAL]]: [[ARRENDATARIA.EMAIL]]
+(ii) [[ARRENDADOR.NOMBRE]]: [[ARRENDADOR.EMAIL]]
+
+PERSONERÍA.
+La personería de [[ARRENDATARIA.REPRESENTANTE.NOMBRE]], para actuar en representación de la sociedad [[ARRENDATARIA.RAZON_SOCIAL]], consta en instrumento legal vigente.
+
+________________________
+[[ARRENDADOR.NOMBRE]]
+Rut: [[ARRENDADOR.RUT]]
+Arrendador
+
+________________________
+pp. [[ARRENDATARIA.REPRESENTANTE.NOMBRE]]
+Rut: [[ARRENDATARIA.REPRESENTANTE.RUT]]
+Arrendataria

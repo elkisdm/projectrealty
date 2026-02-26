@@ -70,3 +70,25 @@ export interface ContractHistoryResponse {
     totalPages: number;
   };
 }
+
+export interface ContractPartyItem {
+  id: string;
+  role:
+    | 'arrendador_propietario'
+    | 'arrendadora'
+    | 'arrendadora_representante'
+    | 'propietario'
+    | 'arrendatario'
+    | 'arrendatario_representante_legal'
+    | 'aval';
+  party_type: 'natural' | 'juridica' | 'unknown';
+  display_name: string;
+  rut: string;
+  email: string | null;
+  phone: string | null;
+  nationality: string | null;
+  civil_status: string | null;
+  profession: string | null;
+  address: string | null;
+  updated_at?: string;
+}

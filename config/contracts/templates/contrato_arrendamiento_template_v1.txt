@@ -7,7 +7,7 @@ CON
 En [[CONTRATO.CIUDAD_FIRMA]], Chile, a [[CONTRATO.FECHA_FIRMA]], entre [[ARRENDADORA.RAZON_SOCIAL]], rol unico tributario numero [[ARRENDADORA.RUT]], representada, segun se acreditara, por [[ARRENDADORA.REPRESENTANTE.TRATAMIENTO]] [[ARRENDADORA.REPRESENTANTE.NOMBRE]], [[ARRENDADORA.REPRESENTANTE.NACIONALIDAD]], [[ARRENDADORA.REPRESENTANTE.ESTADO_CIVIL]], [[ARRENDADORA.REPRESENTANTE.PROFESION]], cedula de identidad numero [[ARRENDADORA.REPRESENTANTE.RUT]], por una parte, en adelante tambien la "Arrendadora" o "[[ARRENDADORA.RAZON_SOCIAL]]", sociedad que actua en representacion de [[PROPIETARIO.NOMBRE]], Rol Unico Tributario numero [[PROPIETARIO.RUT]], todos domiciliados para estos efectos en [[ARRENDADORA.DOMICILIO]]; y por la otra, en adelante indistintamente la parte [[ARRENDATARIO.ROL]], [[ARRENDATARIO.TRATAMIENTO]] [[ARRENDATARIO.NOMBRE]], [[ARRENDATARIO.NACIONALIDAD]], [[ARRENDATARIO.ESTADO_CIVIL]], cedula de identidad numero [[ARRENDATARIO.RUT]], [[ARRENDATARIO.DOMICILIADO]] en [[ARRENDATARIO.DOMICILIO]], todos mayores de edad, quienes exponen que han acordado celebrar el siguiente contrato de arrendamiento.
 
 PRIMERO: ANTECEDENTES
-[[PROPIETARIO.NOMBRE]] es dueno/a del inmueble ubicado en [[INMUEBLE.DIRECCION]], comuna de [[INMUEBLE.COMUNA]], ciudad de [[INMUEBLE.CIUDAD]], correspondiente al condominio [[INMUEBLE.CONDOMINIO]], unidad [[INMUEBLE.UNIDAD_LABEL]].
+[[PROPIETARIO.NOMBRE]] es [[PROPIETARIO.DUENO_A]] del inmueble ubicado en [[INMUEBLE.DIRECCION]], comuna de [[INMUEBLE.COMUNA]], ciudad de [[INMUEBLE.CIUDAD]], correspondiente al condominio [[INMUEBLE.CONDOMINIO]], [[INMUEBLE.UNIDAD_LABEL]].
 
 SEGUNDO: USO DE LA PROPIEDAD
 En este acto y por medio del presente instrumento, [[ARRENDADORA.RAZON_SOCIAL]], en la representacion en que comparece, entrega en arrendamiento a [[ARRENDATARIO.NOMBRE]], quien acepta para si, el inmueble singularizado en la clausula anterior.
@@ -26,11 +26,11 @@ Base legal de referencia: [[SUBARRIENDO.REFERENCIA_LEGAL]].
 
 [[IF.MASCOTA_PERMITIDA]]
 En caso de tenencia de mascota permitida por el propietario:
-a) Se permitira su tenencia en el inmueble de un maximo de 20 kilogramos, siempre y cuando la Arrendataria cumpla con lo dispuesto en la Ley 21.020, con el Reglamento de Copropiedad y con las normas que establezca el comite de administracion en el reglamento interno.
+a) Se permitira su tenencia en el inmueble de un maximo de 20 kilogramos, siempre y cuando la parte [[ARRENDATARIO.ROL]] cumpla con lo dispuesto en la Ley 21.020, con el Reglamento de Copropiedad y con las normas que establezca el comite de administracion en el reglamento interno.
 b) La mascota permitida incluira perros, gatos, peces dentro de peceras, asi como otras especies que no representen un peligro o perturbacion para la comunidad. Se prohibe expresamente la tenencia de animales exoticos, razas peligrosas, salvajes o protegidos por ley.
-c) Si la mascota comienza a habitar el inmueble con posterioridad a la firma del contrato, la Arrendataria debera comunicar dicha situacion a la Arrendadora a la mayor brevedad posible.
+c) Si la mascota comienza a habitar el inmueble con posterioridad a la firma del contrato, la parte [[ARRENDATARIO.ROL]] debera comunicar dicha situacion a la Arrendadora a la mayor brevedad posible.
 d) Toda mascota que circule en pasillos, ascensores y otras areas comunes debera utilizar siempre su correa respectiva.
-e) La Arrendataria sera responsable de cualquier dano o perjuicio, personal o material, que pueda causar la mascota al edificio o sus residentes, obligandose a restituir la propiedad en las mismas condiciones en que fue recibida.
+e) La parte [[ARRENDATARIO.ROL]] sera responsable de cualquier dano o perjuicio, personal o material, que pueda causar la mascota al edificio o sus residentes, obligandose a restituir la propiedad en las mismas condiciones en que fue recibida.
 [[ENDIF.MASCOTA_PERMITIDA]]
 
 TERCERO: VIGENCIA DEL CONTRATO
@@ -38,7 +38,7 @@ El presente contrato regira a contar del dia [[CONTRATO.FECHA_INICIO]] y vencera
 
 En caso de termino anticipado antes del primer ano, la parte afectada podra cobrar una multa equivalente a dos meses de renta.
 
-Sin perjuicio de lo anterior, una vez transcurrido un ano de vigencia del arrendamiento, la parte arrendataria estara facultada para poner termino anticipado al presente contrato, notificando con al menos 60 dias de anticipacion, y pagando la renta correspondiente a dicho periodo y en todo caso hasta la restitucion efectiva del inmueble.
+Sin perjuicio de lo anterior, una vez transcurrido un ano de vigencia del arrendamiento, la parte [[ARRENDATARIO.ROL]] estara facultada para poner termino anticipado al presente contrato, notificando con al menos 60 dias de anticipacion, y pagando la renta correspondiente a dicho periodo y en todo caso hasta la restitucion efectiva del inmueble.
 
 Asimismo, transcurrido un ano de vigencia del arrendamiento, la Arrendadora tambien podra poner termino anticipado al contrato notificando con al menos 90 dias de anticipacion.
 
@@ -55,17 +55,17 @@ Correo de pago: [[ARRENDADORA.CUENTA.EMAIL_PAGO]]
 
 La renta se reajustara cada 12 meses conforme a la variacion de la UF. El primer reajuste se aplicara a contar de [[RENTA.MES_PRIMER_REAJUSTE]] y asi sucesivamente.
 
-El retardo en el pago de la renta y/o gastos comunes desde el dia [[RENTA.DIA_LIMITE_PAGO]] de cada mes constituira en mora a la Arrendataria, quedando obligada a pagar una multa de 2% diario sobre rentas o gastos adeudados.
+El retardo en el pago de la renta y/o gastos comunes desde el dia [[RENTA.DIA_LIMITE_PAGO]] de cada mes constituira en mora a la parte [[ARRENDATARIO.ROL]], quedando dicha parte obligada a pagar una multa de 2% diario sobre rentas o gastos adeudados.
 
 QUINTO: ENTREGA
-La entrega material del inmueble se efectua con esta misma fecha, en condiciones de uso y funcionamiento, desocupado, con servicios debidamente pagados hasta esa fecha, en el estado conocido y aceptado por la Arrendataria, quien se obliga a restituirlo en el mismo estado al termino del contrato.
+La entrega material del inmueble se efectua con esta misma fecha, en condiciones de uso y funcionamiento, desocupado, con servicios debidamente pagados hasta esa fecha, en el estado conocido y aceptado por la parte [[ARRENDATARIO.ROL]], quien se obliga a restituirlo en el mismo estado al termino del contrato.
 
-Toda mejora que efectue la Arrendataria sera de su exclusivo costo y quedara a beneficio de la propiedad, salvo mejoras separables sin detrimento del inmueble.
+Toda mejora que efectue la parte [[ARRENDATARIO.ROL]] sera de su exclusivo costo y quedara a beneficio de la propiedad, salvo mejoras separables sin detrimento del inmueble.
 
-Al termino del contrato, la Arrendataria debera restituir la propiedad totalmente desocupada, haciendo entrega de llaves al personal de la Arrendadora en dia y horario habil.
+Al termino del contrato, la parte [[ARRENDATARIO.ROL]] debera restituir la propiedad totalmente desocupada, haciendo entrega de llaves al personal de la Arrendadora en dia y horario habil.
 
 SEXTO: OBLIGACIONES
-Seran obligaciones de la Arrendataria:
+Seran obligaciones de la parte [[ARRENDATARIO.ROL]]:
 a) Pagar la renta en el plazo pactado;
 b) Pagar gastos comunes y servicios basicos con puntualidad;
 c) Mantener el inmueble en correcto estado de aseo y conservacion;
@@ -73,7 +73,7 @@ d) Ejecutar reparaciones locativas que sean de su cargo;
 e) Solicitar autorizacion previa para mejoras;
 f) Respetar el destino habitacional del inmueble y el reglamento de copropiedad;
 g) Responder por danos al inmueble y/o bienes comunes causados por ella o terceros bajo su responsabilidad;
-h) Restituir a la Arrendadora cualquier suma pagada por multas o infracciones imputables a la Arrendataria.
+h) Restituir a la Arrendadora cualquier suma pagada por multas o infracciones imputables a la parte [[ARRENDATARIO.ROL]].
 
 El incumplimiento de cualquiera de las obligaciones dara derecho a la Arrendadora para poner termino anticipado al contrato y exigir restitucion inmediata del inmueble, pago de rentas vencidas, gastos adeudados y demas conceptos pendientes.
 
@@ -81,10 +81,10 @@ SEPTIMO: CASOS FORTUITOS
 La Arrendadora no respondera por robos o hurtos ocurridos en el inmueble ni por perjuicios ocasionados por sismos, incendios, inundaciones, filtraciones, roturas de canerias, humedad, calor, fuerza mayor o hechos analogos.
 
 OCTAVO: INSPECCION
-La Arrendadora queda facultada para inspeccionar la propiedad cuando lo estime conveniente, comprometiendose la Arrendataria a otorgar las facilidades necesarias para este efecto, al menos una vez cada tres meses.
+La Arrendadora queda facultada para inspeccionar la propiedad cuando lo estime conveniente, comprometiendose la parte [[ARRENDATARIO.ROL]] a otorgar las facilidades necesarias para este efecto, al menos una vez cada tres meses.
 
 NOVENO: PROHIBICIONES
-Se prohibe a la Arrendataria:
+Se prohibe a la parte [[ARRENDATARIO.ROL]]:
 a) Subarrendar o ceder total o parcialmente el contrato o el uso del inmueble;
 b) Alterar instalaciones de gas, agua, electricidad u otras;
 c) Suscribir convenios de pago de cuentas vencidas que afecten el inmueble sin autorizacion;
@@ -94,20 +94,20 @@ f) Mantener mascotas que no cumplan las condiciones de este contrato;
 g) Exceder capacidad razonable de ocupacion del inmueble.
 
 DECIMO: GARANTIA
-Para garantizar la conservacion del inmueble y el cumplimiento del contrato, la Arrendataria entrega en garantia la suma total de [[GARANTIA.MONTO_TOTAL_CLP]].
+Para garantizar la conservacion del inmueble y el cumplimiento del contrato, la parte [[ARRENDATARIO.ROL]] entrega en garantia la suma total de [[GARANTIA.MONTO_TOTAL_CLP]].
 
 Esta se pagara con un pago inicial de [[GARANTIA.PAGO_INICIAL_CLP]], una primera cuota de [[GARANTIA.CUOTA_1_MONTO_CLP]] con vencimiento el [[GARANTIA.CUOTA_1_FECHA]], y una segunda cuota de [[GARANTIA.CUOTA_2_MONTO_CLP]] con vencimiento el [[GARANTIA.CUOTA_2_FECHA]].
 
-La Arrendataria debera solicitar liquidacion de garantia transcurridos 30 dias desde la restitucion del inmueble a entera satisfaccion de la Arrendadora. La garantia se liquidara sin reajuste dentro de los 30 dias siguientes a dicha solicitud.
+La parte [[ARRENDATARIO.ROL]] debera solicitar liquidacion de garantia transcurridos 30 dias desde la restitucion del inmueble a entera satisfaccion de la Arrendadora. La garantia se liquidara sin reajuste dentro de los 30 dias siguientes a dicha solicitud.
 
 La Arrendadora podra descontar de la garantia:
 - Reparaciones para dejar el inmueble en condiciones optimas.
 - Dias proporcionales de arriendo pendientes.
 - Cuentas de servicios y gastos comunes adeudados.
 
-La Arrendataria no podra imputar la garantia al pago de rentas.
+La parte [[ARRENDATARIO.ROL]] no podra imputar la garantia al pago de rentas.
 
-Adicionalmente, la Arrendataria perdera derecho a devolucion de garantia en casos de incumplimientos graves, incluyendo:
+Adicionalmente, la parte [[ARRENDATARIO.ROL]] perdera derecho a devolucion de garantia en casos de incumplimientos graves, incluyendo:
 - Termino por incumplimiento contractual.
 - No solicitar salvoconducto previo a desocupacion.
 - No dar aviso de termino con 60 dias de anticipacion.
@@ -142,7 +142,7 @@ DECIMO PRIMERO: NOTIFICACION A BOLETINES COMERCIALES
 [[ENDIF.HAY_AVAL]]
 
 DECIMO SEGUNDO: COMUNICACIONES
-La Arrendataria se obliga a comunicar a [[ARRENDADORA.RAZON_SOCIAL]], dentro de tres dias habiles, cualquier modificacion de su correo electronico o telefono. En caso de no cumplir, se tendran por validas las comunicaciones enviadas al correo indicado en este contrato.
+La parte [[ARRENDATARIO.ROL]] se obliga a comunicar a [[ARRENDADORA.RAZON_SOCIAL]], dentro de tres dias habiles, cualquier modificacion de su correo electronico o telefono. En caso de no cumplir, se tendran por validas las comunicaciones enviadas al correo indicado en este contrato.
 [[IF.HAY_AVAL]]
 El Aval se obliga en los mismos terminos respecto de sus datos de contacto.
 [[ENDIF.HAY_AVAL]]
@@ -156,12 +156,12 @@ Presente a este acto [[AVAL.TRATAMIENTO]] [[AVAL.NOMBRE]], [[AVAL.NACIONALIDAD]]
 [[ENDIF.HAY_AVAL]]
 
 DECIMO QUINTO: DOCUMENTO DE IDENTIDAD
-En caso de que la Arrendataria y/o el Aval hayan firmado el presente contrato usando un documento de identificacion distinto a la cedula de identidad chilena, se obligan a comparecer a las oficinas de [[ARRENDADORA.RAZON_SOCIAL]] en un plazo no mayor a cinco meses desde [[CONTRATO.FECHA_INICIO]] para firmar nuevamente ante notario con cedula chilena vigente.
+En caso de que la parte [[ARRENDATARIO.ROL]] y/o el Aval hayan firmado el presente contrato usando un documento de identificacion distinto a la cedula de identidad chilena, se obligan a comparecer a las oficinas de [[ARRENDADORA.RAZON_SOCIAL]] en un plazo no mayor a cinco meses desde [[CONTRATO.FECHA_INICIO]] para firmar nuevamente ante notario con cedula chilena vigente.
 
-El incumplimiento de esta obligacion generara una multa mensual de CLP 30.000, incorporada al cupon mensual de arriendo. Los gastos notariales seran de cargo de la parte arrendataria.
+El incumplimiento de esta obligacion generara una multa mensual de CLP 30.000, incorporada al cupon mensual de arriendo. Los gastos notariales seran de cargo de la parte [[ARRENDATARIO.ROL]].
 
 DECIMO SEXTO: CESION DE DERECHOS
-La Arrendadora estara facultada para vender, ceder o transferir libremente a terceros el inmueble objeto del presente contrato y/o ceder total o parcialmente sus derechos, en especial el cobro de la renta, sin necesidad de autorizacion de la Arrendataria.
+La Arrendadora estara facultada para vender, ceder o transferir libremente a terceros el inmueble objeto del presente contrato y/o ceder total o parcialmente sus derechos, en especial el cobro de la renta, sin necesidad de autorizacion de la parte [[ARRENDATARIO.ROL]].
 
 DECIMO SEPTIMO: FIRMA Y COMUNICACIONES
 Todas las comunicaciones, cartas, avisos y/o notificaciones entre las partes a que se refiere el presente contrato deberan ser enviadas a las siguientes direcciones:
@@ -171,7 +171,7 @@ B) [[ARRENDATARIO.NOMBRE]]: [[ARRENDATARIO.EMAIL]]
 C) [[AVAL.NOMBRE]]: [[AVAL.EMAIL]]
 [[ENDIF.HAY_AVAL]]
 
-El presente contrato se firma en dos ejemplares de identico tenor y fecha, quedando uno en poder de la Arrendataria y uno en poder de la Arrendadora.
+El presente contrato se firma en dos ejemplares de identico tenor y fecha, quedando uno en poder de la parte [[ARRENDATARIO.ROL]] y uno en poder de la Arrendadora.
 
 La personeria de [[ARRENDADORA.REPRESENTANTE.NOMBRE]] para actuar en representacion de [[ARRENDADORA.RAZON_SOCIAL]] consta [[ARRENDADORA.PERSONERIA.DESCRIPCION]].
 

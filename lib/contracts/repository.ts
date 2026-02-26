@@ -45,6 +45,32 @@ export interface ListContractsResult {
   totalPages: number;
 }
 
+export interface ContractPartyRecord {
+  id: string;
+  source_contract_id: string | null;
+  role:
+    | 'arrendador_propietario'
+    | 'arrendadora'
+    | 'arrendadora_representante'
+    | 'propietario'
+    | 'arrendatario'
+    | 'arrendatario_representante_legal'
+    | 'aval';
+  party_type: 'natural' | 'juridica' | 'unknown';
+  display_name: string;
+  rut: string;
+  email: string | null;
+  phone: string | null;
+  nationality: string | null;
+  civil_status: string | null;
+  profession: string | null;
+  address: string | null;
+  meta_json: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+  created_by: string;
+}
+
 export async function listTemplates(): Promise<TemplateRecord[]> {
   const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase
@@ -247,4 +273,134 @@ export async function listContracts(filters: ListContractsFilters): Promise<List
     limit,
     totalPages,
   };
+}
+
+export async function upsertContractParties(input: {
+  parties: Array<{
+    source_contract_id?: string | null;
+    role: ContractPartyRecord['role'];
+    party_type?: ContractPartyRecord['party_type'];
+    display_name: string;
+    rut: string;
+    email?: string | null;
+    phone?: string | null;
+    nationality?: string | null;
+    civil_status?: string | null;
+    profession?: string | null;
+    address?: string | null;
+    meta_json?: Record<string, unknown>;
+    created_by: string;
+  }>;
+}): Promise<void> {
+  if (!input.parties.length) return;
+
+  const supabase = createSupabaseAdminClient();
+  const rows = input.parties.map((party) => ({
+    source_contract_id: party.source_contract_id ?? null,
+    role: party.role,
+    party_type: party.party_type ?? 'unknown',
+    display_name: party.display_name,
+    rut: party.rut,
+    email: party.email ?? null,
+    phone: party.phone ?? null,
+    nationality: party.nationality ?? null,
+    civil_status: party.civil_status ?? null,
+    profession: party.profession ?? null,
+    address: party.address ?? null,
+    meta_json: party.meta_json ?? {},
+    created_by: party.created_by,
+    updated_at: new Date().toISOString(),
+  }));
+
+  const roles = Array.from(new Set(rows.map((row) => row.role)));
+  const ruts = Array.from(new Set(rows.map((row) => row.rut)));
+
+  const { data: existingRows, error: existingError } = await supabase
+    .from('contract_parties')
+    .select('*')
+    .in('role', roles)
+    .in('rut', ruts);
+
+  if (existingError) {
+    throw new ContractError({
+      code: 'RENDER_FAILED',
+      message: 'No se pudo leer implicados existentes para enriquecer',
+      details: existingError.message,
+    });
+  }
+
+  const existingByKey = new Map<string, ContractPartyRecord>();
+  for (const row of (existingRows ?? []) as ContractPartyRecord[]) {
+    existingByKey.set(`${row.role}|${row.rut}`, row);
+  }
+
+  const mergedRows = rows.map((row) => {
+    const current = existingByKey.get(`${row.role}|${row.rut}`);
+    if (!current) return row;
+
+    return {
+      ...row,
+      source_contract_id: row.source_contract_id ?? current.source_contract_id ?? null,
+      party_type: row.party_type === 'unknown' ? current.party_type : row.party_type,
+      display_name: row.display_name || current.display_name,
+      email: row.email ?? current.email ?? null,
+      phone: row.phone ?? current.phone ?? null,
+      nationality: row.nationality ?? current.nationality ?? null,
+      civil_status: row.civil_status ?? current.civil_status ?? null,
+      profession: row.profession ?? current.profession ?? null,
+      address: row.address ?? current.address ?? null,
+      meta_json: {
+        ...(current.meta_json ?? {}),
+        ...(row.meta_json ?? {}),
+      },
+      created_by: current.created_by || row.created_by,
+      updated_at: new Date().toISOString(),
+    };
+  });
+
+  const { error } = await supabase
+    .from('contract_parties')
+    .upsert(mergedRows, { onConflict: 'role,rut' });
+
+  if (error) {
+    throw new ContractError({
+      code: 'RENDER_FAILED',
+      message: 'No se pudo persistir registro de implicados',
+      details: error.message,
+    });
+  }
+}
+
+export async function listContractParties(filters: {
+  q?: string;
+  role?: ContractPartyRecord['role'];
+  limit?: number;
+}): Promise<ContractPartyRecord[]> {
+  const supabase = createSupabaseAdminClient();
+  const limit = Math.min(100, Math.max(1, filters.limit ?? 20));
+
+  let query = supabase
+    .from('contract_parties')
+    .select('*')
+    .order('updated_at', { ascending: false })
+    .limit(limit);
+
+  if (filters.role) {
+    query = query.eq('role', filters.role);
+  }
+
+  if (filters.q && filters.q.trim()) {
+    const q = filters.q.trim().replace(/%/g, '');
+    query = query.or(`display_name.ilike.%${q}%,rut.ilike.%${q}%`);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    throw new ContractError({
+      code: 'RENDER_FAILED',
+      message: 'No se pudo listar implicados',
+      details: error.message,
+    });
+  }
+  return (data ?? []) as ContractPartyRecord[];
 }

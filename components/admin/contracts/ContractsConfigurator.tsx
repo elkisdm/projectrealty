@@ -21,7 +21,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import type { AdminRole } from '@/types/admin-ui';
-import { CONTRACT_WIZARD_STEPS, formatCLPInput, parseCLPInput } from '@/lib/contracts/form-utils';
+import { formatCLPInput, parseCLPInput } from '@/lib/contracts/form-utils';
+import { isSubleaseTemplate } from '@/lib/contracts/template-type';
 import { useContractConfigurator } from '@/hooks/useContractConfigurator';
 import { useContractHistory } from '@/hooks/useContractHistory';
 import { ContractWizardStepper } from './ContractWizardStepper';
@@ -83,16 +84,40 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
 
   const reviewSections = useMemo(
     () =>
-      CONTRACT_WIZARD_STEPS.slice(0, 5).map((step, index) => ({
-        title: step.title,
-        completed: configurator.sectionCompletion[index],
-        state: configurator.stepState[index],
-      })),
-    [configurator.sectionCompletion, configurator.stepState]
+      configurator.steps
+        .filter((step) => step.key !== 'review')
+        .map((step, index) => ({
+          title: step.title,
+          completed: configurator.sectionCompletion[index],
+          state: configurator.stepState[index],
+        })),
+    [configurator.sectionCompletion, configurator.stepState, configurator.steps]
   );
 
   const readOnly = !configurator.canIssue;
   const fechaTerminoRegister = register('contrato.fecha_termino');
+  const handleRutBlur = (
+    fieldPath:
+      | 'arrendadora.rut'
+      | 'arrendadora.representante.rut'
+      | 'propietario.rut'
+      | 'arrendatario.rut'
+      | 'arrendatario.representante_legal.rut'
+      | 'aval.rut'
+  ) => {
+    configurator.formatRutField(fieldPath);
+    void configurator.autofillByRut(fieldPath);
+  };
+  const filteredTemplates = useMemo(() => {
+    return configurator.templates.filter((template) =>
+      contratoTipo === 'subarriendo_propietario' ? isSubleaseTemplate(template) : !isSubleaseTemplate(template)
+    );
+  }, [configurator.templates, contratoTipo]);
+
+  const selectedTemplateForType = useMemo(
+    () => filteredTemplates.find((template) => template.id === configurator.selectedTemplateId) ?? null,
+    [configurator.selectedTemplateId, filteredTemplates]
+  );
 
   const handleTemplateDownload = async () => {
     const url = await configurator.downloadTemplateSource();
@@ -140,22 +165,253 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
+  const handleHistoryRegenerate = async (contractId: string) => {
+    const loaded = await configurator.loadFromExistingContract(contractId);
+    if (!loaded) {
+      toast.error('No se pudo cargar el contrato para regenerar');
+      return;
+    }
+    setTab('configurator');
+    toast.success('Contrato cargado. Revisa y valida antes de emitir.');
+  };
+
   const renderCurrentStep = () => {
     switch (configurator.currentStep) {
       case 0:
         return (
-          <ContractTemplateSelector
-            templates={configurator.templates}
-            selectedTemplate={configurator.selectedTemplate}
-            selectedTemplateId={configurator.selectedTemplateId}
-            isLoading={configurator.isLoadingTemplates}
-            error={configurator.templatesError}
-            onSelect={configurator.setSelectedTemplateId}
-            onReload={configurator.loadTemplates}
-            onDownloadSource={handleTemplateDownload}
-          />
+          <div className="space-y-4">
+            <SectionCard title="Tipo de contrato">
+              <div className="space-y-1.5">
+                <Label>Selecciona tipo</Label>
+                <Controller
+                  control={control}
+                  name="contrato.tipo"
+                  render={({ field }) => (
+                    <Select
+                      value={field.value ?? 'standard'}
+                      onValueChange={(value) => {
+                        const nextValue = value as 'standard' | 'subarriendo_propietario';
+                        field.onChange(nextValue);
+                        const candidate = configurator.templates.find((template) =>
+                          nextValue === 'subarriendo_propietario'
+                            ? isSubleaseTemplate(template)
+                            : !isSubleaseTemplate(template)
+                        );
+                        configurator.setSelectedTemplateId(candidate?.id ?? '');
+                      }}
+                    >
+                      <SelectTrigger disabled={readOnly}>
+                        <SelectValue placeholder="Selecciona tipo de contrato" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="standard">Estándar</SelectItem>
+                        <SelectItem value="subarriendo_propietario">Propietario con subarriendo</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </div>
+            </SectionCard>
+
+            <ContractTemplateSelector
+              templates={filteredTemplates}
+              selectedTemplate={selectedTemplateForType}
+              selectedTemplateId={selectedTemplateForType?.id ?? ''}
+              isLoading={configurator.isLoadingTemplates}
+              error={configurator.templatesError}
+              onSelect={configurator.setSelectedTemplateId}
+              onReload={configurator.loadTemplates}
+              onDownloadSource={handleTemplateDownload}
+            />
+          </div>
         );
       case 1:
+        if (contratoTipo === 'subarriendo_propietario') {
+          return (
+            <Accordion className="w-full max-w-none space-y-3" defaultValue={['arrendador', 'arrendataria', 'representante']}>
+              <AccordionItem value="arrendador" className="overflow-hidden rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-1)]">
+                <AccordionHeader>
+                  <AccordionTrigger className="px-4 py-3 text-left">
+                    <span className="font-semibold text-[var(--text)]">Arrendador / Propietario</span>
+                  </AccordionTrigger>
+                </AccordionHeader>
+                <AccordionPanel className="px-0">
+                  <SectionCard title="Arrendador / Propietario" description="Figura 1 del contrato de subarriendo (sin aval).">
+                    <FieldGrid>
+                      <div className="space-y-1.5">
+                        <Label>Tipo persona</Label>
+                        <Controller
+                          control={control}
+                          name="arrendadora.tipo_persona"
+                          render={({ field }) => (
+                            <Select value={field.value ?? 'natural'} onValueChange={field.onChange}>
+                              <SelectTrigger disabled={readOnly}>
+                                <SelectValue placeholder="Selecciona tipo" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="natural">Persona natural</SelectItem>
+                                <SelectItem value="juridica">Persona jurídica</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          )}
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Nombre completo / Razón social</Label>
+                        <Input {...register('arrendadora.razon_social')} disabled={readOnly} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>RUT arrendador</Label>
+                        <Input
+                          {...register('arrendadora.rut')}
+                          disabled={readOnly}
+                          onBlur={() => handleRutBlur('arrendadora.rut')}
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Nacionalidad</Label>
+                        <Input {...register('arrendadora.nacionalidad')} disabled={readOnly} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Estado civil</Label>
+                        <Input {...register('arrendadora.estado_civil')} disabled={readOnly} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Profesión</Label>
+                        <Input {...register('arrendadora.profesion')} disabled={readOnly} />
+                      </div>
+                      <div className="space-y-1.5 md:col-span-2">
+                        <Label>Domicilio</Label>
+                        <Input {...register('arrendadora.domicilio')} disabled={readOnly} />
+                      </div>
+                      <div className="space-y-1.5 md:col-span-2">
+                        <Label>Email notificaciones</Label>
+                        <Input type="email" {...register('arrendadora.email')} disabled={readOnly} />
+                      </div>
+                    </FieldGrid>
+                  </SectionCard>
+                </AccordionPanel>
+              </AccordionItem>
+
+              <AccordionItem value="arrendataria" className="overflow-hidden rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-1)]">
+                <AccordionHeader>
+                  <AccordionTrigger className="px-4 py-3 text-left">
+                    <span className="font-semibold text-[var(--text)]">Arrendataria (empresa)</span>
+                  </AccordionTrigger>
+                </AccordionHeader>
+                <AccordionPanel className="px-0">
+                  <SectionCard title="Arrendataria (empresa)" description="Figura 2 con derecho a subarrendar.">
+                    <FieldGrid>
+                      <div className="space-y-1.5">
+                        <Label>Tipo persona</Label>
+                        <Controller
+                          control={control}
+                          name="arrendatario.tipo_persona"
+                          render={({ field }) => (
+                            <Select value={field.value ?? 'juridica'} onValueChange={field.onChange}>
+                              <SelectTrigger disabled>
+                                <SelectValue placeholder="Persona jurídica" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="juridica">Persona jurídica</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          )}
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Razón social</Label>
+                        <Input {...register('arrendatario.nombre')} disabled={readOnly} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>RUT empresa</Label>
+                        <Input
+                          {...register('arrendatario.rut')}
+                          disabled={readOnly}
+                          onBlur={() => handleRutBlur('arrendatario.rut')}
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Email notificaciones</Label>
+                        <Input type="email" {...register('arrendatario.email')} disabled={readOnly} />
+                      </div>
+                      <div className="space-y-1.5 md:col-span-2">
+                        <Label>Domicilio</Label>
+                        <Input {...register('arrendatario.domicilio')} disabled={readOnly} />
+                      </div>
+                    </FieldGrid>
+                  </SectionCard>
+                </AccordionPanel>
+              </AccordionItem>
+
+              <AccordionItem value="representante" className="overflow-hidden rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-1)]">
+                <AccordionHeader>
+                  <AccordionTrigger className="px-4 py-3 text-left">
+                    <span className="font-semibold text-[var(--text)]">Representante legal (arrendataria)</span>
+                  </AccordionTrigger>
+                </AccordionHeader>
+                <AccordionPanel className="px-0">
+                  <SectionCard title="Representante legal">
+                    <FieldGrid>
+                      <div className="space-y-1.5">
+                        <Label>Nombre completo</Label>
+                        <Input {...register('arrendatario.representante_legal.nombre')} disabled={readOnly} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>RUT personal</Label>
+                        <Input
+                          {...register('arrendatario.representante_legal.rut')}
+                          disabled={readOnly}
+                          onBlur={() => handleRutBlur('arrendatario.representante_legal.rut')}
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Nacionalidad</Label>
+                        <Input {...register('arrendatario.representante_legal.nacionalidad')} disabled={readOnly} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Estado civil</Label>
+                        <Input {...register('arrendatario.representante_legal.estado_civil')} disabled={readOnly} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Profesión</Label>
+                        <Input {...register('arrendatario.representante_legal.profesion')} disabled={readOnly} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Género</Label>
+                        <Controller
+                          control={control}
+                          name="arrendatario.representante_legal.genero"
+                          render={({ field }) => (
+                            <Select value={field.value ?? 'na'} onValueChange={(value) => field.onChange(value === 'na' ? undefined : value)}>
+                              <SelectTrigger disabled={readOnly}>
+                                <SelectValue placeholder="Selecciona género" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="na">No especificado</SelectItem>
+                                <SelectItem value="femenino">Femenino</SelectItem>
+                                <SelectItem value="masculino">Masculino</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          )}
+                        />
+                      </div>
+                      <div className="space-y-1.5 md:col-span-2">
+                        <Label>Domicilio</Label>
+                        <Input {...register('arrendatario.representante_legal.domicilio')} disabled={readOnly} />
+                      </div>
+                      <div className="space-y-1.5 md:col-span-2">
+                        <Label>Email</Label>
+                        <Input type="email" {...register('arrendatario.representante_legal.email')} disabled={readOnly} />
+                      </div>
+                    </FieldGrid>
+                  </SectionCard>
+                </AccordionPanel>
+              </AccordionItem>
+            </Accordion>
+          );
+        }
+
         return (
           <Accordion className="w-full max-w-none space-y-3" defaultValue={['arrendadora']}>
             <AccordionItem value="arrendadora" className="overflow-hidden rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-1)]">
@@ -176,7 +432,7 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
                       <Input
                         {...register('arrendadora.rut')}
                         disabled={readOnly}
-                        onBlur={() => configurator.formatRutField('arrendadora.rut')}
+                        onBlur={() => handleRutBlur('arrendadora.rut')}
                       />
                       <p className="text-xs text-[var(--subtext)]">Este RUT debe ser el de la empresa.</p>
                     </div>
@@ -285,7 +541,7 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
                       <Input
                         {...register('arrendadora.representante.rut')}
                         disabled={readOnly}
-                        onBlur={() => configurator.formatRutField('arrendadora.representante.rut')}
+                        onBlur={() => handleRutBlur('arrendadora.representante.rut')}
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -342,7 +598,26 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
                       <Input
                         {...register('propietario.rut')}
                         disabled={readOnly}
-                        onBlur={() => configurator.formatRutField('propietario.rut')}
+                        onBlur={() => handleRutBlur('propietario.rut')}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Género propietario</Label>
+                      <Controller
+                        control={control}
+                        name="propietario.genero"
+                        render={({ field }) => (
+                          <Select value={field.value ?? 'na'} onValueChange={(value) => field.onChange(value === 'na' ? undefined : value)}>
+                            <SelectTrigger disabled={readOnly}>
+                              <SelectValue placeholder="Selecciona género" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="na">No especificado</SelectItem>
+                              <SelectItem value="femenino">Femenino</SelectItem>
+                              <SelectItem value="masculino">Masculino</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
                       />
                     </div>
                   </FieldGrid>
@@ -368,7 +643,7 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
                       <Input
                         {...register('arrendatario.rut')}
                         disabled={readOnly}
-                        onBlur={() => configurator.formatRutField('arrendatario.rut')}
+                        onBlur={() => handleRutBlur('arrendatario.rut')}
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -449,7 +724,7 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
                         <Input
                           {...register('aval.rut')}
                           disabled={readOnly}
-                          onBlur={() => configurator.formatRutField('aval.rut')}
+                          onBlur={() => handleRutBlur('aval.rut')}
                         />
                       </div>
                       <div className="space-y-1.5">
@@ -590,11 +865,56 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
                     </Button>
                   </div>
                 </div>
+                {contratoTipo === 'subarriendo_propietario' ? (
+                  <div className="space-y-1.5">
+                    <Label>Aviso de término (días)</Label>
+                    <Input type="number" min={1} max={365} {...register('contrato.aviso_termino_dias', { valueAsNumber: true })} disabled={readOnly} />
+                  </div>
+                ) : null}
               </FieldGrid>
             </SectionCard>
           </div>
         );
       case 3:
+        if (contratoTipo === 'subarriendo_propietario') {
+          return (
+            <div className="space-y-4">
+              <SectionCard title="Renta de subarriendo" description="Modelo variable por porcentaje del subarriendo efectivamente percibido.">
+                <FieldGrid>
+                  <div className="space-y-1.5">
+                    <Label>% renta para arrendador</Label>
+                    <Input type="number" step="0.1" {...register('renta.porcentaje_subarriendo', { valueAsNumber: true })} disabled={readOnly} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Día límite pago</Label>
+                    <Input type="number" {...register('renta.dia_limite_pago', { valueAsNumber: true })} disabled={readOnly} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Monto base referencial CLP</Label>
+                    <Controller
+                      control={control}
+                      name="renta.monto_clp"
+                      render={({ field }) => (
+                        <Input
+                          inputMode="numeric"
+                          value={formatCLPInput(Number(field.value ?? 0))}
+                          onChange={(event) => field.onChange(parseCLPInput(event.target.value))}
+                          disabled={readOnly}
+                          placeholder="400.000"
+                        />
+                      )}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Monto UF referencial</Label>
+                    <Input type="number" step="0.01" {...register('renta.monto_uf', { valueAsNumber: true })} disabled={readOnly} />
+                  </div>
+                </FieldGrid>
+              </SectionCard>
+            </div>
+          );
+        }
+
         return (
           <div className="space-y-4">
             <SectionCard title="Renta">
@@ -712,40 +1032,124 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
           </div>
         );
       case 4:
+        if (contratoTipo === 'subarriendo_propietario') {
+          return (
+            <div className="space-y-4">
+              <SectionCard
+                title="Reglas subarriendo"
+                description="Configura autorización, notificaciones y términos legales para el contrato de subarriendo propietario."
+              >
+                <div className="grid gap-3 md:grid-cols-2">
+                  <Controller
+                    control={control}
+                    name="subarriendo.permitido"
+                    render={({ field }) => (
+                      <div className="rounded-lg border border-[var(--admin-border-subtle)] p-3 text-sm">
+                        <label className="inline-flex items-center gap-2">
+                        <Checkbox
+                          checked={Boolean(field.value)}
+                          onCheckedChange={() => field.onChange(true)}
+                          disabled
+                        />
+                        Subarriendo permitido
+                        </label>
+                        <p className="mt-1 text-xs text-[var(--subtext)]">Obligatorio para contrato subarriendo propietario.</p>
+                      </div>
+                    )}
+                  />
+                  <Controller
+                    control={control}
+                    name="subarriendo.propietario_autoriza"
+                    render={({ field }) => (
+                      <div className="rounded-lg border border-[var(--admin-border-subtle)] p-3 text-sm">
+                        <label className="inline-flex items-center gap-2">
+                        <Checkbox
+                          checked={Boolean(field.value)}
+                          onCheckedChange={() => field.onChange(true)}
+                          disabled
+                        />
+                        Propietario autoriza subarriendo
+                        </label>
+                        <p className="mt-1 text-xs text-[var(--subtext)]">Se fija automáticamente en este tipo de contrato.</p>
+                      </div>
+                    )}
+                  />
+                  <Controller
+                    control={control}
+                    name="subarriendo.notificacion_obligatoria"
+                    render={({ field }) => (
+                      <label className="inline-flex items-center gap-2 rounded-lg border border-[var(--admin-border-subtle)] p-3 text-sm">
+                        <Checkbox
+                          checked={Boolean(field.value)}
+                          onCheckedChange={(checked) => field.onChange(Boolean(checked))}
+                          disabled={readOnly}
+                        />
+                        Notificación obligatoria
+                      </label>
+                    )}
+                  />
+                  <Controller
+                    control={control}
+                    name="subarriendo.permite_multiples"
+                    render={({ field }) => (
+                      <label className="inline-flex items-center gap-2 rounded-lg border border-[var(--admin-border-subtle)] p-3 text-sm">
+                        <Checkbox
+                          checked={Boolean(field.value)}
+                          onCheckedChange={(checked) => field.onChange(Boolean(checked))}
+                          disabled={readOnly}
+                        />
+                        Permite múltiples subarrendamientos
+                      </label>
+                    )}
+                  />
+                  <Controller
+                    control={control}
+                    name="subarriendo.periodo_vacancia"
+                    render={({ field }) => (
+                      <label className="inline-flex items-center gap-2 rounded-lg border border-[var(--admin-border-subtle)] p-3 text-sm md:col-span-2">
+                        <Checkbox
+                          checked={Boolean(field.value)}
+                          onCheckedChange={(checked) => field.onChange(Boolean(checked))}
+                          disabled={readOnly}
+                        />
+                        Permite período de vacancia
+                      </label>
+                    )}
+                  />
+                </div>
+
+                <FieldGrid>
+                  <div className="space-y-1.5">
+                    <Label>Plazo notificación (días hábiles)</Label>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={365}
+                      {...register('subarriendo.plazo_notificacion_habiles', { valueAsNumber: true })}
+                      disabled={readOnly}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Referencia legal</Label>
+                    <Input {...register('subarriendo.referencia_legal')} disabled={readOnly} />
+                  </div>
+                  <div className="space-y-1.5 md:col-span-2">
+                    <Label>Texto de autorización</Label>
+                    <Textarea rows={3} {...register('subarriendo.autorizacion_texto')} disabled={readOnly} />
+                  </div>
+                  <div className="space-y-1.5 md:col-span-2">
+                    <Label>Responsabilidad principal</Label>
+                    <Textarea rows={3} {...register('subarriendo.responsabilidad_principal')} disabled={readOnly} />
+                  </div>
+                </FieldGrid>
+              </SectionCard>
+            </div>
+          );
+        }
+
         return (
           <div className="space-y-4">
             <SectionCard title="Condiciones contrato">
-              <div className="space-y-1.5">
-                <Label>Tipo de contrato</Label>
-                <Controller
-                  control={control}
-                  name="contrato.tipo"
-                  render={({ field }) => (
-                    <Select
-                      value={field.value ?? 'standard'}
-                      onValueChange={(value) => {
-                        const nextValue = value as 'standard' | 'subarriendo_propietario';
-                        field.onChange(nextValue);
-                        if (nextValue === 'subarriendo_propietario') {
-                          setValue('subarriendo.permitido', true, { shouldDirty: true, shouldValidate: true });
-                          setValue('subarriendo.propietario_autoriza', true, { shouldDirty: true, shouldValidate: true });
-                          setValue('subarriendo.notificacion_obligatoria', true, { shouldDirty: true, shouldValidate: true });
-                          setValue('subarriendo.plazo_notificacion_habiles', 5, { shouldDirty: true, shouldValidate: true });
-                        }
-                      }}
-                    >
-                      <SelectTrigger disabled={readOnly}>
-                        <SelectValue placeholder="Selecciona tipo de contrato" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="standard">Estándar</SelectItem>
-                        <SelectItem value="subarriendo_propietario">Propietario con subarriendo</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-              </div>
-
               <div className="grid gap-3 md:grid-cols-2">
                 <Controller
                   control={control}
@@ -776,109 +1180,6 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
                   )}
                 />
               </div>
-            </SectionCard>
-
-            <SectionCard
-              title="Subarriendo"
-              description="Reglas contractuales para subarriendo y autorización del propietario."
-            >
-              <div className="grid gap-3 md:grid-cols-2">
-                <Controller
-                  control={control}
-                  name="subarriendo.permitido"
-                  render={({ field }) => (
-                    <label className="inline-flex items-center gap-2 rounded-lg border border-[var(--admin-border-subtle)] p-3 text-sm">
-                      <Checkbox
-                        checked={Boolean(field.value)}
-                        onCheckedChange={(checked) => field.onChange(Boolean(checked))}
-                        disabled={readOnly || contratoTipo === 'subarriendo_propietario'}
-                      />
-                      Subarriendo permitido
-                    </label>
-                  )}
-                />
-                <Controller
-                  control={control}
-                  name="subarriendo.propietario_autoriza"
-                  render={({ field }) => (
-                    <label className="inline-flex items-center gap-2 rounded-lg border border-[var(--admin-border-subtle)] p-3 text-sm">
-                      <Checkbox
-                        checked={Boolean(field.value)}
-                        onCheckedChange={(checked) => field.onChange(Boolean(checked))}
-                        disabled={readOnly || contratoTipo === 'subarriendo_propietario'}
-                      />
-                      Propietario autoriza subarriendo
-                    </label>
-                  )}
-                />
-                <Controller
-                  control={control}
-                  name="subarriendo.notificacion_obligatoria"
-                  render={({ field }) => (
-                    <label className="inline-flex items-center gap-2 rounded-lg border border-[var(--admin-border-subtle)] p-3 text-sm">
-                      <Checkbox
-                        checked={Boolean(field.value)}
-                        onCheckedChange={(checked) => field.onChange(Boolean(checked))}
-                        disabled={readOnly}
-                      />
-                      Notificación obligatoria
-                    </label>
-                  )}
-                />
-                <Controller
-                  control={control}
-                  name="subarriendo.permite_multiples"
-                  render={({ field }) => (
-                    <label className="inline-flex items-center gap-2 rounded-lg border border-[var(--admin-border-subtle)] p-3 text-sm">
-                      <Checkbox
-                        checked={Boolean(field.value)}
-                        onCheckedChange={(checked) => field.onChange(Boolean(checked))}
-                        disabled={readOnly}
-                      />
-                      Permite múltiples subarrendatarios
-                    </label>
-                  )}
-                />
-                <Controller
-                  control={control}
-                  name="subarriendo.periodo_vacancia"
-                  render={({ field }) => (
-                    <label className="inline-flex items-center gap-2 rounded-lg border border-[var(--admin-border-subtle)] p-3 text-sm md:col-span-2">
-                      <Checkbox
-                        checked={Boolean(field.value)}
-                        onCheckedChange={(checked) => field.onChange(Boolean(checked))}
-                        disabled={readOnly}
-                      />
-                      Permite período de vacancia entre subarrendatarios
-                    </label>
-                  )}
-                />
-              </div>
-
-              <FieldGrid>
-                <div className="space-y-1.5">
-                  <Label>Plazo notificación (días hábiles)</Label>
-                  <Input
-                    type="number"
-                    min={1}
-                    max={365}
-                    {...register('subarriendo.plazo_notificacion_habiles', { valueAsNumber: true })}
-                    disabled={readOnly}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Referencia legal</Label>
-                  <Input {...register('subarriendo.referencia_legal')} disabled={readOnly} />
-                </div>
-                <div className="space-y-1.5 md:col-span-2">
-                  <Label>Texto de autorización</Label>
-                  <Textarea rows={3} {...register('subarriendo.autorizacion_texto')} disabled={readOnly} />
-                </div>
-                <div className="space-y-1.5 md:col-span-2">
-                  <Label>Responsabilidad principal</Label>
-                  <Textarea rows={3} {...register('subarriendo.responsabilidad_principal')} disabled={readOnly} />
-                </div>
-              </FieldGrid>
             </SectionCard>
 
             <SectionCard title="Declaración de origen de fondos">
@@ -944,7 +1245,7 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
         ) : null}
 
         <ContractWizardStepper
-          steps={CONTRACT_WIZARD_STEPS}
+          steps={configurator.steps}
           currentStep={configurator.currentStep}
           stepState={configurator.stepState}
           sectionCompletion={configurator.sectionCompletion}
@@ -966,7 +1267,7 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
                 <div className="rounded-md border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-2)] p-3">
                   <p className="text-xs uppercase tracking-wide text-[var(--subtext)]">Paso actual</p>
                   <p className="font-semibold text-[var(--text)]">
-                    {configurator.currentStep + 1}. {CONTRACT_WIZARD_STEPS[configurator.currentStep]?.title}
+                    {configurator.currentStep + 1}. {configurator.steps[configurator.currentStep]?.title}
                   </p>
                 </div>
                 <div className="rounded-md border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-2)] p-3">
@@ -1003,7 +1304,7 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
               Anterior
             </Button>
 
-            {configurator.currentStep < CONTRACT_WIZARD_STEPS.length - 1 ? (
+            {configurator.currentStep < configurator.steps.length - 1 ? (
               <Button
                 type="button"
                 onClick={() => {
@@ -1047,6 +1348,7 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
           onPageChange={history.setPage}
           onRefresh={history.reload}
           onDownload={handleHistoryDownload}
+          onRegenerate={handleHistoryRegenerate}
         />
       </TabsContent>
     </Tabs>
