@@ -26,10 +26,15 @@ Este paquete define, sin implementacion tecnica, el flujo end-to-end de arriendo
 8. `ApiContracts.md` - Contratos API objetivo (sin implementacion).
 9. `ContractHydrationSpec.md` - Especificacion de hidratacion de contrato.
 10. `PaymentsAndSettlements.md` - Cobros, documentos a arrendatario y liquidaciones.
+11. `ADR-001-Dominio-y-Lenguaje-Ubicuo.md` - Decision arquitectonica final de dominio y lenguaje ubicuo.
 
 ## Sprint Execution Artifacts
 - `execution/ELK-19-Inventario-Terminos-y-Fuentes.md` - Inventario inicial de terminos canonicos, fuentes y ambiguedades priorizadas.
 - `execution/ELK-20-Mapa-Actores-y-Entidades-Canonicas.md` - Mapa de actores internos/externos, entidades canonicas y fronteras difusas.
+- `execution/ELK-21-Diccionario-v0-y-Aliases-Prohibidos.md` - Diccionario canonico v0 y aliases prohibidos.
+- `execution/ELK-22-Bounded-Contexts-y-Fronteras-de-Eventos.md` - Delimitacion de contextos y contratos de frontera por eventos.
+- `execution/ELK-23-Resolucion-de-Conflictos-Semanticos.md` - Resolucion de conflictos y decisiones candidatas a ADR.
+- `execution/ELK-24-Handoff-a-ELK-12.md` - Handoff operativo y checklist de adopcion para ELK-12.
 
 ## Locked Defaults (2026-02-26)
 - MVP end-to-end completo.
@@ -58,3 +63,5 @@ Este paquete define, sin implementacion tecnica, el flujo end-to-end de arriendo
 - v0.1 (2026-02-26): Baseline inicial del paquete documental.
 - v0.1 (2026-02-26): Se agrega artefacto de ejecucion `ELK-19`.
 - v0.1 (2026-02-26): Se agrega artefacto de ejecucion `ELK-20`.
+- v0.1 (2026-02-26): Se agregan artefactos de ejecucion `ELK-21`, `ELK-22`, `ELK-23`, `ELK-24`.
+- v1.0 (2026-02-26): Se publica `ADR-001-Dominio-y-Lenguaje-Ubicuo`.
