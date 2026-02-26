@@ -23,6 +23,17 @@ function paragraphFromLine(line, inSignatureBlock) {
   const trimmed = line.trim();
 
   if (!trimmed) {
+    if (inSignatureBlock) {
+      return {
+        paragraph: new Paragraph({
+          spacing: { after: 25 },
+          keepNext: true,
+          keepLines: true,
+        }),
+        inSignatureBlock,
+      };
+    }
+
     return {
       paragraph: new Paragraph({ spacing: { after: 140 } }),
       inSignatureBlock,
@@ -92,7 +103,7 @@ function paragraphFromLine(line, inSignatureBlock) {
     };
   }
 
-  const shouldLeftAlign = inSignatureBlock && signatureMetaRegex.test(trimmed);
+  const shouldLeftAlign = inSignatureBlock || signatureMetaRegex.test(trimmed);
   const isSignatureEnd = inSignatureBlock && /^Arrendataria$/i.test(trimmed);
   const paragraph = new Paragraph({
     spacing: { after: inSignatureBlock ? 55 : 120 },

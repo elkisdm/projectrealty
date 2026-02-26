@@ -91,5 +91,6 @@ Arrendador
 
 ________________________
 pp. [[ARRENDATARIA.REPRESENTANTE.NOMBRE]]
+en representación de [[ARRENDATARIA.RAZON_SOCIAL]]
 Rut: [[ARRENDATARIA.REPRESENTANTE.RUT]]
 Arrendataria
