@@ -29,6 +29,7 @@ Este paquete define, sin implementacion tecnica, el flujo end-to-end de arriendo
 
 ## Sprint Execution Artifacts
 - `execution/ELK-19-Inventario-Terminos-y-Fuentes.md` - Inventario inicial de terminos canonicos, fuentes y ambiguedades priorizadas.
+- `execution/ELK-20-Mapa-Actores-y-Entidades-Canonicas.md` - Mapa de actores internos/externos, entidades canonicas y fronteras difusas.
 
 ## Locked Defaults (2026-02-26)
 - MVP end-to-end completo.
@@ -56,3 +57,4 @@ Este paquete define, sin implementacion tecnica, el flujo end-to-end de arriendo
 ## Changelog
 - v0.1 (2026-02-26): Baseline inicial del paquete documental.
 - v0.1 (2026-02-26): Se agrega artefacto de ejecucion `ELK-19`.
+- v0.1 (2026-02-26): Se agrega artefacto de ejecucion `ELK-20`.
