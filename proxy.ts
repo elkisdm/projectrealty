@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { validateAdminRedirect } from "@lib/admin/validate-redirect";
+import { isSessionAuthenticatedPayload } from "@lib/admin/session-payload";
 import { featureFlags } from "./config/feature-flags";
 
 // Rutas que requieren autenticación
@@ -53,8 +54,8 @@ async function isAuthenticatedAdmin(request: NextRequest): Promise<boolean> {
       return false;
     }
 
-    const data = (await response.json()) as { authenticated?: boolean };
-    return data.authenticated === true;
+    const payload = await response.json();
+    return isSessionAuthenticatedPayload(payload);
   } catch {
     return false;
   }
