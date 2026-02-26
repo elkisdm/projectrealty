@@ -8,7 +8,13 @@ interface AutoRuleOptions {
   autoDeclaration?: boolean;
 }
 
-const STANDARD_WIZARD_STEPS = [
+interface ContractWizardStep {
+  key: 'template' | 'partes' | 'inmueble' | 'finanzas' | 'condiciones' | 'review';
+  title: string;
+  description: string;
+}
+
+const STANDARD_WIZARD_STEPS: readonly ContractWizardStep[] = [
   { key: 'template', title: 'Plantilla', description: 'Selecciona la versión oficial' },
   { key: 'partes', title: 'Partes', description: 'Figuras y representación legal' },
   { key: 'inmueble', title: 'Inmueble y Fechas', description: 'Dirección y vigencia' },
@@ -17,7 +23,7 @@ const STANDARD_WIZARD_STEPS = [
   { key: 'review', title: 'Revisión', description: 'Validación y emisión' },
 ] as const;
 
-const SUBLEASE_WIZARD_STEPS = [
+const SUBLEASE_WIZARD_STEPS: readonly ContractWizardStep[] = [
   { key: 'template', title: 'Plantilla', description: 'Plantilla específica de subarriendo propietario' },
   { key: 'partes', title: 'Partes', description: 'Arrendador, arrendataria y representante legal' },
   { key: 'inmueble', title: 'Inmueble y Vigencia', description: 'Ubicación, inicio y término' },
@@ -26,7 +32,6 @@ const SUBLEASE_WIZARD_STEPS = [
   { key: 'review', title: 'Revisión', description: 'Validación y emisión' },
 ] as const;
 
-export type ContractWizardStep = (typeof STANDARD_WIZARD_STEPS)[number];
 type WizardStepKey = ContractWizardStep['key'];
 type Genero = ContractPayload['arrendatario']['genero'];
 
@@ -178,8 +183,6 @@ export function getStepFieldsForContractType(
     return [
       'renta.porcentaje_subarriendo',
       'renta.dia_limite_pago',
-      'renta.monto_clp',
-      'renta.monto_uf',
     ];
   }
 
@@ -259,6 +262,7 @@ export function createContractWizardDefaultDraft(): ContractPayload {
     propietario: {
       nombre: '',
       rut: '',
+      genero: undefined,
     },
     arrendatario: {
       tipo_persona: 'natural',
@@ -484,9 +488,9 @@ function resolveUnitLabel(payload: ContractPayload): string {
 }
 
 function getTratamiento(genero: Genero): string {
-  if (genero === 'masculino') return 'Sr.';
-  if (genero === 'femenino') return 'Sra.';
-  return 'Sr./Sra.';
+  if (genero === 'masculino') return 'Don';
+  if (genero === 'femenino') return 'Doña';
+  return 'Don/Doña';
 }
 
 function getDomiciliado(genero: Genero): string {
@@ -502,14 +506,14 @@ export function generateFundsOriginDeclaration(payload: ContractPayload): string
     payload.declaraciones.fondos_origen_fuente ?? payload.declaraciones.fondos_origen_texto
   );
   const unidadLabel = resolveUnitLabel(payload);
-  const domicilio = payload.arrendatario.domicilio?.trim() || payload.inmueble.direccion;
+  const domicilioInmueble = payload.inmueble.direccion?.trim() || payload.arrendatario.domicilio?.trim() || '';
   const tratamiento = getTratamiento(payload.arrendatario.genero);
   const domiciliado = getDomiciliado(payload.arrendatario.genero);
 
   return [
     'DECLARACIÓN DE ORIGEN DE ORIGEN DE FONDOS PARA PAGOS ASOCIADOS AL CONTRATO DE ARRENDAMIENTO',
     '',
-    `En Santiago de Chile, a ${fechaLarga}, ${tratamiento} ${payload.arrendatario.nombre}, ${payload.arrendatario.nacionalidad}, ${payload.arrendatario.estado_civil}, cédula de identidad número ${payload.arrendatario.rut}, ${domiciliado} en ${domicilio}, ${unidadLabel}, ${payload.inmueble.comuna}, certifico y declaro lo siguiente:`,
+    `En Santiago de Chile, a ${fechaLarga}, ${tratamiento} ${payload.arrendatario.nombre}, ${payload.arrendatario.nacionalidad}, ${payload.arrendatario.estado_civil}, cédula de identidad número ${payload.arrendatario.rut}, ${domiciliado} en ${domicilioInmueble}, ${unidadLabel}, ${payload.inmueble.comuna}, certifico y declaro lo siguiente:`,
     '1. Que respecto al inmueble arrendado ubicado en '
       + `${payload.inmueble.direccion}, comuna de ${payload.inmueble.comuna}, ${unidadLabel}, `
       + 'los fondos con los cuales pagaré mensualmente las rentas y obligaciones económicas provienen de: '
@@ -649,12 +653,13 @@ export function applyAutomaticContractRules(
     numero_casa: unidadTipo === 'casa' ? normalized.inmueble.numero_casa || '' : '',
   };
 
-  const garantiaTotal = normalized.renta.monto_clp;
-  const guarantee = computeAutomaticGuaranteeSchedule({
-    montoTotalClp: garantiaTotal,
-    pagoInicialClp: normalized.garantia.pago_inicial_clp,
-    fechaInicio: normalized.contrato.fecha_inicio,
-  });
+  const guarantee = isOwnerSublease
+    ? normalized.garantia
+    : computeAutomaticGuaranteeSchedule({
+        montoTotalClp: normalized.renta.monto_clp,
+        pagoInicialClp: normalized.garantia.pago_inicial_clp,
+        fechaInicio: normalized.contrato.fecha_inicio,
+      });
 
   const withAutoRules: ContractPayload = {
     ...normalized,

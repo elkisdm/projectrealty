@@ -52,6 +52,7 @@ export const ContractPayloadSchema = z.object({
   propietario: z.object({
     nombre: z.string().min(1),
     rut: rutField,
+    genero: generoField,
   }),
   arrendatario: z.object({
     tipo_persona: tipoPersonaField,
@@ -93,7 +94,7 @@ export const ContractPayloadSchema = z.object({
     numero_casa: z.string().optional(),
   }),
   renta: z.object({
-    monto_clp: z.number().int().positive(),
+    monto_clp: z.number().int().nonnegative(),
     monto_uf: z.number().nonnegative(),
     porcentaje_subarriendo: z.number().min(0).max(100).optional(),
     dia_limite_pago: z.number().int().min(1).max(31),
@@ -121,8 +122,8 @@ export const ContractPayloadSchema = z.object({
     depto_amoblado: z.boolean(),
   }),
   declaraciones: z.object({
-    fondos_origen_texto: z.string().min(1),
-    fondos_origen_fuente: z.string().min(1).optional(),
+    fondos_origen_texto: z.string().default(''),
+    fondos_origen_fuente: z.string().optional(),
   }),
 });
 

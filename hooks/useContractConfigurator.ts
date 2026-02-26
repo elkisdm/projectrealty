@@ -315,6 +315,7 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
   }, [fechaInicio, form, isEndDateManual]);
 
   useEffect(() => {
+    if (contratoTipo === 'subarriendo_propietario') return;
     const renta = Number(rentaMonto ?? 0);
     const currentTotal = Number(form.getValues('garantia.monto_total_clp') ?? 0);
     if (renta > 0 && currentTotal !== renta) {
@@ -323,9 +324,10 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
         shouldValidate: true,
       });
     }
-  }, [form, rentaMonto]);
+  }, [contratoTipo, form, rentaMonto]);
 
   useEffect(() => {
+    if (contratoTipo === 'subarriendo_propietario') return;
     const total = Number(rentaMonto ?? 0);
     if (total <= 0) return;
 
@@ -351,19 +353,28 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
         shouldValidate: true,
       });
     }
-  }, [fechaInicio, form, garantiaCuotas, garantiaPagoInicial, rentaMonto]);
+  }, [contratoTipo, fechaInicio, form, garantiaCuotas, garantiaPagoInicial, rentaMonto]);
 
   useEffect(() => {
     if (!values) return;
+    const isOwnerSublease = (values as ContractWizardDraft).contrato.tipo === 'subarriendo_propietario';
     const withRules = applyAutomaticContractRules(values as ContractWizardDraft, {
       unidadTipo,
       firmaOnline,
-      autoDeclaration: true,
+      autoDeclaration: !isOwnerSublease,
     });
 
-    if (withRules.declaraciones.fondos_origen_texto !== form.getValues('declaraciones.fondos_origen_texto')) {
-      form.setValue('declaraciones.fondos_origen_texto', withRules.declaraciones.fondos_origen_texto, {
+    const declarationText = form.getValues('declaraciones.fondos_origen_texto');
+    if (!isOwnerSublease) {
+      if (withRules.declaraciones.fondos_origen_texto !== declarationText) {
+        form.setValue('declaraciones.fondos_origen_texto', withRules.declaraciones.fondos_origen_texto, {
+          shouldDirty: true,
+        });
+      }
+    } else if (declarationText) {
+      form.setValue('declaraciones.fondos_origen_texto', '', {
         shouldDirty: true,
+        shouldValidate: false,
       });
     }
 
@@ -409,6 +420,9 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
     form.setValue('flags.hay_aval', false, { shouldDirty: true, shouldValidate: true });
     form.setValue('arrendadora.tipo_persona', 'natural', { shouldDirty: true, shouldValidate: true });
     form.setValue('arrendatario.tipo_persona', 'juridica', { shouldDirty: true, shouldValidate: true });
+    form.setValue('subarriendo.permitido', true, { shouldDirty: true, shouldValidate: true });
+    form.setValue('subarriendo.propietario_autoriza', true, { shouldDirty: true, shouldValidate: true });
+    form.setValue('subarriendo.notificacion_obligatoria', true, { shouldDirty: true, shouldValidate: true });
   }, [contratoTipo, form]);
 
   const formatRutField = useCallback(
@@ -487,7 +501,8 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
         const setIfEmpty = (path: string, value: string | null | undefined) => {
           if (!value || !value.trim()) return;
           const current = form.getValues(path as never);
-          if (typeof current === 'string' && current.trim()) return;
+          const currentText = typeof current === 'string' ? current : '';
+          if (currentText.trim()) return;
           form.setValue(path as never, value as never, {
             shouldDirty: true,
             shouldValidate: true,
@@ -528,6 +543,15 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
           } else if (merged.party_type === 'juridica') {
             setIfEmpty('arrendatario.tipo_persona', 'juridica');
           }
+
+          if (contratoTipo === 'subarriendo_propietario') {
+            setIfEmpty('arrendatario.representante_legal.nombre', form.getValues('arrendatario.nombre'));
+            setIfEmpty('arrendatario.representante_legal.rut', form.getValues('arrendatario.rut'));
+            setIfEmpty('arrendatario.representante_legal.nacionalidad', form.getValues('arrendatario.nacionalidad'));
+            setIfEmpty('arrendatario.representante_legal.estado_civil', form.getValues('arrendatario.estado_civil'));
+            setIfEmpty('arrendatario.representante_legal.domicilio', form.getValues('arrendatario.domicilio'));
+            setIfEmpty('arrendatario.representante_legal.email', form.getValues('arrendatario.email'));
+          }
         }
 
         if (fieldPath === 'arrendatario.representante_legal.rut') {
@@ -551,7 +575,7 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
         // Best-effort autofill; ignore network errors
       }
     },
-    [form]
+    [contratoTipo, form]
   );
 
   const runStepValidation = useCallback(
@@ -631,7 +655,7 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
     return prepareContractPayloadForSubmit(form.getValues(), {
       unidadTipo,
       firmaOnline,
-      autoDeclaration: true,
+      autoDeclaration: (form.getValues('contrato.tipo') ?? 'standard') !== 'subarriendo_propietario',
     });
   }, [firmaOnline, form, unidadTipo]);
 
@@ -641,12 +665,29 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
       return null;
     }
 
+    const payload = normalizeAndBuildPayload();
+    const schemaCheck = ContractPayloadSchema.safeParse(payload);
+    if (!schemaCheck.success) {
+      setValidationResult({
+        valid: false,
+        errors: [
+          {
+            code: 'VALIDATION_ERROR',
+            message: 'Hay campos pendientes o inválidos en el formulario.',
+            details: schemaCheck.error.flatten(),
+          },
+        ],
+        warnings: [],
+        missingPlaceholders: [],
+      });
+      setApiError('Hay campos pendientes o inválidos en el formulario.');
+      return null;
+    }
+
     try {
       setApiError(null);
       setIsValidatingContract(true);
       setIssueResult(null);
-
-      const payload = normalizeAndBuildPayload();
       const response = await fetch('/api/contracts/validate', {
         method: 'POST',
         credentials: 'include',
@@ -691,8 +732,9 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
       return null;
     }
 
-    const validSchema = await form.trigger(undefined, { shouldFocus: true });
-    if (!validSchema) {
+    const payload = normalizeAndBuildPayload();
+    const schemaCheck = ContractPayloadSchema.safeParse(payload);
+    if (!schemaCheck.success) {
       setApiError('Hay campos pendientes o inválidos en el formulario.');
       return null;
     }
@@ -700,7 +742,6 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
     try {
       setApiError(null);
       setIsGeneratingDraft(true);
-      const payload = normalizeAndBuildPayload();
 
       const response = await fetch('/api/contracts/draft', {
         method: 'POST',
@@ -732,7 +773,7 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
     } finally {
       setIsGeneratingDraft(false);
     }
-  }, [canIssue, form, normalizeAndBuildPayload, selectedTemplateId]);
+  }, [canIssue, normalizeAndBuildPayload, selectedTemplateId]);
 
   const issueContract = useCallback(async () => {
     if (!canIssue) return null;
@@ -741,8 +782,9 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
       return null;
     }
 
-    const validSchema = await form.trigger(undefined, { shouldFocus: true });
-    if (!validSchema) {
+    const payload = normalizeAndBuildPayload();
+    const schemaCheck = ContractPayloadSchema.safeParse(payload);
+    if (!schemaCheck.success) {
       setApiError('Hay campos pendientes o inválidos en el formulario.');
       return null;
     }
@@ -756,7 +798,6 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
     try {
       setApiError(null);
       setIsIssuingContract(true);
-      const payload = normalizeAndBuildPayload();
 
       const response = await fetch('/api/contracts/issue', {
         method: 'POST',
@@ -789,7 +830,6 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
     }
   }, [
     canIssue,
-    form,
     normalizeAndBuildPayload,
     selectedTemplateId,
     validateContract,
@@ -863,6 +903,63 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
     setJsonText(formatContractPayloadJson(defaults));
   }, [form, storageKey]);
 
+  const loadFromExistingContract = useCallback(
+    async (contractId: string) => {
+      try {
+        setApiError(null);
+        const response = await fetch(`/api/contracts/${contractId}?includePayload=1`, {
+          credentials: 'include',
+        });
+        const data = (await response.json()) as {
+          templateId?: string;
+          payload?: unknown;
+          message?: string;
+        };
+
+        if (!response.ok || !data.payload) {
+          setApiError(extractErrorMessage(data, 'No se pudo cargar contrato para regenerar'));
+          return false;
+        }
+
+        const parsed = ContractPayloadSchema.safeParse(data.payload);
+        if (!parsed.success) {
+          setApiError('El contrato histórico tiene payload inválido y no se puede regenerar.');
+          return false;
+        }
+
+        const payload = parsed.data;
+        form.reset(payload);
+        setCurrentStep(0);
+        setStepState(getContractWizardSteps(payload.contrato.tipo).map(() => 'idle'));
+        setValidationResult(null);
+        setIssueResult(null);
+        setDraftResult(null);
+        setRestoredDraft(false);
+        setIsEndDateManual(Boolean(payload.contrato.fecha_termino));
+        setUnidadTipo(detectUnidadTipo(payload));
+        setJsonText(formatContractPayloadJson(payload));
+
+        const currentTemplate =
+          (data.templateId && templates.find((template) => template.id === data.templateId))
+          || null;
+        if (currentTemplate && matchesTemplateToContractType(currentTemplate, payload.contrato.tipo)) {
+          setSelectedTemplateId(currentTemplate.id);
+        } else {
+          const compatible = templates.find((template) =>
+            matchesTemplateToContractType(template, payload.contrato.tipo)
+          );
+          setSelectedTemplateId(compatible?.id ?? '');
+        }
+
+        return true;
+      } catch (error) {
+        setApiError(error instanceof Error ? error.message : 'No se pudo cargar contrato para regenerar');
+        return false;
+      }
+    },
+    [form, templates]
+  );
+
   const sectionCompletion = useMemo(() => {
     const currentValues = (values ?? form.getValues()) as unknown as Record<string, unknown>;
     return steps.map((step) => {
@@ -924,6 +1021,7 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
     applyJsonToForm,
     formatJson,
     discardDraft,
+    loadFromExistingContract,
     formatRutField,
     autofillByRut,
   };

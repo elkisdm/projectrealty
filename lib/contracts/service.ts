@@ -1,5 +1,5 @@
 import type { ContractPayload } from '@/schemas/contracts';
-import { ContractError } from './errors';
+import { ContractError } from './contract-error';
 import { applyPayloadDefaults, validateBusinessRules } from './validation';
 import {
   applyReplacements,
@@ -13,7 +13,7 @@ import {
 import { applyConditionals } from './conditionals';
 import { canonicalStringify, sha256Hex } from './utils';
 import { renderDocxTemplate } from './docx';
-import { convertDocxToPdf } from './gotenberg';
+import { convertDocxToPdf } from './gotenberg-client';
 import { normalizeRut } from './rut';
 import { matchesTemplateToContractType } from './template-type';
 import {
@@ -35,6 +35,51 @@ export interface ValidationResult {
   replacements?: Record<string, string>;
 }
 
+function applyLegacyLanguageFixes(content: string, payload: ContractPayload): string {
+  if (payload.contrato.tipo !== 'standard') return content;
+
+  const genero = payload.arrendatario.genero;
+  if (genero !== 'masculino') return content;
+
+  const replacements: Array<[RegExp, string]> = [
+    [/\bArrendatario\/a\b/g, 'Arrendatario'],
+    [/\bla Arrendataria\b/g, 'el Arrendatario'],
+    [/\bLa Arrendataria\b/g, 'El Arrendatario'],
+    [/\bla arrendataria\b/g, 'el arrendatario'],
+    [/\bLa arrendataria\b/g, 'El arrendatario'],
+    [/\ba la Arrendataria\b/g, 'al Arrendatario'],
+    [/\bA la Arrendataria\b/g, 'Al Arrendatario'],
+    [/\ba la arrendataria\b/g, 'al arrendatario'],
+    [/\bA la arrendataria\b/g, 'Al arrendatario'],
+    [/\bde la Arrendataria\b/g, 'del Arrendatario'],
+    [/\bde la arrendataria\b/g, 'del arrendatario'],
+    [/\bpor la Arrendataria\b/g, 'por el Arrendatario'],
+    [/\bpor la arrendataria\b/g, 'por el arrendatario'],
+    [/\bpara ella y su familia\b/g, 'para él y su familia'],
+    [/\bla parte arrendataria\b/g, 'la parte arrendataria'],
+    [/\bdueno\/a\b/g, payload.propietario.genero === 'femenino' ? 'dueña' : 'dueño'],
+    [/\bDueno\/a\b/g, payload.propietario.genero === 'femenino' ? 'Dueña' : 'Dueño'],
+  ];
+
+  return replacements.reduce((acc, [pattern, replacement]) => acc.replace(pattern, replacement), content);
+}
+
+function applyLegacyTypoFixes(content: string): string {
+  const replacements: Array<[RegExp, string]> = [
+    [/segúnda/g, 'segunda'],
+    [/segúndo/g, 'segundo'],
+    [/hermaño/g, 'hermano'],
+    [/dueno\/a/g, 'dueño/a'],
+    [/Dueno\/a/g, 'Dueño/a'],
+    [/\bunidad\s+Departamento\b/g, 'Departamento'],
+    [/\bUnidad\s+Departamento\b/g, 'Departamento'],
+    [/\bunidad\s+Casa\b/g, 'Casa'],
+    [/\bUnidad\s+Casa\b/g, 'Casa'],
+    [/DECLARACIÓN DE ORIGEN DE ORIGEN DE FONDOS/g, 'DECLARACIÓN DE ORIGEN DE FONDOS'],
+  ];
+  return replacements.reduce((acc, [pattern, replacement]) => acc.replace(pattern, replacement), content);
+}
+
 function transformXmlContent(xml: string, payload: ContractPayload, replacements: Record<string, string>): string {
   validateCatalogSyntax(xml);
 
@@ -47,7 +92,9 @@ function transformXmlContent(xml: string, payload: ContractPayload, replacements
   assertAvalPlaceholdersProtected(afterIf, payload.flags.hay_aval);
 
   const rendered = applyReplacements(afterIf, replacements);
-  return rendered;
+  const withLanguage = applyLegacyLanguageFixes(rendered, payload);
+  const withTyposFixed = applyLegacyTypoFixes(withLanguage);
+  return withTyposFixed;
 }
 
 function renderTemplateWithPayload(params: {
@@ -59,6 +106,14 @@ function renderTemplateWithPayload(params: {
     sourceDocxBuffer: params.sourceDocx,
     transformXml: (xml) => transformXmlContent(xml, params.payload, params.replacements),
   });
+}
+
+function getTemplateXmlContent(sourceDocx: Buffer): string {
+  const parsed = renderDocxTemplate({
+    sourceDocxBuffer: sourceDocx,
+    transformXml: (xml) => xml,
+  });
+  return parsed.mergedXmlContent;
 }
 
 function nonEmpty(value: string | undefined | null): string | null {
@@ -227,6 +282,7 @@ export async function validateContractForTemplate(params: {
     const template = await getTemplateById(params.templateId);
     assertTemplateMatchesContractType(template, payload);
     const sourceDocx = await downloadTemplateDocx(template.docx_path);
+    assertTemplateMatchesContractTypeProfile(getTemplateXmlContent(sourceDocx), payload.contrato.tipo);
     const replacements = buildReplacements(payload);
 
     const rendered = renderTemplateWithPayload({
@@ -234,8 +290,6 @@ export async function validateContractForTemplate(params: {
       payload,
       replacements,
     });
-
-    assertTemplateMatchesContractTypeProfile(rendered.mergedXmlContent, payload.contrato.tipo);
 
     const missing = findResidualPlaceholders(rendered.mergedXmlContent);
 
@@ -323,6 +377,7 @@ export async function issueContract(params: {
   }
 
   const sourceDocx = await downloadTemplateDocx(template.docx_path);
+  assertTemplateMatchesContractTypeProfile(getTemplateXmlContent(sourceDocx), payload.contrato.tipo);
   const replacements = buildReplacements(payload);
 
   const rendered = renderTemplateWithPayload({
@@ -330,8 +385,6 @@ export async function issueContract(params: {
     payload,
     replacements,
   });
-  assertTemplateMatchesContractTypeProfile(rendered.mergedXmlContent, payload.contrato.tipo);
-
   const residual = findResidualPlaceholders(rendered.mergedXmlContent);
   if (residual.length > 0) {
     throw new ContractError({
@@ -412,14 +465,13 @@ export async function generateContractDraft(params: {
   }
 
   const sourceDocx = await downloadTemplateDocx(template.docx_path);
+  assertTemplateMatchesContractTypeProfile(getTemplateXmlContent(sourceDocx), payload.contrato.tipo);
   const replacements = buildReplacements(payload);
   const rendered = renderTemplateWithPayload({
     sourceDocx,
     payload,
     replacements,
   });
-  assertTemplateMatchesContractTypeProfile(rendered.mergedXmlContent, payload.contrato.tipo);
-
   const residual = findResidualPlaceholders(rendered.mergedXmlContent);
   if (residual.length > 0) {
     throw new ContractError({

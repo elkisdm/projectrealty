@@ -1,7 +1,11 @@
 import { createContractEvent, getContractById, listContracts } from './repository';
 import { createContractSignedUrl } from './storage';
 
-export async function getContractMetadata(contractId: string, trackDownload: boolean) {
+export async function getContractMetadata(
+  contractId: string,
+  trackDownload: boolean,
+  includePayload = false
+) {
   const contract = await getContractById(contractId);
   const pdfUrl = await createContractSignedUrl(contract.pdf_path);
 
@@ -22,6 +26,7 @@ export async function getContractMetadata(contractId: string, trackDownload: boo
     createdAt: contract.created_at,
     createdBy: contract.created_by,
     pdfUrl,
+    ...(includePayload ? { payload: contract.payload_json } : {}),
   };
 }
 

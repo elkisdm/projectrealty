@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { ContractPayload } from '@/schemas/contracts';
-import { ContractError } from './errors';
+import { ContractError } from './contract-error';
 import { formatCLP, formatDateForContract, formatUF } from './utils';
 
 interface PlaceholderCatalog {
@@ -82,6 +82,16 @@ function getPronombreObjeto(genero: Genero): string {
   return 'él/ella';
 }
 
+function getOwnerNoun(payload: ContractPayload): string {
+  if (payload.propietario.genero === 'femenino') return 'dueña';
+  if (payload.propietario.genero === 'masculino') return 'dueño';
+
+  const civil = (payload.arrendadora.estado_civil ?? '').trim().toLowerCase();
+  if (/(soltera|casada|viuda|divorciada)/.test(civil)) return 'dueña';
+  if (/(soltero|casado|viudo|divorciado)/.test(civil)) return 'dueño';
+  return 'dueño/a';
+}
+
 function buildPersoneriaDescripcion(payload: ContractPayload): string {
   const personeria = payload.arrendadora.personeria;
   const fecha = formatDateForContract(personeria.fecha ?? '');
@@ -130,6 +140,14 @@ function formatDateWithWeekday(dateISO: string): string {
     timeZone: 'America/Santiago',
   }).format(date);
   return long.charAt(0).toUpperCase() + long.slice(1);
+}
+
+function buildFirstReajusteLabel(payload: ContractPayload): string {
+  const month = (payload.renta.mes_primer_reajuste ?? '').trim() || 'Marzo';
+  const yearFromStart = payload.contrato.fecha_inicio?.match(/^(\d{4})-/)?.[1];
+  if (!yearFromStart) return month;
+  const firstReajusteYear = Number(yearFromStart) + 1;
+  return `${month} de ${firstReajusteYear} (12 meses desde el inicio del contrato)`;
 }
 
 export function buildReplacements(payload: ContractPayload): Record<string, string> {
@@ -198,6 +216,10 @@ export function buildReplacements(payload: ContractPayload): Record<string, stri
       value = String(payload.contrato.aviso_termino_dias ?? 30);
     }
 
+    if (scoped === 'RENTA.MES_PRIMER_REAJUSTE') {
+      value = buildFirstReajusteLabel(payload);
+    }
+
     if (scoped === 'SUBARRIENDO.PERMITIDO_LABEL') {
       value = payload.subarriendo?.permitido ? 'Permitido' : 'No permitido';
     }
@@ -230,6 +252,10 @@ export function buildReplacements(payload: ContractPayload): Record<string, stri
 
     if (scoped === 'INMUEBLE.UNIDAD_LABEL') {
       value = getUnidadLabel(payload);
+    }
+
+    if (scoped === 'PROPIETARIO.DUENO_A') {
+      value = getOwnerNoun(payload);
     }
 
     if (scoped === 'ARRENDADORA.PERSONERIA.DESCRIPCION') {
@@ -307,7 +333,7 @@ export function buildReplacements(payload: ContractPayload): Record<string, stri
     }
 
     if (scoped === 'ARRENDADOR.TRATAMIENTO') {
-      value = getTratamiento(payload.arrendatario.representante_legal?.genero);
+      value = getTratamiento(payload.arrendadora.representante.genero);
     }
 
     if (scoped === 'ARRENDATARIA.RAZON_SOCIAL') {
@@ -418,12 +444,24 @@ export function assertTemplateMatchesContractTypeProfile(
   const profile = profiles[contractType] ?? [];
   if (profile.length === 0) return;
 
-  const missing = profile.filter((token) => !xmlContent.includes(token));
-  if (missing.length > 0) {
+  const templateTokens = Array.from(new Set(xmlContent.match(/\[\[[A-Z0-9_.]+\]\]/g) ?? []));
+  const profileSet = new Set(profile);
+  const templateSet = new Set(templateTokens);
+
+  const missing = profile.filter((token) => !templateSet.has(token));
+  const unexpected =
+    contractType === 'subarriendo_propietario'
+      ? templateTokens.filter((token) => !profileSet.has(token))
+      : [];
+
+  if (missing.length > 0 || unexpected.length > 0) {
     throw new ContractError({
       code: 'VALIDATION_ERROR',
       message: `La plantilla no corresponde al contrato tipo ${contractType}`,
-      details: missing.slice(0, 12),
+      details: {
+        missing: missing.slice(0, 20),
+        unexpected: unexpected.slice(0, 20),
+      },
       hint: contractType === 'subarriendo_propietario'
         ? 'Selecciona o sube la plantilla de subarriendo propietario con placeholders ARRENDADOR/ARRENDATARIA.'
         : 'Selecciona una plantilla estándar compatible.',

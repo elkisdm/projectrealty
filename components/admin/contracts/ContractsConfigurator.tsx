@@ -165,6 +165,16 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
+  const handleHistoryRegenerate = async (contractId: string) => {
+    const loaded = await configurator.loadFromExistingContract(contractId);
+    if (!loaded) {
+      toast.error('No se pudo cargar el contrato para regenerar');
+      return;
+    }
+    setTab('configurator');
+    toast.success('Contrato cargado. Revisa y valida antes de emitir.');
+  };
+
   const renderCurrentStep = () => {
     switch (configurator.currentStep) {
       case 0:
@@ -591,6 +601,25 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
                         onBlur={() => handleRutBlur('propietario.rut')}
                       />
                     </div>
+                    <div className="space-y-1.5">
+                      <Label>Género propietario</Label>
+                      <Controller
+                        control={control}
+                        name="propietario.genero"
+                        render={({ field }) => (
+                          <Select value={field.value ?? 'na'} onValueChange={(value) => field.onChange(value === 'na' ? undefined : value)}>
+                            <SelectTrigger disabled={readOnly}>
+                              <SelectValue placeholder="Selecciona género" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="na">No especificado</SelectItem>
+                              <SelectItem value="femenino">Femenino</SelectItem>
+                              <SelectItem value="masculino">Masculino</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                    </div>
                   </FieldGrid>
                 </SectionCard>
               </AccordionPanel>
@@ -1003,41 +1032,124 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
           </div>
         );
       case 4:
+        if (contratoTipo === 'subarriendo_propietario') {
+          return (
+            <div className="space-y-4">
+              <SectionCard
+                title="Reglas subarriendo"
+                description="Configura autorización, notificaciones y términos legales para el contrato de subarriendo propietario."
+              >
+                <div className="grid gap-3 md:grid-cols-2">
+                  <Controller
+                    control={control}
+                    name="subarriendo.permitido"
+                    render={({ field }) => (
+                      <div className="rounded-lg border border-[var(--admin-border-subtle)] p-3 text-sm">
+                        <label className="inline-flex items-center gap-2">
+                        <Checkbox
+                          checked={Boolean(field.value)}
+                          onCheckedChange={() => field.onChange(true)}
+                          disabled
+                        />
+                        Subarriendo permitido
+                        </label>
+                        <p className="mt-1 text-xs text-[var(--subtext)]">Obligatorio para contrato subarriendo propietario.</p>
+                      </div>
+                    )}
+                  />
+                  <Controller
+                    control={control}
+                    name="subarriendo.propietario_autoriza"
+                    render={({ field }) => (
+                      <div className="rounded-lg border border-[var(--admin-border-subtle)] p-3 text-sm">
+                        <label className="inline-flex items-center gap-2">
+                        <Checkbox
+                          checked={Boolean(field.value)}
+                          onCheckedChange={() => field.onChange(true)}
+                          disabled
+                        />
+                        Propietario autoriza subarriendo
+                        </label>
+                        <p className="mt-1 text-xs text-[var(--subtext)]">Se fija automáticamente en este tipo de contrato.</p>
+                      </div>
+                    )}
+                  />
+                  <Controller
+                    control={control}
+                    name="subarriendo.notificacion_obligatoria"
+                    render={({ field }) => (
+                      <label className="inline-flex items-center gap-2 rounded-lg border border-[var(--admin-border-subtle)] p-3 text-sm">
+                        <Checkbox
+                          checked={Boolean(field.value)}
+                          onCheckedChange={(checked) => field.onChange(Boolean(checked))}
+                          disabled={readOnly}
+                        />
+                        Notificación obligatoria
+                      </label>
+                    )}
+                  />
+                  <Controller
+                    control={control}
+                    name="subarriendo.permite_multiples"
+                    render={({ field }) => (
+                      <label className="inline-flex items-center gap-2 rounded-lg border border-[var(--admin-border-subtle)] p-3 text-sm">
+                        <Checkbox
+                          checked={Boolean(field.value)}
+                          onCheckedChange={(checked) => field.onChange(Boolean(checked))}
+                          disabled={readOnly}
+                        />
+                        Permite múltiples subarrendamientos
+                      </label>
+                    )}
+                  />
+                  <Controller
+                    control={control}
+                    name="subarriendo.periodo_vacancia"
+                    render={({ field }) => (
+                      <label className="inline-flex items-center gap-2 rounded-lg border border-[var(--admin-border-subtle)] p-3 text-sm md:col-span-2">
+                        <Checkbox
+                          checked={Boolean(field.value)}
+                          onCheckedChange={(checked) => field.onChange(Boolean(checked))}
+                          disabled={readOnly}
+                        />
+                        Permite período de vacancia
+                      </label>
+                    )}
+                  />
+                </div>
+
+                <FieldGrid>
+                  <div className="space-y-1.5">
+                    <Label>Plazo notificación (días hábiles)</Label>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={365}
+                      {...register('subarriendo.plazo_notificacion_habiles', { valueAsNumber: true })}
+                      disabled={readOnly}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Referencia legal</Label>
+                    <Input {...register('subarriendo.referencia_legal')} disabled={readOnly} />
+                  </div>
+                  <div className="space-y-1.5 md:col-span-2">
+                    <Label>Texto de autorización</Label>
+                    <Textarea rows={3} {...register('subarriendo.autorizacion_texto')} disabled={readOnly} />
+                  </div>
+                  <div className="space-y-1.5 md:col-span-2">
+                    <Label>Responsabilidad principal</Label>
+                    <Textarea rows={3} {...register('subarriendo.responsabilidad_principal')} disabled={readOnly} />
+                  </div>
+                </FieldGrid>
+              </SectionCard>
+            </div>
+          );
+        }
+
         return (
           <div className="space-y-4">
             <SectionCard title="Condiciones contrato">
-              <div className="space-y-1.5">
-                <Label>Tipo de contrato</Label>
-                <Controller
-                  control={control}
-                  name="contrato.tipo"
-                  render={({ field }) => (
-                    <Select
-                      value={field.value ?? 'standard'}
-                      onValueChange={(value) => {
-                        const nextValue = value as 'standard' | 'subarriendo_propietario';
-                        field.onChange(nextValue);
-                        if (nextValue === 'subarriendo_propietario') {
-                          setValue('subarriendo.permitido', true, { shouldDirty: true, shouldValidate: true });
-                          setValue('subarriendo.propietario_autoriza', true, { shouldDirty: true, shouldValidate: true });
-                          setValue('subarriendo.notificacion_obligatoria', true, { shouldDirty: true, shouldValidate: true });
-                          setValue('subarriendo.plazo_notificacion_habiles', 2, { shouldDirty: true, shouldValidate: true });
-                          setValue('flags.hay_aval', false, { shouldDirty: true, shouldValidate: true });
-                        }
-                      }}
-                    >
-                      <SelectTrigger disabled={readOnly}>
-                        <SelectValue placeholder="Selecciona tipo de contrato" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="standard">Estándar</SelectItem>
-                        <SelectItem value="subarriendo_propietario">Propietario con subarriendo</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-              </div>
-
               <div className="grid gap-3 md:grid-cols-2">
                 <Controller
                   control={control}
@@ -1068,109 +1180,6 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
                   )}
                 />
               </div>
-            </SectionCard>
-
-            <SectionCard
-              title="Subarriendo"
-              description="Reglas contractuales para subarriendo y autorización del propietario."
-            >
-              <div className="grid gap-3 md:grid-cols-2">
-                <Controller
-                  control={control}
-                  name="subarriendo.permitido"
-                  render={({ field }) => (
-                    <label className="inline-flex items-center gap-2 rounded-lg border border-[var(--admin-border-subtle)] p-3 text-sm">
-                      <Checkbox
-                        checked={Boolean(field.value)}
-                        onCheckedChange={(checked) => field.onChange(Boolean(checked))}
-                        disabled={readOnly || contratoTipo === 'subarriendo_propietario'}
-                      />
-                      Subarriendo permitido
-                    </label>
-                  )}
-                />
-                <Controller
-                  control={control}
-                  name="subarriendo.propietario_autoriza"
-                  render={({ field }) => (
-                    <label className="inline-flex items-center gap-2 rounded-lg border border-[var(--admin-border-subtle)] p-3 text-sm">
-                      <Checkbox
-                        checked={Boolean(field.value)}
-                        onCheckedChange={(checked) => field.onChange(Boolean(checked))}
-                        disabled={readOnly || contratoTipo === 'subarriendo_propietario'}
-                      />
-                      Propietario autoriza subarriendo
-                    </label>
-                  )}
-                />
-                <Controller
-                  control={control}
-                  name="subarriendo.notificacion_obligatoria"
-                  render={({ field }) => (
-                    <label className="inline-flex items-center gap-2 rounded-lg border border-[var(--admin-border-subtle)] p-3 text-sm">
-                      <Checkbox
-                        checked={Boolean(field.value)}
-                        onCheckedChange={(checked) => field.onChange(Boolean(checked))}
-                        disabled={readOnly}
-                      />
-                      Notificación obligatoria
-                    </label>
-                  )}
-                />
-                <Controller
-                  control={control}
-                  name="subarriendo.permite_multiples"
-                  render={({ field }) => (
-                    <label className="inline-flex items-center gap-2 rounded-lg border border-[var(--admin-border-subtle)] p-3 text-sm">
-                      <Checkbox
-                        checked={Boolean(field.value)}
-                        onCheckedChange={(checked) => field.onChange(Boolean(checked))}
-                        disabled={readOnly}
-                      />
-                      Permite múltiples subarrendatarios
-                    </label>
-                  )}
-                />
-                <Controller
-                  control={control}
-                  name="subarriendo.periodo_vacancia"
-                  render={({ field }) => (
-                    <label className="inline-flex items-center gap-2 rounded-lg border border-[var(--admin-border-subtle)] p-3 text-sm md:col-span-2">
-                      <Checkbox
-                        checked={Boolean(field.value)}
-                        onCheckedChange={(checked) => field.onChange(Boolean(checked))}
-                        disabled={readOnly}
-                      />
-                      Permite período de vacancia entre subarrendatarios
-                    </label>
-                  )}
-                />
-              </div>
-
-              <FieldGrid>
-                <div className="space-y-1.5">
-                  <Label>Plazo notificación (días hábiles)</Label>
-                  <Input
-                    type="number"
-                    min={1}
-                    max={365}
-                    {...register('subarriendo.plazo_notificacion_habiles', { valueAsNumber: true })}
-                    disabled={readOnly}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Referencia legal</Label>
-                  <Input {...register('subarriendo.referencia_legal')} disabled={readOnly} />
-                </div>
-                <div className="space-y-1.5 md:col-span-2">
-                  <Label>Texto de autorización</Label>
-                  <Textarea rows={3} {...register('subarriendo.autorizacion_texto')} disabled={readOnly} />
-                </div>
-                <div className="space-y-1.5 md:col-span-2">
-                  <Label>Responsabilidad principal</Label>
-                  <Textarea rows={3} {...register('subarriendo.responsabilidad_principal')} disabled={readOnly} />
-                </div>
-              </FieldGrid>
             </SectionCard>
 
             <SectionCard title="Declaración de origen de fondos">
@@ -1339,6 +1348,7 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
           onPageChange={history.setPage}
           onRefresh={history.reload}
           onDownload={handleHistoryDownload}
+          onRegenerate={handleHistoryRegenerate}
         />
       </TabsContent>
     </Tabs>

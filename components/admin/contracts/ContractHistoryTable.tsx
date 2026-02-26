@@ -44,6 +44,7 @@ interface ContractHistoryTableProps {
   onPageChange: (page: number) => void;
   onRefresh: () => void | Promise<void>;
   onDownload: (contractId: string) => void | Promise<void>;
+  onRegenerate: (contractId: string) => void | Promise<void>;
 }
 
 function shortHash(value: string): string {
@@ -73,6 +74,7 @@ export function ContractHistoryTable({
   onPageChange,
   onRefresh,
   onDownload,
+  onRegenerate,
 }: ContractHistoryTableProps) {
   return (
     <Card className="border-[var(--admin-border-subtle)] bg-[var(--admin-surface-1)]">
@@ -195,16 +197,26 @@ export function ContractHistoryTable({
                       {contract.createdBy.slice(0, 8)}...
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        disabled={downloading}
-                        onClick={() => onDownload(contract.id)}
-                      >
-                        <Download className="mr-2 h-4 w-4" />
-                        Ver/Descargar
-                      </Button>
+                      <div className="inline-flex items-center gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => onRegenerate(contract.id)}
+                        >
+                          Regenerar
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={downloading}
+                          onClick={() => onDownload(contract.id)}
+                        >
+                          <Download className="mr-2 h-4 w-4" />
+                          Ver/Descargar
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))

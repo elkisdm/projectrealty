@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
-import { ContractError } from './errors';
+import { ContractError } from './contract-error';
 
 const XML_FILES = [
   'word/document.xml',
@@ -13,6 +13,20 @@ const XML_FILES = [
   'word/footer2.xml',
   'word/footer3.xml',
 ];
+
+function enforceParagraphJustification(xml: string): string {
+  return xml.replace(/<w:p\b[\s\S]*?<\/w:p>/g, (paragraph) => {
+    if (/<w:jc\b/.test(paragraph)) {
+      return paragraph;
+    }
+
+    if (/<w:pPr>/.test(paragraph)) {
+      return paragraph.replace('<w:pPr>', '<w:pPr><w:jc w:val="both"/>');
+    }
+
+    return paragraph.replace(/<w:p([^>]*)>/, '<w:p$1><w:pPr><w:jc w:val="both"/></w:pPr>');
+  });
+}
 
 export interface RenderDocxInput {
   sourceDocxBuffer: Buffer;
@@ -41,7 +55,11 @@ export function renderDocxTemplate({ sourceDocxBuffer, transformXml }: RenderDoc
       const absPath = join(extractDir, relPath);
       try {
         const xml = readFileSync(absPath, 'utf8');
-        const transformed = transformXml(xml);
+        const transformedBase = transformXml(xml);
+        const transformed =
+          relPath === 'word/document.xml'
+            ? enforceParagraphJustification(transformedBase)
+            : transformedBase;
         transformedXmlPieces.push(transformed);
         writeFileSync(absPath, transformed, 'utf8');
       } catch {
