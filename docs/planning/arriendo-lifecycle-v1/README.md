@@ -27,6 +27,9 @@ Este paquete define, sin implementacion tecnica, el flujo end-to-end de arriendo
 9. `ContractHydrationSpec.md` - Especificacion de hidratacion de contrato.
 10. `PaymentsAndSettlements.md` - Cobros, documentos a arrendatario y liquidaciones.
 
+## Sprint Execution Artifacts
+- `execution/ELK-19-Inventario-Terminos-y-Fuentes.md` - Inventario inicial de terminos canonicos, fuentes y ambiguedades priorizadas.
+
 ## Locked Defaults (2026-02-26)
 - MVP end-to-end completo.
 - KPI primario: conversion a contrato.
@@ -52,3 +55,4 @@ Este paquete define, sin implementacion tecnica, el flujo end-to-end de arriendo
 
 ## Changelog
 - v0.1 (2026-02-26): Baseline inicial del paquete documental.
+- v0.1 (2026-02-26): Se agrega artefacto de ejecucion `ELK-19`.
