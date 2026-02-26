@@ -26,6 +26,7 @@ import {
   prepareContractPayloadForSubmit,
   type UnidadTipo,
 } from '@/lib/contracts/form-utils';
+import { matchesTemplateToContractType } from '@/lib/contracts/template-type';
 
 type StepState = 'idle' | 'valid' | 'invalid';
 
@@ -213,6 +214,16 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
   useEffect(() => {
     void loadTemplates();
   }, [loadTemplates]);
+
+  useEffect(() => {
+    if (!templates.length) return;
+    const type = contratoTipo ?? 'standard';
+    const current = templates.find((item) => item.id === selectedTemplateId);
+    if (current && matchesTemplateToContractType(current, type)) return;
+
+    const fallback = templates.find((item) => matchesTemplateToContractType(item, type));
+    setSelectedTemplateId(fallback?.id ?? '');
+  }, [contratoTipo, selectedTemplateId, templates]);
 
   useEffect(() => {
     if (!storageKey) {
@@ -418,14 +429,18 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
       if (!step) return false;
 
       if (step.key === 'template') {
-        const validTemplate = Boolean(selectedTemplateId);
+        const validTemplate = Boolean(
+          selectedTemplateId
+          && selectedTemplate
+          && matchesTemplateToContractType(selectedTemplate, contratoTipo ?? 'standard')
+        );
         setStepState((prev) => {
           const next = [...prev];
           next[stepIndex] = validTemplate ? 'valid' : 'invalid';
           return next;
         });
         if (!validTemplate) {
-          setApiError('Debes seleccionar una plantilla activa para continuar.');
+          setApiError('Debes seleccionar una plantilla activa compatible con el tipo de contrato.');
         } else {
           setApiError(null);
         }
@@ -445,7 +460,7 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
       });
       return valid;
     },
-    [contratoTipo, firmaOnline, form, hayAval, selectedTemplateId]
+    [contratoTipo, firmaOnline, form, hayAval, selectedTemplate, selectedTemplateId]
   );
 
   const nextStep = useCallback(async () => {

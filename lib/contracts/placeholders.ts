@@ -9,15 +9,26 @@ interface PlaceholderCatalog {
   required: string[];
 }
 
+type ContractTypeKey = ContractPayload['contrato']['tipo'];
+type ContractTypeProfiles = Record<ContractTypeKey, string[]>;
+
 type Genero = 'masculino' | 'femenino' | undefined;
 
 let cachedCatalog: PlaceholderCatalog | null = null;
+let cachedProfiles: ContractTypeProfiles | null = null;
 
 function getCatalog(): PlaceholderCatalog {
   if (cachedCatalog) return cachedCatalog;
   const path = join(process.cwd(), 'config/contracts/placeholders.catalog.json');
   cachedCatalog = JSON.parse(readFileSync(path, 'utf8')) as PlaceholderCatalog;
   return cachedCatalog;
+}
+
+function getProfiles(): ContractTypeProfiles {
+  if (cachedProfiles) return cachedProfiles;
+  const path = join(process.cwd(), 'config/contracts/placeholders.by-contract-type.json');
+  cachedProfiles = JSON.parse(readFileSync(path, 'utf8')) as ContractTypeProfiles;
+  return cachedProfiles;
 }
 
 function getValueFromPath(payload: ContractPayload, path: string): unknown {
@@ -395,6 +406,27 @@ export function assertAvalPlaceholdersProtected(xmlContent: string, hayAval: boo
       code: 'TEMPLATE_AVAL_OUTSIDE_IF',
       message: 'Se detectaron placeholders AVAL fuera de bloque condicional',
       hint: 'Envuelve placeholders AVAL dentro de [[IF.HAY_AVAL]] ... [[ENDIF.HAY_AVAL]].',
+    });
+  }
+}
+
+export function assertTemplateMatchesContractTypeProfile(
+  xmlContent: string,
+  contractType: ContractTypeKey
+): void {
+  const profiles = getProfiles();
+  const profile = profiles[contractType] ?? [];
+  if (profile.length === 0) return;
+
+  const missing = profile.filter((token) => !xmlContent.includes(token));
+  if (missing.length > 0) {
+    throw new ContractError({
+      code: 'VALIDATION_ERROR',
+      message: `La plantilla no corresponde al contrato tipo ${contractType}`,
+      details: missing.slice(0, 12),
+      hint: contractType === 'subarriendo_propietario'
+        ? 'Selecciona o sube la plantilla de subarriendo propietario con placeholders ARRENDADOR/ARRENDATARIA.'
+        : 'Selecciona una plantilla estándar compatible.',
     });
   }
 }

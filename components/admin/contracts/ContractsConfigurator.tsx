@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/select';
 import type { AdminRole } from '@/types/admin-ui';
 import { CONTRACT_WIZARD_STEPS, formatCLPInput, parseCLPInput } from '@/lib/contracts/form-utils';
+import { isSubleaseTemplate } from '@/lib/contracts/template-type';
 import { useContractConfigurator } from '@/hooks/useContractConfigurator';
 import { useContractHistory } from '@/hooks/useContractHistory';
 import { ContractWizardStepper } from './ContractWizardStepper';
@@ -93,6 +94,16 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
 
   const readOnly = !configurator.canIssue;
   const fechaTerminoRegister = register('contrato.fecha_termino');
+  const filteredTemplates = useMemo(() => {
+    return configurator.templates.filter((template) =>
+      contratoTipo === 'subarriendo_propietario' ? isSubleaseTemplate(template) : !isSubleaseTemplate(template)
+    );
+  }, [configurator.templates, contratoTipo]);
+
+  const selectedTemplateForType = useMemo(
+    () => filteredTemplates.find((template) => template.id === configurator.selectedTemplateId) ?? null,
+    [configurator.selectedTemplateId, filteredTemplates]
+  );
 
   const handleTemplateDownload = async () => {
     const url = await configurator.downloadTemplateSource();
@@ -144,16 +155,51 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
     switch (configurator.currentStep) {
       case 0:
         return (
-          <ContractTemplateSelector
-            templates={configurator.templates}
-            selectedTemplate={configurator.selectedTemplate}
-            selectedTemplateId={configurator.selectedTemplateId}
-            isLoading={configurator.isLoadingTemplates}
-            error={configurator.templatesError}
-            onSelect={configurator.setSelectedTemplateId}
-            onReload={configurator.loadTemplates}
-            onDownloadSource={handleTemplateDownload}
-          />
+          <div className="space-y-4">
+            <SectionCard title="Tipo de contrato">
+              <div className="space-y-1.5">
+                <Label>Selecciona tipo</Label>
+                <Controller
+                  control={control}
+                  name="contrato.tipo"
+                  render={({ field }) => (
+                    <Select
+                      value={field.value ?? 'standard'}
+                      onValueChange={(value) => {
+                        const nextValue = value as 'standard' | 'subarriendo_propietario';
+                        field.onChange(nextValue);
+                        const candidate = configurator.templates.find((template) =>
+                          nextValue === 'subarriendo_propietario'
+                            ? isSubleaseTemplate(template)
+                            : !isSubleaseTemplate(template)
+                        );
+                        configurator.setSelectedTemplateId(candidate?.id ?? '');
+                      }}
+                    >
+                      <SelectTrigger disabled={readOnly}>
+                        <SelectValue placeholder="Selecciona tipo de contrato" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="standard">Estándar</SelectItem>
+                        <SelectItem value="subarriendo_propietario">Propietario con subarriendo</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </div>
+            </SectionCard>
+
+            <ContractTemplateSelector
+              templates={filteredTemplates}
+              selectedTemplate={selectedTemplateForType}
+              selectedTemplateId={selectedTemplateForType?.id ?? ''}
+              isLoading={configurator.isLoadingTemplates}
+              error={configurator.templatesError}
+              onSelect={configurator.setSelectedTemplateId}
+              onReload={configurator.loadTemplates}
+              onDownloadSource={handleTemplateDownload}
+            />
+          </div>
         );
       case 1:
         if (contratoTipo === 'subarriendo_propietario') {

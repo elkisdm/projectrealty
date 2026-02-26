@@ -4,6 +4,7 @@ import { applyPayloadDefaults, validateBusinessRules } from './validation';
 import {
   applyReplacements,
   assertAvalPlaceholdersProtected,
+  assertTemplateMatchesContractTypeProfile,
   assertNoResidualPlaceholders,
   buildReplacements,
   findResidualPlaceholders,
@@ -234,6 +235,8 @@ export async function validateContractForTemplate(params: {
       replacements,
     });
 
+    assertTemplateMatchesContractTypeProfile(rendered.mergedXmlContent, payload.contrato.tipo);
+
     const missing = findResidualPlaceholders(rendered.mergedXmlContent);
 
     return {
@@ -327,6 +330,7 @@ export async function issueContract(params: {
     payload,
     replacements,
   });
+  assertTemplateMatchesContractTypeProfile(rendered.mergedXmlContent, payload.contrato.tipo);
 
   const residual = findResidualPlaceholders(rendered.mergedXmlContent);
   if (residual.length > 0) {
@@ -414,6 +418,7 @@ export async function generateContractDraft(params: {
     payload,
     replacements,
   });
+  assertTemplateMatchesContractTypeProfile(rendered.mergedXmlContent, payload.contrato.tipo);
 
   const residual = findResidualPlaceholders(rendered.mergedXmlContent);
   if (residual.length > 0) {
