@@ -79,14 +79,29 @@ describe('Business validation', () => {
         ...payload.contrato,
         tipo: 'subarriendo_propietario',
       },
+      arrendadora: {
+        ...payload.arrendadora,
+        tipo_persona: 'natural',
+        nacionalidad: 'chilena',
+        estado_civil: 'casada',
+        profesion: 'enfermera',
+      },
+      propietario: {
+        ...payload.propietario,
+        nombre: payload.arrendadora.razon_social,
+        rut: payload.arrendadora.rut,
+      },
       arrendatario: {
         ...payload.arrendatario,
+        tipo_persona: 'juridica',
         representante_legal: {
           nombre: 'Rep Legal',
           rut: '11111111-1',
           nacionalidad: 'cl',
           estado_civil: 's',
           profesion: 'abogado',
+          domicilio: 'Las Condes 1',
+          email: 'rep@empresa.cl',
         },
       },
       subarriendo: {

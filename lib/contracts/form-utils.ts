@@ -9,9 +9,8 @@ interface AutoRuleOptions {
 }
 
 export const CONTRACT_WIZARD_STEPS = [
-  { key: 'tipo', title: 'Tipo de contrato', description: 'Define el flujo y campos habilitados' },
   { key: 'template', title: 'Plantilla', description: 'Selecciona la versión oficial' },
-  { key: 'partes', title: 'Partes', description: 'Arrendadora, arrendatario y aval' },
+  { key: 'partes', title: 'Partes', description: 'Figuras y representación legal' },
   { key: 'inmueble', title: 'Inmueble y Fechas', description: 'Dirección y vigencia' },
   { key: 'finanzas', title: 'Renta y Garantía', description: 'Montos y cuotas' },
   { key: 'condiciones', title: 'Condiciones', description: 'Flags y declaraciones' },
@@ -24,11 +23,9 @@ type Genero = ContractPayload['arrendatario']['genero'];
 export type WizardStepFieldMap = Record<WizardStepKey, string[]>;
 
 export const WIZARD_STEP_FIELDS: WizardStepFieldMap = {
-  tipo: ['contrato.tipo'],
   template: [],
   partes: [
     'arrendadora.razon_social',
-    'arrendadora.tipo_persona',
     'arrendadora.rut',
     'arrendadora.domicilio',
     'arrendadora.email',
@@ -55,11 +52,6 @@ export const WIZARD_STEP_FIELDS: WizardStepFieldMap = {
     'arrendatario.estado_civil',
     'arrendatario.email',
     'arrendatario.domicilio',
-    'arrendatario.representante_legal.nombre',
-    'arrendatario.representante_legal.rut',
-    'arrendatario.representante_legal.nacionalidad',
-    'arrendatario.representante_legal.estado_civil',
-    'arrendatario.representante_legal.profesion',
   ],
   inmueble: [
     'inmueble.condominio',
@@ -97,6 +89,102 @@ export const WIZARD_STEP_FIELDS: WizardStepFieldMap = {
   review: [],
 };
 
+export function getStepFieldsForContractType(
+  stepKey: WizardStepKey,
+  contractType: ContractPayload['contrato']['tipo'],
+  options?: { hayAval?: boolean; firmaOnline?: boolean }
+): string[] {
+  if (stepKey === 'template' || stepKey === 'review') return [];
+
+  if (contractType !== 'subarriendo_propietario') {
+    const base = [...WIZARD_STEP_FIELDS[stepKey]];
+    if (stepKey === 'partes' && options?.hayAval) {
+      base.push(
+        'aval.nombre',
+        'aval.rut',
+        'aval.nacionalidad',
+        'aval.estado_civil',
+        'aval.profesion',
+        'aval.domicilio'
+      );
+    }
+    if (stepKey === 'partes' && options?.firmaOnline) {
+      const excluded = new Set([
+        'arrendadora.personeria.notaria',
+        'arrendadora.personeria.ciudad',
+        'arrendadora.personeria.notario_nombre',
+      ]);
+      return base.filter((field) => !excluded.has(field));
+    }
+    return base;
+  }
+
+  if (stepKey === 'partes') {
+    return [
+      'arrendadora.tipo_persona',
+      'arrendadora.razon_social',
+      'arrendadora.rut',
+      'arrendadora.nacionalidad',
+      'arrendadora.estado_civil',
+      'arrendadora.profesion',
+      'arrendadora.domicilio',
+      'arrendadora.email',
+      'arrendatario.tipo_persona',
+      'arrendatario.nombre',
+      'arrendatario.rut',
+      'arrendatario.domicilio',
+      'arrendatario.email',
+      'arrendatario.representante_legal.nombre',
+      'arrendatario.representante_legal.rut',
+      'arrendatario.representante_legal.nacionalidad',
+      'arrendatario.representante_legal.estado_civil',
+      'arrendatario.representante_legal.profesion',
+      'arrendatario.representante_legal.domicilio',
+      'arrendatario.representante_legal.email',
+    ];
+  }
+
+  if (stepKey === 'inmueble') {
+    return [
+      'inmueble.condominio',
+      'inmueble.direccion',
+      'inmueble.comuna',
+      'inmueble.ciudad',
+      'contrato.ciudad_firma',
+      'contrato.fecha_inicio',
+      'contrato.fecha_firma',
+      'contrato.fecha_termino',
+      'contrato.aviso_termino_dias',
+    ];
+  }
+
+  if (stepKey === 'finanzas') {
+    return [
+      'renta.porcentaje_subarriendo',
+      'renta.dia_limite_pago',
+      'renta.monto_clp',
+      'renta.monto_uf',
+    ];
+  }
+
+  if (stepKey === 'condiciones') {
+    return [
+      'contrato.tipo',
+      'subarriendo.permitido',
+      'subarriendo.propietario_autoriza',
+      'subarriendo.notificacion_obligatoria',
+      'subarriendo.plazo_notificacion_habiles',
+      'subarriendo.permite_multiples',
+      'subarriendo.periodo_vacancia',
+      'subarriendo.referencia_legal',
+      'subarriendo.autorizacion_texto',
+      'subarriendo.responsabilidad_principal',
+    ];
+  }
+
+  return [];
+}
+
 const SPANISH_MONTHS = [
   'enero',
   'febrero',
@@ -117,14 +205,18 @@ export function createContractWizardDefaultDraft(): ContractPayload {
     contrato: {
       ciudad_firma: 'Santiago',
       tipo: 'standard',
+      aviso_termino_dias: 60,
       fecha_inicio: '',
       fecha_firma: '',
       fecha_termino: '',
     },
     arrendadora: {
-      tipo_persona: 'natural',
+      tipo_persona: 'juridica',
       razon_social: '',
       rut: '',
+      nacionalidad: 'Chilena',
+      estado_civil: 'Soltera',
+      profesion: '',
       domicilio: '',
       email: '',
       cuenta: {
@@ -153,6 +245,7 @@ export function createContractWizardDefaultDraft(): ContractPayload {
       rut: '',
     },
     arrendatario: {
+      tipo_persona: 'natural',
       nombre: '',
       rut: '',
       genero: undefined,
@@ -168,6 +261,8 @@ export function createContractWizardDefaultDraft(): ContractPayload {
         nacionalidad: 'Chilena',
         estado_civil: '',
         profesion: '',
+        domicilio: '',
+        email: '',
       },
     },
     aval: {
@@ -191,6 +286,7 @@ export function createContractWizardDefaultDraft(): ContractPayload {
     renta: {
       monto_clp: 0,
       monto_uf: 0,
+      porcentaje_subarriendo: 91,
       dia_limite_pago: 5,
       mes_primer_reajuste: 'Marzo',
     },
@@ -203,10 +299,10 @@ export function createContractWizardDefaultDraft(): ContractPayload {
       permitido: false,
       propietario_autoriza: false,
       notificacion_obligatoria: true,
-      plazo_notificacion_habiles: 10,
-      permite_multiples: false,
+      plazo_notificacion_habiles: 2,
+      permite_multiples: true,
       periodo_vacancia: false,
-      referencia_legal: 'Artículo 1973 del Código Civil y normativa aplicable.',
+      referencia_legal: 'Artículo 1946 del Código Civil.',
       autorizacion_texto:
         'La parte arrendataria no podrá subarrendar total o parcialmente el inmueble sin autorización previa y expresa del propietario.',
       responsabilidad_principal:
@@ -455,14 +551,15 @@ export function normalizeContractPayload(input: ContractPayload): ContractPayloa
     contrato: {
       ...trimmed.contrato,
       tipo: contractType,
+      aviso_termino_dias: normalizeNumber(trimmed.contrato.aviso_termino_dias ?? 60),
     },
     arrendadora: {
       ...trimmed.arrendadora,
-      tipo_persona: trimmed.arrendadora.tipo_persona === 'juridica' ? 'juridica' : 'natural',
+      tipo_persona: trimmed.arrendadora.tipo_persona ?? 'juridica',
       rut: formatRutForDisplay(trimmed.arrendadora.rut),
       representante: {
         ...trimmed.arrendadora.representante,
-        rut: formatRutForDisplay(trimmed.arrendadora.representante.rut),
+        rut: formatRutForDisplay(trimmed.arrendadora.representante.rut ?? ''),
       },
     },
     propietario: {
@@ -471,12 +568,14 @@ export function normalizeContractPayload(input: ContractPayload): ContractPayloa
     },
     arrendatario: {
       ...trimmed.arrendatario,
+      tipo_persona: trimmed.arrendatario.tipo_persona ?? 'natural',
       rut: formatRutForDisplay(trimmed.arrendatario.rut),
       telefono: trimmed.arrendatario.telefono || undefined,
       representante_legal: trimmed.arrendatario.representante_legal
         ? {
             ...trimmed.arrendatario.representante_legal,
             rut: formatRutForDisplay(trimmed.arrendatario.representante_legal.rut),
+            email: trimmed.arrendatario.representante_legal.email || undefined,
           }
         : undefined,
     },
@@ -491,6 +590,7 @@ export function normalizeContractPayload(input: ContractPayload): ContractPayloa
       ...trimmed.renta,
       monto_clp: normalizeNumber(trimmed.renta.monto_clp),
       monto_uf: normalizeNumber(trimmed.renta.monto_uf),
+      porcentaje_subarriendo: normalizeNumber(trimmed.renta.porcentaje_subarriendo ?? 91),
       dia_limite_pago: normalizeNumber(trimmed.renta.dia_limite_pago),
     },
     garantia: {
@@ -556,7 +656,7 @@ export function applyAutomaticContractRules(
           plazo_notificacion_habiles:
             normalized.subarriendo?.plazo_notificacion_habiles && normalized.subarriendo.plazo_notificacion_habiles > 0
               ? normalized.subarriendo.plazo_notificacion_habiles
-              : 5,
+              : 2,
           autorizacion_texto:
             normalized.subarriendo?.autorizacion_texto
             || 'El propietario autoriza expresamente el subarriendo total o parcial del inmueble, sujeto a las condiciones establecidas en esta cláusula.',
@@ -565,7 +665,7 @@ export function applyAutomaticContractRules(
             || 'La parte arrendataria mantendrá responsabilidad principal y solidaria frente a la arrendadora por cualquier obligación contractual, incluso en caso de subarriendo.',
           referencia_legal:
             normalized.subarriendo?.referencia_legal
-            || 'Artículo 1973 del Código Civil y normativa aplicable.',
+            || 'Artículo 1946 del Código Civil.',
         }
       : {
           ...normalized.subarriendo,
@@ -584,14 +684,8 @@ export function applyAutomaticContractRules(
             || 'En todo caso, la parte arrendataria mantendrá responsabilidad directa y principal frente a la arrendadora por todas las obligaciones del contrato.',
           referencia_legal:
             normalized.subarriendo?.referencia_legal
-            || 'Artículo 1973 del Código Civil y normativa aplicable.',
+            || 'Artículo 1946 del Código Civil.',
         },
-    propietario: isOwnerSublease
-      ? {
-          nombre: normalized.arrendadora.razon_social,
-          rut: normalized.arrendadora.rut,
-        }
-      : normalized.propietario,
   };
 
   if (options.firmaOnline) {
@@ -611,6 +705,39 @@ export function applyAutomaticContractRules(
       ...withAutoRules.declaraciones,
       fondos_origen_texto: generateFundsOriginDeclaration(withAutoRules),
     };
+  }
+
+  if (isOwnerSublease) {
+    withAutoRules.flags = {
+      ...withAutoRules.flags,
+      hay_aval: false,
+    };
+
+    withAutoRules.arrendadora = {
+      ...withAutoRules.arrendadora,
+      tipo_persona: withAutoRules.arrendadora.tipo_persona ?? 'natural',
+    };
+
+    withAutoRules.arrendatario = {
+      ...withAutoRules.arrendatario,
+      tipo_persona: 'juridica',
+      representante_legal: withAutoRules.arrendatario.representante_legal ?? {
+        nombre: withAutoRules.arrendatario.nombre,
+        rut: withAutoRules.arrendatario.rut,
+        genero: withAutoRules.arrendatario.genero,
+        nacionalidad: withAutoRules.arrendatario.nacionalidad || 'Chilena',
+        estado_civil: withAutoRules.arrendatario.estado_civil || 'Soltero/a',
+        profesion: 'Representante legal',
+        domicilio: withAutoRules.arrendatario.domicilio,
+        email: withAutoRules.arrendatario.email,
+      },
+    };
+
+    withAutoRules.propietario = {
+      nombre: withAutoRules.arrendadora.razon_social,
+      rut: withAutoRules.arrendadora.rut,
+    };
+    withAutoRules.contrato.aviso_termino_dias = withAutoRules.contrato.aviso_termino_dias || 30;
   }
 
   return withAutoRules;

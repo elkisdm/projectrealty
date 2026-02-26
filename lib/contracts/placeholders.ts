@@ -73,7 +73,7 @@ function getPronombreObjeto(genero: Genero): string {
 
 function buildPersoneriaDescripcion(payload: ContractPayload): string {
   const personeria = payload.arrendadora.personeria;
-  const fecha = formatDateForContract(personeria.fecha);
+  const fecha = formatDateForContract(personeria.fecha ?? '');
   const notaria = personeria.notaria?.toLowerCase() ?? '';
   const notario = personeria.notario_nombre?.toLowerCase() ?? '';
   const isOnline = notaria.includes('firma online') || notario.includes('firma online');
@@ -105,6 +105,20 @@ function sanitizeFundsSource(value: string | undefined): string {
   }
 
   return source.replace(/\s+/g, ' ').replace(/[.;:\s]+$/, '');
+}
+
+function formatDateWithWeekday(dateISO: string): string {
+  if (!dateISO) return '';
+  const date = new Date(`${dateISO}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return formatDateForContract(dateISO);
+  const long = new Intl.DateTimeFormat('es-CL', {
+    weekday: 'long',
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'America/Santiago',
+  }).format(date);
+  return long.charAt(0).toUpperCase() + long.slice(1);
 }
 
 export function buildReplacements(payload: ContractPayload): Record<string, string> {
@@ -163,6 +177,14 @@ export function buildReplacements(payload: ContractPayload): Record<string, stri
 
     if (scoped === 'CONTRATO.TIPO') {
       value = payload.contrato.tipo === 'subarriendo_propietario' ? 'subarriendo_propietario' : 'standard';
+    }
+
+    if (scoped === 'CONTRATO.FECHA_FIRMA_LARGA') {
+      value = formatDateWithWeekday(payload.contrato.fecha_firma ?? '');
+    }
+
+    if (scoped === 'CONTRATO.AVISO_TERMINO_DIAS') {
+      value = String(payload.contrato.aviso_termino_dias ?? 30);
     }
 
     if (scoped === 'SUBARRIENDO.PERMITIDO_LABEL') {
@@ -229,14 +251,6 @@ export function buildReplacements(payload: ContractPayload): Record<string, stri
       value = getDomiciliado(payload.arrendatario.genero);
     }
 
-    if (scoped === 'ARRENDATARIO.REPRESENTANTE_LEGAL.TRATAMIENTO') {
-      value = getTratamiento(payload.arrendatario.representante_legal?.genero);
-    }
-
-    if (scoped === 'ARRENDATARIO.REPRESENTANTE_LEGAL.DOMICILIADO') {
-      value = getDomiciliado(payload.arrendatario.representante_legal?.genero);
-    }
-
     if (scoped === 'AVAL.TRATAMIENTO') {
       value = getTratamiento(payload.aval?.genero);
     }
@@ -251,6 +265,90 @@ export function buildReplacements(payload: ContractPayload): Record<string, stri
 
     if (scoped === 'ARRENDADORA.REPRESENTANTE.DOMICILIADO') {
       value = getDomiciliado(payload.arrendadora.representante.genero);
+    }
+
+    if (scoped === 'ARRENDADOR.NOMBRE') {
+      value = payload.arrendadora.razon_social;
+    }
+
+    if (scoped === 'ARRENDADOR.RUT') {
+      value = payload.arrendadora.rut;
+    }
+
+    if (scoped === 'ARRENDADOR.NACIONALIDAD') {
+      value = payload.arrendadora.nacionalidad ?? '';
+    }
+
+    if (scoped === 'ARRENDADOR.ESTADO_CIVIL') {
+      value = payload.arrendadora.estado_civil ?? '';
+    }
+
+    if (scoped === 'ARRENDADOR.PROFESION') {
+      value = payload.arrendadora.profesion ?? '';
+    }
+
+    if (scoped === 'ARRENDADOR.DOMICILIO') {
+      value = payload.arrendadora.domicilio;
+    }
+
+    if (scoped === 'ARRENDADOR.EMAIL') {
+      value = payload.arrendadora.email;
+    }
+
+    if (scoped === 'ARRENDADOR.TRATAMIENTO') {
+      value = getTratamiento(payload.arrendatario.representante_legal?.genero);
+    }
+
+    if (scoped === 'ARRENDATARIA.RAZON_SOCIAL') {
+      value = payload.arrendatario.nombre;
+    }
+
+    if (scoped === 'ARRENDATARIA.RUT') {
+      value = payload.arrendatario.rut;
+    }
+
+    if (scoped === 'ARRENDATARIA.DOMICILIO') {
+      value = payload.arrendatario.domicilio;
+    }
+
+    if (scoped === 'ARRENDATARIA.EMAIL') {
+      value = payload.arrendatario.email;
+    }
+
+    if (scoped === 'ARRENDATARIA.REPRESENTANTE.NOMBRE') {
+      value = payload.arrendatario.representante_legal?.nombre ?? '';
+    }
+
+    if (scoped === 'ARRENDATARIA.REPRESENTANTE.RUT') {
+      value = payload.arrendatario.representante_legal?.rut ?? '';
+    }
+
+    if (scoped === 'ARRENDATARIA.REPRESENTANTE.NACIONALIDAD') {
+      value = payload.arrendatario.representante_legal?.nacionalidad ?? '';
+    }
+
+    if (scoped === 'ARRENDATARIA.REPRESENTANTE.ESTADO_CIVIL') {
+      value = payload.arrendatario.representante_legal?.estado_civil ?? '';
+    }
+
+    if (scoped === 'ARRENDATARIA.REPRESENTANTE.PROFESION') {
+      value = payload.arrendatario.representante_legal?.profesion ?? '';
+    }
+
+    if (scoped === 'ARRENDATARIA.REPRESENTANTE.DOMICILIO') {
+      value = payload.arrendatario.representante_legal?.domicilio ?? '';
+    }
+
+    if (scoped === 'ARRENDATARIA.REPRESENTANTE.TRATAMIENTO') {
+      value = getTratamiento(payload.arrendatario.representante_legal?.genero);
+    }
+
+    if (scoped === 'ARRENDATARIA.REPRESENTANTE.DOMICILIADO') {
+      value = getDomiciliado(payload.arrendatario.representante_legal?.genero);
+    }
+
+    if (scoped === 'RENTA.PORCENTAJE_SUBARRIENDO') {
+      value = `${Number(payload.renta.porcentaje_subarriendo ?? 91)}%`;
     }
 
     if (value === undefined || value === null) {

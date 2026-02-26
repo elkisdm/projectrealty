@@ -24,19 +24,57 @@ export function applyPayloadDefaults(payload: ContractPayload): ContractPayload 
 export function validateBusinessRules(payload: ContractPayload): void {
   assertValidRut('arrendatario.rut', payload.arrendatario.rut);
   assertValidRut('arrendadora.rut', payload.arrendadora.rut);
-  assertValidRut('arrendadora.representante.rut', payload.arrendadora.representante.rut);
   assertValidRut('propietario.rut', payload.propietario.rut);
 
-  if (normalizeRut(payload.arrendadora.rut) === normalizeRut(payload.arrendadora.representante.rut)) {
-    throw new ContractError({
-      code: 'INVALID_RUT',
-      message: 'RUT de representante legal debe ser personal y distinto al RUT de la arrendadora',
-      details: {
-        arrendadoraRut: payload.arrendadora.rut,
-        representanteRut: payload.arrendadora.representante.rut,
-      },
-      hint: 'Usa el RUT de la empresa en arrendadora y el RUT de persona natural en representante legal.',
-    });
+  const isOwnerSublease = payload.contrato.tipo === 'subarriendo_propietario';
+
+  if (!isOwnerSublease) {
+    const requiredStandardFields = [
+      ['arrendadora.cuenta.banco', payload.arrendadora.cuenta.banco],
+      ['arrendadora.cuenta.tipo', payload.arrendadora.cuenta.tipo],
+      ['arrendadora.cuenta.numero', payload.arrendadora.cuenta.numero],
+      ['arrendadora.cuenta.email_pago', payload.arrendadora.cuenta.email_pago],
+      ['arrendadora.personeria.fecha', payload.arrendadora.personeria.fecha],
+      ['arrendadora.personeria.notaria', payload.arrendadora.personeria.notaria],
+      ['arrendadora.personeria.ciudad', payload.arrendadora.personeria.ciudad],
+      ['arrendadora.personeria.notario_nombre', payload.arrendadora.personeria.notario_nombre],
+      ['arrendadora.representante.nombre', payload.arrendadora.representante.nombre],
+      ['arrendadora.representante.nacionalidad', payload.arrendadora.representante.nacionalidad],
+      ['arrendadora.representante.estado_civil', payload.arrendadora.representante.estado_civil],
+      ['arrendadora.representante.profesion', payload.arrendadora.representante.profesion],
+      ['arrendatario.nacionalidad', payload.arrendatario.nacionalidad],
+      ['arrendatario.estado_civil', payload.arrendatario.estado_civil],
+    ] as const;
+
+    const missing = requiredStandardFields.filter(([, value]) => !String(value ?? '').trim());
+    if (missing.length > 0) {
+      throw new ContractError({
+        code: 'VALIDATION_ERROR',
+        message: 'Faltan campos obligatorios para contrato estándar',
+        details: missing.map(([field]) => field),
+      });
+    }
+  }
+
+  if (!isOwnerSublease || payload.arrendadora.tipo_persona === 'juridica') {
+    if (!payload.arrendadora.representante?.rut) {
+      throw new ContractError({
+        code: 'VALIDATION_ERROR',
+        message: 'Falta RUT del representante legal de arrendadora',
+      });
+    }
+    assertValidRut('arrendadora.representante.rut', payload.arrendadora.representante.rut);
+    if (normalizeRut(payload.arrendadora.rut) === normalizeRut(payload.arrendadora.representante.rut)) {
+      throw new ContractError({
+        code: 'INVALID_RUT',
+        message: 'RUT de representante legal debe ser personal y distinto al RUT de la arrendadora',
+        details: {
+          arrendadoraRut: payload.arrendadora.rut,
+          representanteRut: payload.arrendadora.representante.rut,
+        },
+        hint: 'Usa el RUT de la empresa en arrendadora y el RUT de persona natural en representante legal.',
+      });
+    }
   }
 
   if (payload.flags.hay_aval) {
@@ -100,22 +138,46 @@ export function validateBusinessRules(payload: ContractPayload): void {
     }
   }
 
-  if (payload.contrato.tipo === 'subarriendo_propietario') {
-    const legalRep = payload.arrendatario.representante_legal;
-    if (!legalRep) {
+  if (isOwnerSublease) {
+    const subleaseRequired = [
+      ['arrendadora.nacionalidad', payload.arrendadora.nacionalidad],
+      ['arrendadora.estado_civil', payload.arrendadora.estado_civil],
+      ['arrendadora.profesion', payload.arrendadora.profesion],
+      ['arrendatario.representante_legal.nombre', payload.arrendatario.representante_legal?.nombre],
+      ['arrendatario.representante_legal.nacionalidad', payload.arrendatario.representante_legal?.nacionalidad],
+      ['arrendatario.representante_legal.estado_civil', payload.arrendatario.representante_legal?.estado_civil],
+      ['arrendatario.representante_legal.profesion', payload.arrendatario.representante_legal?.profesion],
+      ['arrendatario.representante_legal.domicilio', payload.arrendatario.representante_legal?.domicilio],
+    ] as const;
+    const missingSublease = subleaseRequired.filter(([, value]) => !String(value ?? '').trim());
+    if (missingSublease.length > 0) {
       throw new ContractError({
         code: 'VALIDATION_ERROR',
-        message: 'Subarriendo propietario requiere representante legal del arrendatario',
-        hint: 'Completa datos de representante legal en la sección de Partes.',
+        message: 'Faltan campos obligatorios para contrato de subarriendo propietario',
+        details: missingSublease.map(([field]) => field),
       });
     }
 
-    assertValidRut('arrendatario.representante_legal.rut', legalRep.rut);
-
-    if (normalizeRut(legalRep.rut) === normalizeRut(payload.arrendatario.rut)) {
+    if (payload.arrendatario.tipo_persona !== 'juridica') {
       throw new ContractError({
-        code: 'INVALID_RUT',
-        message: 'RUT de representante legal del arrendatario debe ser distinto al RUT del arrendatario',
+        code: 'VALIDATION_ERROR',
+        message: 'En subarriendo propietario, la arrendataria debe ser persona jurídica',
+      });
+    }
+
+    if (!payload.arrendatario.representante_legal) {
+      throw new ContractError({
+        code: 'VALIDATION_ERROR',
+        message: 'Falta representante legal de la arrendataria',
+        hint: 'Completa los datos de representante legal para este tipo de contrato.',
+      });
+    }
+    assertValidRut('arrendatario.representante_legal.rut', payload.arrendatario.representante_legal.rut);
+
+    if (normalizeRut(payload.propietario.rut) !== normalizeRut(payload.arrendadora.rut)) {
+      throw new ContractError({
+        code: 'VALIDATION_ERROR',
+        message: 'En subarriendo propietario, arrendador y propietario deben coincidir',
       });
     }
 

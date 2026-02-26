@@ -13,12 +13,14 @@ import { applyConditionals } from './conditionals';
 import { canonicalStringify, sha256Hex } from './utils';
 import { renderDocxTemplate } from './docx';
 import { convertDocxToPdf } from './gotenberg';
+import { normalizeRut } from './rut';
 import { matchesTemplateToContractType } from './template-type';
 import {
   createContractEvent,
   createIssuedContract,
   findIdempotentContract,
   getTemplateById,
+  upsertContractParties,
   type ContractRecord,
 } from './repository';
 import { createContractSignedUrl, downloadTemplateDocx, uploadContractPdf } from './storage';
@@ -56,6 +58,110 @@ function renderTemplateWithPayload(params: {
     sourceDocxBuffer: params.sourceDocx,
     transformXml: (xml) => transformXmlContent(xml, params.payload, params.replacements),
   });
+}
+
+function nonEmpty(value: string | undefined | null): string | null {
+  const trimmed = (value ?? '').trim();
+  return trimmed ? trimmed : null;
+}
+
+async function persistContractParties(params: {
+  payload: ContractPayload;
+  createdBy: string;
+  contractId: string;
+}): Promise<void> {
+  const { payload, createdBy, contractId } = params;
+  const parties: Parameters<typeof upsertContractParties>[0]['parties'] = [];
+  const isSubleaseOwner = payload.contrato.tipo === 'subarriendo_propietario';
+
+  parties.push({
+    source_contract_id: contractId,
+    role: isSubleaseOwner ? 'arrendador_propietario' : 'arrendadora',
+    party_type: payload.arrendadora.tipo_persona === 'juridica' ? 'juridica' : 'natural',
+    display_name: payload.arrendadora.razon_social,
+    rut: normalizeRut(payload.arrendadora.rut),
+    email: nonEmpty(payload.arrendadora.email),
+    address: nonEmpty(payload.arrendadora.domicilio),
+    meta_json: { contrato_tipo: payload.contrato.tipo },
+    created_by: createdBy,
+  });
+
+  if (payload.arrendadora.representante.nombre && payload.arrendadora.representante.rut) {
+    parties.push({
+      source_contract_id: contractId,
+      role: 'arrendadora_representante',
+      party_type: 'natural',
+      display_name: payload.arrendadora.representante.nombre,
+      rut: normalizeRut(payload.arrendadora.representante.rut),
+      nationality: nonEmpty(payload.arrendadora.representante.nacionalidad),
+      civil_status: nonEmpty(payload.arrendadora.representante.estado_civil),
+      profession: nonEmpty(payload.arrendadora.representante.profesion),
+      meta_json: { contrato_tipo: payload.contrato.tipo },
+      created_by: createdBy,
+    });
+  }
+
+  if (!isSubleaseOwner) {
+    parties.push({
+      source_contract_id: contractId,
+      role: 'propietario',
+      party_type: 'natural',
+      display_name: payload.propietario.nombre,
+      rut: normalizeRut(payload.propietario.rut),
+      meta_json: { contrato_tipo: payload.contrato.tipo },
+      created_by: createdBy,
+    });
+  }
+
+  parties.push({
+    source_contract_id: contractId,
+    role: 'arrendatario',
+    party_type: payload.arrendatario.tipo_persona === 'juridica' ? 'juridica' : 'natural',
+    display_name: payload.arrendatario.nombre,
+    rut: normalizeRut(payload.arrendatario.rut),
+    email: nonEmpty(payload.arrendatario.email),
+    phone: nonEmpty(payload.arrendatario.telefono),
+    nationality: nonEmpty(payload.arrendatario.nacionalidad),
+    civil_status: nonEmpty(payload.arrendatario.estado_civil),
+    address: nonEmpty(payload.arrendatario.domicilio),
+    meta_json: { contrato_tipo: payload.contrato.tipo },
+    created_by: createdBy,
+  });
+
+  if (payload.arrendatario.representante_legal) {
+    parties.push({
+      source_contract_id: contractId,
+      role: 'arrendatario_representante_legal',
+      party_type: 'natural',
+      display_name: payload.arrendatario.representante_legal.nombre,
+      rut: normalizeRut(payload.arrendatario.representante_legal.rut),
+      nationality: nonEmpty(payload.arrendatario.representante_legal.nacionalidad),
+      civil_status: nonEmpty(payload.arrendatario.representante_legal.estado_civil),
+      profession: nonEmpty(payload.arrendatario.representante_legal.profesion),
+      address: nonEmpty(payload.arrendatario.domicilio),
+      meta_json: { contrato_tipo: payload.contrato.tipo },
+      created_by: createdBy,
+    });
+  }
+
+  if (payload.flags.hay_aval && payload.aval) {
+    parties.push({
+      source_contract_id: contractId,
+      role: 'aval',
+      party_type: 'natural',
+      display_name: payload.aval.nombre,
+      rut: normalizeRut(payload.aval.rut),
+      email: nonEmpty(payload.aval.email),
+      nationality: nonEmpty(payload.aval.nacionalidad),
+      civil_status: nonEmpty(payload.aval.estado_civil),
+      profession: nonEmpty(payload.aval.profesion),
+      address: nonEmpty(payload.aval.domicilio),
+      meta_json: { contrato_tipo: payload.contrato.tipo },
+      created_by: createdBy,
+    });
+  }
+
+  await upsertContractParties({ parties });
 }
 
 function assertTemplateMatchesContractType(
@@ -258,6 +364,12 @@ export async function issueContract(params: {
       requestHash,
       pdfHash,
     },
+  });
+
+  await persistContractParties({
+    payload,
+    createdBy: params.createdBy,
+    contractId: contract.id,
   });
 
   const pdfUrl = await createContractSignedUrl(contractFilePath);

@@ -15,12 +15,12 @@ import type {
 import type { AdminRole } from '@/types/admin-ui';
 import {
   CONTRACT_WIZARD_STEPS,
-  WIZARD_STEP_FIELDS,
   applyAutomaticContractRules,
   computeAutomaticGuaranteeSchedule,
   createContractWizardDefaultDraft,
   formatContractPayloadJson,
   formatRutForDisplay,
+  getStepFieldsForContractType,
   getDefaultContractEndDate,
   parseContractPayloadJson,
   prepareContractPayloadForSubmit,
@@ -369,12 +369,6 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
   }, [firmaOnline, form, unidadTipo, values]);
 
   useEffect(() => {
-    if (contratoTipo !== 'subarriendo_propietario') return;
-    if (!form.getValues('flags.hay_aval')) return;
-    form.setValue('flags.hay_aval', false, { shouldDirty: true, shouldValidate: true });
-  }, [contratoTipo, form]);
-
-  useEffect(() => {
     if (unidadTipo === 'departamento') {
       if (form.getValues('inmueble.numero_casa')) {
         form.setValue('inmueble.numero_casa', '', { shouldDirty: true });
@@ -386,6 +380,14 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
       form.setValue('inmueble.numero_depto', '', { shouldDirty: true });
     }
   }, [form, unidadTipo]);
+
+  useEffect(() => {
+    if (contratoTipo !== 'subarriendo_propietario') return;
+
+    form.setValue('flags.hay_aval', false, { shouldDirty: true, shouldValidate: true });
+    form.setValue('arrendadora.tipo_persona', 'natural', { shouldDirty: true, shouldValidate: true });
+    form.setValue('arrendatario.tipo_persona', 'juridica', { shouldDirty: true, shouldValidate: true });
+  }, [contratoTipo, form]);
 
   const formatRutField = useCallback(
     (
@@ -430,54 +432,10 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
         return validTemplate;
       }
 
-      const fields = [...WIZARD_STEP_FIELDS[step.key]];
-      if (step.key === 'partes' && contratoTipo !== 'subarriendo_propietario') {
-        const excluded = new Set([
-          'arrendatario.representante_legal.nombre',
-          'arrendatario.representante_legal.rut',
-          'arrendatario.representante_legal.nacionalidad',
-          'arrendatario.representante_legal.estado_civil',
-          'arrendatario.representante_legal.profesion',
-        ]);
-        const filtered = fields.filter((field) => !excluded.has(field));
-        fields.length = 0;
-        fields.push(...filtered);
-      }
-
-      if (step.key === 'partes' && contratoTipo === 'subarriendo_propietario') {
-        const excluded = new Set(['propietario.nombre', 'propietario.rut']);
-        const filtered = fields.filter((field) => !excluded.has(field));
-        fields.length = 0;
-        fields.push(...filtered);
-      }
-
-      if (step.key === 'partes' && hayAval && contratoTipo !== 'subarriendo_propietario') {
-        fields.push(
-          'aval.nombre',
-          'aval.rut',
-          'aval.nacionalidad',
-          'aval.estado_civil',
-          'aval.profesion',
-          'aval.domicilio'
-        );
-      }
-
-      if (step.key === 'partes' && firmaOnline) {
-        const excluded = new Set([
-          'arrendadora.personeria.notaria',
-          'arrendadora.personeria.ciudad',
-          'arrendadora.personeria.notario_nombre',
-        ]);
-        const filtered = fields.filter((field) => !excluded.has(field));
-        const valid =
-          filtered.length === 0 ? true : await form.trigger(filtered as never, { shouldFocus: true });
-        setStepState((prev) => {
-          const next = [...prev];
-          next[stepIndex] = valid ? 'valid' : 'invalid';
-          return next;
-        });
-        return valid;
-      }
+      const fields = getStepFieldsForContractType(step.key, contratoTipo ?? 'standard', {
+        hayAval,
+        firmaOnline,
+      });
 
       const valid = fields.length === 0 ? true : await form.trigger(fields as never, { shouldFocus: true });
       setStepState((prev) => {
@@ -762,53 +720,13 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
   const sectionCompletion = useMemo(() => {
     const currentValues = (values ?? form.getValues()) as unknown as Record<string, unknown>;
     return CONTRACT_WIZARD_STEPS.map((step) => {
-      const baseFields = WIZARD_STEP_FIELDS[step.key];
-      const fields = [...baseFields];
-
-      if (step.key === 'partes' && contratoTipo !== 'subarriendo_propietario') {
-        const excluded = new Set([
-          'arrendatario.representante_legal.nombre',
-          'arrendatario.representante_legal.rut',
-          'arrendatario.representante_legal.nacionalidad',
-          'arrendatario.representante_legal.estado_civil',
-          'arrendatario.representante_legal.profesion',
-        ]);
-        const filtered = fields.filter((field) => !excluded.has(field));
-        fields.length = 0;
-        fields.push(...filtered);
-      }
-
-      if (step.key === 'partes' && contratoTipo === 'subarriendo_propietario') {
-        const excluded = new Set(['propietario.nombre', 'propietario.rut']);
-        const filtered = fields.filter((field) => !excluded.has(field));
-        fields.length = 0;
-        fields.push(...filtered);
-      }
+      const fields = getStepFieldsForContractType(step.key, contratoTipo ?? 'standard', {
+        hayAval,
+        firmaOnline,
+      });
 
       if (step.key === 'template') {
         return Boolean(selectedTemplateId);
-      }
-
-      if (step.key === 'partes' && hayAval && contratoTipo !== 'subarriendo_propietario') {
-        fields.push(
-          'aval.nombre',
-          'aval.rut',
-          'aval.nacionalidad',
-          'aval.estado_civil',
-          'aval.profesion',
-          'aval.domicilio'
-        );
-      }
-
-      if (step.key === 'partes' && firmaOnline) {
-        const excluded = new Set([
-          'arrendadora.personeria.notaria',
-          'arrendadora.personeria.ciudad',
-          'arrendadora.personeria.notario_nombre',
-        ]);
-        const filtered = fields.filter((field) => !excluded.has(field));
-        if (filtered.length === 0) return true;
-        return filtered.every((path) => hasValue(getPathValue(currentValues, path)));
       }
 
       if (fields.length === 0) return true;
@@ -829,7 +747,6 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
     stepState,
     sectionCompletion,
     canIssue,
-    contratoTipo,
     hayAval,
     unidadTipo,
     setUnidadTipo,
