@@ -8,7 +8,7 @@ interface AutoRuleOptions {
   autoDeclaration?: boolean;
 }
 
-export const CONTRACT_WIZARD_STEPS = [
+const STANDARD_WIZARD_STEPS = [
   { key: 'template', title: 'Plantilla', description: 'Selecciona la versión oficial' },
   { key: 'partes', title: 'Partes', description: 'Figuras y representación legal' },
   { key: 'inmueble', title: 'Inmueble y Fechas', description: 'Dirección y vigencia' },
@@ -17,10 +17,26 @@ export const CONTRACT_WIZARD_STEPS = [
   { key: 'review', title: 'Revisión', description: 'Validación y emisión' },
 ] as const;
 
-type WizardStepKey = (typeof CONTRACT_WIZARD_STEPS)[number]['key'];
+const SUBLEASE_WIZARD_STEPS = [
+  { key: 'template', title: 'Plantilla', description: 'Plantilla específica de subarriendo propietario' },
+  { key: 'partes', title: 'Partes', description: 'Arrendador, arrendataria y representante legal' },
+  { key: 'inmueble', title: 'Inmueble y Vigencia', description: 'Ubicación, inicio y término' },
+  { key: 'finanzas', title: 'Términos Económicos', description: 'Porcentaje y forma de pago' },
+  { key: 'condiciones', title: 'Reglas Subarriendo', description: 'Notificación, autorización y referencia legal' },
+  { key: 'review', title: 'Revisión', description: 'Validación y emisión' },
+] as const;
+
+export type ContractWizardStep = (typeof STANDARD_WIZARD_STEPS)[number];
+type WizardStepKey = ContractWizardStep['key'];
 type Genero = ContractPayload['arrendatario']['genero'];
 
 export type WizardStepFieldMap = Record<WizardStepKey, string[]>;
+
+export function getContractWizardSteps(
+  contractType: ContractPayload['contrato']['tipo']
+): readonly ContractWizardStep[] {
+  return contractType === 'subarriendo_propietario' ? SUBLEASE_WIZARD_STEPS : STANDARD_WIZARD_STEPS;
+}
 
 export const WIZARD_STEP_FIELDS: WizardStepFieldMap = {
   template: [],

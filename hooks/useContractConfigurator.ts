@@ -14,18 +14,20 @@ import type {
 } from '@/types/contracts';
 import type { AdminRole } from '@/types/admin-ui';
 import {
-  CONTRACT_WIZARD_STEPS,
   applyAutomaticContractRules,
   computeAutomaticGuaranteeSchedule,
   createContractWizardDefaultDraft,
   formatContractPayloadJson,
   formatRutForDisplay,
+  getContractWizardSteps,
   getStepFieldsForContractType,
   getDefaultContractEndDate,
+  normalizeRutForValidation,
   parseContractPayloadJson,
   prepareContractPayloadForSubmit,
   type UnidadTipo,
 } from '@/lib/contracts/form-utils';
+import type { ContractPartyItem } from '@/types/contracts';
 import { matchesTemplateToContractType } from '@/lib/contracts/template-type';
 
 type StepState = 'idle' | 'valid' | 'invalid';
@@ -146,7 +148,7 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
   const [currentStep, setCurrentStep] = useState(0);
   const [stepState, setStepState] = useState<StepState[]>(
-    CONTRACT_WIZARD_STEPS.map(() => 'idle')
+    getContractWizardSteps('standard').map(() => 'idle')
   );
   const [isEndDateManual, setIsEndDateManual] = useState(false);
   const [unidadTipo, setUnidadTipo] = useState<UnidadTipo>('departamento');
@@ -170,6 +172,7 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
   const garantiaPagoInicial = useWatch({ control: form.control, name: 'garantia.pago_inicial_clp' });
   const garantiaCuotas = useWatch({ control: form.control, name: 'garantia.cuotas' });
   const values = useWatch({ control: form.control });
+  const steps = useMemo(() => getContractWizardSteps(contratoTipo ?? 'standard'), [contratoTipo]);
 
   const selectedTemplate = useMemo(
     () => templates.find((template) => template.id === selectedTemplateId) ?? null,
@@ -248,7 +251,7 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
       setSelectedTemplateId(parsed.templateId || '');
       setCurrentStep(
         Number.isFinite(parsed.currentStep)
-          ? Math.max(0, Math.min(CONTRACT_WIZARD_STEPS.length - 1, parsed.currentStep))
+          ? Math.max(0, Math.min(steps.length - 1, parsed.currentStep))
           : 0
       );
       setIsEndDateManual(Boolean(parsed.isEndDateManual));
@@ -261,7 +264,15 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
     } finally {
       setDraftHydrated(true);
     }
-  }, [form, storageKey]);
+  }, [form, storageKey, steps.length]);
+
+  useEffect(() => {
+    setStepState((prev) => {
+      if (prev.length === steps.length) return prev;
+      return steps.map((_, index) => prev[index] ?? 'idle');
+    });
+    setCurrentStep((prev) => Math.max(0, Math.min(steps.length - 1, prev)));
+  }, [steps]);
 
   useEffect(() => {
     if (!draftHydrated || !storageKey) return;
@@ -423,9 +434,129 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
     [form]
   );
 
+  const autofillByRut = useCallback(
+    async (
+      fieldPath:
+        | 'arrendadora.rut'
+        | 'arrendadora.representante.rut'
+        | 'propietario.rut'
+        | 'arrendatario.rut'
+        | 'arrendatario.representante_legal.rut'
+        | 'aval.rut'
+    ) => {
+      const currentRut = form.getValues(fieldPath);
+      if (typeof currentRut !== 'string' || !currentRut.trim()) return;
+
+      const normalizedTarget = normalizeRutForValidation(currentRut);
+      try {
+        const response = await fetch(
+          `/api/contracts/parties?q=${encodeURIComponent(currentRut)}&limit=50`,
+          { credentials: 'include' }
+        );
+        const data = (await response.json()) as { parties?: ContractPartyItem[] };
+        if (!response.ok || !Array.isArray(data.parties)) return;
+
+        const exactMatches = data.parties.filter(
+          (party) => normalizeRutForValidation(party.rut) === normalizedTarget
+        );
+        if (!exactMatches.length) return;
+
+        const merged = exactMatches.reduce(
+          (acc, party) => ({
+            display_name: acc.display_name || party.display_name,
+            email: acc.email || party.email,
+            phone: acc.phone || party.phone,
+            nationality: acc.nationality || party.nationality,
+            civil_status: acc.civil_status || party.civil_status,
+            profession: acc.profession || party.profession,
+            address: acc.address || party.address,
+            party_type: acc.party_type === 'unknown' ? party.party_type : acc.party_type,
+          }),
+          {
+            display_name: '',
+            email: null as string | null,
+            phone: null as string | null,
+            nationality: null as string | null,
+            civil_status: null as string | null,
+            profession: null as string | null,
+            address: null as string | null,
+            party_type: 'unknown' as ContractPartyItem['party_type'],
+          }
+        );
+
+        const setIfEmpty = (path: string, value: string | null | undefined) => {
+          if (!value || !value.trim()) return;
+          const current = form.getValues(path as never);
+          if (typeof current === 'string' && current.trim()) return;
+          form.setValue(path as never, value as never, {
+            shouldDirty: true,
+            shouldValidate: true,
+          });
+        };
+
+        if (fieldPath === 'arrendadora.rut') {
+          setIfEmpty('arrendadora.razon_social', merged.display_name);
+          setIfEmpty('arrendadora.email', merged.email);
+          setIfEmpty('arrendadora.domicilio', merged.address);
+          if (merged.party_type === 'natural') {
+            setIfEmpty('arrendadora.tipo_persona', 'natural');
+          } else if (merged.party_type === 'juridica') {
+            setIfEmpty('arrendadora.tipo_persona', 'juridica');
+          }
+        }
+
+        if (fieldPath === 'arrendadora.representante.rut') {
+          setIfEmpty('arrendadora.representante.nombre', merged.display_name);
+          setIfEmpty('arrendadora.representante.nacionalidad', merged.nationality);
+          setIfEmpty('arrendadora.representante.estado_civil', merged.civil_status);
+          setIfEmpty('arrendadora.representante.profesion', merged.profession);
+        }
+
+        if (fieldPath === 'propietario.rut') {
+          setIfEmpty('propietario.nombre', merged.display_name);
+        }
+
+        if (fieldPath === 'arrendatario.rut') {
+          setIfEmpty('arrendatario.nombre', merged.display_name);
+          setIfEmpty('arrendatario.email', merged.email);
+          setIfEmpty('arrendatario.telefono', merged.phone);
+          setIfEmpty('arrendatario.nacionalidad', merged.nationality);
+          setIfEmpty('arrendatario.estado_civil', merged.civil_status);
+          setIfEmpty('arrendatario.domicilio', merged.address);
+          if (merged.party_type === 'natural') {
+            setIfEmpty('arrendatario.tipo_persona', 'natural');
+          } else if (merged.party_type === 'juridica') {
+            setIfEmpty('arrendatario.tipo_persona', 'juridica');
+          }
+        }
+
+        if (fieldPath === 'arrendatario.representante_legal.rut') {
+          setIfEmpty('arrendatario.representante_legal.nombre', merged.display_name);
+          setIfEmpty('arrendatario.representante_legal.email', merged.email);
+          setIfEmpty('arrendatario.representante_legal.nacionalidad', merged.nationality);
+          setIfEmpty('arrendatario.representante_legal.estado_civil', merged.civil_status);
+          setIfEmpty('arrendatario.representante_legal.profesion', merged.profession);
+          setIfEmpty('arrendatario.representante_legal.domicilio', merged.address);
+        }
+
+        if (fieldPath === 'aval.rut') {
+          setIfEmpty('aval.nombre', merged.display_name);
+          setIfEmpty('aval.email', merged.email);
+          setIfEmpty('aval.nacionalidad', merged.nationality);
+          setIfEmpty('aval.estado_civil', merged.civil_status);
+          setIfEmpty('aval.profesion', merged.profession);
+          setIfEmpty('aval.domicilio', merged.address);
+        }
+      } catch {
+        // Best-effort autofill; ignore network errors
+      }
+    },
+    [form]
+  );
+
   const runStepValidation = useCallback(
     async (stepIndex: number): Promise<boolean> => {
-      const step = CONTRACT_WIZARD_STEPS[stepIndex];
+      const step = steps[stepIndex];
       if (!step) return false;
 
       if (step.key === 'template') {
@@ -460,15 +591,15 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
       });
       return valid;
     },
-    [contratoTipo, firmaOnline, form, hayAval, selectedTemplate, selectedTemplateId]
+    [contratoTipo, firmaOnline, form, hayAval, selectedTemplate, selectedTemplateId, steps]
   );
 
   const nextStep = useCallback(async () => {
     const valid = await runStepValidation(currentStep);
     if (!valid) return false;
-    setCurrentStep((prev) => Math.min(prev + 1, CONTRACT_WIZARD_STEPS.length - 1));
+    setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
     return true;
-  }, [currentStep, runStepValidation]);
+  }, [currentStep, runStepValidation, steps.length]);
 
   const prevStep = useCallback(() => {
     setCurrentStep((prev) => Math.max(prev - 1, 0));
@@ -476,7 +607,7 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
 
   const goToStep = useCallback(
     async (targetStep: number) => {
-      const boundedTarget = Math.max(0, Math.min(CONTRACT_WIZARD_STEPS.length - 1, targetStep));
+      const boundedTarget = Math.max(0, Math.min(steps.length - 1, targetStep));
       if (boundedTarget <= currentStep) {
         setCurrentStep(boundedTarget);
         return true;
@@ -493,7 +624,7 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
       setCurrentStep(boundedTarget);
       return true;
     },
-    [currentStep, runStepValidation]
+    [currentStep, runStepValidation, steps.length]
   );
 
   const normalizeAndBuildPayload = useCallback(() => {
@@ -734,7 +865,7 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
 
   const sectionCompletion = useMemo(() => {
     const currentValues = (values ?? form.getValues()) as unknown as Record<string, unknown>;
-    return CONTRACT_WIZARD_STEPS.map((step) => {
+    return steps.map((step) => {
       const fields = getStepFieldsForContractType(step.key, contratoTipo ?? 'standard', {
         hayAval,
         firmaOnline,
@@ -747,7 +878,7 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
       if (fields.length === 0) return true;
       return fields.every((path) => hasValue(getPathValue(currentValues, path)));
     });
-  }, [contratoTipo, firmaOnline, form, hayAval, selectedTemplateId, values]);
+  }, [contratoTipo, firmaOnline, form, hayAval, selectedTemplateId, steps, values]);
 
   return {
     form,
@@ -760,6 +891,7 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
     setSelectedTemplateId,
     currentStep,
     stepState,
+    steps,
     sectionCompletion,
     canIssue,
     hayAval,
@@ -793,5 +925,6 @@ export function useContractConfigurator(options: UseContractConfiguratorOptions 
     formatJson,
     discardDraft,
     formatRutField,
+    autofillByRut,
   };
 }

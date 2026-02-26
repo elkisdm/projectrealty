@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import type { AdminRole } from '@/types/admin-ui';
-import { CONTRACT_WIZARD_STEPS, formatCLPInput, parseCLPInput } from '@/lib/contracts/form-utils';
+import { formatCLPInput, parseCLPInput } from '@/lib/contracts/form-utils';
 import { isSubleaseTemplate } from '@/lib/contracts/template-type';
 import { useContractConfigurator } from '@/hooks/useContractConfigurator';
 import { useContractHistory } from '@/hooks/useContractHistory';
@@ -84,16 +84,30 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
 
   const reviewSections = useMemo(
     () =>
-      CONTRACT_WIZARD_STEPS.slice(0, 5).map((step, index) => ({
-        title: step.title,
-        completed: configurator.sectionCompletion[index],
-        state: configurator.stepState[index],
-      })),
-    [configurator.sectionCompletion, configurator.stepState]
+      configurator.steps
+        .filter((step) => step.key !== 'review')
+        .map((step, index) => ({
+          title: step.title,
+          completed: configurator.sectionCompletion[index],
+          state: configurator.stepState[index],
+        })),
+    [configurator.sectionCompletion, configurator.stepState, configurator.steps]
   );
 
   const readOnly = !configurator.canIssue;
   const fechaTerminoRegister = register('contrato.fecha_termino');
+  const handleRutBlur = (
+    fieldPath:
+      | 'arrendadora.rut'
+      | 'arrendadora.representante.rut'
+      | 'propietario.rut'
+      | 'arrendatario.rut'
+      | 'arrendatario.representante_legal.rut'
+      | 'aval.rut'
+  ) => {
+    configurator.formatRutField(fieldPath);
+    void configurator.autofillByRut(fieldPath);
+  };
   const filteredTemplates = useMemo(() => {
     return configurator.templates.filter((template) =>
       contratoTipo === 'subarriendo_propietario' ? isSubleaseTemplate(template) : !isSubleaseTemplate(template)
@@ -241,7 +255,7 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
                         <Input
                           {...register('arrendadora.rut')}
                           disabled={readOnly}
-                          onBlur={() => configurator.formatRutField('arrendadora.rut')}
+                          onBlur={() => handleRutBlur('arrendadora.rut')}
                         />
                       </div>
                       <div className="space-y-1.5">
@@ -304,7 +318,7 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
                         <Input
                           {...register('arrendatario.rut')}
                           disabled={readOnly}
-                          onBlur={() => configurator.formatRutField('arrendatario.rut')}
+                          onBlur={() => handleRutBlur('arrendatario.rut')}
                         />
                       </div>
                       <div className="space-y-1.5">
@@ -338,7 +352,7 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
                         <Input
                           {...register('arrendatario.representante_legal.rut')}
                           disabled={readOnly}
-                          onBlur={() => configurator.formatRutField('arrendatario.representante_legal.rut')}
+                          onBlur={() => handleRutBlur('arrendatario.representante_legal.rut')}
                         />
                       </div>
                       <div className="space-y-1.5">
@@ -408,7 +422,7 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
                       <Input
                         {...register('arrendadora.rut')}
                         disabled={readOnly}
-                        onBlur={() => configurator.formatRutField('arrendadora.rut')}
+                        onBlur={() => handleRutBlur('arrendadora.rut')}
                       />
                       <p className="text-xs text-[var(--subtext)]">Este RUT debe ser el de la empresa.</p>
                     </div>
@@ -517,7 +531,7 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
                       <Input
                         {...register('arrendadora.representante.rut')}
                         disabled={readOnly}
-                        onBlur={() => configurator.formatRutField('arrendadora.representante.rut')}
+                        onBlur={() => handleRutBlur('arrendadora.representante.rut')}
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -574,7 +588,7 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
                       <Input
                         {...register('propietario.rut')}
                         disabled={readOnly}
-                        onBlur={() => configurator.formatRutField('propietario.rut')}
+                        onBlur={() => handleRutBlur('propietario.rut')}
                       />
                     </div>
                   </FieldGrid>
@@ -600,7 +614,7 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
                       <Input
                         {...register('arrendatario.rut')}
                         disabled={readOnly}
-                        onBlur={() => configurator.formatRutField('arrendatario.rut')}
+                        onBlur={() => handleRutBlur('arrendatario.rut')}
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -681,7 +695,7 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
                         <Input
                           {...register('aval.rut')}
                           disabled={readOnly}
-                          onBlur={() => configurator.formatRutField('aval.rut')}
+                          onBlur={() => handleRutBlur('aval.rut')}
                         />
                       </div>
                       <div className="space-y-1.5">
@@ -1222,7 +1236,7 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
         ) : null}
 
         <ContractWizardStepper
-          steps={CONTRACT_WIZARD_STEPS}
+          steps={configurator.steps}
           currentStep={configurator.currentStep}
           stepState={configurator.stepState}
           sectionCompletion={configurator.sectionCompletion}
@@ -1244,7 +1258,7 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
                 <div className="rounded-md border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-2)] p-3">
                   <p className="text-xs uppercase tracking-wide text-[var(--subtext)]">Paso actual</p>
                   <p className="font-semibold text-[var(--text)]">
-                    {configurator.currentStep + 1}. {CONTRACT_WIZARD_STEPS[configurator.currentStep]?.title}
+                    {configurator.currentStep + 1}. {configurator.steps[configurator.currentStep]?.title}
                   </p>
                 </div>
                 <div className="rounded-md border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-2)] p-3">
@@ -1281,7 +1295,7 @@ export function ContractsConfigurator({ role = 'viewer', adminUserId }: Contract
               Anterior
             </Button>
 
-            {configurator.currentStep < CONTRACT_WIZARD_STEPS.length - 1 ? (
+            {configurator.currentStep < configurator.steps.length - 1 ? (
               <Button
                 type="button"
                 onClick={() => {

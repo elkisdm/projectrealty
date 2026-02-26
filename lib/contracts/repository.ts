@@ -312,9 +312,55 @@ export async function upsertContractParties(input: {
     updated_at: new Date().toISOString(),
   }));
 
+  const roles = Array.from(new Set(rows.map((row) => row.role)));
+  const ruts = Array.from(new Set(rows.map((row) => row.rut)));
+
+  const { data: existingRows, error: existingError } = await supabase
+    .from('contract_parties')
+    .select('*')
+    .in('role', roles)
+    .in('rut', ruts);
+
+  if (existingError) {
+    throw new ContractError({
+      code: 'RENDER_FAILED',
+      message: 'No se pudo leer implicados existentes para enriquecer',
+      details: existingError.message,
+    });
+  }
+
+  const existingByKey = new Map<string, ContractPartyRecord>();
+  for (const row of (existingRows ?? []) as ContractPartyRecord[]) {
+    existingByKey.set(`${row.role}|${row.rut}`, row);
+  }
+
+  const mergedRows = rows.map((row) => {
+    const current = existingByKey.get(`${row.role}|${row.rut}`);
+    if (!current) return row;
+
+    return {
+      ...row,
+      source_contract_id: row.source_contract_id ?? current.source_contract_id ?? null,
+      party_type: row.party_type === 'unknown' ? current.party_type : row.party_type,
+      display_name: row.display_name || current.display_name,
+      email: row.email ?? current.email ?? null,
+      phone: row.phone ?? current.phone ?? null,
+      nationality: row.nationality ?? current.nationality ?? null,
+      civil_status: row.civil_status ?? current.civil_status ?? null,
+      profession: row.profession ?? current.profession ?? null,
+      address: row.address ?? current.address ?? null,
+      meta_json: {
+        ...(current.meta_json ?? {}),
+        ...(row.meta_json ?? {}),
+      },
+      created_by: current.created_by || row.created_by,
+      updated_at: new Date().toISOString(),
+    };
+  });
+
   const { error } = await supabase
     .from('contract_parties')
-    .upsert(rows, { onConflict: 'role,rut' });
+    .upsert(mergedRows, { onConflict: 'role,rut' });
 
   if (error) {
     throw new ContractError({
